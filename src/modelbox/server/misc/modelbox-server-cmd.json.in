@@ -1,0 +1,10 @@
+{
+    "cmd-list": [
+        {
+            "name": "develop",
+            "exec": "@MODELBOX_TOOLS_PATH@/develop",
+            "desc": "Develop mode switch",
+            "help-cmd": "@MODELBOX_TOOLS_PATH@/develop --help"
+        }
+    ]
+}

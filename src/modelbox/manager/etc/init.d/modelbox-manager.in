@@ -1,0 +1,120 @@
+#!/bin/sh
+#
+# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+### BEGIN INIT INFO
+# Provides:        modelbox-manager
+# Required-Start:  $network 
+# Required-Stop:   $network 
+# Default-Start:   2 3 4 5
+# Default-Stop:
+# Short-Description: Start modelbox-manager server
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+
+. @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager-opts
+MODELBOX_MANAGER=@CMAKE_INSTALL_FULL_BINDIR@/modelbox-manager
+PIDDIR=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager
+PIDFILE=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.pid
+
+test -x $MODELBOX_MANAGER || exit 5
+
+case $1 in
+	start)
+		if [ ! -d "$PIDDIR" ]; then
+			mkdir $PIDDIR
+		fi
+
+		$MODELBOX_MANAGER $MODELBOX_MANAGER_OPTS -p $PIDFILE
+		LOOP=0
+		while true; do
+			if [ -e "$PIDFILE" ]; then
+				break;
+			fi
+			LOOP=$((LOOP+1))
+
+			if [ $LOOP -gt 10 ]; then
+				echo "start modelbox-manager server failed."
+				"$0" stop
+				exit 1
+			fi
+			sleep .5
+		done
+
+		PID="$(cat $PIDFILE 2>/dev/null)"
+		if [ -z "$PID" ]; then
+			echo "start modelbox-manager server failed."
+			exit 1
+		fi
+		if [ ! -e "/proc/$PID" ]; then
+			echo "start modelbox-manager server failed."
+			exit 1
+		fi
+		echo "start modelbox-manager server success."
+		;;
+	stop)
+		if [ ! -f "$PIDFILE" ]; then
+			echo "modelbox-manager server is stopped."
+			exit 0
+		fi
+		PID="$(cat $PIDFILE 2>/dev/null)"
+		if [ ! -e "/proc/$PID" ] || [ -z "$PID" ]; then
+			echo "modelbox-manager server is stopped"
+			exit 0
+		fi
+
+		kill -TERM "$PID"
+		if [ $? -ne 0 ]; then
+			echo "Stop modelbox-manager server failed."
+			exit 1;
+		fi
+
+		LOOP=1
+		while true; do
+			if [ ! -d "/proc/$PID" ]; then
+				break;
+			fi
+
+			if [ $LOOP -gt 10 ]; then
+				kill -9 "$PID"
+				break;
+			fi
+			LOOP=$((LOOP+1))
+			sleep .5
+		done
+		rm -f "$PIDFILE"
+		echo "Stop modelbox-manager server success."
+		;;
+	restart)
+		"$0" stop && sleep 1 && "$0" start
+		;;
+	status)
+		PID="$(cat "$PIDFILE" 2>/dev/null)"
+		if [ ! -e "/proc/$PID" ] || [ -z "$PID" ]; then
+			echo "modelbox-manager server is not running."
+			exit 1
+		fi
+		echo "modelbox-manager server is running."
+		status=$?
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|status}"
+		exit 2
+		;;
+esac
+
+exit $status
+

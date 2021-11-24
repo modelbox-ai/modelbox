@@ -1,0 +1,10 @@
+[base]
+# for example: https://iam.cn-north-7.myhuaweicloud.com
+iam_host=""
+# agent info 
+domain_id=""
+project_id=""
+ak=""
+sk=""
+
+

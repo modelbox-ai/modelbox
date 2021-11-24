@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+#
+# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import argparse
+import os
+import sys
+import modelbox
+import pathlib
+import datetime
+
+__log = modelbox.Log()
+
+
+def log_level_str_to_level(level: str) -> modelbox.Log.Level:
+    '''
+    log level str to enum level
+    '''
+    if level == 'DEBUG':
+        return modelbox.Log.Level.DEBUG
+    elif level == 'INFO':
+        return modelbox.Log.Level.INFO
+    elif level == 'NOTICE':
+        return modelbox.Log.Level.NOTICE
+    elif level == 'WARN':
+        return modelbox.Log.Level.WARN
+    elif level == 'ERROR':
+        return modelbox.Log.Level.ERROR
+    elif level == 'FATAL':
+        return modelbox.Log.Level.FATAL
+
+    return modelbox.Log.Level.OFF
+
+
+def log_level_to_str(level: modelbox.Log.Level) -> str:
+    '''
+    log level str to enum level
+    '''
+    if level == modelbox.Log.Level.DEBUG:
+        return 'DEBUG'
+    elif level == modelbox.Log.Level.INFO:
+        return 'INFO'
+    elif level == modelbox.Log.Level.NOTICE:
+        return 'NOTICE'
+    elif level == modelbox.Log.Level.WARN:
+        return 'WARN'
+    elif level == modelbox.Log.Level.ERROR:
+        return 'ERROR'
+    elif level == modelbox.Log.Level.FATAL:
+        return 'FATAL'
+
+    return "NONE"
+
+
+def log_callback(level: modelbox.Log.Level, file: str, lineno: int, func: str, msg: str):
+    '''
+    Log callback function
+    '''
+    print("[{time}][{level:>5}][{file:>20}:{lineno:>4}] {msg}".format(
+        time=datetime.datetime.now(), level=log_level_to_str(level),
+        file=file, lineno=lineno, msg=msg
+    ))
+
+
+def reg_log():
+    '''
+    Register log function
+    '''
+    __log.reg(log_callback)
+    __log.set_log_level(modelbox.Log.Level.INFO)
+
+
+def set_log_level(level: modelbox.Log.Level):
+    '''
+    Set log level
+    '''
+    __log.set_log_level(level)
+
+
+def run_flow(flow_file: str):
+    '''
+    Run modelbox flow
+    '''
+    try:
+        with open(flow_file) as f:
+            pass
+    except IOError as e:
+        print("Open file {} failed, {}".format(
+            flow_file, os.strerror(e.errno)), file=sys.stderr)
+        return 1
+
+    # initialize flow
+    flow = modelbox.Flow()
+    ret = flow.init(flow_file)
+    if ret == False:
+        modelbox.error(ret)
+        return 1
+
+    # build graph
+    ret = flow.build()
+    if ret == False:
+        modelbox.error(ret)
+        return 1
+
+    # run flow async
+    ret = flow.run_async()
+    if ret == False:
+        modelbox.error(ret)
+        return 1
+
+    # get flow result
+    retval = modelbox.Status()
+    ret = flow.wait(0, retval)
+    if ret == False:
+        modelbox.error(ret)
+        return 1
+    modelbox.info("Running result: " + str(retval))
+    return 0
+
+
+def run_python_debug_tool():
+    '''
+    Run modelbox python debug tool
+    '''
+    parser = argparse.ArgumentParser(description='Modelbox python debug tool.')
+    parser.add_argument('--flow', dest='flow_file', type=str, required=True,
+                        help='Run flow file')
+    parser.add_argument('--loglevel', dest="log_level", choices=['DEBUG', 'INFO', 'NOTICE', "WARN", 'ERROR', 'FATAL'],
+                        help='log level')
+    parser.add_argument(
+        '--verbose', help="output log to screen", dest="log_verbose", action='store_true')
+    parser.add_argument(
+        '--no-debug', help="disable debug support", dest="disable_debug", action='store_true'
+    )
+
+    args = parser.parse_args()
+    flow_file = args.flow_file
+
+    if args.disable_debug == False:
+        os.environ['MODELBOX_DEBUG_PYTHON'] = "yes"
+
+    reg_log()
+
+    level = log_level_str_to_level(args.log_level)
+    set_log_level(level)
+
+    return run_flow(flow_file)
+
+
+if __name__ == '__main__':
+    ret = run_python_debug_tool()
+    sys.exit(ret)

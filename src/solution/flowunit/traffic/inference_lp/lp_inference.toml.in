@@ -1,0 +1,22 @@
+[base]
+name = "@UNIT_NAME@"
+device = "cuda"
+version = "1.1.2"
+description = "a plate license detection inference flowunit"
+
+entry = "@SOLUTION_MODEL_DIR@/PLD-nopool-fp32.engine"
+type = "inference"
+virtual_type = "tensorrt"
+
+[config]
+plugin = "yolo"
+
+[input]
+[input.input1]
+name = "data"
+type = "float"
+
+[output]
+[output.output1]
+name = "layer11-conv"
+type = "float"

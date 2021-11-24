@@ -1,0 +1,26 @@
+[base]
+name = "mnist_response" 
+device = "cpu" 
+version = "1.0.0" 
+description = "mnist_response" 
+entry = "mnist_response@MnistResponseFlowUnit" 
+type = "python" 
+
+stream = false 
+condition  = false
+collapse = false 
+collapse_all = false 
+expand = false 
+
+[config]
+item = "value"
+
+[input]
+[input.input1] 
+name = "In_1" 
+type = "int" 
+
+[output]
+[output.output1] 
+name = "Out_1" 
+type = "string" 

@@ -1,0 +1,357 @@
+OPEN SOURCE SOFTWARE NOTICE
+
+Please note we provide an open source software notice along with this product and/or this product firmware (in the following just “this product”). The open source software licenses are granted by the respective right holders. And the open source licenses prevail all other license information with regard to the respective open source software contained in the product, including but not limited to End User Software Licensing Agreement. This notice is provided on behalf of Huawei Technologies Co. Ltd. and any of its local subsidiaries which may have provided this product to you in your local country. 
+
+Warranty Disclaimer    
+THE OPEN SOURCE SOFTWARE IN THIS PRODUCT IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE APPLICABLE LICENSES FOR MORE DETAILS.
+
+Copyright Notice and License Texts
+
+Software: APIGW-cpp-sdk 1.0.2
+Copyright notice:
+Copyright (C) 2020 Huawei Technologies Co., Ltd. All rights reserved.
+Copyright (c) 2006, 2008 Junio C Hamano
+
+
+License:
+
+
+Software: googletest 1.10.0
+Copyright notice:
+Copyright 2017 Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2007, Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2007, Google Inc.
+Copyright 2017 Google Inc.
+Copyright 2018, Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2006, Google Inc.
+Copyright 2009, Google Inc.
+Copyright 2013, Google Inc.
+Copyright 2009, Google Inc.
+Copyright 2009, Google Inc.
+Copyright 2007 Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2008 Google Inc. All Rights Reserved.
+Copyright [2007] Neal Norwitz
+Portions Copyright [2007] Google Inc.
+Copyright 2007 Neal Norwitz
+Portions Copyright 2007 Google Inc.
+Copyright 2008 Google Inc.  All Rights Reserved.
+Copyright 2009 Neal Norwitz All Rights Reserved.
+Copyright 2007, Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2013, Google Inc.
+Copyright 2007, Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2015, Google Inc.
+Copyright (c) 2006, 2008 Junio C Hamano
+Copyright 2008, Google Inc.
+Copyright 2008 Google Inc.
+Copyright 2005, Google Inc.
+Copyright 2007, Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2006, Google Inc.
+Copyright 2007, Google Inc.
+Copyright 2006, Google Inc.
+Copyright 2006, Google Inc.
+Copyright 2009, Google Inc.
+Copyright 2010, Google Inc.
+Copyright 2009 Google Inc. All rights reserved.
+Copyright 2005, Google Inc.
+Copyright 2015, Google Inc.
+Copyright 2017 Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2009 Google Inc.  All rights reserved.
+Copyright 2008 Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2018, Google LLC.
+Copyright 2019 Google LLC.  All Rights Reserved.
+Copyright 2018, Google Inc.
+Copyright 2009 Google Inc. All Rights Reserved.
+Copyright 2009, Google Inc.
+Copyright 2013, Google Inc.
+Copyright 2018, Google Inc.
+Copyright 2018 Google LLC. All rights reserved.
+Copyright 2015 Google Inc. All rights reserved.
+Copyright 2019, Google LLC.
+Copyright 2010 Google Inc.  All Rights Reserved.
+Copyright 2005 Google Inc. All Rights Reserved.
+Copyright 2013 Google Inc. All Rights Reserved.
+Copyright 2009, Google Inc.
+Copyright 2007 Google Inc.
+Copyright 2005, Google Inc.
+Copyright 2005, Google Inc.
+Copyright 2008, Google Inc.
+Copyright 2015, Google Inc.
+Copyright 2015, Google Inc.
+Copyright 2005, Google Inc.
+Copyright 2008 Google Inc.
+Copyright 2017 Google Inc.
+
+
+License: BSD 3-Clause License
+Copyright 2008, Google Inc.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+    * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Software: Huawei_Secure_C 1.0.0
+Copyright notice:
+Copyright (C) 2020 Huawei Technologies Co., Ltd. All rights reserved.
+Copyright (c) Huawei Technologies Co., Ltd. 2014-2018. All rights reserved.
+Copyright (C), 2001-2012, Huawei Tech. Co., Ltd.
+Copyright @ Huawei Technologies Co., Ltd. 1998-2014. All rights reserved.
+Copyright @ Huawei Technologies Co., Ltd. 1998-2014. All rights reserved.  ^M
+Copyright (C), 2001-2012, Huawei Tech. Co., Ltd.
+Copyright (c) Huawei Technologies Co., Ltd. 2014-2018. All rights reserved.
+Copyright (c) 2006, 2008 Junio C Hamano
+
+License:
+
+
+Software: nlohmann 3.7.3
+Copyright notice:
+Copyright &copy; 2013-2019 [Niels Lohmann](http://nlohmann.me)
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+The class contains the UTF-8 Decoder from Bjoern Hoehrmann which is licensed under the [MIT License](http://opensource.org/licenses/MIT) (see above). Copyright &copy; 2008-2009 [Björn Hoehrmann](http://bjoern.hoehrmann.de/) <bjoern@hoehrmann.de>
+The class contains a slightly modified version of the Grisu2 algorithm from Florian Loitsch which is licensed under the [MIT License](http://opensource.org/licenses/MIT) (see above). Copyright &copy; 2009 [Florian Loitsch](http://florian.loitsch.com/)
+Copyright (c) 2013-2019 Niels Lohmann
+Copyright (c) 2012, Erik Edlund <erik.edlund@32767.se>
+Copyright (c) 2009 Google Inc. All rights reserved.
+cpplint.py and its corresponding unit tests are Copyright (C) 2009 Google Inc.
+Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>.
+The above copyright notice and this permission notice shall be included in all
+Copyright (c) 2018 Vitaliy Manushkin <agri@akamo.info>.
+CHECK(j["copyright"] == "(C) 2013-2017 Niels Lohmann");
+Copyright 2014 The Authors
+Copyright (c) 2015 Max Woolf
+The above copyright notice and this permission notice shall be included in all
+Copyright (c) 2016 Nicolas Seriot
+The above copyright notice and this permission notice shall be included in all
+Copyright (c) 2016 Nicolas Seriot
+The above copyright notice and this permission notice shall be included in all
+Copyright (c) 2018-2019 Bryan Gillespie
+The above copyright notice and this permission notice shall be included in
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+Copyright (c) 2016-2019 Viktor Kirilov
+Copyright (c) 2016-2018 Viktor Kirilov
+The above copyright notice and this permission notice shall be included in all
+Copyright (c) 2015-2017 Niels Lohmann.
+The above copyright notice and this permission notice shall be included in all
+Copyright (c) 2015-2017 Niels Lohmann
+Copyright 2015 Google Inc. All rights reserved.
+Copyright 2018 Google Inc. All rights reserved.
+Copyright 2016 Ismael Jimenez Martinez. All rights reserved.
+Copyright 2017 Roman Lebedev. All rights reserved.
+Copyright 2015 Google Inc. All rights reserved.
+Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>.
+The above copyright notice and this permission notice shall be included in all
+`copyright` | The copyright line for the library as string.
+result["copyright"] = "(C) 2013-2017 Niels Lohmann";
+copyright and related and neighboring rights to this software to
+@copyright Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+The code is distributed under the MIT license, Copyright (c) 2009 Florian Loitsch.
+Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>.
+The above copyright notice and this permission notice shall be included in all
+copyright and related and neighboring rights to this software to
+The code is distributed under the MIT license, Copyright (c) 2009 Florian Loitsch.
+@copyright Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+result["copyright"] = "(C) 2013-2017 Niels Lohmann";
+@copyright Copyright &copy; 2013-2019 Niels Lohmann. The code is licensed under the [MIT License](http://opensource.org/licenses/MIT).
+Copyright Louis Dionne 2015
+"copyright": "(C) 2013-2017 Niels Lohmann",
+Copyright (c) 2006, 2008 Junio C Hamano
+
+
+License: MIT License
+MIT License 
+
+Copyright (c) 2013-2019 Niels Lohmann
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+Software: pybind11 2.5.0
+Copyright notice:
+Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>, All rights reserved.
+Copyright (c) 2006, 2007 Montel Laurent, <montel@kde.org>
+Copyright (c) 2008, 2009 Gael Guennebaud, <g.gael@free.fr>
+Copyright (c) 2009 Benoit Jacob <jacob.benoit.1@gmail.com>
+Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+Copyright 2001-2009 Kitware, Inc.
+Copyright 2012 Continuum Analytics, Inc.
+Copyright (c) 2007-2012 University of Illinois at Urbana-Champaign.
+Copyright (c) 2017 Wenzel Jakob <wenzel.jakob@epfl.ch>
+Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
+Copyright (c) 2019 Google Inc.
+Copyright (c) 2017 Henry F. Schreiner
+Copyright (c) 2016 Ivan Smirnov
+Copyright (c) 2018 Hudson River Trading LLC <opensource@hudson-trading.com>
+Copyright (c) 2016 Sergey Lyskov
+Copyright (c) 2016 Trent Houliston <trent@houliston.me> and
+Copyright (c) 2016 Ivan Smirnov <i.s.smirnov@gmail.com>
+Copyright (c) 2019 Roland Dreier <roland.dreier@gmail.com>
+Copyright (c) 2016 Jason Rhinelander <jason@imaginary.ca>
+Copyright (c) 2016 Ben North <ben@redfrontdoor.org>
+Copyright (c) 2017 Jason Rhinelander <jason@imaginary.ca>
+Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+Copyright (c) 2019 Google LLC
+Copyright (c) 2016 Klemens D. Morgenstern
+Copyright (c) 2016 Pim Schellart <P.Schellart@princeton.edu>
+Copyright (c) 2017 Borja Zarco (Google LLC) <bzarco@google.com>
+Copyright (c) 2016 Trent Houliston <trent@houliston.me> and
+Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
+Copyright (c) 2016 Sergey Lyskov and Wenzel Jakob
+Copyright (c) 2017 Henry F. Schreiner
+Copyright (c) 2017 Wenzel Jakob <wenzel.jakob@epfl.ch>
+Copyright (c) 2016 Klemens Morgenstern <klemens.morgenstern@ed-chemnitz.de> and
+Copyright (c) 2017 Jason Rhinelander <jason@imaginary.ca>
+Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
+Copyright (c) 2017 Wenzel Jakob <wenzel.jakob@epfl.ch>
+Copyright (c) 2006, 2008 Junio C Hamano
+Copyright (c) 2006, 2008 Junio C Hamano
+
+
+License: BSD 3-Clause License
+Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>, All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Please also refer to the file CONTRIBUTING.md, which clarifies licensing of
+external contributions to this project including patches, pull requests, etc.
+
+
+Software: tinylog 1.4
+Copyright notice:
+Copyright (C) 2018-2020 Nick Peng <pymumu@gmail.com>
+Copyright (c) 2018 Nick Peng <pymumu@gmail.com>
+Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>
+Copyright (c) 2006, 2008 Junio C Hamano
+
+
+License: MIT License
+MIT License
+
+tinylog
+Copyright (c) 2018 Nick Peng <pymumu@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+Software: toml11 3.5.0
+Copyright notice:
+Copyright (c) 2017-2020 Toru Niina
+Copyright (c) 2017 Toru Niina
+Copyright Toru Niina 2019.
+Copyright Toru Niina 2017.
+Copyright (c) 2006, 2008 Junio C Hamano
+
+
+License: MIT License
+
+The MIT License (MIT)
+
+Copyright (c) 2017 Toru Niina
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

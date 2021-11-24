@@ -1,0 +1,17 @@
+[base]
+name = "httpserver_python"
+device = "cpu"
+version = "1.1.1"
+description = "a python httpserver flowunit"
+entry = "xxx.py"
+type = "python"
+
+[input]
+[input.input1]
+name = "image"
+[input.input2]
+name = "anchor"
+
+[output]
+[output.output1]
+name = "output"

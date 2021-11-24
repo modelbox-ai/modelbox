@@ -1,0 +1,9 @@
+[base]
+# for example: obs.cn-north-7.ulanqab.huawei.com
+host=""
+# obs bucket name
+bucket=""
+ak=""
+sk=""
+# subpath in the bucket which to store the file
+sub_path = ""

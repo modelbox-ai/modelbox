@@ -1,0 +1,25 @@
+[base]
+name = "acl_inference_encrypt"
+device = "ascend"
+version = "1.0.0"
+description = "an ascend inference flowunit"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/atc_inference/2d_2048_w_stage1_pad0_en.om"
+type = "inference"
+virtual_type = "acl"
+
+[encryption]
+plugin_name = "modeldecrypt-plugin"
+plugin_version = "1.0.0"
+rootkey = "+bo3telmmykFCNYg9Hn8dSJlpOH1CTBWeYNYhYtxNrbNQhNkrXW5dC5CdURgqJ2HpnbaviiKCY9Di+x83S+kmAQGx0zM7Z9pJqSKCBV2upjx"
+passwd = "Y4smkXW0eNaaANVPgfxMN+3ddfeaxEkf2g/+pRNMHFYFkDFspXocPAmAB06fSDFqcs0bg1joo6gSgWj0bacDsg=="
+
+[input]
+[input.input1]
+name = "input"
+type = "float"
+device = "ascend"
+
+[output]
+[output.output1]
+name = "output:0"
+type = "float"

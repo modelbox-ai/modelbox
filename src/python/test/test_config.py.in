@@ -1,0 +1,21 @@
+
+# test working dir
+TEST_WORKING_DIR = "@TEST_WORKING_DIR@"
+
+# test lib dir
+TEST_LIB_DIR = "@TEST_WORKING_LIB_DIR@"
+
+# test bin dir
+TEST_BIN_DIR = "@TEST_WORKING_BIN_DIR@"
+
+# test data dir
+TEST_DATA_DIR = "@TEST_WORKING_DATA_DIR@"
+
+# test source code dir
+TEST_SOURCE_DIR = "@TEST_SOURCE_DIR@"
+
+# test driver dir
+TEST_DRIVER_DIR = "@TEST_WORKING_DRIVERS_DIR@"
+
+# test asserts file
+TEST_ASSETS = "@TEST_ASSETS@"

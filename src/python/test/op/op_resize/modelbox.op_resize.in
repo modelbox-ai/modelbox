@@ -1,0 +1,27 @@
+[base]
+name = "python_resize"
+device = "cpu"
+version = "1.0.0"
+description = "test python flowunit - resize image"
+entry = "op_resize@ResizeFlowunit"
+type = "python"
+
+stream = false
+condition  = false
+collapse = false
+collapse_all = false
+expand = false
+
+[config]
+height = 360
+width = 480
+
+[input]
+[input.input1]
+name = "resize_in"
+type = "uint8"
+
+[output]
+[output.output1]
+name = "resize_out"
+type = "uint8"

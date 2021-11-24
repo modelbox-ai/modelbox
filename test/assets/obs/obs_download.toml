@@ -1,0 +1,11 @@
+[base]
+# for example: obs.cn-north-7.ulanqab.huawei.com
+host=""
+# obs bucket name
+bucket=""
+ak=""
+sk=""
+# subpath and file which want to be downloaded, for example: test/video.mp4
+file_key=""
+# local path to store the downloaded file,  for example: /home/xx/obs_download, default is /tmp/obs_download
+local_path=""

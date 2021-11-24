@@ -1,0 +1,19 @@
+[base]
+name = "acl_inference"
+device = "ascend"
+version = "1.0.0"
+description = "an ascend inference flowunit"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/atc_inference/2d_2048_w_stage1_pad0.om"
+type = "inference"
+virtual_type = "acl"
+
+[input]
+[input.input1]
+name = "input"
+type = "float"
+device = "ascend"
+
+[output]
+[output.output1]
+name = "output:0"
+type = "float"

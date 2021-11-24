@@ -1,0 +1,108 @@
+/*
+ * Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef MODELBOX_FLOWUNIT_VIDEO_DEMUXER_CPU_H_
+#define MODELBOX_FLOWUNIT_VIDEO_DEMUXER_CPU_H_
+
+#include <modelbox/base/device.h>
+#include <modelbox/base/status.h>
+#include <modelbox/flow.h>
+
+#include "ffmpeg_video_demuxer.h"
+#include "modelbox/flowunit.h"
+#include "source_context.h"
+
+constexpr const char *FLOWUNIT_NAME = "video_demuxer";
+constexpr const char *FLOWUNIT_TYPE = "cpu";
+constexpr const char *FLOWUNIT_DESC =
+    "\n\t@Brief: A video demuxer flowunit on cpu. \n"
+    "\t@Port parameter: The input port buffer data indicate video file path or "
+    "stream path, the output "
+    "port buffer type is video_packet.\n"
+    "\t  The video_packet buffer contain the following meta fields:\n"
+    "\t\tField Name: pts,           Type: int64_t\n"
+    "\t\tField Name: dts,           Type: int64_t\n"
+    "\t\tField Name: rate_num,      Type: int32_t\n"
+    "\t\tField Name: rate_den,      Type: int32_t\n"
+    "\t\tField Name: duration,      Type: int64_t\n"
+    "\t\tField Name: time_base,     Type: double\n"
+    "\t\tField Name: width,         Type: int32_t\n"
+    "\t\tField Name: height,        Type: int32_t\n"
+    "\t@Constraint: The flowuint 'video_decoder' must be used pair "
+    "with 'video_demuxer. ";
+constexpr const char *SOURCE_URL = "source_url";
+constexpr const char *CODEC_META = "codec_meta";
+constexpr const char *PROFILE_META = "profile_meta";
+constexpr const char *DEMUXER_CTX = "demuxer_ctx";
+constexpr const char *STREAM_META_INPUT = "in_video_url";
+constexpr const char *VIDEO_PACKET_OUTPUT = "out_video_packet";
+constexpr const char *DEMUX_RETRY_CONTEXT = "source_context";
+constexpr const char *DEMUX_TIMER_TASK = "demux_timer_task";
+
+enum DemuxStatus { DEMUX_FAIL = 0, DEMUX_SUCCESS = 1 };
+
+#define RETRY_ON 1
+#define RETRY_OFF 0
+
+class VideoDemuxerFlowUnit
+    : public modelbox::FlowUnit,
+      public std::enable_shared_from_this<VideoDemuxerFlowUnit> {
+ public:
+  VideoDemuxerFlowUnit();
+  ~VideoDemuxerFlowUnit();
+
+  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+
+  modelbox::Status Close();
+
+  /* run when processing data */
+  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+
+  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx);
+
+  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx);
+
+  modelbox::Status DataGroupPre(
+      std::shared_ptr<modelbox::DataContext> data_ctx) {
+    return modelbox::STATUS_OK;
+  };
+
+  modelbox::Status DataGroupPost(
+      std::shared_ptr<modelbox::DataContext> data_ctx) {
+    return modelbox::STATUS_OK;
+  };
+
+ private:
+  std::shared_ptr<std::string> GetSourceUrl(
+      std::shared_ptr<modelbox::DataContext> data_ctx);
+
+  modelbox::Status Reconnect(modelbox::Status &status,
+                             std::shared_ptr<modelbox::DataContext> &ctx);
+  modelbox::Status CreateRetryTask(
+      std::shared_ptr<modelbox::DataContext> &data_ctx);
+  modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> &ctx,
+                             std::shared_ptr<AVPacket> &pkt,
+                             std::shared_ptr<FfmpegVideoDemuxer> video_demuxer);
+  void WriteEnd(std::shared_ptr<modelbox::DataContext> &ctx);
+
+  modelbox::Status InitDemuxer(std::shared_ptr<modelbox::DataContext> &ctx,
+                               std::shared_ptr<std::string> &source_url);
+
+  void UpdateStatsInfo(const std::shared_ptr<modelbox::DataContext> &ctx,
+                       const std::shared_ptr<FfmpegVideoDemuxer> &demuxer);
+};
+
+#endif  // MODELBOX_FLOWUNIT_VIDEO_DEMUXER_CPU_H_

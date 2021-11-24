@@ -1,0 +1,22 @@
+
+# IDE product files
+.idea
+*.iml
+*.ipr
+*.iws
+*.bin
+*.exe
+*.pyc
+
+out
+gen
+target
+.vscode
+build
+.settings
+.classpath
+.project
+
+#clangd
+.cache
+compile_commands.json

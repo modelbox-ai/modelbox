@@ -1,0 +1,118 @@
+
+#
+# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+cmake_minimum_required(VERSION 3.10)
+
+# 替换的环境变量
+set(THIRDPARTY_DOWNLOAD_DIR @THIRDPARTY_DOWNLOAD_DIR@)
+
+# 预先下载代码库列表，此处仅包含需要使用ADD_SUBDIRECTORY添加的外部项目。
+include(ExternalProject)
+find_package(Git)
+
+# 下载googletest
+ExternalProject_Add(
+  GoogleTest
+  URL               https://github.com/google/googletest/archive/refs/tags/release-1.10.0.zip
+  SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/googletest
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
+# 下载安全C库
+ExternalProject_Add(
+  Huawei_Secure_C_download
+  URL               https://gitee.com/Janisa/huawei_secure_c/repository/archive/master.zip
+  SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/Huawei_Secure_C
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
+# 下载安全tinylog
+ExternalProject_Add(
+  tinylog
+  URL               https://github.com/pymumu/tinylog/archive/refs/tags/1.5.zip
+  SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/tinylog
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
+# pybind11
+ExternalProject_Add(
+  pybind11
+  URL               https://github.com/pybind/pybind11/archive/refs/tags/v2.5.0.zip
+  SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/pybind11
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
+# toml11
+ExternalProject_Add(
+  toml11
+  URL               https://github.com/ToruNiina/toml11/archive/refs/tags/v3.7.0.zip
+  SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/toml11
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
+# nlohmann json
+ExternalProject_Add(
+  nlohmann
+  URL               https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
+  SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/nlohmann
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
+# lib-httplib
+ExternalProject_Add(
+  lib-httplib
+  URL               https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.9.7.zip
+  SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/lib-httplib
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
+# APIGW-cpp-sdk
+ExternalProject_Add(
+  APIGW-cpp-sdk
+  URL                https://obs.cn-north-1.myhuaweicloud.com/apig-sdk/APIGW-cpp-sdk.zip
+  SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/APIGW-cpp-sdk-1.0.2
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
+
+
+
+

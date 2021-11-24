@@ -1,0 +1,27 @@
+[base]
+name = "python_brightness"
+device = "cpu"
+version = "1.0.0"
+description = "test python flowunit - brightness image"
+entry = "op_brightness@BrightnessFlowunit"
+type = "python"
+
+stream = false
+condition  = false
+collapse = false
+collapse_all = false
+expand = false
+
+[config]
+brightness = 0.1
+
+
+[input]
+[input.input1]
+name = "brightness_in"
+type = "uint8"
+
+[output]
+[output.output1]
+name = "brightness_out"
+type = "uint8"

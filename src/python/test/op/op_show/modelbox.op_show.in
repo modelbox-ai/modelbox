@@ -1,0 +1,24 @@
+[base]
+name = "python_show"
+device = "cpu"
+version = "1.0.0"
+description = "test python flowunit - show image"
+entry = "op_show@ShowFlowunit"
+type = "python"
+
+stream = false
+condition  = false
+collapse = false
+collapse_all = false
+expand = false
+
+[config]
+out_path = "@CMAKE_SOURCE_DIR@/build/test/test-working-dir/out/"
+check_path = "@CMAKE_SOURCE_DIR@/src/python/test/data/python_test_show_out.png"
+
+[input]
+[input.input1]
+name = "show_in"
+type = "uint8"
+
+[output]

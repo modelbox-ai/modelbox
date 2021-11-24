@@ -1,0 +1,22 @@
+PROJECT_NAME           = "@CMAKE_PROJECT_NAME@"
+PROJECT_NUMBER         = @MODELBOX_VERSION_MAJOR@.@MODELBOX_VERSION_MINOR@.@MODELBOX_VERSION_PATCH@
+INPUT                  = @DOXYGEN_LIBMODELBOX_INCLUDES@ \
+                         @LIBMODELBOX_BASE_INCLUDE@ \
+                         @DOXYGEN_MODELBOX_SERVER_INCLUDES@ \
+                         @LIBMODELBOX_DEVICE_CPU_INCLUDE@ \
+                         @LIBMODELBOX_DEVICE_CUDA_INCLUDE@ \
+                         @LIBMODELBOX_DEVICE_ASCEND_INCLUDE@
+
+FILE_PATTERNS          = *.h \
+                         *.py
+RECURSIVE              = YES
+WARN_IF_UNDOCUMENTED   = NO
+GENERATE_LATEX         = NO
+EXCLUDE                = Doxygen.in
+EXAMPLE_PATH           = @CMAKE_CURRENT_SOURCE_DIR@/../examples
+EXAMPLE_PATTERNS       = *
+EXAMPLE_RECURSIVE      = YES
+IMAGE_PATH             = @CMAKE_CURRENT_SOURCE_DIR@/../docs
+OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/doxygen/
+EXTRACT_STATIC         = YES
+QUIET                  = YES

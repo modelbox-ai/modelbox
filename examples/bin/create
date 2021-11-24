@@ -1,0 +1,312 @@
+#!/bin/bash
+#
+# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+FLOWUNIT_TEMPLATE_PATH=/usr/local/share/modelbox/project-template/
+
+showhelp() {
+	echo " -t, --template=[c++|python|infer|project|service-plugin]    create a c++, python, inference, project, service-plugin template"
+	echo " -d, --dir=[directory]                target output directory, default is './'"
+	echo " -n, --name=[target-name]             target name, default is 'exapmle'"
+}
+
+create_python_template()
+{
+	if [ -e $directory/$name/$name.py ]; then 
+		return 0
+	fi
+
+	mv $directory/$name/example.py $directory/$name/$name.py
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	mv $directory/$name/example.toml $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	sed -i "s/ExampleFlowUnit/$flowunit/g" $directory/$name/$name.py
+	if [ $? -ne 0 ]; then
+		echo "sed .py failed"
+		return 1
+	fi
+
+	sed -i "s/Example/$big_name/g" $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "sed .toml failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "copy templ.toml failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/CMakeLists.txt
+	if [ $? -ne 0 ]; then
+		echo "sed CMakeLists.txt failed"
+		return 1
+	fi
+}
+
+create_cpp_template()
+{
+	if [ -e $directory/$name/$name.cc ]; then 
+		return 0
+	fi
+
+	mv $directory/$name/example.cc $directory/$name/$name.cc
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	mv $directory/$name/example.h $directory/$name/$name.h
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	sed -i "s/ExampleFlowUnit/$flowunit/g" $directory/$name/$name.cc
+	if [ $? -ne 0 ]; then
+		echo "sed .cc failed"
+		return 1
+	fi
+
+	sed -i "s/ExampleFlowUnit/$flowunit/g" $directory/$name/$name.h
+	if [ $? -ne 0 ]; then
+		echo "sed .h failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/$name.cc
+	if [ $? -ne 0 ]; then
+		echo "sed .cc failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/CMakeLists.txt
+	if [ $? -ne 0 ]; then
+		echo "sed CMakeLists.txt failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/$name.h
+	if [ $? -ne 0 ]; then
+		echo "sed .h failed"
+		return 1
+	fi
+
+}
+
+create_infer_template()
+{
+	if [ -e $directory/$name/$name.toml ]; then 
+		return 0
+	fi
+
+	mv $directory/$name/example.toml $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "sed toml failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/CMakeLists.txt
+	if [ $? -ne 0 ]; then
+		echo "sed CMakeLists.txt failed"
+		return 1
+	fi
+}
+
+create_project_template()
+{
+	sed -i "s/my-project/$name/g" $directory/$name/CMakeLists.txt
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+	
+	sed -i "s/my-project/$name/g" $directory/$name/src/graph/example.toml
+	if [ $? -ne 0 ]; then
+		echo "sed CMakeLists.txt failed"
+		return 1
+	fi
+    
+}
+
+create_service_plugin_template()
+{
+	if [ -e $directory/$name/$name.cc ]; then 
+		return 0
+	fi
+
+	mv $directory/$name/example.cc $directory/$name/$name.cc
+	if [ $? -ne 0 ]; then
+		echo "copy example.cc failed"
+		return 1
+	fi
+
+	mv $directory/$name/example.h $directory/$name/$name.h
+	if [ $? -ne 0 ]; then
+		echo "copy example.h failed"
+		return 1
+	fi
+
+	sed -i "s/ExamplePlugin/$plugin/g" $directory/$name/$name.cc
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	sed -i "s/ExamplePlugin/$plugin/g" $directory/$name/$name.h
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/$name.cc
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/$name.h
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+	sed -i "s/example/$name/g" $directory/$name/CMakeLists.txt
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+    
+}
+
+create_template()
+{
+	if [ ! -d $directory ]; then
+		echo "$directory directory not exist"
+		return 0 
+	fi
+
+	if [ -d $directory/$name ]; then
+		echo "$directory/$name is already exist"
+		return 0 
+	fi
+
+	big_name=`echo ${name:0:1} | tr  '[a-z]' '[A-Z]'`${name:1}
+	flowunit="${big_name}FlowUnit"
+	plugin="${big_name}Plugin"
+
+	if [ "$template" == "python" ]; then
+	    cp -r $FLOWUNIT_TEMPLATE_PATH/flowunit/$template $directory/$name
+		if [ $? -ne 0 ]; then
+			echo "copy python template failed"
+			return 1
+		fi
+		create_python_template
+	elif [ "$template" == "c++" ]; then
+		cp -r $FLOWUNIT_TEMPLATE_PATH/flowunit/$template $directory/$name
+		if [ $? -ne 0 ]; then
+			echo "copy c++ template failed"
+			return 1
+		fi
+		create_cpp_template
+	elif [ "$template" == "infer" ]; then
+		cp -r $FLOWUNIT_TEMPLATE_PATH/flowunit/$template $directory/$name
+		if [ $? -ne 0 ]; then
+			echo "copy infer template failed"
+			return 1
+		fi
+		create_infer_template
+	elif [ "$template" == "project" ]; then
+		cp -r $FLOWUNIT_TEMPLATE_PATH/project $directory/$name
+		if [ $? -ne 0 ]; then
+			echo "copy project template failed"
+			return 1
+		fi
+		create_project_template
+	elif [ "$template" == "service-plugin" ]; then
+		cp -r $FLOWUNIT_TEMPLATE_PATH/plugin $directory/$name
+		if [ $? -ne 0 ]; then
+			echo "copy service-plugin template failed"
+			return 1
+		fi
+		create_service_plugin_template
+	else
+		echo "unsurpport template"
+		return 1 
+	fi
+
+	if [ $? -ne 0 ]; then
+		echo "copy template failed"
+		return 1
+	fi
+
+
+}
+
+
+main() {
+	OPTS=`getopt -o n:t:d:h --long template:,name:,dir:,help \
+		-n  "" -- "$@"`
+
+	if [ $# -lt 2 ]; then showhelp; exit 1; fi
+	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+	directory="./"
+	name="example"
+
+	while true; do
+		case "$1" in
+		-t | --template)
+			template="$2"
+			shift 2;;
+		-d | --dir)
+			directory="$2"
+			shift 2;;
+		-n | --name)
+			name="$2"
+			shift 2;;
+		-h | --help)
+			showhelp
+			shift ;;
+		-- ) shift; break ;;
+		* ) break ;;
+  		esac
+	done
+
+	create_template
+	if [ $? -ne 0 ]; then
+		rm -r $directory/$name
+	fi
+
+	return $?
+}
+
+main $@

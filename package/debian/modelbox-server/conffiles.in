@@ -1,0 +1,4 @@
+@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox.conf
+@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox-opts
+@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager.conf
+@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager-opts

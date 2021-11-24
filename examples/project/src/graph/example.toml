@@ -1,0 +1,37 @@
+#
+# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[driver]
+skip-default = false
+dir=["/opt/modelbox/my-project/lib","/opt/modelbox/my-project/python","/opt/modelbox/my-project/model"]   # path for user c++ flowuint, python flowuint, infer flowunit
+[profile]
+profile=false
+trace=false
+dir=""  
+[log]
+level="INFO"
+[graph]
+format = "graphviz"
+graphconf = '''digraph graph1{
+          queue_size = 32
+          batch_size = 16
+          video_input[type=flowunit, flowunit=video_input, device=cpu, deviceid=0, label="<out_video_url>", repeat=20, source_url="/xxx/xxx.mp4"]
+          videodemuxer[type=flowunit, flowunit=video_demuxer, device=cpu, deviceid=0, queue_size_event=1000, label="<in_video_url> | <out_video_packet>"] 
+          videodecoder[type=flowunit, flowunit=video_decoder, device=cuda, deviceid=0, label="<in_video_packet> | <out_video_frame>", pix_fmt="nv12"]
+          output1[type=output]  
+          video_input:out_video_url -> videodemuxer:in_video_url
+          videodemuxer:out_video_packet -> videodecoder:in_video_packet
+          videodecoder:out_video_frame -> output1
+        }'''

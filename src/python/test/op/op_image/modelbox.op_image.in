@@ -1,0 +1,23 @@
+[base]
+name = "python_image"
+device = "cpu"
+version = "1.0.0"
+description = "test python flowunit - read image"
+entry = "op_image@ImageFlowunit"
+type = "python"
+
+stream = false
+condition  = false
+collapse = false
+collapse_all = false
+expand = false
+
+[config]
+path = "@CMAKE_SOURCE_DIR@/src/python/test/data/"
+
+[input]
+
+[output]
+[output.output1]
+name = "image_out/out_1"
+type = "uint8"

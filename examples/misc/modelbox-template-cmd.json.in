@@ -1,0 +1,10 @@
+{
+    "cmd-list": [
+        {
+            "name": "create",
+            "exec": "@MODELBOX_TOOLS_PATH@/create",
+            "desc": "Create the template",
+            "help-cmd": "@MODELBOX_TOOLS_PATH@/create --help"
+        }
+    ]
+}

@@ -1,0 +1,188 @@
+#!/bin/bash
+#
+# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+MODELBOX_CONF_FILE="/usr/local/etc/modelbox/modelbox.conf"
+MODELBOX_CONF_BACKUP_FILE="${MODELBOX_CONF_FILE}.origin"
+MODELBOX_DEV_FILE="/usr/local/etc/modelbox/modelbox-dev.conf.template"
+
+restart_modelbox() {
+    systemctl restart modelbox
+}
+
+backup_origin() {
+    if [ ! -e $MODELBOX_CONF_FILE ] && [ -e $MODELBOX_CONF_BACKUP_FILE ]; then
+        return 0
+    fi
+
+    mv $MODELBOX_CONF_FILE $MODELBOX_CONF_BACKUP_FILE
+    return $?
+}
+
+restore_origin() {
+    if [ -e $MODELBOX_CONF_FILE ] && [ ! -e $MODELBOX_CONF_BACKUP_FILE ]; then
+        return 0
+    fi
+
+    mv ${MODELBOX_CONF_BACKUP_FILE} $MODELBOX_CONF_FILE
+    return $?
+}
+
+develop_switch_is_on() {
+    if [ ! -e "$MODELBOX_CONF_FILE" ]; then
+        return 1
+    fi
+
+    if [ ! -e "$MODELBOX_CONF_BACKUP_FILE" ]; then
+        return 1
+    fi
+
+    return 0
+}
+
+develop_switch_on() {
+    develop_switch_is_on
+    if [ $? -eq 0 ]; then
+        echo "develop mode already enabled"
+        return 0
+    fi
+
+    backup_origin
+    if [ $? -ne 0 ]; then
+        echo "backup origin conf failed"
+        return 1
+    fi
+    cp -a ${MODELBOX_DEV_FILE} ${MODELBOX_CONF_FILE}
+    if [ $? -ne 0 ]; then
+        echo "setup develop mode failed"
+        restore_origin
+        return 1
+    fi
+
+    PORT=`grep "^ *port" ${MODELBOX_CONF_FILE} | awk '{print $3}' | sed 's/"//g'`
+    sed -i 's/^[[:space:]]*ip[[:space:]]*=.*$/ip = "0.0.0.0"/g' ${MODELBOX_CONF_FILE}
+    if [ $? -ne 0 ]; then
+        echo "setup develop mode failed"
+        restore_origin
+        return 1
+    fi
+
+    CLIENTIP=`env | grep SSH_CLIENT | awk -F'=' '{print $2}' | awk '{print $1}'`
+    if [ ! -z "$CLIENTIP" ]; then
+        sed -i "s/\(# ADD CLIENT HOST HERE\)/\"${CLIENTIP}\"\n    \1/g" ${MODELBOX_CONF_FILE}
+        if [ $? -ne 0 ]; then
+            echo "setup develop mode failed"
+            restore_origin
+            return 1
+        fi
+    fi
+
+    echo "Warning: This command can reset the IP address (change from 127.0.0.1 to 0.0.0.0), which means that other people in the same network may access and attack the service.
+  For network security, we have added an access control list to allow only legitimate IPs to access the service.
+  The default whitelist only includes your local IP.
+For more details on security, please refer to the manual.
+"
+
+    
+    echo "please visit http://[ip]:${PORT}/editor/"
+
+    return $?
+}
+
+develop_switch_off() {
+    develop_switch_is_on
+    if [ $? -ne 0 ]; then
+        echo "develop mode already disabled"
+        return 0
+    fi
+
+    rm -f $MODELBOX_CONF_FILE
+    if [ $? -ne 0 ]; then
+        echo "disable conf failed"
+        return 1
+    fi
+
+    restore_origin
+    return $?
+}
+
+develop_switch_status() {
+    develop_switch_is_on
+    if [ $? -ne 0 ]; then
+        echo "develop mode disabled"
+        return 0
+    else 
+        echo "develop mode enabled"
+        echo "please visit http://[ip]:1104"
+    fi
+
+    return 0
+}
+
+develop_switch() {
+    case "$1" in
+        on)
+        develop_switch_on
+        restart_modelbox
+        ;;
+        off)
+        develop_switch_off
+        restart_modelbox
+        ;;
+    esac
+
+    return $?
+}
+
+showhelp() {
+    echo " -e, --on     turn on editor."
+    echo " -d, --off    turn off editor."
+    echo " -q, --query  editor switch status."
+}
+
+main() {
+    OPTS=`getopt -o hedsq --long help,on,off,query: \
+		-n  "" -- "$@"`
+
+    if [ $# -lt 1 ]; then showhelp; exit 1; fi
+	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+	# Note the quotes around `$TEMP': they are essential!
+	eval set -- "$OPTS"
+
+	while true; do
+		case "$1" in
+        -e | --on)
+            develop_switch "on"
+            shift ;;
+        -d | --off)
+            develop_switch "off"
+            shift ;;
+        -q | --query)
+            develop_switch_status
+            shift ;;
+        -h | --help)
+            showhelp
+            shift ;;
+        -- ) shift; break ;;
+        * ) break ;;
+  		esac
+	done
+
+    return $?
+}
+
+main $@

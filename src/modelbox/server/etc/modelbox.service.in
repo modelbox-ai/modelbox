@@ -1,0 +1,24 @@
+[Unit]
+Description=modelbox server
+After=network.target 
+StartLimitBurst=0
+StartLimitIntervalSec=60
+
+[Service]
+User=modelbox
+Group=modelbox
+Type=forking
+PermissionsStartOnly=True
+RuntimeDirectory=modelbox
+RuntimeDirectoryMode=755
+PIDFile=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid
+EnvironmentFile=@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox-opts
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/modelbox -p /@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid $MODELBOX_OPTS 
+KillMode=process
+LimitNOFILE=100000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+Alias=modelbox.service

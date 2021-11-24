@@ -1,0 +1,25 @@
+[base]
+name = "inference_encrypt"
+device = "cuda"
+version = "1.1.2"
+description = "a cuda inference flowunit"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/tensorflow_cuda/TF_VERSION/tensorflow_cuda_pb/frozen_model_en.pb"
+type = "inference"
+virtual_type = "tensorflow"
+
+[encryption]
+plugin_name = "modeldecrypt-plugin"
+plugin_version = "1.0.0"
+rootkey = "LfxL6P4NBBSgVjw6ay075j2GL4SjIBdHiDgm+gEBWx/bwjgbaO2CpygEgZqKyYRheDVuqKkvjf1adLyTTO5dRB5xsIlWqL+rvrUpWu5qyilM"
+passwd = "jXkGiVoIA/4mh0lNdxeAOOg3NfGjXUNKgwWWujvpRZI/Xu5wfTI9xQJwjBy5LQn7ZHiUSZ+AWFXjiZMDYgaAgQ=="
+
+[input]
+[input.input1]
+name = "input"
+type = "float"
+device = "cpu"
+
+[output]
+[output.output1]
+name = "output"
+type = "float"

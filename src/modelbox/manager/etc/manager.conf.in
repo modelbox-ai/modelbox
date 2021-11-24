@@ -1,0 +1,6 @@
+#
+# app --name "appname" --cmd "/path/to/command"  --pidfile "/run/app.pid" --keep-check
+#
+# app --name "modelbox" --cmd "/usr/local/bin/modelbox -c /usr/local/etc/modelbox/modelbox.conf -p /var/run/modelbox/modelbox.pid -n modelbox" --check-alive --pidfile "/var/run/modelbox/modelbox.pid"
+#
+#

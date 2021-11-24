@@ -1,0 +1,28 @@
+[base]
+name = "test_yolobox"
+version = "1.0.0"
+description = "a common cpu yolobox flowunit"
+type = "yolo_postprocess"
+virtual_type = "yolov3_postprocess"
+device = "cpu"
+
+[config]
+input_width = 800
+input_height = 480
+class_num = 1
+score_threshold = ["0.6","0.7"]
+nms_threshold = ["0.45","0.3"]
+yolo_output_layer_num = 2
+yolo_output_layer_wh = ["25","15","50","30"]
+anchor_num = ["4","4"]
+anchor_biases = ["100.0","72.0","173.12","55.04","165.12","132.0","280.0","252.0"," 10.0","8.0","20.0","16.0","30.0","24.0","67.0","56.0"]
+
+[input]
+[input.input1]
+name = "in_1"
+[input.input2]
+name = "in_2"
+
+[output]
+[output.output1]
+name = "out_1"
