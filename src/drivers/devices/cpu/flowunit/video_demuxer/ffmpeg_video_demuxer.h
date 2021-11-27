@@ -51,6 +51,8 @@ class FfmpegVideoDemuxer {
 
   void GetFrameMeta(int32_t *frame_width, int32_t *frame_height);
 
+  int32_t GetFrameRotate();
+
   double GetTimeBase();
 
   int64_t GetDuration();
@@ -99,6 +101,7 @@ class FfmpegVideoDemuxer {
   int32_t frame_height_{0};
   int32_t frame_rate_numerator_{0};
   int32_t frame_rate_denominator_{0};
+  int32_t frame_rotate_{0};
   int32_t frame_count_{0};
   std::vector<std::shared_ptr<AVBSFContext>> bsf_ctx_list_;
   std::vector<std::string> bsf_name_list_;
