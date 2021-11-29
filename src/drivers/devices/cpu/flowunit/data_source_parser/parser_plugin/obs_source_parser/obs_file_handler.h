@@ -14,37 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef MODELBOX_FILE_HANDLER_H_
-#define MODELBOX_FILE_HANDLER_H_
-
-#include <cpprest/http_client.h>
+#ifndef MODELBOX_OBS_FILE_HANDLER_H_
+#define MODELBOX_OBS_FILE_HANDLER_H_
 
 #include "modelbox/base/status.h"
+#include "modelbox/drivers/common/file_requester.h"
 #include "obs_client.h"
 
 namespace modelbox {
-
-class FileGetHandler {
- public:
-  /**
-   * @brief get data.
-   * @param buff read buffer.
-   * @param size buffer size.
-   * @param off current read offset.
-   * @param path file path.
-   * @return read result.
-   */
-  virtual modelbox::Status Get(unsigned char *buff, size_t size, off_t off) = 0;
-
-  /**
-   * @brief get file size.
-   * @param path file path.
-   * @return file size.
-   */
-  virtual int GetFileSize() = 0;
-
-  virtual ~FileGetHandler() {}
-};
 
 class OBSFileHandler : public FileGetHandler {
  public:
@@ -63,14 +40,14 @@ class OBSFileHandler : public FileGetHandler {
    * @param path obs file path in the bucket.
    * @return file size.
    */
-  int GetFileSize() override;
+  uint64_t GetFileSize() override;
 
   void SetOBSOption(const ObsOptions &opt);
 
  private:
   ObsOptions opt_;
-  int file_size_ = 0;
+  uint64_t file_size_ = 0;
 };
 };  // namespace modelbox
 
-#endif  // MODELBOX_FILE_HANDLER_H_
+#endif  // MODELBOX_OBS_FILE_HANDLER_H_

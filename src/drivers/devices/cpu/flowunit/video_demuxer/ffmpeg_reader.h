@@ -24,6 +24,7 @@
 #include <memory>
 extern "C" {
 #include <libavformat/avformat.h>
+#include <libavutil/log.h>
 }
 constexpr std::chrono::seconds FFMPEG_READER_TIMEOUT_INTERVAL =
     std::chrono::seconds(60);
@@ -44,6 +45,8 @@ class FfmpegReader {
   void SetupRtspOption(const std::string &source_url, AVDictionary **options);
 
   void SetupCommonOption(const std::string &source_url, AVDictionary **options);
+
+  void SetupHttpOption(const std::string &source_url, AVDictionary **options);
 
   std::string origin_source_url_;
   std::string format_source_url_;

@@ -31,11 +31,15 @@
 #include "modelbox/base/utils.h"
 #include "modelbox/base/uuid.h"
 #include "modelbox/device/cpu/device_cpu.h"
-#include "modelbox/drivers/common/file_requester.h"
 #include "obs_client.h"
+#include "obs_file_handler.h"
 
 #define OBS_RETRY_INTERVAL_DEFALUT 1000
 #define OBS_RETRY_TIMES_DEFALUT 5
+
+#define OBS_STREAM_READ_SIZE_LOW 1
+#define OBS_STREAM_READ_SIZE_NORMAL 5
+#define OBS_STREAM_READ_SIZE_HIGH 20
 
 void RemoveFileCallback(std::string uri);
 
@@ -51,6 +55,17 @@ modelbox::Status ObsSourceParser::Init(
   retry_max_times_ =
       opts->GetInt32("obs_retry_count_limit", OBS_RETRY_TIMES_DEFALUT);
   read_type_ = opts->GetString("obs_download_method", "file");
+  if (read_type_ != "stream") {
+    return modelbox::STATUS_OK;
+  }
+  stream_memory_mode_ = opts->GetString("obs_stream_memory_mode", "low");
+  max_read_size_ = OBS_STREAM_READ_SIZE_LOW;
+  if (stream_memory_mode_ == "normal") {
+    max_read_size_ = OBS_STREAM_READ_SIZE_NORMAL;
+  } 
+  if (stream_memory_mode_ == "high") {
+    max_read_size_ = OBS_STREAM_READ_SIZE_HIGH;
+  }
   return modelbox::STATUS_OK;
 }
 
@@ -97,6 +112,7 @@ modelbox::Status ObsSourceParser::Parse(const std::string &config,
     uri = DEFAULT_FILE_REQUEST_URI + obs_uri;
     modelbox::FileRequester::GetInstance()->RegisterUrlHandler(obs_uri,
                                                                obs_handler);
+    modelbox::FileRequester::GetInstance()->SetMaxFileReadSize(max_read_size_);
     destroy_uri_func = [obs_uri](std::string uri) {
       modelbox::FileRequester::GetInstance()->DeregisterUrl(obs_uri);
     };

@@ -23,7 +23,6 @@
 #include "data_source_parser_plugin.h"
 #include "eSDKOBS.h"
 
-
 #define OBS_TEMP_PATH "/tmp/ObsDownload/"
 
 constexpr const char *DRIVER_NAME = "obs";
@@ -77,6 +76,8 @@ class ObsSourceParser : public DataSourceParserPlugin {
   std::string GetTimeString(time_t *time);
 
   std::string read_type_;
+  std::string stream_memory_mode_;
+  int max_read_size_ = 0;
 };
 
 class ObsSourceParserFactory : public modelbox::DriverFactory {

@@ -17,6 +17,7 @@
 #include "ffmpeg_reader.h"
 
 #include <modelbox/base/log.h>
+
 #include <regex>
 
 using namespace modelbox;
@@ -110,6 +111,24 @@ void FfmpegReader::SetupCommonOption(const std::string &source_url,
   av_dict_set(options, "rw_timeout", "30000000", 0);
   MBLOG_INFO << "Source url:" << source_url
              << ", reconnect:true, rw_timeout:30s";
+}
+
+void FfmpegReader::SetupHttpOption(const std::string &source_url,
+                                   AVDictionary **options) {
+  const std::string http_prefix = "http:";
+  if (source_url.size() < http_prefix.size()) {
+    return;
+  }
+
+  auto source_url_prefix = source_url.substr(0, http_prefix.size());
+  if (source_url_prefix != http_prefix) {
+    return;
+  }
+
+  MBLOG_INFO << "Source is http file";
+  av_dict_set(options, "multiple_requests", "1", 0);
+  av_dict_set(options, "rw_timeout", "1000000", 0);
+  av_log_set_level(AV_LOG_ERROR);
 }
 
 void FfmpegReader::ResetStartTime() {

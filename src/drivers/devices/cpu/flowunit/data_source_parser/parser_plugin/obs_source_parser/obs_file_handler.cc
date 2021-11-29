@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "modelbox/drivers/common/file_handler.h"
+#include "obs_file_handler.h"
 
 using namespace modelbox;
 
@@ -23,7 +23,7 @@ modelbox::Status OBSFileHandler::Get(unsigned char *buff, size_t size,
   return modelbox::ObsClient::GetInstance()->GetBuffer(opt_, buff, size, off);
 }
 
-int OBSFileHandler::GetFileSize() {
+uint64_t OBSFileHandler::GetFileSize() {
   if (file_size_ == 0) {
     file_size_ = modelbox::ObsClient::GetInstance()->GetObjectSize(opt_);
   }
