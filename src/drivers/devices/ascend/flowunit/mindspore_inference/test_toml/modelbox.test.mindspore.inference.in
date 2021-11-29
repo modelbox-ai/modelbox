@@ -7,6 +7,9 @@ entry = "@CMAKE_SOURCE_DIR@/test/assets/mindspore_inference/tensor_add.mindir"
 type = "inference"
 virtual_type = "mindspore"
 
+[config]
+input_format = "nchw"
+
 [input]
 [input.input1]
 name = "8_7_5_construct_wrapper_x_"
