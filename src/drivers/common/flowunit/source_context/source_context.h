@@ -21,6 +21,7 @@
 #include <modelbox/base/device.h>
 #include <modelbox/base/log.h>
 #include <modelbox/base/status.h>
+
 #include "modelbox/data_context.h"
 #include "source_parser.h"
 
@@ -43,9 +44,7 @@ class RetryContext {
 
   int32_t GetMaxRetryTimes() { return max_retry_times_; };
   int32_t GetRetryTimes() { return retry_times_; };
-  int32_t GetRetryInterval() {
-    return retry_interval_;
-  };  // millisecond
+  int32_t GetRetryInterval() { return retry_interval_; };  // millisecond
   int32_t GetRetryEnable() { return retry_enabled_; };
   void RetryTimesInc() { retry_times_++; };
 
@@ -66,6 +65,8 @@ class SourceContext {
   std::shared_ptr<std::string> GetSourceURL();
   void SetLastProcessStatus(modelbox::Status last_status);
   void SetDataSourceCfg(std::string data_source_cfg);
+  void SetSessionContext(
+      std::shared_ptr<modelbox::SessionContext> session_context);
 
   RetryStatus NeedRetry();
   int32_t GetRetryInterval();
@@ -73,6 +74,7 @@ class SourceContext {
                      int32_t retry_times);
 
  private:
+  std::shared_ptr<modelbox::SessionContext> session_context_;
   std::string data_source_cfg_;
   std::weak_ptr<SourceParser> plugin_;
   modelbox::Status last_status_{modelbox::STATUS_SUCCESS};

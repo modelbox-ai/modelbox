@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_RESTFUL_CPU_H_
 #define MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_RESTFUL_CPU_H_
 
@@ -33,6 +32,7 @@ typedef struct tag_RestfulInputInfo {
   std::string encode_full_url;
   web::http::http_headers headers;
   std::string response_url_position;
+  std::string response_body;
 } RestfulInputInfo;
 
 class RestfulSourceParser : public DataSourceParserPlugin {
@@ -45,17 +45,19 @@ class RestfulSourceParser : public DataSourceParserPlugin {
 
   modelbox::Status Deinit() override;
 
-  modelbox::Status Parse(const std::string &config, std::string &uri,
-                       DestroyUriFunc &destroy_uri_func) override;
+  modelbox::Status Parse(
+      std::shared_ptr<modelbox::SessionContext> session_context,
+      const std::string &config, std::string &uri,
+      DestroyUriFunc &destroy_uri_func) override;
 
  private:
   modelbox::Status GetRestfulInfo(RestfulInputInfo &input_info,
-                                const std::string &config);
+                                  const std::string &config);
   modelbox::Status SendRestfulRequest(RestfulInputInfo &input_info,
-                                    web::http::http_response &resp);
+                                      web::http::http_response &resp);
   modelbox::Status ProcessRestfulResponse(RestfulInputInfo &input_info,
-                                        web::http::http_response &resp,
-                                        std::string &uri);
+                                          web::http::http_response &resp,
+                                          std::string &uri);
 };
 
 class RestfulSourceParserFactory : public modelbox::DriverFactory {

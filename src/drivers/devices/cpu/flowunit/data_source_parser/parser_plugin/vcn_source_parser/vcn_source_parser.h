@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_VCN_CPU_H_
 #define MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_VCN_CPU_H_
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
+
 #include "data_source_parser_plugin.h"
 #include "vcn_client.h"
 
@@ -37,12 +37,14 @@ class VcnSourceParser : public DataSourceParserPlugin {
 
   modelbox::Status Deinit() override;
 
-  modelbox::Status Parse(const std::string &config, std::string &uri,
-                       DestroyUriFunc &destroy_uri_func) override;
+  modelbox::Status Parse(
+      std::shared_ptr<modelbox::SessionContext> session_context,
+      const std::string &config, std::string &uri,
+      DestroyUriFunc &destroy_uri_func) override;
 
  private:
   modelbox::Status GetVcnInfo(modelbox::VcnInfo &vcn_info,
-                            const std::string &config);
+                              const std::string &config);
 };
 
 class VcnSourceParserFactory : public modelbox::DriverFactory {

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "url_source_parser.h"
 
 #include <securec.h>
@@ -40,7 +39,8 @@ modelbox::Status UrlSourceParser::Init(
       opts->GetInt32("url_file_retry_interval_ms", DEFAULT_RETRY_INTERVAL);
   stream_retry_interval_ =
       opts->GetInt32("url_stream_retry_interval_ms", DEFAULT_RETRY_INTERVAL);
-  retry_max_times_ = opts->GetInt32("url_retry_count_limit", RETRY_PARAMS_NOT_SET);
+  retry_max_times_ =
+      opts->GetInt32("url_retry_count_limit", RETRY_PARAMS_NOT_SET);
   file_retry_times_ = opts->GetInt32("url_file_retry_count_limit",
                                      retry_max_times_ == RETRY_PARAMS_NOT_SET
                                          ? FILE_DEFAULT_RETRY_TIMES
@@ -55,7 +55,7 @@ modelbox::Status UrlSourceParser::Init(
 modelbox::Status UrlSourceParser::Deinit() { return modelbox::STATUS_OK; }
 
 modelbox::Status UrlSourceParser::GetStreamType(const std::string &config,
-                                              std::string &stream_type) {
+                                                std::string &stream_type) {
   nlohmann::json json;
   try {
     json = nlohmann::json::parse(config);
@@ -79,9 +79,10 @@ modelbox::Status UrlSourceParser::GetStreamType(const std::string &config,
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status UrlSourceParser::Parse(const std::string &config,
-                                      std::string &uri,
-                                      DestroyUriFunc &destroy_uri_func) {
+modelbox::Status UrlSourceParser::Parse(
+    std::shared_ptr<modelbox::SessionContext> session_context,
+    const std::string &config, std::string &uri,
+    DestroyUriFunc &destroy_uri_func) {
   nlohmann::json json;
   std::string url_type;
   if (GetStreamType(config, url_type) != modelbox::STATUS_OK) {

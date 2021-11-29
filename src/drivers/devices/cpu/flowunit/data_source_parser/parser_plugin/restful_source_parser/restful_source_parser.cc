@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "restful_source_parser.h"
 
 #include <iomanip>
@@ -34,9 +33,10 @@ modelbox::Status RestfulSourceParser::Init(
 
 modelbox::Status RestfulSourceParser::Deinit() { return modelbox::STATUS_OK; }
 
-modelbox::Status RestfulSourceParser::Parse(const std::string &config,
-                                          std::string &uri,
-                                          DestroyUriFunc &destroy_uri_func) {
+modelbox::Status RestfulSourceParser::Parse(
+    std::shared_ptr<modelbox::SessionContext> session_context,
+    const std::string &config, std::string &uri,
+    DestroyUriFunc &destroy_uri_func) {
   RestfulInputInfo input_info;
 
   if (GetRestfulInfo(input_info, config) != modelbox::STATUS_OK) {
@@ -57,11 +57,14 @@ modelbox::Status RestfulSourceParser::Parse(const std::string &config,
     MBLOG_ERROR << "Process Restful Response failed.";
     return modelbox::STATUS_FAULT;
   }
+  session_context->SetPrivate(
+      "data_source_parser.restful_source_parser.response",
+      std::make_shared<std::string>(input_info.response_body));
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status RestfulSourceParser::GetRestfulInfo(RestfulInputInfo &input_info,
-                                                   const std::string &config) {
+modelbox::Status RestfulSourceParser::GetRestfulInfo(
+    RestfulInputInfo &input_info, const std::string &config) {
   nlohmann::json config_json;
   try {
     config_json = nlohmann::json::parse(config);
@@ -177,6 +180,8 @@ modelbox::Status RestfulSourceParser::ProcessRestfulResponse(
         MBLOG_ERROR << "Restful rtsp address is empty!";
         return modelbox::STATUS_FAULT;
       }
+
+      input_info.response_body = resp_info;
       MBLOG_DEBUG << "Get restful input info success.";
       return modelbox::STATUS_OK;
     } catch (const std::exception &e) {

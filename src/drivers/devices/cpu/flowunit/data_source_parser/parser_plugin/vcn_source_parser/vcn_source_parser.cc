@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-
 #include "vcn_source_parser.h"
+
 #include <dirent.h>
 #include <securec.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <nlohmann/json.hpp>
 #include <string>
+
 #include "modelbox/base/utils.h"
 #include "modelbox/device/cpu/device_cpu.h"
 
@@ -43,9 +45,10 @@ modelbox::Status VcnSourceParser::Init(
 
 modelbox::Status VcnSourceParser::Deinit() { return modelbox::STATUS_OK; }
 
-modelbox::Status VcnSourceParser::Parse(const std::string &config,
-                                      std::string &uri,
-                                      DestroyUriFunc &destroy_uri_func) {
+modelbox::Status VcnSourceParser::Parse(
+    std::shared_ptr<modelbox::SessionContext> session_context,
+    const std::string &config, std::string &uri,
+    DestroyUriFunc &destroy_uri_func) {
   modelbox::VcnInfo vcn_info;
   uri = "";
 
@@ -76,7 +79,7 @@ modelbox::Status VcnSourceParser::Parse(const std::string &config,
 }
 
 modelbox::Status VcnSourceParser::GetVcnInfo(modelbox::VcnInfo &vcn_info,
-                                           const std::string &config) {
+                                             const std::string &config) {
   nlohmann::json config_json;
   try {
     config_json = nlohmann::json::parse(config);

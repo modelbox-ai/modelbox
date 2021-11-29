@@ -23,7 +23,6 @@
 #include "data_source_parser_plugin.h"
 #include "eSDKOBS.h"
 
-
 #define OBS_TEMP_PATH "/tmp/ObsDownload/"
 
 constexpr const char *DRIVER_NAME = "obs";
@@ -54,8 +53,10 @@ class ObsSourceParser : public DataSourceParserPlugin {
 
   modelbox::Status Deinit() override;
 
-  modelbox::Status Parse(const std::string &config, std::string &uri,
-                         DestroyUriFunc &destroy_uri_func) override;
+  modelbox::Status Parse(
+      std::shared_ptr<modelbox::SessionContext> session_context,
+      const std::string &config, std::string &uri,
+      DestroyUriFunc &destroy_uri_func) override;
   modelbox::Status GetStreamType(const std::string &config,
                                  std::string &stream_type) override;
 
