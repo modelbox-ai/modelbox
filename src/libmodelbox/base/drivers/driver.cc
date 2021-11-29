@@ -720,7 +720,6 @@ void Drivers::Clear() {
 
 Status Drivers::VirtualDriverScan() {
   for (auto &driver : GetDriverListByClass(DRIVER_CLASS_VIRTUAL)) {
-    MBLOG_INFO << driver->GetDriverDesc()->GetName();
     std::shared_ptr<VirtualDriverManager> factory =
         std::dynamic_pointer_cast<VirtualDriverManager>(
             driver->CreateFactory());

@@ -325,6 +325,13 @@ void VirtualPythonFlowUnitFactory::FillFlowUnitType(
   } else {
     flowunit_desc->SetStreamSameCount(false);
   }
+
+  auto exception_visible = config->GetBool("base.exception_visible", false);
+  if (exception_visible) {
+    flowunit_desc->SetExceptionVisible(true);
+  } else {
+    flowunit_desc->SetExceptionVisible(false);
+  }
 }
 
 std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>

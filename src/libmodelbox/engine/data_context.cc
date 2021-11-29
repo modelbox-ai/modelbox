@@ -80,6 +80,13 @@ bool FlowUnitDataContext::HasError() {
   return true;
 }
 
+void ExternalDataImpl::SendCacheBuffer() {
+  for (auto &index_buffer: index_buffer_cache_) {
+    ext_port_->Send(index_buffer);
+  }
+  ext_port_->NotifyPushEvent();
+}
+
 ExternalDataImpl::ExternalDataImpl(std::shared_ptr<InPort> port,
                                    std::shared_ptr<Device> device,
                                    std::shared_ptr<StatisticsItem> graph_stats)
@@ -88,6 +95,15 @@ ExternalDataImpl::ExternalDataImpl(std::shared_ptr<InPort> port,
   auto session_context = std::make_shared<SessionContext>(graph_stats);
   session_context_ = session_context;
   virtual_stream_->SetSessionContext(session_context);
+}
+
+ExternalDataImpl::~ExternalDataImpl() {
+  virtual_stream_ = nullptr; 
+
+  if (!index_buffer_cache_.empty()) {
+    SendCacheBuffer();
+    index_buffer_cache_.clear();
+  }
 }
 
 std::shared_ptr<BufferList> ExternalDataImpl::CreateBufferList() {
@@ -108,6 +124,7 @@ Status ExternalDataImpl::SetOutputMeta(std::shared_ptr<DataMeta> meta) {
 }
 
 Status ExternalDataImpl::Send(std::shared_ptr<BufferList> buffer_list) {
+  // external data send just cache the bufferlist, real send when close
   if (!buffer_list) {
     return {STATUS_INVALID, "buffer_list must not be nullptr."};
   }
@@ -130,9 +147,8 @@ Status ExternalDataImpl::Send(std::shared_ptr<BufferList> buffer_list) {
   }
 
   for (uint32_t i = 0; i < index_buffer_list->GetBufferNum(); i++) {
-    ext_port_->Send(index_buffer_list->GetBuffer(i));
+    index_buffer_cache_.push_back(index_buffer_list->GetBuffer(i));
   }
-  ext_port_->NotifyPushEvent();
   return STATUS_OK;
 };
 
@@ -141,7 +157,10 @@ std::shared_ptr<SessionContext> ExternalDataImpl::GetSessionContext() {
 };
 
 Status ExternalDataImpl::Close() {
+  // real send data
   virtual_stream_->Close();
+  SendCacheBuffer();
+  index_buffer_cache_.clear();
   return STATUS_OK;
 };
 
