@@ -56,9 +56,10 @@ modelbox::Status ObsSourceParser::Init(
 
 modelbox::Status ObsSourceParser::Deinit() { return modelbox::STATUS_OK; }
 
-modelbox::Status ObsSourceParser::Parse(const std::string &config,
-                                        std::string &uri,
-                                        DestroyUriFunc &destroy_uri_func) {
+modelbox::Status ObsSourceParser::Parse(
+    std::shared_ptr<modelbox::SessionContext> session_context,
+    const std::string &config, std::string &uri,
+    DestroyUriFunc &destroy_uri_func) {
   OBSDownloadInfo download_info;
   uri = "";
 

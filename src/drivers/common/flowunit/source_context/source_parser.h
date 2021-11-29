@@ -31,8 +31,10 @@ enum RetryStatus { RETRY_NONEED = 0, RETRY_NEED = 1, RETRY_STOP = 2 };
 
 class SourceParser {
  public:
-  virtual modelbox::Status Parse(const std::string &config, std::string &uri,
-                               DestroyUriFunc &destroy_uri_func) = 0;
+  virtual modelbox::Status Parse(
+      std::shared_ptr<modelbox::SessionContext> session_context,
+      const std::string &config, std::string &uri,
+      DestroyUriFunc &destroy_uri_func) = 0;
   virtual RetryStatus NeedRetry(std::string &stream_type,
                                 modelbox::Status &last_status,
                                 int32_t retry_times) = 0;

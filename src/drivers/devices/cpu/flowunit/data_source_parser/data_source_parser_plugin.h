@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_PLUGIN_H_
 #define MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_PLUGIN_H_
 
 #include <modelbox/base/driver.h>
 #include <modelbox/base/status.h>
+
 #include <functional>
 #include <string>
+
 #include "source_context.h"
 #include "source_parser.h"
 
@@ -41,11 +42,13 @@ class DataSourceParserPlugin
 
   virtual modelbox::Status Deinit() = 0;
 
-  virtual modelbox::Status Parse(const std::string &config, std::string &uri,
-                               DestroyUriFunc &destroy_uri_func) = 0;
+  virtual modelbox::Status Parse(
+      std::shared_ptr<modelbox::SessionContext> session_context,
+      const std::string &config, std::string &uri,
+      DestroyUriFunc &destroy_uri_func) = 0;
 
   virtual modelbox::Status GetStreamType(const std::string &config,
-                                       std::string &stream_type) {
+                                         std::string &stream_type) {
     stream_type = "stream";
     return modelbox::STATUS_OK;
   }
@@ -71,15 +74,15 @@ class DataSourceParserPlugin
       const std::string &source_type) {
     std::shared_ptr<modelbox::SourceContext> source_context =
         std::make_shared<modelbox::SourceContext>(shared_from_this(),
-                                                source_type);
+                                                  source_type);
     source_context->SetRetryParam(retry_enabled_, retry_interval_,
                                   retry_max_times_);
     return source_context;
   };
 
   virtual modelbox::RetryStatus NeedRetry(std::string &stream_type,
-                                        modelbox::Status &last_status,
-                                        int32_t retry_times) {
+                                          modelbox::Status &last_status,
+                                          int32_t retry_times) {
     if (last_status == modelbox::STATUS_NODATA && stream_type == "file") {
       return modelbox::RETRY_STOP;
     }

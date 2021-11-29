@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_URL_CPU_H_
 #define MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_URL_CPU_H_
 
@@ -37,10 +36,13 @@ class UrlSourceParser : public DataSourceParserPlugin {
 
   modelbox::Status Deinit() override;
 
-  modelbox::Status Parse(const std::string &config, std::string &uri,
-                       DestroyUriFunc &destroy_uri_func) override;
+  modelbox::Status Parse(
+      std::shared_ptr<modelbox::SessionContext> session_context,
+      const std::string &config, std::string &uri,
+      DestroyUriFunc &destroy_uri_func) override;
   modelbox::Status GetStreamType(const std::string &config,
-                               std::string &stream_type) override;                             
+                                 std::string &stream_type) override;
+
  protected:
   int32_t file_retry_interval_ = 1;
   int32_t file_retry_times_ = 0;
