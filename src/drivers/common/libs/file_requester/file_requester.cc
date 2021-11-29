@@ -16,11 +16,14 @@
 
 #include "modelbox/drivers/common/file_requester.h"
 
+#include <algorithm>
+
 #include "cpprest/producerconsumerstream.h"
 #include "cpprest/uri.h"
 #include "modelbox/base/log.h"
 
 const int MAX_BLOCK_SIZE = 1 * 1024 * 1024;
+const int MAX_READ_SIZE = 40;
 
 using namespace modelbox;
 
@@ -77,6 +80,16 @@ modelbox::Status FileRequester::RegisterUrlHandler(
   return modelbox::STATUS_EXIST;
 }
 
+void FileRequester::SetMaxFileReadSize(int read_size) {
+  if (read_size <= 0 || read_size > MAX_READ_SIZE) {
+    MBLOG_ERROR << "Invalid read size, use default value for instead."
+    << "Your read size:" << read_size;
+    return;
+  }
+  max_read_size_ = read_size * MAX_BLOCK_SIZE;
+  MBLOG_INFO << "Set max file read size to " << max_read_size_;
+}
+
 modelbox::Status FileRequester::DeregisterUrl(const std::string &relative_url) {
   std::lock_guard<std::mutex> lock(handler_lock_);
   auto iter = file_handlers_.find(relative_url);
@@ -100,9 +113,9 @@ bool FileRequester::IsValidRequest(const web::http::http_request &request) {
   return true;
 }
 
-modelbox::Status FileRequester::ReadRequestRange(
-    const web::http::http_request &request, const int file_size,
-    int &range_start, int &range_end) {
+bool FileRequester::ReadRequestRange(const web::http::http_request &request,
+                                     const uint64_t file_size, uint64_t &range_start,
+                                     uint64_t &range_end) {
   auto headers = request.headers();
   auto range_value = headers["Range"];
   const std::string range_prefix = "bytes=";
@@ -119,11 +132,11 @@ modelbox::Status FileRequester::ReadRequestRange(
     return false;
   }
   try {
-    range_start = std::stoi(ranges[0]);
+    range_start = std::stoull(ranges[0]);
     if (ranges.size() == 1) {
       range_end = file_size - 1;
     } else {
-      range_end = std::stoi(ranges[1]);
+      range_end = std::stoull(ranges[1]);
     }
   } catch (const std::exception &e) {
     MBLOG_ERROR << "Convert request range to int failed, range " << ranges[0]
@@ -138,14 +151,18 @@ modelbox::Status FileRequester::ReadRequestRange(
                 << ", file size: " << file_size;
     return false;
   }
+  if (range_end > range_start + MAX_BLOCK_SIZE) {
+    range_end = std::min(
+        range_end, range_start + std::max(MAX_BLOCK_SIZE, max_read_size_));
+  }
   return true;
 }
 
 void FileRequester::ProcessRequest(
     web::http::http_request &request,
-    std::shared_ptr<modelbox::FileGetHandler> handler, int range_start,
-    int range_end) {
-  int file_size = handler->GetFileSize();
+    std::shared_ptr<modelbox::FileGetHandler> handler, uint64_t range_start,
+    uint64_t range_end) {
+  uint64_t file_size = handler->GetFileSize();
   concurrency::streams::producer_consumer_buffer<unsigned char> rwbuf;
   concurrency::streams::basic_istream<uint8_t> stream(rwbuf);
   web::http::http_response response(web::http::status_codes::OK);
@@ -155,16 +172,17 @@ void FileRequester::ProcessRequest(
                              std::to_string(file_size);
   response.headers().add("Content-Range", rangeResponseHeader);
   response.headers().set_content_type(U("application/octet-stream"));
-  response.headers().set_content_length((size_t)file_size);
+  response.headers().set_content_length((size_t)(range_end - range_start + 1));
 
-  auto rep = request.reply(response);
   std::shared_ptr<unsigned char> raw_data(new unsigned char[MAX_BLOCK_SIZE],
                                           [](unsigned char *p) { delete[] p; });
 
+  auto rep = request.reply(response);
   while (range_start < range_end) {
     int read_size;
     if (range_start + MAX_BLOCK_SIZE < range_end) {
       read_size = MAX_BLOCK_SIZE;
+      response.set_status_code(web::http::status_codes::PartialContent);
     } else {
       read_size = range_end - range_start + 1;
     }
@@ -206,9 +224,8 @@ void FileRequester::HandleFileGet(web::http::http_request request) {
   }
 
   int file_size = file_get_handler->GetFileSize();
-  int range_start, range_end = 0;
-  if (modelbox::STATUS_OK !=
-      ReadRequestRange(request, file_size, range_start, range_end)) {
+  uint64_t range_start, range_end = 0;
+  if (!ReadRequestRange(request, file_size, range_start, range_end)) {
     MBLOG_ERROR << "Read request range for file " << path << " filed.";
     request.reply(web::http::status_codes::BadRequest);
     return;

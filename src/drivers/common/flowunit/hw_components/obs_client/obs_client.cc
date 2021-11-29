@@ -520,6 +520,21 @@ modelbox::Status ObsClient::GetBuffer(ObsOptions &opt, unsigned char *buf,
   get_object(&option, &object_info, &get_condition, 0, &get_object_handler,
              &data);
 
+  if (NeedUpdateAuthInfo(data.ret_status)) {
+    MBLOG_WARN
+        << "Denied to access OBS. Maybe Auth info expired. Try to update.";
+    auto ret = GetUpdatedAuthInfo(opt.domain_name, opt.xrole_name, opt.user_id,
+                                  opt.ak, opt.sk, opt.token);
+    if (modelbox::STATUS_OK != ret) {
+      MBLOG_WARN << "Failed to update hw_auth info.";
+    } else {
+      // try to get object again.
+      SetObsOption(opt, opt.ak, opt.sk, opt.token, option);
+      get_object(&option, &object_info, &get_condition, 0, &get_object_handler,
+                 &data);
+    }
+  }
+
   if (OBS_STATUS_OK != data.ret_status) {
     err_msg = "Failed to get buffer from obs data, bucket: " + opt.bucket +
               ", file key: " + opt.path +
@@ -560,6 +575,20 @@ uint64_t ObsClient::GetObjectSize(ObsOptions &opt) {
                                            &GetObjectSizeCompleteCallback};
 
   get_object_metadata(&option, &object_info, 0, &response_handler, &data);
+
+  if (NeedUpdateAuthInfo(data.ret_status)) {
+    MBLOG_WARN
+        << "Denied to access OBS. Maybe Auth info expired. Try to update.";
+    auto ret = GetUpdatedAuthInfo(opt.domain_name, opt.xrole_name, opt.user_id,
+                                  opt.ak, opt.sk, opt.token);
+    if (modelbox::STATUS_OK != ret) {
+      MBLOG_WARN << "Failed to update hw_auth info.";
+    } else {
+      // try to get object again.
+      SetObsOption(opt, opt.ak, opt.sk, opt.token, option);
+      get_object_metadata(&option, &object_info, 0, &response_handler, &data);
+    }
+  }
 
   if (OBS_STATUS_OK != data.ret_status) {
     err_msg = "Failed to get obs object size, bucket: " + opt.bucket +

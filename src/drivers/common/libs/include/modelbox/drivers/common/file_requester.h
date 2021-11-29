@@ -24,11 +24,33 @@
 #include <unordered_map>
 
 #include "cpprest/http_listener.h"
-#include "file_handler.h"
+#include "modelbox/base/status.h"
 
 const std::string DEFAULT_FILE_REQUEST_URI = "http://127.0.0.1:8024";
 
 namespace modelbox {
+
+class FileGetHandler {
+ public:
+  /**
+   * @brief get data.
+   * @param buff read buffer.
+   * @param size buffer size.
+   * @param off current read offset.
+   * @param path file path.
+   * @return read result.
+   */
+  virtual modelbox::Status Get(unsigned char *buff, size_t size, off_t off) = 0;
+
+  /**
+   * @brief get file size.
+   * @param path file path.
+   * @return file size.
+   */
+  virtual uint64_t GetFileSize() = 0;
+
+  virtual ~FileGetHandler() = default;
+};
 
 class FileRequester {
  public:
@@ -44,6 +66,8 @@ class FileRequester {
 
   modelbox::Status DeregisterUrl(const std::string &relative_url);
 
+  void SetMaxFileReadSize(int read_size);
+
   ~FileRequester();
 
  private:
@@ -51,12 +75,11 @@ class FileRequester {
   modelbox::Status Init();
   void HandleFileGet(web::http::http_request request);
   bool IsValidRequest(const web::http::http_request &request);
-  modelbox::Status ReadRequestRange(const web::http::http_request &request,
-                                    int file_size, int &range_start,
-                                    int &range_end);
+  bool ReadRequestRange(const web::http::http_request &request, uint64_t file_size,
+                        uint64_t &range_start, uint64_t &range_end);
   void ProcessRequest(web::http::http_request &request,
                       std::shared_ptr<modelbox::FileGetHandler> handler,
-                      int range_start, int range_end);
+                      uint64_t range_start, uint64_t range_end);
 
  private:
   static std::once_flag file_requester_init_flag_;
@@ -65,6 +88,7 @@ class FileRequester {
       file_handlers_;
   std::mutex handler_lock_;
   std::shared_ptr<modelbox::ThreadPool> pool_;
+  int max_read_size_ = 0;
 };
 };  // namespace modelbox
 

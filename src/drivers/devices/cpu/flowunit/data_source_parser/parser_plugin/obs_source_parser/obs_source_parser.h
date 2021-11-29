@@ -78,6 +78,8 @@ class ObsSourceParser : public DataSourceParserPlugin {
   std::string GetTimeString(time_t *time);
 
   std::string read_type_;
+  std::string stream_memory_mode_;
+  int max_read_size_ = 0;
 };
 
 class ObsSourceParserFactory : public modelbox::DriverFactory {
