@@ -454,6 +454,14 @@ Status Drivers::WriteScanInfo(const std::string &scan_info_path,
   }
 
   nlohmann::json dump_json;
+
+  struct stat buffer;
+  if (stat(DEFAULT_LD_CACHE, &buffer) == -1) {
+    dump_json["ld_cache_time"] = 0;
+  } else {
+    dump_json["ld_cache_time"] = buffer.st_mtim.tv_sec;
+  }
+
   dump_json["check_code"] = check_code;
   std::time_t tt =
       std::chrono::system_clock::to_time_t(std::chrono::system_clock().now());
@@ -544,11 +552,13 @@ Status Drivers::GatherScanInfo(const std::string &scan_path) {
 }
 
 void Drivers::FillCheckInfo(std::string &file_check_node,
-                            std::unordered_map<std::string, bool> &file_map) {
+                            std::unordered_map<std::string, bool> &file_map,
+                            int64_t &ld_cache_time) {
   std::ifstream scan_info(DEFAULT_SCAN_INFO);
   nlohmann::json dump_json;
   scan_info >> dump_json;
   file_check_node = dump_json["check_code"];
+  ld_cache_time = dump_json["ld_cache_time"];
   auto driver_json_arr = dump_json["scan_drivers"];
   for (const auto &driver_info : driver_json_arr) {
     if (file_map.find(driver_info["file_path"]) != file_map.end()) {
@@ -565,9 +575,19 @@ bool Drivers::CheckPathAndMagicCode() {
     return false;
   }
 
+  if (stat(DEFAULT_LD_CACHE, &buffer) == -1) {
+    MBLOG_DEBUG << DEFAULT_LD_CACHE << " does not exit.";
+    return false;
+  }
+
   std::string file_check_node;
   std::unordered_map<std::string, bool> file_map;
-  FillCheckInfo(file_check_node, file_map);
+  int64_t ld_cache_time;
+  FillCheckInfo(file_check_node, file_map, ld_cache_time);
+
+  if (ld_cache_time != buffer.st_mtim.tv_sec) {
+    return false;
+  }
 
   int64_t check_sum = 0;
   for (const auto &dir : driver_dirs_) {
@@ -661,7 +681,7 @@ void Drivers::PrintScanResults(const std::string &scan_path) {
 
   std::list<std::string> load_success_info;
   std::map<std::string, std::string> load_failed_info;
-  
+
   for (auto &dump_json : dump_driver_json_arr) {
     if (dump_json["load_success"]) {
       load_success_info.push_back(dump_json["file_path"]);

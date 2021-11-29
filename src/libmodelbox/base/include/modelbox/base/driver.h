@@ -32,6 +32,7 @@ constexpr const char *DRIVER_CLASS_VIRTUAL = "DRIVER-VIRTUAL";
 constexpr const char *DRIVER_CLASS_INFERENCE = "DRIVER-INFERENCE";
 constexpr const char *DRIVER_TYPE_VIRTUAL = "virtual";
 constexpr const char *DEFAULT_SCAN_INFO = "/tmp/modelbox-driver-info";
+constexpr const char *DEFAULT_LD_CACHE = "/etc/ld.so.cache";
 
 class Driver;
 class DriverFactory {
@@ -224,7 +225,8 @@ class Drivers {
                        const std::string &check_code);
   Status GatherScanInfo(const std::string &scan_path);
   void FillCheckInfo(std::string &file_check_node,
-                     std::unordered_map<std::string, bool> &file_map);
+                     std::unordered_map<std::string, bool> &file_map,
+                     int64_t &ld_cache_time);
   bool CheckPathAndMagicCode();
   void PrintScanResults(const std::string &scan_path);
   void PrintScanResult(
