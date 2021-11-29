@@ -105,7 +105,7 @@ class ExternalDataImpl : public ExternalData {
  public:
   ExternalDataImpl(std::shared_ptr<InPort> port, std::shared_ptr<Device> device,
                    std::shared_ptr<StatisticsItem> graph_stats = nullptr);
-  virtual ~ExternalDataImpl() = default;
+  virtual ~ExternalDataImpl();
 
   std::shared_ptr<BufferList> CreateBufferList() override;
   Status Send(std::shared_ptr<BufferList> buffer_list) override;
@@ -121,11 +121,13 @@ class ExternalDataImpl : public ExternalData {
   std::shared_ptr<Configuration> GetSessionConfig() override;
 
  private:
+  void SendCacheBuffer();
   std::shared_ptr<Device> device_;
   std::shared_ptr<InPort> ext_port_;
   std::shared_ptr<DataMeta> input_meta_;
   std::weak_ptr<SessionContext> session_context_;
   std::shared_ptr<VirtualStream> virtual_stream_;
+  std::vector<std::shared_ptr<IndexBuffer>> index_buffer_cache_;
 };
 
 class ExternalPort {
