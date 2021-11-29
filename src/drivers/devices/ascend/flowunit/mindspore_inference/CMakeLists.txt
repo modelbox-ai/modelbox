@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.10.2)
 
 set(UNIT_DEVICE "ascend")
 set(UNIT_NAME "mindspore_inference")
@@ -24,7 +24,6 @@ if (NOT MINDSPORE_FOUND)
     message(STATUS "Not found mindspore, disable ${UNIT_NAME} flowunit")
     return()
 endif()
-
 set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB_RECURSE UNIT_SOURCE *.cpp *.cc *.c)

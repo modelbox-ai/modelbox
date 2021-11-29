@@ -1,5 +1,5 @@
 set(HITS_MINDSPORE_PATH $ENV{MINDSPORE_PATH})
-find_path(MINDSPORE_INCLUDE NAMES include/infer_log.h include/infer_tensor.h include/inference.h HINTS ${CMAKE_INSTALL_FULL_INCLUDEDIR} ${HITS_MINDSPORE_PATH})
+find_path(MINDSPORE_INCLUDE NAMES include/api/context.h include/api/graph.h include/api/model.h HINTS ${CMAKE_INSTALL_FULL_INCLUDEDIR} ${HITS_MINDSPORE_PATH})
 mark_as_advanced(MINDSPORE_INCLUDE)
 
 # Look for the library (sorted from most current/relevant entry to least).
