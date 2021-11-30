@@ -93,7 +93,7 @@ ExternalProject_Add(
 # lib-httplib
 ExternalProject_Add(
   lib-httplib
-  URL               https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.9.7.zip
+  URL               https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.9.9.zip
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/lib-httplib
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
