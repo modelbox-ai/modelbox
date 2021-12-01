@@ -18,8 +18,8 @@ cmake_minimum_required(VERSION 3.10)
 
 subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
 
-
 set(GRAPH_NAME "car_detection.toml")
+set(CAR_TEST_VIDEO "car_test_video.mp4")
 set(SOLUTION_GRAPH ${CMAKE_CURRENT_BINARY_DIR}/${GRAPH_NAME})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${GRAPH_NAME}.in ${SOLUTION_GRAPH} @ONLY)
 install(FILES 
@@ -27,3 +27,7 @@ install(FILES
     COMPONENT solution
 )
 
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/${CAR_TEST_VIDEO} DESTINATION ${SOLUTION_VIDEO_DIR}
+    COMPONENT solution
+)
