@@ -9,7 +9,9 @@ mark_as_advanced(DSMI_INCLUDE)
 set(DRIVER_LIB_PATH ${HITS_DRIVER_PATH}/lib64)
 find_library(DSMI_LIBRARY NAMES
     drvdsmi_host
-    HINTS ${CMAKE_INSTALL_FULL_LIBDIR} ${DRIVER_LIB_PATH}
+    HINTS ${CMAKE_INSTALL_FULL_LIBDIR} 
+          ${DRIVER_LIB_PATH}
+          ${DRIVER_LIB_PATH}/driver
 )
 mark_as_advanced(DSMI_LIBRARY)
 
