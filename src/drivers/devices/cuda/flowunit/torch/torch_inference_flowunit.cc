@@ -68,7 +68,7 @@ void TorchInferenceFlowUnit::FillOutput(
 modelbox::Status TorchInferenceFlowUnit::LoadModel(
     const std::string &model_path) {
   try {
-    MBLOG_INFO << "model_path:\t" << model_path;
+    MBLOG_DEBUG << "model_path: " << model_path;
     auto drivers_ptr = GetBindDevice()->GetDeviceManager()->GetDrivers();
     auto config = std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
                       this->GetFlowUnitDesc())
@@ -105,7 +105,7 @@ modelbox::Status TorchInferenceFlowUnit::LoadModel(
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
-  MBLOG_INFO << "model loads success.";
+  MBLOG_DEBUG << "model loads success.";
   return modelbox::STATUS_OK;
 }
 
@@ -267,11 +267,10 @@ modelbox::Status TorchInferenceFlowUnit::PreProcess(
       return {status, "input type convert failed."};
     }
 
-    torch::TensorOptions option =
-        torch::TensorOptions()
-            .device(torch::kCUDA, dev_id_)
-            .layout(torch::kStrided)
-            .dtype(torch_type);
+    torch::TensorOptions option = torch::TensorOptions()
+                                      .device(torch::kCUDA, dev_id_)
+                                      .layout(torch::kStrided)
+                                      .dtype(torch_type);
 
     if (torch_set_type.empty()) {
       torch::Tensor input_tensor;
@@ -381,7 +380,7 @@ modelbox::Status TorchInferenceFlowUnit::CreateOutputBufferList(
 modelbox::Status TorchInferenceFlowUnit::CreateOutputBufferListFromVector(
     std::shared_ptr<modelbox::BufferList> &output_buffer_list,
     std::vector<torch::Tensor> &output_tensor, size_t input_size) {
-  MBLOG_INFO << "output_tensor size " << output_tensor.size();
+  MBLOG_DEBUG << "output_tensor size: " << output_tensor.size();
 
   std::vector<std::vector<std::shared_ptr<modelbox::Buffer>>>
       chunk_torch_tensors;
@@ -497,9 +496,8 @@ modelbox::Status TorchInferenceFlowUnit::PostProcess(
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    MBLOG_INFO << "input size: " << size;
+    MBLOG_DEBUG << "input size: " << size;
     if (output_vector.size() == 1) {
-      MBLOG_INFO << "output_vector: " << output_vector.size();
       auto status = CreateOutputBufferList(output_buf, output_vector[0], size);
       if (status != modelbox::STATUS_OK) {
         auto err_msg =
@@ -536,7 +534,7 @@ modelbox::Status TorchInferenceFlowUnit::Process(
   if (status != modelbox::STATUS_OK) {
     auto err_msg =
         "torch inference preprocess failed, error: " + status.WrapErrormsgs();
-    MBLOG_INFO << err_msg;
+    MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
@@ -558,7 +556,7 @@ modelbox::Status TorchInferenceFlowUnit::Process(
   if (status != modelbox::STATUS_OK) {
     auto err_msg =
         "torch inference postprocess failed, error: " + status.WrapErrormsgs();
-    MBLOG_INFO << err_msg;
+    MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
