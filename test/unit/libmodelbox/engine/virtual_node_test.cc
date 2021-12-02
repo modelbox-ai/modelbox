@@ -607,9 +607,6 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
     status = ext_data_2->Send("input1", output_buf_2);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data_2->Shutdown();
-    EXPECT_EQ(status, STATUS_SUCCESS);
-
     auto selector = std::make_shared<ExternalDataSelect>();
     selector->RegisterExternalData(ext_data_1);
     selector->RegisterExternalData(ext_data_2);
