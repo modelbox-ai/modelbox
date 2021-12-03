@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "ffmpeg_video_demuxer.h"
 
 #include <modelbox/base/log.h>
@@ -78,6 +77,7 @@ void FfmpegVideoDemuxer::LogStreamInfo() {
   MBLOG_INFO << "frame height: " << frame_height_;
   MBLOG_INFO << "frame rate: " << frame_rate_numerator_ << "/"
              << frame_rate_denominator_;
+  MBLOG_INFO << "frame rotate: " << frame_rotate_;
   MBLOG_INFO << "frame count: " << frame_count_;
   MBLOG_INFO << "video duration: " << GetDuration();
   std::stringstream bsf_name_log;
@@ -106,6 +106,8 @@ void FfmpegVideoDemuxer::GetFrameMeta(int32_t *frame_width,
   *frame_width = frame_width_;
   *frame_height = frame_height_;
 }
+
+int32_t FfmpegVideoDemuxer::GetFrameRotate() { return frame_rotate_; }
 
 double FfmpegVideoDemuxer::GetTimeBase() { return time_base_; }
 
@@ -267,6 +269,13 @@ Status FfmpegVideoDemuxer::GetStreamFrameInfo() {
   frame_rate_numerator_ = format_ctx_->streams[stream_id_]->avg_frame_rate.num;
   frame_rate_denominator_ =
       format_ctx_->streams[stream_id_]->avg_frame_rate.den;
+  auto entry = av_dict_get(format_ctx_->streams[stream_id_]->metadata, "rotate",
+                           nullptr, 0);
+  if (entry != nullptr) {
+    frame_rotate_ = (atol(entry->value) % 360 + 360) % 360;
+  } else {
+    MBLOG_INFO << "Stream " << source_url_ << " rotate is null";
+  }
   RescaleFrameRate(frame_rate_numerator_, frame_rate_denominator_);
   frame_count_ = format_ctx_->streams[stream_id_]->nb_frames;
   return STATUS_SUCCESS;
@@ -310,10 +319,10 @@ Status FfmpegVideoDemuxer::GetStreamBsfInfo() {
 }
 
 modelbox::Status FfmpegVideoDemuxer::GetBsfName(uint32_t codec_tag,
-                                              AVCodecID codec_id,
-                                              uint8_t *extra_data,
-                                              size_t extra_size,
-                                              std::string &bsf_name) {
+                                                AVCodecID codec_id,
+                                                uint8_t *extra_data,
+                                                size_t extra_size,
+                                                std::string &bsf_name) {
   char fourcc_str_array[AV_FOURCC_MAX_STRING_SIZE] = {0};
   char *fourcc = av_fourcc_make_string(fourcc_str_array, codec_tag);
   if (fourcc) {

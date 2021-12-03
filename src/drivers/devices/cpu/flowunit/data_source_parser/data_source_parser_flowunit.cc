@@ -15,7 +15,9 @@
  */
 
 #include "data_source_parser_flowunit.h"
+
 #include <securec.h>
+
 #include "driver_util.h"
 #include "modelbox/base/config.h"
 #include "modelbox/flowunit.h"
@@ -102,7 +104,7 @@ modelbox::Status DataSourceParserFlowUnit::DataPre(
   std::string data_source_cfg(inbuff_data, buffer->GetBytes());
   std::shared_ptr<std::string> uri;
   std::shared_ptr<modelbox::SourceContext> source_context =
-      Parse(source_type, data_source_cfg, uri);
+      Parse(session_ctx, source_type, data_source_cfg, uri);
   if (source_context) {
     source_context->SetDataSourceCfg(data_source_cfg);
   } else {
@@ -119,6 +121,7 @@ modelbox::Status DataSourceParserFlowUnit::DataPre(
 }
 
 std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
+    std::shared_ptr<modelbox::SessionContext> session_context,
     const std::string &source_type, const std::string &data_source_cfg,
     std::shared_ptr<std::string> &uri) {
   auto plugin = GetPlugin(source_type);
@@ -132,7 +135,7 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
   DestroyUriFunc destroy_uri_func;
   std::string stream_type;
 
-  auto ret = plugin->Parse(data_source_cfg, uri_str, destroy_uri_func);
+  auto ret = plugin->Parse(session_context, data_source_cfg, uri_str, destroy_uri_func);
   if (!ret) {
     MBLOG_ERROR << "Parse config failed, source uri is empty";
   }
@@ -140,7 +143,8 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
   auto source_context = plugin->GetSourceContext(source_type);
   plugin->GetStreamType(data_source_cfg, stream_type);
   if (source_context) {
-    source_context->SetStreamType(stream_type);
+    source_context->SetStreamType(stream_type);    
+    source_context->SetSessionContext(session_context);
   }
 
   uri = std::shared_ptr<std::string>(new std::string(uri_str),
@@ -187,10 +191,12 @@ MODELBOX_FLOWUNIT(DataSourceParserFlowUnit, desc) {
   desc.SetDescription(FLOWUNIT_DESC);
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "retry_enable", "bool", false, "false", "enable source parser retry"));
-  desc.AddFlowUnitOption(modelbox::FlowUnitOption(
-      "retry_interval_ms", "int", false, "1000", "the source parser retry interval in ms"));
-  desc.AddFlowUnitOption(modelbox::FlowUnitOption(
-      "retry_count_limit", "int", false, "-1", "the source parser retry count limit"));
+  desc.AddFlowUnitOption(
+      modelbox::FlowUnitOption("retry_interval_ms", "int", false, "1000",
+                               "the source parser retry interval in ms"));
+  desc.AddFlowUnitOption(
+      modelbox::FlowUnitOption("retry_count_limit", "int", false, "-1",
+                               "the source parser retry count limit"));
 }
 
 MODELBOX_DRIVER_FLOWUNIT(desc) {

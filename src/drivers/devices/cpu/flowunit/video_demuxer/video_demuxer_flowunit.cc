@@ -120,12 +120,14 @@ modelbox::Status VideoDemuxerFlowUnit::WriteData(
   int32_t rate_den;
   int32_t frame_width;
   int32_t frame_height;
+  int32_t rotate_angle = video_demuxer->GetFrameRotate();
   video_demuxer->GetFrameRate(rate_num, rate_den);
   video_demuxer->GetFrameMeta(&frame_width, &frame_height);
   packet_buffer->Set("rate_num", rate_num);
   packet_buffer->Set("rate_den", rate_den);
   packet_buffer->Set("width", frame_width);
   packet_buffer->Set("height", frame_height);
+  packet_buffer->Set("rotate_angle", rotate_angle);
   packet_buffer->Set("duration", video_demuxer->GetDuration());
   return STATUS_SUCCESS;
 }

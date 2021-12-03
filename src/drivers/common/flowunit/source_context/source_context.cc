@@ -37,7 +37,8 @@ std::shared_ptr<std::string> SourceContext::GetSourceURL() {
   if (plugin == nullptr) {
     return nullptr;
   }
-  auto ret = plugin->Parse(data_source_cfg_, uri_str, destroy_uri_func);
+  auto ret = plugin->Parse(session_context_, data_source_cfg_, uri_str,
+                           destroy_uri_func);
   if (!ret) {
     MBLOG_ERROR << "Parse config failed, source uri is empty";
     return nullptr;
@@ -92,6 +93,11 @@ void SourceContext::SetRetryParam(int32_t retry_enable, int32_t retry_interval,
 
 void SourceContext::SetDataSourceCfg(std::string data_source_cfg) {
   data_source_cfg_ = data_source_cfg;
+}
+
+void SourceContext::SetSessionContext(
+    std::shared_ptr<modelbox::SessionContext> session_context) {
+  session_context_ = session_context;
 }
 
 int32_t SourceContext::GetRetryInterval() {

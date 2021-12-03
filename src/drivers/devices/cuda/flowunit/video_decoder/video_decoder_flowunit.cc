@@ -15,11 +15,12 @@
  */
 
 #include "video_decoder_flowunit.h"
+
+#include "modelbox/device/cuda/device_cuda.h"
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 #include "nppi_color_converter.h"
 #include "video_decode_common.h"
-#include "modelbox/device/cuda/device_cuda.h"
 
 VideoDecoderFlowUnit::VideoDecoderFlowUnit(){};
 VideoDecoderFlowUnit::~VideoDecoderFlowUnit(){};
@@ -165,9 +166,11 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
   auto pack_buff = pack_buff_list->At(0);
   int32_t rate_num = 0;
   int32_t rate_den = 0;
+  int32_t rotate_angle = 0;
   int64_t duration = 0;
   pack_buff->Get("rate_num", rate_num);
   pack_buff->Get("rate_den", rate_den);
+  pack_buff->Get("rotate_angle", rotate_angle);
   pack_buff->Get("duration", duration);
   double time_base = 0;
   pack_buff->Get("time_base", time_base);
@@ -197,6 +200,7 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
     frame_buffer->Set("height_stride", frame->height);
     frame_buffer->Set("rate_num", rate_num);
     frame_buffer->Set("rate_den", rate_den);
+    frame_buffer->Set("rotate_angle", rotate_angle);
     frame_buffer->Set("duration", duration);
     frame_buffer->Set("eos", false);
     frame_buffer->Set("pix_fmt", out_pix_fmt_str_);

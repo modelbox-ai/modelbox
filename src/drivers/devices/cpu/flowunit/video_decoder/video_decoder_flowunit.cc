@@ -188,9 +188,11 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
   auto pack_buff = pack_buff_list->At(0);
   int32_t rate_num = 0;
   int32_t rate_den = 0;
+  int32_t rotate_angle = 0;
   int64_t duration = 0;
   pack_buff->Get("rate_num", rate_num);
   pack_buff->Get("rate_den", rate_den);
+  pack_buff->Get("rotate_angle", rotate_angle);
   pack_buff->Get("duration", duration);
   double time_base = 0;
   pack_buff->Get("time_base", time_base);
@@ -229,6 +231,7 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
     frame_buff->Set("height_stride", frame_ptr->height);
     frame_buff->Set("rate_num", rate_num);
     frame_buff->Set("rate_den", rate_den);
+    frame_buff->Set("rotate_angle", rotate_angle);
     frame_buff->Set("duration", duration);
     frame_buff->Set("eos", false);
     frame_buff->Set("pix_fmt", out_pix_fmt_str_);

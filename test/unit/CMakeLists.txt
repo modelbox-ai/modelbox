@@ -16,7 +16,7 @@
  
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_FLAGS "-rdynamic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
 
 file(GLOB_RECURSE UNIT_TEST_SOURCE *.cpp *.cc *.c)
  

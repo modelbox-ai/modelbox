@@ -139,12 +139,15 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
   return modelbox::STATUS_OK;
 }
 
-void MindSporeInference::SetDevice(
+void MindSporeInference::InitContext(
     std::shared_ptr<modelbox::Configuration> &config) {
+  context_ = std::make_shared<mindspore::Context>();
+  auto ascend310_info = std::make_shared<mindspore::Ascend310DeviceInfo>();
   auto device_id = config->GetInt32("deviceid", 0);
-  mindspore::GlobalContext::SetGlobalDeviceTarget(
-      mindspore::kDeviceTypeAscend310);
-  mindspore::GlobalContext::SetGlobalDeviceID(device_id);
+  // nchw or nhwc
+  auto input_format = config->GetString("input_format", "nchw");
+  ascend310_info->SetDeviceID(device_id);
+  ascend310_info->SetInputFormat(input_format);
 }
 
 modelbox::Status MindSporeInference::Init(
@@ -154,8 +157,8 @@ modelbox::Status MindSporeInference::Init(
     const std::vector<std::string> &output_name_list,
     const std::vector<std::string> &input_type_list,
     const std::vector<std::string> &output_type_list,
-    const std::shared_ptr<modelbox::Drivers>& drivers_ptr) {
-  SetDevice(config);
+    const std::shared_ptr<modelbox::Drivers> &drivers_ptr) {
+  InitContext(config);
 
   mindspore::ModelType mindspore_type;
   auto ret = GetModelType(model_entry, mindspore_type);
@@ -166,6 +169,7 @@ modelbox::Status MindSporeInference::Init(
   }
 
   mindspore::Graph graph(nullptr);
+  mindspore::Status ms_status{mindspore::kSuccess};
   ModelDecryption model_decrypt;
   if (modelbox::STATUS_SUCCESS !=
       model_decrypt.Init(model_entry, drivers_ptr, config)) {
@@ -179,23 +183,24 @@ modelbox::Status MindSporeInference::Init(
     if (!modelBuf) {
       return {modelbox::STATUS_FAULT, "Decrypt model fail"};
     }
-    graph = mindspore::Serialization::LoadModel(
-        (const void *)modelBuf.get(), (size_t)model_len, mindspore_type);
+    ms_status = mindspore::Serialization::Load(
+        (const void *)modelBuf.get(), (size_t)model_len, mindspore_type, &graph);
   } else if (model_decrypt.GetModelState() ==
              ModelDecryption::MODEL_STATE_PLAIN) {
-    graph = mindspore::Serialization::LoadModel(model_entry.c_str(),
-                                                mindspore_type);
+    ms_status = mindspore::Serialization::Load(model_entry.c_str(),
+                                                mindspore_type, &graph);
   }
-  if (graph == nullptr) {
-    auto err_msg = "mindspore LoadModel failed, path " + model_entry;
+  if (ms_status != mindspore::kSuccess) {
+    auto err_msg = "mindspore load model failed, path " + model_entry + ", msg: " + ms_status.GetErrDescription();
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  model_ = std::make_shared<mindspore::Model>(mindspore::GraphCell(graph));
-  mindspore::Status ms_status = model_->Build();
+  model_ = std::make_shared<mindspore::Model>();
+  ms_status =
+      model_->Build(mindspore::GraphCell(graph), context_);
   if (ms_status != mindspore::kSuccess) {
-    auto err_msg = "build model failed";
+    auto err_msg = "build model failed: " + ms_status.GetErrDescription();
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
