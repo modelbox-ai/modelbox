@@ -21,6 +21,7 @@
 using namespace imageprocess;
 
 #define YUV420SP_SIZE(width, height) ((width) * (height)*3 / 2)
+#define ALIGNMENT_DOWN(size) size & 0xfffffffe
 
 const std::string output_img_pix_fmt = "nv12";
 
@@ -111,13 +112,15 @@ modelbox::Status PaddingFlowUnit::Open(
     void *buffer = nullptr;
     if (device == "cpu") {
       if (0 == aclrtMallocHost(&buffer, size)) {
-        std::shared_ptr<void> shared_buffer_cpu(buffer, [this](void *ptr) { aclrtFreeHost(ptr); });
+        std::shared_ptr<void> shared_buffer_cpu(
+            buffer, [this](void *ptr) { aclrtFreeHost(ptr); });
         return shared_buffer_cpu;
       }
 
     } else {
       if (0 == acldvppMalloc((void **)&buffer, size)) {
-        std::shared_ptr<void> shared_buffer_device(buffer, [this](void *ptr) { acldvppFree(ptr); });
+        std::shared_ptr<void> shared_buffer_device(
+            buffer, [this](void *ptr) { acldvppFree(ptr); });
         return shared_buffer_device;
       }
     }
@@ -258,7 +261,7 @@ modelbox::Status PaddingFlowUnit::ProcessOneImg(
   };
 
   auto resize_buffer = alloc_buffer(resize_image.buffer_size_);
-  if(resize_buffer == nullptr) {
+  if (resize_buffer == nullptr) {
     MBLOG_ERROR << "failed alloc resize buffer";
     return modelbox::STATUS_FAULT;
   }
@@ -356,17 +359,16 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(ImageSize &in_image_size,
       align_up(out_image_size.height_, ASCEND_HEIGHT_ALIGN);
   out_image_size.buffer_size_ = YUV420SP_SIZE(out_image_size.width_stride_,
                                               out_image_size.height_stride_);
-
-  auto align_width = out_image_size.width_ >> 1 << 1;
-  auto align_height = out_image_size.height_ >> 1 << 1;
+  auto align_width = ALIGNMENT_DOWN(out_image_size.width_);
+  auto align_height = ALIGNMENT_DOWN(out_image_size.height_);
   crop_area = acldvppCreateRoiConfig(0, align_width - 1, 0, align_height - 1);
   dest_roi.x =
       GetAlignOffset(horizontal_align_, out_image_.width_, dest_roi.width) >>
       4 << 4;
-  dest_roi.width = dest_roi.width >> 1 << 1;
-  dest_roi.y =
-      GetAlignOffset(vertical_align_, out_image_.height_, dest_roi.height);
-  dest_roi.height = dest_roi.height >> 1 << 1;
+  dest_roi.width = ALIGNMENT_DOWN(dest_roi.width);
+  dest_roi.y = ALIGNMENT_DOWN(
+      GetAlignOffset(vertical_align_, out_image_.height_, dest_roi.height));
+  dest_roi.height = ALIGNMENT_DOWN(dest_roi.height);
   paste_area =
       acldvppCreateRoiConfig(dest_roi.x, dest_roi.x + dest_roi.width - 1,
                              dest_roi.y, dest_roi.y + dest_roi.height - 1);
