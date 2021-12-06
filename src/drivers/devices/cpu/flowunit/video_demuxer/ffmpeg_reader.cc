@@ -56,6 +56,7 @@ modelbox::Status FfmpegReader::Open(const std::string &source_url) {
   AVDictionary *options = nullptr;
   SetupRtspOption(format_source_url_, &options);
   SetupCommonOption(format_source_url_, &options);
+  SetupHttpOption(format_source_url_, &options);
 
   AVFormatContext *ctx = nullptr;
   ctx = avformat_alloc_context();
