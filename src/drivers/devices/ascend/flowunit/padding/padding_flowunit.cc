@@ -21,7 +21,8 @@
 using namespace imageprocess;
 
 #define YUV420SP_SIZE(width, height) ((width) * (height)*3 / 2)
-#define ALIGNMENT_DOWN(size) size & 0xfffffffe
+#define ALIGNMENT_DOWN(size) (size & 0xfffffffe)
+#define MINI_WIDTH_STRIDE 32
 
 const std::string output_img_pix_fmt = "nv12";
 
@@ -328,14 +329,8 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(ImageSize &in_image_size,
     auto w_scale = (float)in_image_size.width_ / out_image_.width_;
     auto h_scale = (float)in_image_size.height_ / out_image_.height_;
     auto scale = std::max(w_scale, h_scale);
-    dest_roi.width =
-        align_up((in_image_size.width_ / scale - 15), ASCEND_WIDTH_ALIGN);
-    if (dest_roi.width == 0) {
-      MBLOG_ERROR << "align image width is 0";
-      return modelbox::STATUS_FAULT;
-    }
-    auto new_scale = (float)in_image_size.width_ / dest_roi.width;
-    dest_roi.height = in_image_size.height_ / new_scale;
+    dest_roi.width = in_image_size.width_ / scale;
+    dest_roi.height = in_image_size.height_ / scale;
   } else {
     if (in_image_size.width_ > out_image_.width_ ||
         in_image_size.height_ > out_image_.height_) {
@@ -355,6 +350,9 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(ImageSize &in_image_size,
   out_image_size.height_ = dest_roi.height;
   out_image_size.width_stride_ =
       align_up(out_image_size.width_, ASCEND_WIDTH_ALIGN);
+  if (out_image_size.width_stride_ < MINI_WIDTH_STRIDE) {
+    out_image_size.width_stride_ = MINI_WIDTH_STRIDE;
+  }
   out_image_size.height_stride_ =
       align_up(out_image_size.height_, ASCEND_HEIGHT_ALIGN);
   out_image_size.buffer_size_ = YUV420SP_SIZE(out_image_size.width_stride_,
