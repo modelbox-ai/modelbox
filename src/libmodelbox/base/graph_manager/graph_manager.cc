@@ -214,18 +214,18 @@ std::map<std::string, const std::shared_ptr<GCNode>> GCGraph::GetAllNodes()
 
 void GCGraph::ShowAllNode() const {
   for (auto &elem : nodes_) {
-    MBLOG_DEBUG << "node name : " << elem.second->GetNodeName();
+    MBLOG_INFO << "node name : " << elem.second->GetNodeName();
 
     std::shared_ptr<const std::set<std::string>> input_ports;
     input_ports = elem.second->GetInputPorts();
     for (auto input_port : *input_ports) {
-      MBLOG_DEBUG << "input port : " << input_port;
+      MBLOG_INFO << "input port : " << input_port;
     }
 
     std::shared_ptr<const std::set<std::string>> output_ports;
     output_ports = elem.second->GetOutputPorts();
     for (auto &output_port : *output_ports) {
-      MBLOG_DEBUG << "output port : " << output_port;
+      MBLOG_INFO << "output port : " << output_port;
     }
   }
   return;
@@ -327,7 +327,6 @@ std::shared_ptr<GraphConfig> GraphConfigManager::LoadGraphConfig(
   }
 
   if (graph_graphconf != "") {
-    MBLOG_INFO << "graph.graphconf : " << graph_graphconf;
     graph_config = graph_conf_factory->CreateGraphConfigFromStr(
         graph_graphconf);  // from config get graph config value
     return graph_config;

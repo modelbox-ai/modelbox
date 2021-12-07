@@ -66,13 +66,11 @@ void TorchInferenceFlowUnit::FillOutput(
 }
 
 modelbox::Status TorchInferenceFlowUnit::LoadModel(
-    const std::string &model_path) {
+    const std::string &model_path,
+    const std::shared_ptr<modelbox::Configuration> &config) {
   try {
     MBLOG_DEBUG << "model_path: " << model_path;
     auto drivers_ptr = GetBindDevice()->GetDeviceManager()->GetDrivers();
-    auto config = std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
-                      this->GetFlowUnitDesc())
-                      ->GetConfiguration();
 
     c10::Device device(c10::kCUDA, dev_id_);
     ModelDecryption torch_decrypt;
@@ -121,7 +119,7 @@ modelbox::Status TorchInferenceFlowUnit::InitConfig(
 
   std::string model_path = inference_desc_->GetModelEntry();
 
-  auto status = LoadModel(model_path);
+  auto status = LoadModel(model_path, config);
   if (modelbox::STATUS_OK != status) {
     auto err_msg =
         "could not load inference graph, err: " + status.WrapErrormsgs();
