@@ -288,6 +288,7 @@ void TensorRTInferenceFlowUnit::PrintModelBindInfo(
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
+    const std::shared_ptr<modelbox::Configuration>& config,
     std::shared_ptr<IBuilder>& builder,
     std::shared_ptr<INetworkDefinition>& network) {
   // parse the caffe model to populate the network, then set the outputs
@@ -301,9 +302,6 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
 
   const IBlobNameToTensor* blobNameToTensor = nullptr;
   auto drivers_ptr = GetBindDevice()->GetDeviceManager()->GetDrivers();
-  auto config = std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
-                    this->GetFlowUnitDesc())
-                    ->GetConfiguration();
 
   ModelDecryption deploy_decrypt;
   auto ret = deploy_decrypt.Init(params_.deploy_file, drivers_ptr, config);
@@ -383,6 +381,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
+    const std::shared_ptr<modelbox::Configuration>& config,
     std::shared_ptr<IBuilder>& builder,
     std::shared_ptr<INetworkDefinition>& network) {
   // parse the uff model to populate the network, then set the outputs
@@ -415,9 +414,6 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
 
   bool parseRet = false;
   auto drivers_ptr = GetBindDevice()->GetDeviceManager()->GetDrivers();
-  auto config = std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
-                    this->GetFlowUnitDesc())
-                    ->GetConfiguration();
   ModelDecryption uff_decrypt;
   // do not need to check return , just use GetModelState
   uff_decrypt.Init(params_.uff_file, drivers_ptr, config);
@@ -472,6 +468,7 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
+    const std::shared_ptr<modelbox::Configuration>& config,
     std::shared_ptr<IBuilder>& builder,
     std::shared_ptr<INetworkDefinition>& network) {
   int verbosity = (int)nvinfer1::ILogger::Severity::kWARNING;
@@ -487,9 +484,6 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
 
   bool parseRet = false;
   auto drivers_ptr = GetBindDevice()->GetDeviceManager()->GetDrivers();
-  auto config = std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
-                    this->GetFlowUnitDesc())
-                    ->GetConfiguration();
 
   ModelDecryption onnx_decrypt;
   onnx_decrypt.Init(params_.onnx_model_file, drivers_ptr, config);
@@ -575,24 +569,9 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status TensorRTInferenceFlowUnit::EngineToModel() {
+modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
+    const std::shared_ptr<modelbox::Configuration>& config) {
   MBLOG_INFO << "engines: " << params_.engine;
-  std::vector<char> trtModelStream;
-  size_t size{0};
-  std::ifstream file(params_.engine, std::ios::binary);
-  if (!file.good()) {
-    auto err_msg = "read model file failed, the model file " + params_.engine;
-    MBLOG_ERROR << err_msg;
-    return {modelbox::STATUS_FAULT, err_msg};
-  }
-
-  file.seekg(0, file.end);
-  size = file.tellg();
-  file.seekg(0, file.beg);
-  trtModelStream.resize(size);
-  file.read(trtModelStream.data(), size);
-  file.close();
-
   std::shared_ptr<IRuntime> infer =
       TensorRTInferObject(createInferRuntime(gLogger));
   if (infer == nullptr) {
@@ -606,8 +585,55 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel() {
   }
 
   SetPluginFactory(params_.plugin);
-  engine_ = TensorRTInferObject(infer->deserializeCudaEngine(
-      trtModelStream.data(), size, plugin_factory_.get()));
+
+  auto drivers_ptr = GetBindDevice()->GetDeviceManager()->GetDrivers();
+  ModelDecryption engine_decrypt;
+  auto ret = engine_decrypt.Init(params_.engine, drivers_ptr, config);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    auto err_msg = "open engine deploy failed.";
+    MBLOG_ERROR << err_msg;
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+  // do not need to check return , just use GetModelState
+  auto modelState = engine_decrypt.GetModelState();
+  if (modelState == ModelDecryption::MODEL_STATE_ENCRYPT) {
+    int64_t model_len = 0;
+    std::shared_ptr<uint8_t> modelBuf =
+        engine_decrypt.GetModelSharedBuffer(model_len);
+    if (modelBuf == nullptr) {
+      auto err_msg =
+          "failed to decrypt model, the model file " + params_.engine;
+      MBLOG_ERROR << err_msg;
+      return {modelbox::STATUS_BADCONF, err_msg};
+    }
+    engine_ = TensorRTInferObject(infer->deserializeCudaEngine(
+        modelBuf.get(), model_len, plugin_factory_.get()));
+  } else if (modelState == ModelDecryption::MODEL_STATE_PLAIN) {
+    std::vector<char> trtModelStream;
+    size_t size{0};
+    std::ifstream file(params_.engine, std::ios::binary);
+    if (!file.good()) {
+      auto err_msg = "read model file failed, the model file " + params_.engine;
+      MBLOG_ERROR << err_msg;
+      return {modelbox::STATUS_FAULT, err_msg};
+    }
+
+    file.seekg(0, file.end);
+    size = file.tellg();
+    file.seekg(0, file.beg);
+    trtModelStream.resize(size);
+    file.read(trtModelStream.data(), size);
+    file.close();
+
+    engine_ = TensorRTInferObject(infer->deserializeCudaEngine(
+        trtModelStream.data(), size, plugin_factory_.get()));
+
+  } else {
+    auto err_msg = "model state error.";
+    MBLOG_ERROR << err_msg;
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+
   if (engine_ == nullptr) {
     auto err_msg = "build engine from model_file failed.";
     MBLOG_ERROR << err_msg;
@@ -633,11 +659,12 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel() {
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(void) {
+modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(
+    const std::shared_ptr<modelbox::Configuration>& config) {
   modelbox::Status status;
   // load directly from serialized engine file if deploy not specified
   if (!params_.engine.empty()) {
-    return EngineToModel();
+    return EngineToModel(config);
   }
 
   std::shared_ptr<IBuilder> builder =
@@ -665,15 +692,15 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(void) {
   }
 
   if (!params_.deploy_file.empty()) {
-    return CaffeToTRTModel(builder, network);
+    return CaffeToTRTModel(config, builder, network);
   }
 
   if (!params_.uff_file.empty()) {
-    return UffToTRTModel(builder, network);
+    return UffToTRTModel(config, builder, network);
   }
 
   if (!params_.onnx_model_file.empty()) {
-    return OnnxToTRTModel(builder, network);
+    return OnnxToTRTModel(config, builder, network);
   }
 
   return modelbox::STATUS_OK;
@@ -722,7 +749,7 @@ modelbox::Status TensorRTInferenceFlowUnit::InitConfig(
     params_.inputs_name_list.push_back(input_item.GetPortName());
   }
 
-  status = CreateEngine();
+  status = CreateEngine(fu_config);
   if (status != modelbox::STATUS_OK) {
     auto err_msg = "engine create failed." + status.WrapErrormsgs();
     return {modelbox::STATUS_FAULT, err_msg};

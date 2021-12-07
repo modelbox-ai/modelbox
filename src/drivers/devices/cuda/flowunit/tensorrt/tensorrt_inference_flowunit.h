@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_INFERENCE_H_
 #define MODELBOX_FLOWUNIT_INFERENCE_H_
 
@@ -116,42 +115,53 @@ class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
 
   /* run when processing data */
   modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                             cudaStream_t stream);
+                               cudaStream_t stream);
 
  private:
   void SetUpOtherConfig(std::shared_ptr<modelbox::Configuration> config);
   modelbox::Status InitConfig(
       const std::shared_ptr<modelbox::Configuration>& fu_config);
-  modelbox::Status CreateEngine(void);
-  modelbox::Status SetUpModelFile(std::shared_ptr<modelbox::Configuration> config,
-                                const std::string& model_file);
+  modelbox::Status CreateEngine(
+      const std::shared_ptr<modelbox::Configuration>& config);
+  modelbox::Status SetUpModelFile(
+      std::shared_ptr<modelbox::Configuration> config,
+      const std::string& model_file);
   modelbox::Status SetUpDynamicLibrary(
       std::shared_ptr<modelbox::Configuration> config);
   modelbox::Status SetUpInferencePlugin(
       std::shared_ptr<modelbox::Configuration> config);
   void configureBuilder(std::shared_ptr<IBuilder> builder,
                         RndInt8Calibrator& calibrator);
-  modelbox::Status PrePareOutput(std::shared_ptr<modelbox::DataContext>& data_ctx,
-                               std::vector<void*>& memory);
-  modelbox::Status PrePareInput(std::shared_ptr<modelbox::DataContext>& data_ctx,
-                              std::vector<void*>& memory);
+  modelbox::Status PrePareOutput(
+      std::shared_ptr<modelbox::DataContext>& data_ctx,
+      std::vector<void*>& memory);
+  modelbox::Status PrePareInput(
+      std::shared_ptr<modelbox::DataContext>& data_ctx,
+      std::vector<void*>& memory);
   modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx);
   modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> data_ctx);
-  modelbox::Status CreateMemory(std::vector<void*>& buffers,
-                              const std::string& name, const std::string& type,
-                              std::shared_ptr<modelbox::BufferList>& output_buf,
-                              size_t size);
+  modelbox::Status CreateMemory(
+      std::vector<void*>& buffers, const std::string& name,
+      const std::string& type,
+      std::shared_ptr<modelbox::BufferList>& output_buf, size_t size);
   modelbox::Status BindMemory(std::vector<void*>& buffers,
-                            const std::string& name, const void* mem,
-                            size_t mem_size, size_t size);
-  modelbox::Status EngineToModel();
-  void PrintModelBindInfo(const std::vector<std::string> &name_list);
-  modelbox::Status UffToTRTModel(std::shared_ptr<IBuilder>& builder,
-                               std::shared_ptr<INetworkDefinition>& network);
-  modelbox::Status OnnxToTRTModel(std::shared_ptr<IBuilder>& builder,
-                                std::shared_ptr<INetworkDefinition>& network);
-  modelbox::Status CaffeToTRTModel(std::shared_ptr<IBuilder>& builder,
-                                 std::shared_ptr<INetworkDefinition>& network);
+                              const std::string& name, const void* mem,
+                              size_t mem_size, size_t size);
+  modelbox::Status EngineToModel(
+      const std::shared_ptr<modelbox::Configuration>& config);
+  void PrintModelBindInfo(const std::vector<std::string>& name_list);
+  modelbox::Status UffToTRTModel(
+      const std::shared_ptr<modelbox::Configuration>& config,
+      std::shared_ptr<IBuilder>& builder,
+      std::shared_ptr<INetworkDefinition>& network);
+  modelbox::Status OnnxToTRTModel(
+      const std::shared_ptr<modelbox::Configuration>& config,
+      std::shared_ptr<IBuilder>& builder,
+      std::shared_ptr<INetworkDefinition>& network);
+  modelbox::Status CaffeToTRTModel(
+      const std::shared_ptr<modelbox::Configuration>& config,
+      std::shared_ptr<IBuilder>& builder,
+      std::shared_ptr<INetworkDefinition>& network);
   void SetPluginFactory(std::string pluginName);
 
   TensorRTProcess pre_process_{nullptr}, post_process_{nullptr};
@@ -198,7 +208,8 @@ class TensorRTInferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
   const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
   const std::string GetVirtualType() { return INFERENCE_TYPE; };
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
+  FlowUnitProbe() {
     return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
   };
 };
