@@ -53,6 +53,8 @@ set_target_properties(
 target_link_libraries(${UNIT_SHARED} pthread)
 target_link_libraries(${UNIT_SHARED} rt)
 target_link_libraries(${UNIT_SHARED} dl)
+target_link_libraries(${UNIT_SHARED} modelbox)
+target_link_libraries(${UNIT_SHARED} modelbox-device-{UNIT_DEVICE})
 
 install(TARGETS ${UNIT_SHARED} 
     COMPONENT ${UNIT_COMPONENT}
