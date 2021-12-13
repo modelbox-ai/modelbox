@@ -155,7 +155,7 @@ class BufferList {
    * @param buf pointer to buffer
    */
   virtual void PushBack(const std::shared_ptr<Buffer>& buf);
-  
+
   /**
    * @brief Assign buffer list
    * @param buffer_list buffer list to assign
@@ -256,6 +256,48 @@ class BufferList {
    * @return Move result
    */
   Status MoveAllBufferToTargetDevice();
+
+ public:
+  /**
+   * @brief push current device data to buffer list.
+   * support host data to cpu
+   * @param device_data data in current flowunit device
+   * @param data_size size of data
+   * @param func to manage device_data, avoid extra copy
+   * @return result
+   */
+  Status EmplaceBack(void* device_data, size_t data_size,
+                     DeleteFunction func = nullptr);
+
+  /**
+   * @brief push current device data to buffer list.
+   * support host data to cpu
+   * @param device_data data in current flowunit device
+   * @param data_size size of data
+   * @return result
+   */
+  Status EmplaceBack(std::shared_ptr<void> device_data, size_t data_size);
+
+  /**
+   * @brief push host data to device buffer list.
+   * not recommend for host data to cpu
+   * @param host_data host data
+   * @param data_size size of data
+   * @return result
+   */
+  Status EmplaceBackFromHost(void* host_data, size_t data_size);
+
+  /**
+   * @brief get front buffer in bufferlist
+   * @return null if no front buffer
+   */
+  std::shared_ptr<Buffer> Front();
+
+  /**
+   * @brief get last buffer in bufferlist
+   * @return null if no back buffer
+   */
+  std::shared_ptr<Buffer> Back();
 
  private:
   friend class FlowUnitExecData;

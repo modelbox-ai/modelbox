@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/device_memory.h"
 
 #include "modelbox/base/device.h"
@@ -642,6 +641,18 @@ std::shared_ptr<void> DeviceMemoryManager::AllocSharedPtr(size_t size,
   std::shared_ptr<void> ret(
       ptr, [this, mem_flags](void *ptr) { this->Free(ptr, mem_flags); });
   return ret;
+}
+
+Status DeviceMemoryManager::Write(const void *host_data, size_t host_size,
+                                  void *device_buffer, size_t device_size) {
+  return Copy(device_buffer, device_size, host_data, host_size,
+              DeviceMemoryCopyKind::FromHost);
+}
+
+Status DeviceMemoryManager::Read(const void *device_data, size_t device_size,
+                                 void *host_buffer, size_t host_size) {
+  return Copy(host_buffer, host_size, device_data, device_size,
+              DeviceMemoryCopyKind::ToHost);
 }
 
 DeviceMemoryLog::DeviceMemoryLog(const std::string &memory_id,

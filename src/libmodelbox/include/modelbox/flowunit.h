@@ -70,11 +70,11 @@ enum LoopType {
 
 class FlowUnitPort {
  public:
-  FlowUnitPort() : device_type_("cpu"){};
-  FlowUnitPort(const std::string &name)
-      : port_name_(name), device_type_("cpu"){};
+  FlowUnitPort(const std::string &name) : port_name_(name){};
   FlowUnitPort(const std::string &name, const std::string &device_type)
       : port_name_(name), device_type_(device_type){};
+  FlowUnitPort(const std::string &name, uint32_t device_mem_flags)
+      : port_name_(name), device_mem_flags_(device_mem_flags){};
   FlowUnitPort(const std::string &name, const std::string &device_type,
                uint32_t device_mem_flags)
       : port_name_(name),
@@ -131,10 +131,11 @@ class FlowUnitPort {
 
 class FlowUnitInput : public FlowUnitPort {
  public:
-  FlowUnitInput() : FlowUnitPort(){};
   FlowUnitInput(const std::string &name) : FlowUnitPort(name){};
   FlowUnitInput(const std::string &name, const std::string &device_type)
       : FlowUnitPort(name, device_type){};
+  FlowUnitInput(const std::string &name, uint32_t device_mem_flags)
+      : FlowUnitPort(name, device_mem_flags){};
   FlowUnitInput(const std::string &name, const std::string &device_type,
                 uint32_t device_mem_flags)
       : FlowUnitPort(name, device_type, device_mem_flags){};
@@ -150,16 +151,29 @@ class FlowUnitInput : public FlowUnitPort {
 
 class FlowUnitOutput : public FlowUnitPort {
  public:
-  FlowUnitOutput() : FlowUnitPort(){};
   FlowUnitOutput(const std::string &name) : FlowUnitPort(name){};
+  FlowUnitOutput(const std::string &name, uint32_t device_mem_flags)
+      : FlowUnitPort(name, device_mem_flags){};
+  /**
+   * @deprecated
+   **/
   FlowUnitOutput(const std::string &name, const std::string &device_type)
       : FlowUnitPort(name, device_type){};
+  /**
+   * @deprecated
+   **/
   FlowUnitOutput(const std::string &name, const std::string &device_type,
                  uint32_t device_mem_flags)
       : FlowUnitPort(name, device_type, device_mem_flags){};
+  /**
+   * @deprecated
+   **/
   FlowUnitOutput(const std::string &name, const std::string &device_type,
                  const std::string &type)
       : FlowUnitPort(name, device_type, type){};
+  /**
+   * @deprecated
+   **/
   FlowUnitOutput(const std::string &name, const std::string &device_type,
                  const std::string &type,
                  const std::map<std::string, std::string> &ext)

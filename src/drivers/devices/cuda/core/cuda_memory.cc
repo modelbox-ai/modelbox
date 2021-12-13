@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/device/cuda/cuda_memory.h"
 
 #include "modelbox/base/collector.h"
@@ -357,21 +356,9 @@ void CudaMemoryManager::Free(void *mem_ptr, uint32_t mem_flags) {
   mem_pool_->MemFree(mem_ptr);
 }
 
-Status CudaMemoryManager::Write(const void *host_data, size_t host_size,
-                                void *device_buffer, size_t device_size) {
-  return Copy(device_buffer, device_size, host_data, host_size,
-              cudaMemcpyKind::cudaMemcpyHostToDevice);
-}
-
-Status CudaMemoryManager::Read(const void *device_data, size_t device_size,
-                               void *host_buffer, size_t host_size) {
-  return Copy(host_buffer, host_size, device_data, device_size,
-              cudaMemcpyKind::cudaMemcpyDeviceToHost);
-}
-
 Status CudaMemoryManager::Copy(void *dest, size_t dest_size,
                                const void *src_buffer, size_t src_size,
-                               cudaMemcpyKind kind) {
+                               DeviceMemoryCopyKind kind) {
   if (dest == nullptr || src_buffer == nullptr) {
     MBLOG_ERROR << "Cuda copy src " << src_buffer << " to dest " << dest
                 << "failed";
@@ -390,10 +377,12 @@ Status CudaMemoryManager::Copy(void *dest, size_t dest_size,
     return STATUS_FAULT;
   }
 
-  cuda_ret = cudaMemcpy(dest, src_buffer, src_size, kind);
+  cudaMemcpyKind cuda_copy_kind;
+  GetCudaMemcpyKind(kind, cuda_copy_kind);
+  cuda_ret = cudaMemcpy(dest, src_buffer, src_size, cuda_copy_kind);
   if (cudaSuccess != cuda_ret) {
     MBLOG_ERROR << "Cuda memcpy failed, ret " << cuda_ret << ", src size "
-                << src_size;
+                << src_size << ", cuda cpy kind " << cuda_copy_kind;
     return STATUS_FAULT;
   }
 

@@ -69,8 +69,7 @@ modelbox::Status VideoInputFlowUnit::Process(
 MODELBOX_FLOWUNIT(VideoInputFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Video");
-  desc.AddFlowUnitOutput(
-      modelbox::FlowUnitOutput("out_video_url", FLOWUNIT_TYPE));
+  desc.AddFlowUnitOutput({"out_video_url"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetDescription(FLOWUNIT_DESC);
   desc.AddFlowUnitOption(modelbox::FlowUnitOption("source_url", "string", true,

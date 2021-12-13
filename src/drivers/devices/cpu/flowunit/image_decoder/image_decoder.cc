@@ -70,7 +70,6 @@ modelbox::Status ImageDecoderFlowUnit::Process(
   // decode
   std::vector<cv::Mat> output_img_list;
   std::vector<size_t> output_shape;
-  auto device = GetBindDevice();
   for (auto &buffer : *input_bufs) {
     auto input_data = static_cast<const u_char *>(buffer->ConstData());
     std::vector<u_char> input_data2(
@@ -96,23 +95,14 @@ modelbox::Status ImageDecoderFlowUnit::Process(
     }
 
     MBLOG_DEBUG << "decode image clos : " << img_bgr.cols
-                << ", rows : " << img_bgr.rows << "channles : "
-                << img_bgr.channels();
+                << ", rows : " << img_bgr.rows
+                << "channles : " << img_bgr.channels();
 
-    // build output_bufs
-    std::vector<size_t> sub_shape{(size_t)img_dest.rows, (size_t)img_dest.cols,
-                                  (size_t)img_dest.channels()};
-    auto output_buffer = std::make_shared<modelbox::Buffer>(device);
-    output_buffer->Build(modelbox::Volume(sub_shape) * sizeof(u_char));
-    auto output_data = static_cast<uchar *>(output_buffer->MutableData());
-    auto ret = memcpy_s(output_data, output_buffer->GetBytes(),
-                        img_dest.data, img_dest.total() * img_dest.elemSize());
-    if (ret != EOK) {
-      MBLOG_ERROR << "Cpu memcpy failed, ret " << ret << ", src size "
-                  << output_buffer->GetBytes() << ", dest size "
-                  << img_dest.total() * img_dest.elemSize();
-      return modelbox::STATUS_FAULT;
-    }
+    // build output_buffer
+    output_bufs->EmplaceBack(img_dest.data,
+                             img_dest.total() * img_dest.elemSize(),
+                             [img_dest](void *) { /* hold img dest*/ });
+    auto output_buffer = output_bufs->Back();
     output_buffer->Set("width", (int32_t)img_bgr.cols);
     output_buffer->Set("height", (int32_t)img_bgr.rows);
     output_buffer->Set("width_stride", (int32_t)img_dest.cols);
@@ -125,7 +115,6 @@ modelbox::Status ImageDecoderFlowUnit::Process(
         std::vector<size_t>{(size_t)img_dest.cols, (size_t)img_dest.rows,
                             (size_t)img_dest.channels()});
     output_buffer->Set("layout", std::string("hwc"));
-    output_bufs->PushBack(output_buffer);
   }
 
   return modelbox::STATUS_OK;
@@ -172,8 +161,8 @@ modelbox::Status ImageDecoderFlowUnit::DataGroupPost(
 MODELBOX_FLOWUNIT(ImageDecoderFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_encoded_image", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_image", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput({"in_encoded_image"});
+  desc.AddFlowUnitOutput({"out_image"});
 
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "pix_fmt", "string", true, "bgr", "the output pixel format"));

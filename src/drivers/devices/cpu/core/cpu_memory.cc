@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/device/cpu/cpu_memory.h"
 
 #include <securec.h>
@@ -130,18 +129,9 @@ void CpuMemoryManager::Free(void *mem_ptr, uint32_t mem_flags) {
   mem_pool_->MemFree(mem_ptr);
 }
 
-Status CpuMemoryManager::Write(const void *host_data, size_t host_size,
-                               void *device_buffer, size_t device_size) {
-  return Copy(device_buffer, device_size, host_data, host_size);
-}
-
-Status CpuMemoryManager::Read(const void *device_data, size_t device_size,
-                              void *host_buffer, size_t host_size) {
-  return Copy(host_buffer, host_size, device_data, device_size);
-}
-
 Status CpuMemoryManager::Copy(void *dest, size_t dest_size,
-                              const void *src_buffer, size_t src_size) {
+                              const void *src_buffer, size_t src_size,
+                              DeviceMemoryCopyKind kind) {
   auto ret = memcpy_s(dest, dest_size, src_buffer, src_size);
   if (EOK != ret) {
     MBLOG_ERROR << "Cpu memcpy failed, ret " << ret << ", src size " << src_size

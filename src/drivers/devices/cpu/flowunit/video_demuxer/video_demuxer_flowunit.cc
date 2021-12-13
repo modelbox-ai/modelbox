@@ -301,8 +301,8 @@ modelbox::Status VideoDemuxerFlowUnit::DataPost(
 MODELBOX_FLOWUNIT(VideoDemuxerFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Video");
-  desc.AddFlowUnitInput({STREAM_META_INPUT, FLOWUNIT_TYPE});
-  desc.AddFlowUnitOutput({VIDEO_PACKET_OUTPUT, FLOWUNIT_TYPE});
+  desc.AddFlowUnitInput({STREAM_META_INPUT});
+  desc.AddFlowUnitOutput({VIDEO_PACKET_OUTPUT});
   desc.SetFlowType(FlowType::STREAM);
   desc.SetStreamSameCount(false);
   desc.SetDescription(FLOWUNIT_DESC);

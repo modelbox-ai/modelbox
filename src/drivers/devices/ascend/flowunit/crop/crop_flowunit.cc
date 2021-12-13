@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-
 #include "crop_flowunit.h"
 
-#include "modelbox/flowunit_api_helper.h"
 #include "image_process.h"
+#include "modelbox/flowunit_api_helper.h"
 
 using namespace imageprocess;
 
@@ -220,9 +219,9 @@ modelbox::Status CropFlowUnit::Close() { return modelbox::STATUS_OK; }
 MODELBOX_FLOWUNIT(CropFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput({IN_IMG, "ascend", modelbox::ASCEND_MEM_DVPP});
+  desc.AddFlowUnitInput({IN_IMG, modelbox::ASCEND_MEM_DVPP});
   desc.AddFlowUnitInput({IN_BOX, "cpu"});
-  desc.AddFlowUnitOutput({OUT_IMG, "ascend", modelbox::ASCEND_MEM_DVPP});
+  desc.AddFlowUnitOutput({OUT_IMG, modelbox::ASCEND_MEM_DVPP});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetInputContiguous(false);
   desc.SetDescription(FLOWUNIT_DESC);

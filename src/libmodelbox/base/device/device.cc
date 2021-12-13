@@ -150,6 +150,14 @@ std::shared_ptr<DeviceMemory> Device::MemAcquire(void *mem_ptr, size_t size,
   return MemAcquire(mem_shared_ptr, size, mem_flags);
 }
 
+std::shared_ptr<DeviceMemory> Device::MemAcquire(void *mem_ptr, size_t size,
+                                                 uint32_t mem_flags) {
+  auto dev_mem = MemAlloc(size, mem_flags);
+  memory_manager_->Copy(dev_mem->GetPtr<uint8_t>().get(), size, mem_ptr, size,
+                        DeviceMemoryCopyKind::SameDeviceType);
+  return dev_mem;
+}
+
 std::shared_ptr<DeviceMemory> Device::MemAcquire(std::shared_ptr<void> mem_ptr,
                                                  size_t size,
                                                  uint32_t mem_flags) {

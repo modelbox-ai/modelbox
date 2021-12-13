@@ -108,7 +108,7 @@ modelbox::Status DataSourceGeneratorFlowUnit::Process(
 MODELBOX_FLOWUNIT(DataSourceGeneratorFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Input");
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_data", FLOWUNIT_TYPE));
+  desc.AddFlowUnitOutput({"out_data"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetDescription(FLOWUNIT_DESC);
 }

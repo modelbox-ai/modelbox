@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_DEVICE_MEMORY_H_
 #define MODELBOX_DEVICE_MEMORY_H_
 
@@ -447,7 +446,7 @@ class DeviceMemoryManager
   virtual void Free(void *mem_ptr, uint32_t mem_flags) = 0;
 
   /**
-   * @brief Implement by specified device, write to new device memory
+   * @brief Write host data to device by raw pointer
    * @param host_data Host data to read
    * @param host_size Host data size
    * @param device_buffer Device buffer to write
@@ -455,10 +454,10 @@ class DeviceMemoryManager
    * @return Status
    */
   virtual Status Write(const void *host_data, size_t host_size,
-                       void *device_buffer, size_t device_size) = 0;
+                       void *device_buffer, size_t device_size);
 
   /**
-   * @brief Implement by specified device, read device memory to host
+   * @brief Read device data to host by raw pointer
    * @param device_data Device data to read
    * @param device_size Device data size
    * @param host_buffer Host buffer to write
@@ -466,7 +465,19 @@ class DeviceMemoryManager
    * @return Status
    */
   virtual Status Read(const void *device_data, size_t device_size,
-                      void *host_buffer, size_t host_size) = 0;
+                      void *host_buffer, size_t host_size);
+
+  /**
+   * @brief Implement by specified device, copy data from src to dest
+   * @param dest dest buffer to write
+   * @param dest_size dest buffer size
+   * @param src_buffer src buffer to read
+   * @param src_size read data size
+   * @param kind data copy kind
+   * @return Status
+   */
+  virtual Status Copy(void *dest, size_t dest_size, const void *src_buffer,
+                      size_t src_size, DeviceMemoryCopyKind kind) = 0;
 
   /**
    * @brief Implement by specified device, copy memory between current device

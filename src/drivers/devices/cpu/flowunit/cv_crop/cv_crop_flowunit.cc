@@ -57,18 +57,6 @@ modelbox::Status CVCropFlowUnit::Process(
   }
 
   auto output_bufs = ctx->Output("out_image");
-
-  std::vector<size_t> shape_vector;
-  int32_t channel = RGB_CHANNLES;
-  for (size_t i = 0; i < input_img_bufs->Size(); ++i) {
-    auto bbox = static_cast<const RoiBox *>(input_box_bufs->ConstBufferData(i));
-    int32_t crop_width = bbox->w;
-    int32_t crop_height = bbox->h;
-    shape_vector.push_back(crop_width * crop_height * channel * sizeof(u_char));
-  }
-
-  output_bufs->Build(shape_vector);
-
   output_bufs->CopyMeta(input_img_bufs);
 
   for (size_t i = 0; i < input_img_bufs->Size(); ++i) {
@@ -123,12 +111,10 @@ modelbox::Status CVCropFlowUnit::Process(
     auto img_dest = std::make_shared<cv::Mat>();
     cropped.copyTo(*img_dest);
     size_t size_bytes = img_dest->total() * img_dest->elemSize();
-    auto output_buffer = output_bufs->At(i);
-    output_buffer->BuildFromHost(img_dest->data, size_bytes,
-                                 [img_dest](void *ptr) {
-                                   /* Only capture pkt */
-                                 });
-
+    output_bufs->EmplaceBack(img_dest->data, size_bytes, [img_dest](void *ptr) {
+      /* Only capture pkt */
+    });
+    auto output_buffer = output_bufs->Back();
     width_dest = img_dest->cols;
     height_dest = img_dest->rows;
     output_buffer->Set("width", width_dest);
@@ -149,10 +135,9 @@ modelbox::Status CVCropFlowUnit::Process(
 MODELBOX_FLOWUNIT(CVCropFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_image", FLOWUNIT_TYPE));
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_region", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(
-      modelbox::FlowUnitOutput("out_image", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput({"in_image"});
+  desc.AddFlowUnitInput({"in_region"});
+  desc.AddFlowUnitOutput({"out_image"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetInputContiguous(false);
   desc.SetDescription(FLOWUNIT_DESC);

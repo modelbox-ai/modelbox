@@ -252,8 +252,8 @@ uint32_t PaddingFlowUnit::GetAlignOffset(AlignType type, uint32_t dest_range,
 MODELBOX_FLOWUNIT(PaddingFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_image", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_image", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput({"in_image"});
+  desc.AddFlowUnitOutput({"out_image"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetInputContiguous(false);
   desc.SetDescription(FLOWUNIT_DESC);

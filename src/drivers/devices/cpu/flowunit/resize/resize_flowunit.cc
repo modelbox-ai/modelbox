@@ -166,8 +166,8 @@ modelbox::Status CVResizeFlowUnit::Process(
 MODELBOX_FLOWUNIT(CVResizeFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_image", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_image", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput({"in_image"});
+  desc.AddFlowUnitOutput({"out_image"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetInputContiguous(false);
   desc.SetDescription(FLOWUNIT_DESC);

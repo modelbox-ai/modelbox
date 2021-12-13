@@ -44,10 +44,8 @@ modelbox::Status ImageRotateCpuFlowUnit::RotateOneImage(
 MODELBOX_FLOWUNIT(ImageRotateCpuFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput(
-      modelbox::FlowUnitInput("in_origin_image", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(
-      modelbox::FlowUnitOutput("out_rotate_image", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput({"in_origin_image"});
+  desc.AddFlowUnitOutput({"out_rotate_image"});
 
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "rotate_angle", "int", false, "0", "the image rotate image"));

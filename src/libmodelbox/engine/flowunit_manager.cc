@@ -400,7 +400,7 @@ std::shared_ptr<FlowUnit> FlowUnitManager::CreateSingleFlowUnit(
   std::vector<FlowUnitInput> &in_list = flowunit_desc->GetFlowUnitInput();
   for (auto &in_item : in_list) {
     const auto &device_type = in_item.GetDeviceType();
-    if (device_type == device->GetType()) {
+    if (device_type.empty() || device_type == device->GetType()) {
       in_item.SetDevice(device);
       continue;
     }

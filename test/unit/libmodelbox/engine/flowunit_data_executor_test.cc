@@ -49,13 +49,8 @@ class ExecutorMockMemMgr : public DeviceMemoryManager {
     delete[](uint8_t *) mem_ptr;
   }
 
-  Status Write(const void *host_data, size_t host_size, void *device_buffer,
-               size_t device_size) override {
-    return STATUS_OK;
-  }
-
-  Status Read(const void *device_data, size_t device_size, void *host_buffer,
-              size_t host_size) override {
+  Status Copy(void *dest, size_t dest_size, const void *src_buffer,
+              size_t src_size, DeviceMemoryCopyKind kind) override {
     return STATUS_OK;
   }
 

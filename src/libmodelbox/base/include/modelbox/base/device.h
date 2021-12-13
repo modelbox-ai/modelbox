@@ -179,6 +179,16 @@ class Device : public std::enable_shared_from_this<Device> {
    * @brief Manage exist device mem
    * @param mem_ptr Exist mem
    * @param size Memory size
+   * @param mem_flags memory flags
+   * @return Device memory
+   **/
+  std::shared_ptr<DeviceMemory> MemAcquire(void *mem_ptr, size_t size,
+                                           uint32_t mem_flags = 0);
+
+  /**
+   * @brief Manage exist device mem
+   * @param mem_ptr Exist mem
+   * @param size Memory size
    * @param mem_flags Flags of device mem
    * @return Device memory
    **/

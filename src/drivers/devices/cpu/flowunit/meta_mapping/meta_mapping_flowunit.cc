@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "meta_mapping_flowunit.h"
 
 #include <memory>
@@ -24,11 +23,12 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-#define CASTER_IMPL(code) [](std::stringstream &ss, modelbox::Any *any) { code; }
+#define CASTER_IMPL(code) \
+  [](std::stringstream &ss, modelbox::Any *any) { code; }
 
-#define SETTER_IMPL(code)                                                   \
+#define SETTER_IMPL(code)                                                     \
   [this](std::shared_ptr<modelbox::Buffer> &buffer, const std::string &str) { \
-    code;                                                                   \
+    code;                                                                     \
   }
 
 MetaMappingFlowUnit::MetaMappingFlowUnit(){};
@@ -135,7 +135,7 @@ modelbox::Status MetaMappingFlowUnit::ParseRules(
 modelbox::Status MetaMappingFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status MetaMappingFlowUnit::ToString(modelbox::Any *any,
-                                             std::string &val) {
+                                               std::string &val) {
   auto &type = any->type();
   auto caster_item = to_string_casters_.find(type.hash_code());
   if (caster_item == to_string_casters_.end()) {
@@ -225,17 +225,17 @@ modelbox::Status MetaMappingFlowUnit::DataPost(
 
 MODELBOX_FLOWUNIT(MetaMappingFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
-  desc.AddFlowUnitInput({INPUT_DATA, FLOWUNIT_TYPE});
-  desc.AddFlowUnitOutput({OUTPUT_DATA, FLOWUNIT_TYPE});
+  desc.AddFlowUnitInput({INPUT_DATA});
+  desc.AddFlowUnitOutput({OUTPUT_DATA});
   desc.SetFlowType(modelbox::STREAM);
   desc.SetFlowUnitGroupType("Image");
   desc.SetDescription(FLOWUNIT_DESC);
-  desc.AddFlowUnitOption(modelbox::FlowUnitOption("src_meta", "string", true, "",
-                                                "the source meta"));
-  desc.AddFlowUnitOption(
-      modelbox::FlowUnitOption("dest_meta", "string", true, "", "the dest meta"));
+  desc.AddFlowUnitOption(modelbox::FlowUnitOption("src_meta", "string", true,
+                                                  "", "the source meta"));
+  desc.AddFlowUnitOption(modelbox::FlowUnitOption("dest_meta", "string", true,
+                                                  "", "the dest meta"));
   desc.AddFlowUnitOption(modelbox::FlowUnitOption("rules", "string", false, "",
-                                                "the meta mapping rules"));
+                                                  "the meta mapping rules"));
 }
 
 MODELBOX_DRIVER_FLOWUNIT(desc) {

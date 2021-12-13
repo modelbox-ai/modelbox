@@ -411,7 +411,13 @@ modelbox::Status OutputBrokerFlowUnit::InitBrokers(
   auto broker_instances = std::make_shared<BrokerInstances>();
   auto broker_names = std::make_shared<BrokerNames>();
   for (auto &broker_json : brokers_json) {
-    AddBroker(broker_instances, broker_names, broker_json);
+    try {
+      AddBroker(broker_instances, broker_names, broker_json);
+    } catch (const std::exception &e) {
+      MBLOG_ERROR << "init output broker failed, config: "
+                  << broker_json.dump();
+      return modelbox::STATUS_INVALID;
+    }
   }
 
   data_ctx->SetPrivate(CTX_BROKER_INSTANCES, broker_instances);
@@ -499,7 +505,7 @@ std::shared_ptr<OutputBrokerPlugin> OutputBrokerFlowUnit::GetPlugin(
 MODELBOX_FLOWUNIT(OutputBrokerFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Output");
-  desc.AddFlowUnitInput({INPUT_DATA, FLOWUNIT_TYPE});
+  desc.AddFlowUnitInput({INPUT_DATA});
   desc.SetFlowType(modelbox::FlowType::STREAM);
   desc.SetInputContiguous(false);
   desc.SetDescription(FLOWUNIT_DESC);
