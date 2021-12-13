@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "httpserver_sync_reply.h"
 
 #include <cpprest/containerstream.h>
@@ -85,17 +84,17 @@ modelbox::Status HTTPServerReplySync::Process(
 
   auto bytes = input_data->GetBytes();
   auto data = input_data->ConstData();
-  std::string ss((char *)data, bytes);
-  auto resp_body =  concurrency::streams::bytestream::open_istream<std::string>(ss);
+  std::string ss((char*)data, bytes);
+  auto resp_body =
+      concurrency::streams::bytestream::open_istream<std::string>(ss);
   reply->Reply(web::http::status_codes::OK, resp_body, content_type_);
 
   return modelbox::STATUS_OK;
 }
 
-
 MODELBOX_FLOWUNIT(HTTPServerReplySync, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME_REPLY);
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_reply_info", modelbox::DEVICE_TYPE));
+  desc.AddFlowUnitInput({"in_reply_info"});
   desc.SetFlowType(modelbox::STREAM);
   desc.SetFlowUnitGroupType("Output");
   desc.SetDescription(FLOWUNIT_DESC_REPLY);

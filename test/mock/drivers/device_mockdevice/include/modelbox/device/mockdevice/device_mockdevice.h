@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_DEVICE_MOCKDEVICE_H_
 #define MODELBOX_DEVICE_MOCKDEVICE_H_
 
@@ -52,15 +51,10 @@ class FakeDeviceMemoryManager : public DeviceMemoryManager {
 
   void Free(void *mem_ptr, uint32_t mem_flags = 0){};
 
-  Status Write(const void *host_data, size_t host_size, void *device_buffer,
-               size_t device_size) {
+  Status Copy(void *dest, size_t dest_size, const void *src_buffer,
+              size_t src_size, DeviceMemoryCopyKind kind) {
     return STATUS_SUCCESS;
-  };
-
-  Status Read(const void *device_data, size_t device_size, void *host_buffer,
-              size_t host_size) {
-    return STATUS_SUCCESS;
-  };
+  }
 
   Status DeviceMemoryCopy(
       const std::shared_ptr<DeviceMemory> &dest_memory, size_t dest_offset,
@@ -79,9 +73,8 @@ class MockDevice : public Device {
  public:
   MockDevice() : Device(std::make_shared<FakeDeviceMemoryManager>()) {
     EXPECT_CALL(*this, Malloc)
-        .WillRepeatedly([](size_t size, const std::string &user_id) {
-          return nullptr;
-        });
+        .WillRepeatedly(
+            [](size_t size, const std::string &user_id) { return nullptr; });
   };
 
   virtual ~MockDevice() = default;

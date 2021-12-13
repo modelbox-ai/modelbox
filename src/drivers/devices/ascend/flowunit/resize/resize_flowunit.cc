@@ -199,8 +199,8 @@ modelbox::Status ResizeFlowUnit::Close() { return modelbox::STATUS_OK; }
 MODELBOX_FLOWUNIT(ResizeFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput({IN_IMG, FLOWUNIT_TYPE, modelbox::ASCEND_MEM_DVPP});
-  desc.AddFlowUnitOutput({OUT_IMG, FLOWUNIT_TYPE, modelbox::ASCEND_MEM_DVPP});
+  desc.AddFlowUnitInput({IN_IMG, modelbox::ASCEND_MEM_DVPP});
+  desc.AddFlowUnitOutput({OUT_IMG, modelbox::ASCEND_MEM_DVPP});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetInputContiguous(false);
   desc.SetDescription(FLOWUNIT_DESC);

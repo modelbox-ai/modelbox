@@ -530,9 +530,8 @@ modelbox::Status VideoDecodeFlowUnit::Process(
 MODELBOX_FLOWUNIT(VideoDecodeFlowUnit, desc) {
   desc.SetFlowUnitName(DVPP_DECODE_FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Video");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput(VIDEO_PACKET_INPUT, "cpu"));
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput(
-      FRAME_INFO_OUTPUT, FLOWUNIT_TYPE, modelbox::ASCEND_MEM_DVPP));
+  desc.AddFlowUnitInput({VIDEO_PACKET_INPUT, "cpu"});
+  desc.AddFlowUnitOutput({FRAME_INFO_OUTPUT, modelbox::ASCEND_MEM_DVPP});
   desc.SetFlowType(modelbox::STREAM);
   desc.SetInputContiguous(false);
   desc.SetResourceNice(false);

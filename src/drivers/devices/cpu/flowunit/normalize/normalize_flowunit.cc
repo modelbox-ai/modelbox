@@ -89,8 +89,8 @@ void NormalizeFlowUnit::Process(const T *input_data,
 MODELBOX_FLOWUNIT(NormalizeFlowUnit, desc) {
   desc.SetFlowUnitName("normalize");
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_data", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_data", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput({"in_data"});
+  desc.AddFlowUnitOutput({"out_data"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetDescription(FLOWUNIT_DESC);
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(

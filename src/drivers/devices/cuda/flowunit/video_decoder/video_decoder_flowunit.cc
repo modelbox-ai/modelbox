@@ -287,10 +287,8 @@ modelbox::Status VideoDecoderFlowUnit::DataPost(
 MODELBOX_FLOWUNIT(VideoDecoderFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Video");
-  // TODO: Flow unit input may not belong to this device,
-  // a enum might be needed
   desc.AddFlowUnitInput({VIDEO_PACKET_INPUT, "cpu"});
-  desc.AddFlowUnitOutput({FRAME_INFO_OUTPUT, FLOWUNIT_TYPE});
+  desc.AddFlowUnitOutput({FRAME_INFO_OUTPUT});
   desc.SetFlowType(modelbox::STREAM);
   desc.SetInputContiguous(false);
   desc.SetResourceNice(false);

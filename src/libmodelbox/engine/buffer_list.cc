@@ -482,4 +482,53 @@ Status BufferList::MoveAllBufferToTargetDevice() {
   return modelbox::STATUS_OK;
 }
 
+Status BufferList::EmplaceBack(void* device_data, size_t data_size,
+                               DeleteFunction func) {
+  if (!dev_mem_) {
+    return {STATUS_INVALID, "device memory must not be nullptr."};
+  }
+
+  auto device = dev_mem_->GetDevice();
+  auto buffer = std::make_shared<Buffer>(device, dev_mem_flags_);
+  auto ret = buffer->Build(device_data, data_size, func);
+  if (!ret) {
+    return ret;
+  }
+
+  PushBack(buffer);
+  return STATUS_OK;
+}
+
+Status BufferList::EmplaceBack(std::shared_ptr<void> device_data,
+                               size_t data_size) {
+  auto delete_func = [device_data](void*) { /* hold device data */ };
+  return EmplaceBack(device_data.get(), data_size, delete_func);
+}
+
+Status BufferList::EmplaceBackFromHost(void* host_data, size_t data_size) {
+  if (!dev_mem_) {
+    return {STATUS_INVALID, "device memory must not be nullptr."};
+  }
+
+  auto device = dev_mem_->GetDevice();
+  auto buffer = std::make_shared<Buffer>(device, dev_mem_flags_);
+  return buffer->BuildFromHost(host_data, data_size);
+}
+
+std::shared_ptr<Buffer> BufferList::Front() {
+  if (buffer_list_.empty()) {
+    return nullptr;
+  }
+
+  return buffer_list_.front();
+}
+
+std::shared_ptr<Buffer> BufferList::Back() {
+  if (buffer_list_.empty()) {
+    return nullptr;
+  }
+
+  return buffer_list_.back();
+}
+
 }  // namespace modelbox

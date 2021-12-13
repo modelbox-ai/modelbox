@@ -184,8 +184,8 @@ modelbox::Status DataSourceParserFlowUnit::WriteData(
 MODELBOX_FLOWUNIT(DataSourceParserFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Input");
-  desc.AddFlowUnitInput({INPUT_DATA_SOURCE_CFG, FLOWUNIT_TYPE});
-  desc.AddFlowUnitOutput({OUTPUT_STREAM_META, FLOWUNIT_TYPE});
+  desc.AddFlowUnitInput({INPUT_DATA_SOURCE_CFG});
+  desc.AddFlowUnitOutput({OUTPUT_STREAM_META});
   desc.SetFlowType(modelbox::STREAM);
   desc.SetStreamSameCount(false);
   desc.SetDescription(FLOWUNIT_DESC);

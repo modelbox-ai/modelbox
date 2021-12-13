@@ -172,7 +172,8 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @param func data free function
    * @return create result
    */
-  virtual Status Build(void* data, size_t data_size, DeleteFunction func);
+  virtual Status Build(void* data, size_t data_size,
+                       DeleteFunction func = nullptr);
 
   /**
    * @brief Create a buffer from existing host memory

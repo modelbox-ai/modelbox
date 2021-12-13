@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "httpserver_sync_receive.h"
 
 #include <securec.h>
@@ -266,24 +265,24 @@ modelbox::Status HTTPServerReceiveSync::Process(
 
 MODELBOX_FLOWUNIT(HTTPServerReceiveSync, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME_RECEIVE);
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_request_info", modelbox::DEVICE_TYPE));
+  desc.AddFlowUnitOutput({"out_request_info"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetFlowUnitGroupType("Input");
   desc.SetDescription(FLOWUNIT_DESC_RECEIVE);
   desc.AddFlowUnitOption(modelbox::FlowUnitOption("endpoint", "string", true,
-                                                "https://127.0.0.1:8080",
-                                                "http server listen URL."));
+                                                  "https://127.0.0.1:8080",
+                                                  "http server listen URL."));
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "max_requests", "integer", false, "1000", "max http request."));
   desc.AddFlowUnitOption(
       modelbox::FlowUnitOption("time_out", "integer", false, "100",
-                             "max http request timeout. measured in 100ms"));
+                               "max http request timeout. measured in 100ms"));
   desc.AddFlowUnitOption(
       modelbox::FlowUnitOption("cert", "string", false, "", "cert file path"));
   desc.AddFlowUnitOption(
       modelbox::FlowUnitOption("key", "string", false, "", "key file path"));
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "passwd", "string", false, "", "encrypted key file password."));
-  desc.AddFlowUnitOption(modelbox::FlowUnitOption("key_pass", "string", false, "",
-                                                "key for encrypted password."));
+  desc.AddFlowUnitOption(modelbox::FlowUnitOption(
+      "key_pass", "string", false, "", "key for encrypted password."));
 }

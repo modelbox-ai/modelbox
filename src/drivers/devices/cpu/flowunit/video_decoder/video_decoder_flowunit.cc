@@ -302,8 +302,8 @@ modelbox::Status VideoDecoderFlowUnit::DataPost(
 MODELBOX_FLOWUNIT(VideoDecoderFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Video");
-  desc.AddFlowUnitInput({VIDEO_PACKET_INPUT, FLOWUNIT_TYPE});
-  desc.AddFlowUnitOutput({FRAME_INFO_OUTPUT, FLOWUNIT_TYPE});
+  desc.AddFlowUnitInput({VIDEO_PACKET_INPUT});
+  desc.AddFlowUnitOutput({FRAME_INFO_OUTPUT});
   desc.SetFlowType(modelbox::STREAM);
   desc.SetDescription(FLOWUNIT_DESC);
   desc.SetInputContiguous(false);

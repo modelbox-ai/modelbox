@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-
 #include <functional>
 #include <future>
 #include <thread>
 
-#include "modelbox/device/mockdevice/device_mockdevice.h"
 #include "gmock/gmock.h"
 #include "mock_driver_ctl.h"
+#include "modelbox/device/mockdevice/device_mockdevice.h"
 
 #include "modelbox/base/log.h"
 
-#include "modelbox/buffer_list.h"
 #include "gtest/gtest.h"
+#include "modelbox/buffer_list.h"
 
 namespace modelbox {
 class BufferListTest : public testing::Test {
@@ -169,6 +168,32 @@ TEST_F(BufferListTest, Get) {
     EXPECT_TRUE(buffer_list2[i]->Get("Height", i_value));
     EXPECT_EQ(i_value, 360);
   }
+}
+
+TEST_F(BufferListTest, EmplaceBack) {
+  auto ptr = std::make_shared<uint8_t>();
+  *ptr = 123;
+  BufferList buffer_list(device_);
+
+  buffer_list.EmplaceBack(ptr, 1);
+  auto buffer1 = buffer_list.Front();
+  EXPECT_EQ(buffer1->MutableData(), ptr.get());
+
+  buffer_list.EmplaceBack(ptr.get(), 1, [](void *) {});
+  auto buffer2 = buffer_list.Back();
+  EXPECT_EQ(buffer2->MutableData(), ptr.get());
+
+  buffer_list.EmplaceBack(ptr.get(), 1);
+  auto buffer3 = buffer_list.Back();
+  EXPECT_NE(buffer3->MutableData(), ptr.get());
+  auto ptr3 = (uint8_t *)(buffer3->MutableData());
+  EXPECT_EQ(*ptr3, 123);
+
+  buffer_list.EmplaceBackFromHost(ptr.get(), 1);
+  auto buffer4 = buffer_list.Back();
+  EXPECT_NE(buffer4->MutableData(), ptr.get());
+  auto ptr4 = (uint8_t *)(buffer4->MutableData());
+  EXPECT_EQ(*ptr4, 123);
 }
 
 }  // namespace modelbox

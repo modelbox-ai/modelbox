@@ -616,7 +616,7 @@ TEST_F(ModelboxServerTest, JSPlugin) {
 
   // modelbox exit
   flow_stats->DelItem("demo");
-  recv_handle.wait_for(std::chrono::seconds(5));
+  recv_handle.wait();
   server.Stop();
   EXPECT_EQ(route_msg_count, 1);
 }

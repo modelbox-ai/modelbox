@@ -220,8 +220,7 @@ modelbox::Status HTTPServerAsync::Process(
 
 MODELBOX_FLOWUNIT(HTTPServerAsync, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
-  desc.AddFlowUnitOutput(
-      modelbox::FlowUnitOutput("out_request_info", FLOWUNIT_TYPE));
+  desc.AddFlowUnitOutput({"out_request_info"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetFlowUnitGroupType("Input");
   desc.SetDescription(FLOWUNIT_DESC);

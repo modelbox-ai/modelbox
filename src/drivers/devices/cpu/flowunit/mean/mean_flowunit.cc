@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "mean_flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 #include "modelbox/type.h"
@@ -22,7 +21,8 @@
 MeanFlowUnit::MeanFlowUnit(){};
 MeanFlowUnit::~MeanFlowUnit(){};
 
-modelbox::Status MeanFlowUnit::Process(std::shared_ptr<modelbox::DataContext> ctx) {
+modelbox::Status MeanFlowUnit::Process(
+    std::shared_ptr<modelbox::DataContext> ctx) {
   const auto input_bufs = ctx->Input("in_data");
   if (!CheckBufferListValid(input_bufs)) {
     MBLOG_ERROR << "mean flowunit in_image invalied";
@@ -90,8 +90,8 @@ void MeanFlowUnit::Process(const T *input_data,
 MODELBOX_FLOWUNIT(MeanFlowUnit, desc) {
   desc.SetFlowUnitName("mean");
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_data", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_data", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput({"in_data"});
+  desc.AddFlowUnitOutput({"out_data"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.AddFlowUnitOption(
       modelbox::FlowUnitOption("mean", "string", true, "", "the mean param"));

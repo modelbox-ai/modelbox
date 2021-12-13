@@ -133,9 +133,9 @@ modelbox::Status DrawBBoxFlowUnit::Process(
 MODELBOX_FLOWUNIT(DrawBBoxFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_image", FLOWUNIT_TYPE));
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_region", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_image", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput({"in_image"});
+  desc.AddFlowUnitInput({"in_region"});
+  desc.AddFlowUnitOutput({"out_image"});
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetInputContiguous(false);
   desc.SetDescription(FLOWUNIT_DESC);

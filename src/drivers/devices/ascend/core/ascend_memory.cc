@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/device/ascend/ascend_memory.h"
 
 #include <dsmi_common_interface.h>
@@ -469,21 +468,9 @@ void AscendMemoryManager::Free(void *mem_ptr, uint32_t mem_flags) {
   }
 }
 
-Status AscendMemoryManager::Write(const void *host_data, size_t host_size,
-                                  void *device_buffer, size_t device_size) {
-  return Copy(device_buffer, device_size, host_data, host_size,
-              aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);
-}
-
-Status AscendMemoryManager::Read(const void *device_data, size_t device_size,
-                                 void *host_buffer, size_t host_size) {
-  return Copy(host_buffer, host_size, device_data, device_size,
-              aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST);
-}
-
 Status AscendMemoryManager::Copy(void *dest, size_t dest_size,
                                  const void *src_buffer, size_t src_size,
-                                 aclrtMemcpyKind kind) {
+                                 DeviceMemoryCopyKind kind) {
   if (dest == nullptr || src_buffer == nullptr) {
     MBLOG_ERROR << "Ascend copy src " << src_buffer << " to dest " << dest
                 << "failed";
@@ -502,10 +489,12 @@ Status AscendMemoryManager::Copy(void *dest, size_t dest_size,
     return STATUS_FAULT;
   }
 
-  ret = aclrtMemcpy(dest, dest_size, src_buffer, src_size, kind);
+  aclrtMemcpyKind ascend_copy_kind;
+  GetAscendMemcpyKind(kind, ascend_copy_kind);
+  ret = aclrtMemcpy(dest, dest_size, src_buffer, src_size, ascend_copy_kind);
   if (ret != ACL_SUCCESS) {
     MBLOG_ERROR << "Asend memcpy failed, ret " << ret << ", src size "
-                << src_size;
+                << src_size << ", ascend cpy kind " << ascend_copy_kind;
     return STATUS_FAULT;
   }
 

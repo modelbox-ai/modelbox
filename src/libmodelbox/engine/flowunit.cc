@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/flowunit.h"
 
 #include "modelbox/tensor_list.h"

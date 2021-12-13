@@ -31,4 +31,5 @@ jobs:
       working-directory: build
       run: | 
         make build-test -j8
+        unset LD_LIBRARY_PATH
         make unittest
