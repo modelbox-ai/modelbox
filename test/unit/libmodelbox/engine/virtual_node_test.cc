@@ -621,7 +621,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
     while (true) {
       std::list<std::shared_ptr<ExternalDataMap>> external_list;
       auto select_status = selector->SelectExternalData(
-          external_list, std::chrono::milliseconds(1000));
+          external_list, std::chrono::milliseconds(3000));
       if (select_status == STATUS_TIMEDOUT) {
         break;
       }

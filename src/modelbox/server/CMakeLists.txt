@@ -30,7 +30,7 @@ file(GLOB_RECURSE SERVER_BIN_FILES ${CMAKE_CURRENT_LIST_DIR}/bin/*)
 
 list(APPEND MODELBOX_SERVER_INCLUDES ${MODELBOX_INCLUDE})
 list(APPEND MODELBOX_SERVER_INCLUDES ${MODELBOX_COMMON_INCLUDE})
-list(APPEND MODELBOX_SERVER_INCLUDES ${LIB_HTTPLIB_INCLUDE_DIR})
+list(APPEND MODELBOX_SERVER_INCLUDES ${CPP_HTTPLIB_INCLUDE})
 list(APPEND SERVER_INCLUDES ${LIBMODELBOX_INCLUDE})
 list(APPEND SERVER_INCLUDES ${LIBMODELBOX_BASE_INCLUDE})
 list(APPEND SERVER_INCLUDES ${MODELBOX_INCLUDE})
@@ -43,7 +43,6 @@ include_directories(${SERVER_INCLUDES})
 include_directories(${TOML_INCLUDE_DIR})
 include_directories(${DUKTAPE_INCLUDE_DIR})
 include_directories(${HUAWEI_SECURE_C_INCLUDE_DIR})
-include_directories(${HTTPLIB_INCLUDE_DIR})
 
 set(HEADER 
     ${MODELBOX_INCLUDE}/modelbox
@@ -60,6 +59,7 @@ target_link_libraries(modelbox-server rt)
 target_link_libraries(modelbox-server ${DUKTAPE_LIBRARIES})
 target_link_libraries(modelbox-server manager-client)
 target_link_libraries(modelbox-server ${OPENSSL_LIBRARIES})
+target_link_libraries(modelbox-server ${CPP_HTTPLIB_STATIC_LIBRARIES})
 
 if(NOT CMAKE_INSTALL_RUNSTATEDIR)
     set(CMAKE_INSTALL_RUNSTATEDIR "var/run" CACHE INTERNAL "")
@@ -156,5 +156,6 @@ set(MODELBOX_SERVER_LINK_LIBRARIES
     ${BBOX_LIBRARIES}
     ${LINK_LIBRARIES}
     manager-client
+    ${CPP_HTTPLIB_STATIC_LIBRARIES}
     ${MODELBOX_COMMON_LIBRARY}
     CACHE INTERNAL "")
