@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/thread_pool.h"
 
 #include "gtest/gtest.h"
@@ -100,7 +99,12 @@ TEST_F(ThreadPoolTest, SetThreadSize) {
   EXPECT_EQ(pool.GetThreadsNum(), thread_size);
   pool.SetThreadSize(1);
   pool.SetKeepAlive(10);
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  if (pool.GetThreadsNum() > 1) {
+    pool.SetThreadSize(1);
+    pool.SetKeepAlive(10);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  }
   EXPECT_EQ(pool.GetThreadsNum(), 1);
 }
 
