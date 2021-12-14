@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include <modelbox/base/os.h>
 #include <modelbox/base/thread_pool.h>
 
@@ -327,7 +326,12 @@ void ThreadPool::SetTaskQueueSize(size_t size) {
 }
 
 void ThreadPool::SetKeepAlive(uint32_t timeout) {
-  keep_alive_ = timeout;
+  if (timeout <= MIN_KEEP_ALIVE_TIME) {
+    keep_alive_ = MIN_KEEP_ALIVE_TIME;
+  } else {
+    keep_alive_ = timeout;
+  }
+  
   work_queue_->Wakeup();
 }
 
