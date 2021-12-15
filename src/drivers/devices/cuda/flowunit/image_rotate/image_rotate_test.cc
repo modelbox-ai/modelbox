@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cuda_runtime.h>
+
 #include <opencv2/opencv.hpp>
 
 #include "image_rotate_test_base.h"
@@ -21,6 +23,13 @@
 namespace modelbox {
 
 TEST_F(ImageRotateFlowUnitTest, CudaRotateTest) {
+  int count = 0;
+  cudaGetDeviceCount(&count);
+  if (count <= 0) {
+    MBLOG_INFO << "no cuda device, skip test suit";
+    GTEST_SKIP();
+  }
+
   const std::string test_lib_dir = TEST_DRIVER_DIR;
   std::string toml_content = R"(
     [driver]
