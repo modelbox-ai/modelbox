@@ -138,6 +138,21 @@ std::shared_ptr<Device> DeviceManager::CreateDevice(
     return device;
   }
 
+  auto type_desc = device_desc_list_.find(device_type);
+  if (type_desc == device_desc_list_.end()) {
+    StatusError = {STATUS_NOTFOUND, "Can't support type:" + device_type};
+    MBLOG_ERROR << StatusError.Errormsg();
+    return nullptr;
+  }
+
+  auto id_desc = device_desc_list_[device_type].find(device_id);
+  if (id_desc == device_desc_list_[device_type].end()) {
+    StatusError = {STATUS_NOTFOUND,
+                   "Don't probe type " + device_type + " id: " + device_id};
+    MBLOG_ERROR << StatusError.Errormsg();
+    return nullptr;
+  }
+  
   auto iter = device_factory_.find(device_type);
   if (iter == device_factory_.end()) {
     StatusError = {STATUS_NOTFOUND, "device type not found: " + device_type};
@@ -156,20 +171,6 @@ std::shared_ptr<Device> DeviceManager::CreateDevice(
     return nullptr;
   }
 
-  auto type_desc = device_desc_list_.find(device_type);
-  if (type_desc == device_desc_list_.end()) {
-    StatusError = {STATUS_NOTFOUND, "Can't support type:" + device_type};
-    MBLOG_ERROR << StatusError.Errormsg();
-    return nullptr;
-  }
-
-  auto id_desc = device_desc_list_[device_type].find(device_id);
-  if (id_desc == device_desc_list_[device_type].end()) {
-    StatusError = {STATUS_NOTFOUND,
-                   "Don't probe type " + device_type + " id: " + device_id};
-    MBLOG_ERROR << StatusError.Errormsg();
-    return nullptr;
-  }
 
   device->SetDeviceDesc(device_desc_list_[device_type][device_id]);
   auto &id_map = device_list_[device_type];
