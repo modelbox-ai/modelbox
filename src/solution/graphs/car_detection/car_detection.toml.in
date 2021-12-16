@@ -13,7 +13,7 @@ graphconf = """digraph car_detection {
     video_input[type=flowunit, flowunit=video_input, device=cpu, deviceid=0, source_url="@SOLUTION_VIDEO_DIR@/car_test_video.mp4"]
     videodemuxer[type=flowunit, flowunit=video_demuxer, device=cpu, deviceid=0]
     videodecoder[type=flowunit, flowunit=video_decoder, device=cuda, deviceid=0, pix_fmt=bgr]
-    image_resize[type=flowunit, flowunit=resize, device=cpu, deviceid=0, width=512, height=288]
+    image_resize[type=flowunit, flowunit=resize, device=cpu, deviceid=0, image_width=512, image_height=288]
     image_transpose[type=flowunit, flowunit=packed_planar_transpose, device=cpu, deviceid=0]
     normalize[type=flowunit, flowunit=normalize, device=cpu, deviceid=0, standard_deviation_inverse="1,1,1"]
     model_inference[type=flowunit, flowunit=car_detect, device=cuda, deviceid=0, batch_size=1]
