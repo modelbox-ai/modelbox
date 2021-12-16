@@ -1,0 +1,38 @@
+name: Merge Request CUDA
+
+on:
+  pull_request:
+    branches: 
+      - main
+
+env:
+  BUILD_TYPE: Debug
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Remove old package
+      run: |
+        dpkg -l | grep modelbox | awk '{print $2}' | xargs -i apt remove -y {}
+
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        make unittest

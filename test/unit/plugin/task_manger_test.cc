@@ -102,7 +102,7 @@ TEST_F(TaskManagerTest, CreateTask) {
   task_1->FillData(datas);
   task_1->RegisterStatusCallback(TaskFinished);
   task_1->Start();
-  cv.wait_for(lck, std::chrono::seconds(5),
+  cv.wait_for(lck, std::chrono::seconds(10),
               [task_1]() { return task_1->GetTaskStatus() == FINISHED; });
   EXPECT_EQ(FINISHED, task_1->GetTaskStatus());
 
@@ -111,7 +111,7 @@ TEST_F(TaskManagerTest, CreateTask) {
   EXPECT_EQ(WAITING, task_2->GetTaskStatus());
   task_2->Start();
   task_2->RegisterStatusCallback(TaskStopped);
-  cv.wait_for(lck, std::chrono::seconds(5),
+  cv.wait_for(lck, std::chrono::seconds(10),
               [task_2]() { return task_2->GetTaskStatus() == STOPPED; });
   EXPECT_EQ(STOPPED, task_2->GetTaskStatus());
 }
