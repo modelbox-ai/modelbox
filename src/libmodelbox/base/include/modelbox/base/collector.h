@@ -40,7 +40,7 @@ class Collector {
     std::unique_lock<std::mutex> lock(object_lock_);
     auto iter = objs_.find(name);
     if (iter != objs_.end()) {
-      MBLOG_WARN << name << "is already in the map, overwrites it.";
+      MBLOG_WARN << name << " is already in the map, overwrites it.";
     }
     objs_[name] = obj;
 
