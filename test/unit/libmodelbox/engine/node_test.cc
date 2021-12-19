@@ -339,6 +339,16 @@ std::shared_ptr<Node> Add_Collapse_Normal_Node(
   return Add_Node("collapse_normal", {"In_1"}, {"Out_1"}, config);
 }
 
+std::shared_ptr<Node> Add_Expand_Stream_Node(
+    std::shared_ptr<Configuration> config = nullptr) {
+  return Add_Node("expand_stream", {"In_1"}, {"Out_1"}, config);
+}
+
+std::shared_ptr<Node> Add_Collapse_Stream_Node(
+    std::shared_ptr<Configuration> config = nullptr) {
+  return Add_Node("collapse_stream", {"In_1"}, {"Out_1"}, config);
+}
+
 std::shared_ptr<Node> Add_Garther_Node(
     std::shared_ptr<Configuration> config = nullptr) {
   return Add_Node("garther", {"In_1"}, {"Out_1"}, config);
@@ -1193,6 +1203,54 @@ TEST_F(NodeRunTest, GartherScatterRun) {
   }
   queue_1->PushBatch(&buffer_vector);
   buffer_vector.clear();
+}
+
+TEST_F(NodeRunTest, NormalErrorThroughNormalCollaspe) {
+  auto output_node = Add_Error_Start_Normal_Node();
+  auto expand_node = Add_Expand_Normal_Node();
+  auto simple_pass_node = Add_Simple_Pass_Node(0);
+  auto collapse_node = Add_Collapse_Normal_Node();
+  auto input_node = Add_Test_1_0_Node();
+
+  auto output_port_1 = output_node->GetOutputPort("Out_1");
+  auto expand_node_port = expand_node->GetOutputPort("Out_1");
+  auto stream_add_port = simple_pass_node->GetOutputPort("Out_1");
+  auto collapse_node_port = collapse_node->GetOutputPort("Out_1");
+  EXPECT_EQ(output_port_1->AddPort(expand_node->GetInputPort("In_1")), true);
+  EXPECT_EQ(expand_node_port->AddPort(simple_pass_node->GetInputPort("In_1")), true);
+  EXPECT_EQ(stream_add_port->AddPort(collapse_node->GetInputPort("In_1")), true);
+  EXPECT_EQ(collapse_node_port->AddPort(input_node->GetInputPort("In_1")), true);
+
+  EXPECT_EQ(output_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(expand_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(input_node->Run(DATA), STATUS_SUCCESS);
+
+}
+
+TEST_F(NodeRunTest, NormalErrorThroughStreamCollaspe) {
+  auto output_node = Add_Error_Start_Normal_Node();
+  auto expand_node = Add_Expand_Stream_Node();
+  auto simple_pass_node = Add_Simple_Pass_Node(0);
+  auto collapse_node = Add_Collapse_Normal_Node();
+  auto input_node = Add_Test_1_0_Node();
+
+  auto output_port_1 = output_node->GetOutputPort("Out_1");
+  auto expand_node_port = expand_node->GetOutputPort("Out_1");
+  auto stream_add_port = simple_pass_node->GetOutputPort("Out_1");
+  auto collapse_node_port = collapse_node->GetOutputPort("Out_1");
+  EXPECT_EQ(output_port_1->AddPort(expand_node->GetInputPort("In_1")), true);
+  EXPECT_EQ(expand_node_port->AddPort(simple_pass_node->GetInputPort("In_1")), true);
+  EXPECT_EQ(stream_add_port->AddPort(collapse_node->GetInputPort("In_1")), true);
+  EXPECT_EQ(collapse_node_port->AddPort(input_node->GetInputPort("In_1")), true);
+
+  EXPECT_EQ(output_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(expand_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(input_node->Run(DATA), STATUS_SUCCESS);
+
 }
 
 TEST_F(NodeRunTest, StreamGartherScatterRun) {
@@ -2069,7 +2127,7 @@ TEST_F(NodeRunTest, Normal_Process_Error_Collapse_Invisible) {
   auto index_buffer_list =
       std::make_shared<IndexBufferList>(error_buffer_vector);
   auto error = index_buffer_list->GetDataError();
-  EXPECT_EQ(error, nullptr);
+  EXPECT_NE(error, nullptr);
   EXPECT_EQ(error_buffer_vector.size(), 1);
 
   EXPECT_TRUE(error_buffer_vector[0]->GetBufferPtr()->HasError());
@@ -3101,7 +3159,7 @@ TEST_F(NodeRunTest, Normal_Collapse_DataPre_Error) {
   auto index_buffer_list =
       std::make_shared<IndexBufferList>(error_buffer_vector);
   auto error = index_buffer_list->GetDataError();
-  EXPECT_EQ(error, nullptr);
+  EXPECT_NE(error, nullptr);
   EXPECT_EQ(error_buffer_vector.size(), 4);
   for (uint32_t i = 0; i < 4; i++) {
     EXPECT_TRUE(error_buffer_vector[i]->GetBufferPtr()->HasError());
@@ -3146,7 +3204,7 @@ TEST_F(NodeRunTest, Normal_Collapse_Process_Error) {
   auto index_buffer_list =
       std::make_shared<IndexBufferList>(error_buffer_vector);
   auto error = index_buffer_list->GetDataError();
-  EXPECT_EQ(error, nullptr);
+  EXPECT_NE(error, nullptr);
   EXPECT_EQ(error_buffer_vector.size(), 4);
   for (uint32_t i = 0; i < 4; i++) {
     EXPECT_TRUE(error_buffer_vector[i]->GetBufferPtr()->HasError());
@@ -3237,7 +3295,7 @@ TEST_F(NodeRunTest, Normal_Collapse_Invisible_Recv_Error) {
   auto index_buffer_list =
       std::make_shared<IndexBufferList>(error_buffer_vector);
   auto error = index_buffer_list->GetDataError();
-  EXPECT_EQ(error, nullptr);
+  EXPECT_NE(error, nullptr);
   EXPECT_EQ(error_buffer_vector.size(), 4);
   EXPECT_FALSE(error_buffer_vector[0]->GetBufferPtr()->HasError());
   EXPECT_TRUE(error_buffer_vector[3]->GetBufferPtr()->HasError());

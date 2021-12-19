@@ -1338,7 +1338,7 @@ Status NormalCollapseFlowUnitDataContext::LabelError() {
   } else if (output_group_stream_error_ != nullptr) {
     output_data_->SetAllPortError(output_group_stream_error_);
   } else if (output_stream_error_ != nullptr) {
-    output_stream_error_ = nullptr;
+    output_data_->SetAllPortError(output_stream_error_);
   }
   return STATUS_SUCCESS;
 }
@@ -1612,7 +1612,7 @@ Status StreamCollapseFlowUnitDataContext::LabelError() {
   } else if (output_group_stream_error_ != nullptr) {
     output_data_->SetAllPortError(output_group_stream_error_);
   } else if (output_stream_error_ != nullptr) {
-    output_stream_error_ = nullptr;
+    output_data_->SetAllPortError(output_group_stream_error_);
   }
   return STATUS_SUCCESS;
 }

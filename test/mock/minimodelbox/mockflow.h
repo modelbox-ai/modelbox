@@ -137,6 +137,8 @@ class MockFlow {
   void Register_Check_Tensorlist_Test_2_Flowunit();
   void Register_Statistic_Test_Flowunit();
   void Register_Slow_Flowunit();
+  void Register_Expand_Stream_Flowunit();
+  void Register_Collapse_Stream_Flowunit();
 
   Status InitFlow(const std::string &name, const std::string &graph);
 

@@ -1068,6 +1068,11 @@ void MockFlow::Register_Expand_Normal_Flowunit() {
   auto process_func =
       [=](std::shared_ptr<DataContext> ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    auto session_ctx = ctx->GetSessionContext();
+    session_ctx->SetPrivate("session", std::make_shared<std::string>("111"));
+    auto res = session_ctx->GetPrivate("session");
+    MBLOG_INFO << "res normal expand: " << res;
+
     auto input_bufs_1 = ctx->Input("In_1");
     auto output_bufs_1 = ctx->Output("Out_1");
 
@@ -1110,6 +1115,59 @@ void MockFlow::Register_Collapse_Normal_Flowunit() {
   mock_funcitons->RegisterProcessFunc(process_func);
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
 }
+
+void MockFlow::Register_Expand_Stream_Flowunit() {
+  auto mock_desc = GenerateFlowunitDesc("expand_stream", {"In_1"}, {"Out_1"});
+  mock_desc->SetOutputType(EXPAND);
+  mock_desc->SetFlowType(STREAM);
+  auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+  auto process_func =
+      [=](std::shared_ptr<DataContext> ctx,
+          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    auto input_bufs_1 = ctx->Input("In_1");
+    auto output_bufs_1 = ctx->Output("Out_1");
+
+    auto input_data = (int*)(*input_bufs_1)[0]->ConstData();
+    std::vector<size_t> data_shape(5, 4);
+    output_bufs_1->Build(data_shape);
+    auto output_data = (int*)output_bufs_1->MutableData();
+    for (uint32_t j = 0; j < 5; j++) {
+      output_data[j] = input_data[0] + j;
+    }
+
+    return modelbox::STATUS_OK;
+  };
+  mock_funcitons->RegisterProcessFunc(process_func);
+  AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+}
+
+void MockFlow::Register_Collapse_Stream_Flowunit() {
+  auto mock_desc = GenerateFlowunitDesc("collapse_stream", {"In_1"}, {"Out_1"});
+  mock_desc->SetOutputType(COLLAPSE);
+  mock_desc->SetCollapseAll(true);
+  mock_desc->SetFlowType(STREAM);
+
+  auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+  auto process_func =
+      [=](std::shared_ptr<DataContext> ctx,
+          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    auto input_bufs_1 = ctx->Input("In_1");
+    auto output_bufs_1 = ctx->Output("Out_1");
+    std::vector<size_t> data_shape(1, 4);
+    output_bufs_1->Build(data_shape);
+    auto output_data = (int*)output_bufs_1->MutableData();
+    auto input_data = (int*)input_bufs_1->ConstData();
+    output_data[0] = 0;
+    for (uint32_t j = 0; j < 5; j++) {
+      output_data[0] += input_data[j];
+    }
+
+    return modelbox::STATUS_OK;
+  };
+  mock_funcitons->RegisterProcessFunc(process_func);
+  AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+}
+
 
 Status Add_Funciton(std::shared_ptr<DataContext> ctx,
                     std::shared_ptr<MockFlowUnit> mock_flowunit) {
@@ -3375,6 +3433,8 @@ bool MockFlow::Init(bool with_default_flowunit) {
     Register_Slow_Flowunit();
     Register_Statistic_Test_Flowunit();
     Register_HttpServer_Flowunit();
+    Register_Collapse_Stream_Flowunit();
+    Register_Expand_Stream_Flowunit();
   }
 
   bool result = drivers->Scan(TEST_LIB_DIR, "/libmodelbox-unit-*");
