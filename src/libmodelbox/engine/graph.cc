@@ -173,7 +173,7 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
 
   status = CheckStreamMatcher();
   if (!status) {
-    auto msg = "check stream fail.";
+    auto msg = "check stream fail, msg: " + status.WrapErrormsgs();
     auto ret = Status(status, msg);
     return ret;
   }
