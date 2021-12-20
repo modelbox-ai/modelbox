@@ -42,3 +42,8 @@ type = "uint8"
 [input.input2]
 name = "in_feat"
 type = "string"
+
+[output]
+[output.output1]
+name = "out_data"
+type = "uint8"
