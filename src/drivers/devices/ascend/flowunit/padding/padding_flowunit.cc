@@ -23,6 +23,7 @@ using namespace imageprocess;
 #define YUV420SP_SIZE(width, height) ((width) * (height)*3 / 2)
 #define ALIGNMENT_DOWN(size) (size & 0xfffffffe)
 #define MINI_WIDTH_STRIDE 32
+#define MINI_WIDTHE_OFFSET 15
 
 const std::string output_img_pix_fmt = "nv12";
 
@@ -227,7 +228,7 @@ modelbox::Status PaddingFlowUnit::ProcessOneImg(
     std::shared_ptr<modelbox::Buffer> &in_image,
     std::shared_ptr<modelbox::Buffer> &out_image, aclrtStream stream) {
   ResizeCropParam param;
-  ImageSize ori_image, resize_image;
+  ImageSize ori_image;
   std::string pix_fmt = "nv12";
   if (modelbox::STATUS_SUCCESS !=
       SetInImageSize(in_image, ori_image, pix_fmt)) {
@@ -236,9 +237,8 @@ modelbox::Status PaddingFlowUnit::ProcessOneImg(
   }
 
   Rect dest_rect;
-  if (modelbox::STATUS_SUCCESS != FillDestRoi(ori_image, dest_rect,
-                                              resize_image, param.crop_area,
-                                              param.paste_area)) {
+  if (modelbox::STATUS_SUCCESS !=
+      FillDestRoi(ori_image, dest_rect, param.crop_area, param.paste_area)) {
     MBLOG_ERROR << "FillDestRoi failed";
     return {modelbox::STATUS_FAULT, "FillDestRoi failed"};
   }
@@ -248,32 +248,6 @@ modelbox::Status PaddingFlowUnit::ProcessOneImg(
   if (status_ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "create desc for in_image failed";
     return status_ret;
-  }
-
-  auto alloc_buffer = [&](uint32_t size) -> std::shared_ptr<void> {
-    std::shared_ptr<void> shared_buffer = nullptr;
-    void *buffer = nullptr;
-
-    if (0 == acldvppMalloc((void **)&buffer, size)) {
-      shared_buffer.reset(buffer, [this](void *ptr) { acldvppFree(ptr); });
-    }
-
-    return shared_buffer;
-  };
-
-  auto resize_buffer = alloc_buffer(resize_image.buffer_size_);
-  if (resize_buffer == nullptr) {
-    MBLOG_ERROR << "failed alloc resize buffer";
-    return modelbox::STATUS_FAULT;
-  }
-  aclrtMemset(resize_buffer.get(), resize_image.buffer_size_, 0,
-              resize_image.buffer_size_);
-
-  if (modelbox::STATUS_SUCCESS !=
-      CreateDesc(resize_buffer.get(), resize_image.buffer_size_, resize_image,
-                 param.resize_img_desc, output_img_pix_fmt)) {
-    MBLOG_ERROR << "create resize descprition failed";
-    return modelbox::STATUS_FAULT;
   }
 
   if (aclrtMemcpy((void *)out_image->ConstData(), out_image_.buffer_size_,
@@ -320,17 +294,27 @@ modelbox::Status PaddingFlowUnit::CreateDesc(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status PaddingFlowUnit::FillDestRoi(ImageSize &in_image_size,
-                                              Rect &dest_roi,
-                                              ImageSize &out_image_size,
-                                              acldvppRoiConfig *&crop_area,
-                                              acldvppRoiConfig *&paste_area) {
+modelbox::Status PaddingFlowUnit::FillDestRoi(
+    ImageSize &in_image_size, Rect &dest_roi,
+    std::shared_ptr<acldvppRoiConfig> &crop_area,
+    std::shared_ptr<acldvppRoiConfig> &paste_area) {
   if (need_scale_) {
     auto w_scale = (float)in_image_size.width_ / out_image_.width_;
     auto h_scale = (float)in_image_size.height_ / out_image_.height_;
     auto scale = std::max(w_scale, h_scale);
     dest_roi.width = in_image_size.width_ / scale;
     dest_roi.height = in_image_size.height_ / scale;
+
+    auto min_x = (out_image_.width_ - dest_roi.width) >> 1;
+    min_x = (min_x + MINI_WIDTHE_OFFSET) >> 4 << 4;
+    dest_roi.width = out_image_.width_ - 2 * min_x;
+    if (dest_roi.width < MINI_WIDTH_STRIDE) {
+      MBLOG_ERROR << "input w/h is too small than output";
+      return modelbox::STATUS_INVALID;
+    }
+    scale = (float)in_image_size.width_ / dest_roi.width;
+    dest_roi.height = in_image_size.height_ / scale;
+    dest_roi.height = dest_roi.height >> 1 << 1;
   } else {
     if (in_image_size.width_ > out_image_.width_ ||
         in_image_size.height_ > out_image_.height_) {
@@ -346,20 +330,19 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(ImageSize &in_image_size,
     dest_roi.height = in_image_size.height_;
   }
 
-  out_image_size.width_ = dest_roi.width;
-  out_image_size.height_ = dest_roi.height;
-  out_image_size.width_stride_ =
-      align_up(out_image_size.width_, ASCEND_WIDTH_ALIGN);
-  if (out_image_size.width_stride_ < MINI_WIDTH_STRIDE) {
-    out_image_size.width_stride_ = MINI_WIDTH_STRIDE;
+  auto crop_area_local = acldvppCreateRoiConfig(0, in_image_size.width_ - 1, 0,
+                                                in_image_size.height_ - 1);
+  if (crop_area_local == nullptr) {
+    MBLOG_ERROR << "failed create roi config for crop area";
+    return modelbox::STATUS_FAULT;
   }
-  out_image_size.height_stride_ =
-      align_up(out_image_size.height_, ASCEND_HEIGHT_ALIGN);
-  out_image_size.buffer_size_ = YUV420SP_SIZE(out_image_size.width_stride_,
-                                              out_image_size.height_stride_);
-  auto align_width = ALIGNMENT_DOWN(out_image_size.width_);
-  auto align_height = ALIGNMENT_DOWN(out_image_size.height_);
-  crop_area = acldvppCreateRoiConfig(0, align_width - 1, 0, align_height - 1);
+
+  crop_area = std::shared_ptr<acldvppRoiConfig>(
+      crop_area_local, [](acldvppRoiConfig *config) {
+        if (config != nullptr) {
+          acldvppDestroyRoiConfig(config);
+        }
+      });
   dest_roi.x =
       GetAlignOffset(horizontal_align_, out_image_.width_, dest_roi.width) >>
       4 << 4;
@@ -367,9 +350,19 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(ImageSize &in_image_size,
   dest_roi.y = ALIGNMENT_DOWN(
       GetAlignOffset(vertical_align_, out_image_.height_, dest_roi.height));
   dest_roi.height = ALIGNMENT_DOWN(dest_roi.height);
-  paste_area =
+  auto paste_area_local =
       acldvppCreateRoiConfig(dest_roi.x, dest_roi.x + dest_roi.width - 1,
                              dest_roi.y, dest_roi.y + dest_roi.height - 1);
+  if (paste_area_local == nullptr) {
+    MBLOG_ERROR << "failed create roi config for paste area";
+    return modelbox::STATUS_FAULT;
+  }
+  paste_area = std::shared_ptr<acldvppRoiConfig>(
+      paste_area_local, [](acldvppRoiConfig *config) {
+        if (config != nullptr) {
+          acldvppDestroyRoiConfig(config);
+        }
+      });
 
   return modelbox::STATUS_OK;
 }
@@ -421,22 +414,13 @@ modelbox::Status PaddingFlowUnit::CropResizeAndPaste(ResizeCropParam &param,
     return {modelbox::STATUS_FAULT,
             "failed set interpolation for resize config"};
   }
-  acl_ret =
-      acldvppVpcResizeAsync(chan_desc.get(), param.in_img_desc.get(),
-                            param.resize_img_desc.get(), resize_cfg, stream);
+  acl_ret = acldvppVpcCropResizePasteAsync(
+      chan_desc.get(), param.in_img_desc.get(), param.out_img_desc.get(),
+      param.crop_area.get(), param.paste_area.get(), resize_cfg, stream);
   if (acl_ret != ACL_SUCCESS) {
-    MBLOG_ERROR << "acldvppVpcResizeAsync failed, err " +
+    MBLOG_ERROR << "acldvppVpcCropResizePasteAsync failed, err " +
                        std::to_string(acl_ret);
     return modelbox::STATUS_FAULT;
-  }
-
-  acl_ret = acldvppVpcCropAndPasteAsync(
-      chan_desc.get(), param.resize_img_desc.get(), param.out_img_desc.get(),
-      param.crop_area, param.paste_area, stream);
-  if (acl_ret != ACL_SUCCESS) {
-    std::string err_msg =
-        "acldvppVpcCropAndPasteAsync failed, err " + std::to_string(acl_ret);
-    return {modelbox::STATUS_FAULT, err_msg};
   }
 
   acl_ret = aclrtSynchronizeStream(stream);

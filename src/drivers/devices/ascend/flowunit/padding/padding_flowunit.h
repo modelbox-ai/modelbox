@@ -69,8 +69,8 @@ class ResizeCropParam {
  public:
   std::shared_ptr<acldvppPicDesc> in_img_desc;
   std::shared_ptr<acldvppPicDesc> resize_img_desc;
-  acldvppRoiConfig *crop_area;
-  acldvppRoiConfig *paste_area;
+  std::shared_ptr<acldvppRoiConfig> crop_area;
+  std::shared_ptr<acldvppRoiConfig> paste_area;
   std::shared_ptr<acldvppPicDesc> out_img_desc;
 };
 
@@ -109,9 +109,8 @@ class PaddingFlowUnit : public modelbox::AscendFlowUnit {
                                       aclrtStream stream);
 
   modelbox::Status FillDestRoi(ImageSize &in_image_size, Rect &dest_rect,
-                               ImageSize &out_image_size,
-                               acldvppRoiConfig *&crop_area,
-                               acldvppRoiConfig *&paste_area);
+                               std::shared_ptr<acldvppRoiConfig> &crop_area,
+                               std::shared_ptr<acldvppRoiConfig> &paste_area);
 
   uint32_t GetAlignOffset(AlignType type, uint32_t dest_range,
                           uint32_t roi_range);
