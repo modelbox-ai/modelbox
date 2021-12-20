@@ -91,9 +91,11 @@ void VideoDemuxerFlowUnit::WriteEnd(
   auto end_packet = video_packet_output->At(0);
   int32_t rate_num;
   int32_t rate_den;
+  int32_t rotate_angle = video_demuxer->GetFrameRotate();
   video_demuxer->GetFrameRate(rate_num, rate_den);
   end_packet->Set("rate_num", rate_num);
   end_packet->Set("rate_den", rate_den);
+  end_packet->Set("rotate_angle", rotate_angle);
   end_packet->Set("duration", video_demuxer->GetDuration());
   end_packet->Set("time_base", video_demuxer->GetTimeBase());
 }
