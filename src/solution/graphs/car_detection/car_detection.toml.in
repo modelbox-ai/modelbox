@@ -18,6 +18,7 @@ graphconf = """digraph car_detection {
     normalize[type=flowunit, flowunit=normalize, device=cpu, deviceid=0, standard_deviation_inverse="1,1,1"]
     model_inference[type=flowunit, flowunit=car_detect, device=cuda, deviceid=0, batch_size=1]
     yolox_post[type=flowunit, flowunit=yolox_post, device=cpu, deviceid=0]
+    videoencoder[type=flowunit, flowunit=video_encoder, device=cpu, deviceid=0, encoder=mpeg4, format=mp4, default_dest_url="/tmp/car_detection_result.mp4"]
 
     video_input:out_video_url -> videodemuxer:in_video_url
     videodemuxer:out_video_packet -> videodecoder:in_video_packet
@@ -27,4 +28,5 @@ graphconf = """digraph car_detection {
     normalize:out_data -> model_inference:input
     model_inference:output -> yolox_post:in_feat
     videodecoder:out_video_frame -> yolox_post:in_image
+    yolox_post:out_data -> videoencoder:in_video_frame
 }"""

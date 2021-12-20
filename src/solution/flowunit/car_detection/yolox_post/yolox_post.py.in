@@ -32,12 +32,6 @@ class YoloXPost(modelbox.FlowUnit):
         self.conf_thre = config.get_float('conf_threshold', 0.3)
         self.nms_thre = config.get_float('iou_threshold', 0.4)
 
-        self.result_dir = "@MODELBOX_SOLUTION_DIR@/result/car_detect/"
-        folder = os.path.exists(self.result_dir)
-        if not folder:
-            os.makedirs(self.result_dir)
-            modelbox.info("create result dir {} success".format(self.result_dir))
-
         return modelbox.Status.StatusCode.STATUS_SUCCESS
 
     def process(self, data_context):
@@ -63,7 +57,11 @@ class YoloXPost(modelbox.FlowUnit):
             bboxes = postprocess(feat_data, (self.net_h, self.net_w), self.num_classes, self.conf_thre, self.nms_thre, ratio)
             if bboxes is not None:
                 img_out = draw_bbox(img_data, bboxes)
-                cv2.imwrite(self.result_dir + str(frame_index) + ".jpg", img_out)
+                add_buffer = modelbox.Buffer(self.get_bind_device(), img_out)
+                add_buffer.copy_meta(buffer_img)
+                out_data.push_back(add_buffer)
+            else:
+                out_data.push_back(buffer_img)
             
             return modelbox.Status.StatusCode.STATUS_SUCCESS
 
