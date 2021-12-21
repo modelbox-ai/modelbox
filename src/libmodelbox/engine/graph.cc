@@ -131,14 +131,14 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
   // build node and add link
   Status status = BuildGraph(g);
   if (!status) {
-    auto msg = "build graph from config fail.";
+    auto msg = "build graph from config fail, err: " + status.WrapErrormsgs();
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = IsValidGraph();
   if (!status) {
-    auto msg = "invalid graph.";
+    auto msg = "invalid graph, err: " + status.WrapErrormsgs();
     auto ret = Status(status, msg);
     return ret;
   }
@@ -698,7 +698,7 @@ Status Graph::BuildEdges(std::shared_ptr<GCGraph> g) {
 
     auto status = AddLink(srcNodeName, srcPortName, dstNodeName, dstPortName);
     if (!status) {
-      auto msg = "add link failed.";
+      auto msg = "add link failed, err: " + status.WrapErrormsgs();
       return {status, msg};
     }
   }
@@ -780,13 +780,13 @@ Status Graph::IsValidGraph() const {
 
   auto status = IsAllPortConnect();
   if (!status) {
-    auto msg = "not all port connect.";
+    auto msg = "not all port connect, err: " + status.Errormsg();
     return {status, msg};
   }
 
   status = IsAllNodeConnect();
   if (!status) {
-    auto msg = "not all node connect.";
+    auto msg = "not all node connect, err: " + status.Errormsg();
     return {status, msg};
   }
 
