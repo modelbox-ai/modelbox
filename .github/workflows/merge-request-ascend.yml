@@ -1,0 +1,35 @@
+name: Merge Request Ascend
+
+on:
+  pull_request:
+    branches: 
+      - main
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: modelbox/modelbox-develop-mindspore_1.3.0-cann_5.0.2-ubuntu-x86_64
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
