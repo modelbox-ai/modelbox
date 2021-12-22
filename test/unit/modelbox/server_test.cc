@@ -529,15 +529,13 @@ TEST_F(ModelboxServerTest, JSPlugin) {
   auto graph_stats = flow_stats->AddItem("demo");
 
   // router init
-  size_t route_msg_count = 0;
   auto msg_router = PluginMsgRouter::GetInstance();
   std::promise<bool> recv_notify;
   auto recv_handle = recv_notify.get_future();
   msg_router->RegisterRecvFunc(
-      "test_router",
-      [&route_msg_count, &recv_notify](
-          const std::string &msg_name,
-          const std::shared_ptr<const void> &msg_data, size_t msg_len) {
+      "test_router", [&recv_notify](const std::string &msg_name,
+                                    const std::shared_ptr<const void> &msg_data,
+                                    size_t msg_len) {
         EXPECT_EQ(msg_name, "bill");
         std::string msg_str((const char *)msg_data.get(), msg_len);
         bool parse_json_ok = false;
@@ -576,7 +574,6 @@ TEST_F(ModelboxServerTest, JSPlugin) {
         }
 
         recv_notify.set_value(true);
-        ++route_msg_count;
       });
 
   // session1 begin
@@ -616,9 +613,8 @@ TEST_F(ModelboxServerTest, JSPlugin) {
 
   // modelbox exit
   flow_stats->DelItem("demo");
-  recv_handle.wait();
+  EXPECT_TRUE(recv_handle.get());
   server.Stop();
-  EXPECT_EQ(route_msg_count, 1);
 }
 
 }  // namespace modelbox
