@@ -327,7 +327,7 @@ Status Flow::Build() {
 
   auto ret = graph_->Build(gcgraph);
   if (ret != STATUS_OK) {
-    MBLOG_ERROR << ret;
+    MBLOG_ERROR << "build graph failed, " << ret.WrapErrormsgs();
     return STATUS_FAULT;
   }
 
