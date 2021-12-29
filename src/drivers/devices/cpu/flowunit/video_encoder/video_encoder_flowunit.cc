@@ -287,7 +287,7 @@ modelbox::Status VideoEncoderFlowUnit::DataPre(
 
 modelbox::Status VideoEncoderFlowUnit::GetDestUrl(
     std::shared_ptr<modelbox::DataContext> &data_ctx, std::string &dest_url) {
-  auto stream_meta = data_ctx->GetInputMeta(STREAM_META_INPUT);
+  auto stream_meta = data_ctx->GetInputMeta(FRAME_INFO_INPUT);
   if (stream_meta != nullptr) {
     auto dest_url_ptr =
         std::static_pointer_cast<std::string>(stream_meta->GetMeta(DEST_URL));
@@ -297,7 +297,7 @@ modelbox::Status VideoEncoderFlowUnit::GetDestUrl(
     }
   }
 
-  MBLOG_WARN << "Input meta [dest_url] should be set in [stream_meta] for "
+  MBLOG_WARN << "Input meta [dest_url] should be set in port [in_video_frame] for "
                 "each stream, Use default_dest_url in config is only "
                 "for debug";
   if (default_dest_url_.empty()) {
