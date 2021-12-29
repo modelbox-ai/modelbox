@@ -1,0 +1,20 @@
+[base]
+name = "hello_world"
+device = "cpu" 
+version = "1.0.0" 
+description = "show hello world"
+entry = "hello_world@HelloWorld" 
+type = "python" 
+
+[config]
+item = "value"
+
+[input]
+[input.input1] 
+name = "In_1" 
+type = "string" 
+
+[output]
+[output.output1] 
+name = "Out_1" 
+type = "string" 

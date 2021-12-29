@@ -13,22 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+ 
 cmake_minimum_required(VERSION 3.10)
 
 subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
 
-set(SOLUTION_FLOWUNIT_DIR "${MODELBOX_SOLUTION_INSTALL_DIR}/flowunit")
+set(GRAPH_NAME "hello_world.toml")
+set(TEST_HELLO_WORLD_NAME "test_hello_world.py")
+set(SOLUTION_GRAPH ${CMAKE_CURRENT_BINARY_DIR}/${GRAPH_NAME})
+set(SOLUTION_TEST ${CMAKE_CURRENT_BINARY_DIR}/${TEST_HELLO_WORLD_NAME})
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${GRAPH_NAME}.in ${SOLUTION_GRAPH} @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${TEST_HELLO_WORLD_NAME}.in ${SOLUTION_TEST} @ONLY)
 
-set(SOLUTION_FLOWUNIT_CAR_DETECT_DIR "${SOLUTION_FLOWUNIT_DIR}/car_detect" CACHE INTERNAL "")
-set(SOLUTION_FLOWUNIT_MNIST_DIR "${SOLUTION_FLOWUNIT_DIR}/mnist" CACHE INTERNAL "")
-set(SOLUTION_FLOWUNIT_HELLO_WORLD_DIR "${SOLUTION_FLOWUNIT_DIR}/hello_world" CACHE INTERNAL "")
-
-foreach(subdir ${SUBDIRS})
-    add_subdirectory(${subdir})
-endforeach()
-
-
-if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-    message(FATAL_ERROR "Do not build in source directory!")
-endif()
+install(FILES 
+    ${SOLUTION_GRAPH}  ${SOLUTION_TEST} DESTINATION ${SOLUTION_GRAPHS_SUB}
+    COMPONENT solution
+)
