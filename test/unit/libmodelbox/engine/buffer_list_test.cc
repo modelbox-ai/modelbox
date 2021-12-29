@@ -189,11 +189,12 @@ TEST_F(BufferListTest, EmplaceBack) {
   auto ptr3 = (uint8_t *)(buffer3->MutableData());
   EXPECT_EQ(*ptr3, 123);
 
+  *ptr = 234;
   buffer_list.EmplaceBackFromHost(ptr.get(), 1);
   auto buffer4 = buffer_list.Back();
   EXPECT_NE(buffer4->MutableData(), ptr.get());
   auto ptr4 = (uint8_t *)(buffer4->MutableData());
-  EXPECT_EQ(*ptr4, 123);
+  EXPECT_EQ(*ptr4, 234);
 }
 
 }  // namespace modelbox

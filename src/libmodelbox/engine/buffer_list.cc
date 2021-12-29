@@ -512,7 +512,13 @@ Status BufferList::EmplaceBackFromHost(void* host_data, size_t data_size) {
 
   auto device = dev_mem_->GetDevice();
   auto buffer = std::make_shared<Buffer>(device, dev_mem_flags_);
-  return buffer->BuildFromHost(host_data, data_size);
+  auto ret = buffer->BuildFromHost(host_data, data_size);
+  if (ret != STATUS_OK) {
+    return ret;
+  }
+
+  PushBack(buffer);
+  return STATUS_OK;
 }
 
 std::shared_ptr<Buffer> BufferList::Front() {
