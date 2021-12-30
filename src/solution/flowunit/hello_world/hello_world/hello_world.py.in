@@ -15,10 +15,6 @@
 
 
 import _flowunit as modelbox
-import numpy as np
-import base64
-import json
-import cv2
 
 class HelloWorld(modelbox.FlowUnit):
     def __init__(self):
