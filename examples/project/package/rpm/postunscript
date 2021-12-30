@@ -13,4 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#execute after rpm package uninstalled 
+# the script will be executed after rpm package uninstalled 

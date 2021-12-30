@@ -19,6 +19,7 @@
 
 #include <modelbox/base/configuration.h>
 #include <modelbox/base/driver.h>
+
 #include "modelbox/common/command.h"
 #include "modelbox/common/flowunit_info.h"
 
@@ -70,6 +71,8 @@ class ToolCommandDriver : public ToolCommand {
                                   const std::string &filter_name);
   Status DisplayFlowunitInJson(std::shared_ptr<Configuration> config);
   void DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flowunit);
+  void DisplayFlowunitByFilter(std::shared_ptr<FlowUnitInfo> flowunit_info,
+                               const std::string &filter_name);
 };
 
 }  // namespace modelbox

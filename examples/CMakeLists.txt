@@ -67,3 +67,5 @@ install(PROGRAMS ${EXAMPLE_BIN_FILES}
     DESTINATION ${MODELBOX_TOOLS_PATH}
     COMPONENT document)
 
+add_subdirectory(plugin)
+add_subdirectory(flowunit)

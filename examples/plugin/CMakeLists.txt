@@ -21,6 +21,16 @@ endif()
  
 set(PLUGIN_NAME "example")
 
+if(NOT DEFINED MODELBOX_PROJECT_VERSION_MAJOR)
+    # build from flowunit cmakelists, not from project cmakelists
+    set(MODELBOX_PROJECT_VERSION_MAJOR 0)
+    set(MODELBOX_PROJECT_VERSION_MINOR 0)
+    set(MODELBOX_PROJECT_VERSION_PATCH 1)
+    set(RELEASE_PACKAGE_DIR_ROOT /opt/modelbox/project/default )
+    set(RELEASE_PACKAGE_DIR_LIB ${RELEASE_PACKAGE_DIR_ROOT}/lib ) 
+    set(RELEASE_PACKAGE_DIR_BIN ${RELEASE_PACKAGE_DIR_ROOT}/bin ) 
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-strict-aliasing -std=c++11")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fno-strict-aliasing")
  
