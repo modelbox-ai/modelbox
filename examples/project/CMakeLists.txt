@@ -42,7 +42,7 @@ set(UNIT_COMPONENT ${CMAKE_PROJECT_NAME})
 set(CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME})
 
 # User defined installation path
-set(RELEASE_PACKAGE_DIR_ROOT /opt/modelbox/${CMAKE_PROJECT_NAME} )
+set(RELEASE_PACKAGE_DIR_ROOT /opt/modelbox/project/${CMAKE_PROJECT_NAME} )
 set(RELEASE_PACKAGE_DIR_LIB ${RELEASE_PACKAGE_DIR_ROOT}/lib ) # c++ flowunit so path
 set(RELEASE_PACKAGE_DIR_PYTHON ${RELEASE_PACKAGE_DIR_ROOT}/python ) # python flowunit path
 set(RELEASE_PACKAGE_DIR_MODEL ${RELEASE_PACKAGE_DIR_ROOT}/model ) # inference flowunit path
@@ -52,8 +52,8 @@ set(RELEASE_PACKAGE_DIR_BIN ${RELEASE_PACKAGE_DIR_ROOT}/bin )
 set(RELEASE_PACKAGE_DIR_THIRDPARTY ${RELEASE_PACKAGE_DIR_ROOT}/thirdparty )
 
 find_package(CUDA 10.0)
-find_package(Acl)
-find_package(Dsmi)
+find_package(ACL)
+find_package(DSMI)
 find_package(OpenCV)
 
 add_subdirectory(src)

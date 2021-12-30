@@ -234,17 +234,41 @@ Status ToolCommandDriver::DisplayDriverInList(
   return STATUS_OK;
 }
 
+void ToolCommandDriver::DisplayFlowunitByFilter(
+    std::shared_ptr<FlowUnitInfo> flowunit_info,
+    const std::string &filter_name) {
+  if (flowunit_info == nullptr) {
+    printf("DisplayFlowunitByFilter:  flowunit_info is nullptr.");
+    return;
+  }
+  int index = 0;
+  auto flow_list = flowunit_info->GetFlowUnitManager()->GetAllFlowUnitDesc();
+  for (const auto &flow : flow_list) {
+    auto driver_desc = flow->GetDriverDesc();
+    if (filter_name.length() > 0 && (filter_name != driver_desc->GetName() &&
+                                     filter_name != driver_desc->GetType() &&
+                                     filter_name != flow->GetFlowUnitName())) {
+      continue;
+    }
+    index++;
+    if (index == 1) {
+      printf("FlowUnit Information\t\t:\n");
+    }
+    DisplayFlowunit(flow);
+  }
+}
+
 Status ToolCommandDriver::DisplayDriverInDetails(
     std::shared_ptr<Configuration> config, const std::string &filter_name) {
-  FlowUnitInfo flowunit_info;
+  auto flowunit_info = std::make_shared<FlowUnitInfo>();
   int index = 0;
-  auto status = flowunit_info.Init(config);
+  auto status = flowunit_info->Init(config);
   if (!status) {
     std::cerr << status << std::endl;
     return status;
   }
 
-  auto device_desc_list = flowunit_info.GetDeviceManager()->GetDeviceDescList();
+  auto device_desc_list = flowunit_info->GetDeviceManager()->GetDeviceDescList();
   for (const auto &itr_list : device_desc_list) {
     for (const auto &itr_device : itr_list.second) {
       auto desc = itr_device.second;
@@ -264,7 +288,7 @@ Status ToolCommandDriver::DisplayDriverInDetails(
     }
   }
 
-  auto drivers_list = flowunit_info.GetDriverManager()->GetAllDriverList();
+  auto drivers_list = flowunit_info->GetDriverManager()->GetAllDriverList();
   index = 0;
   for (const auto &driver : drivers_list) {
     auto desc = driver->GetDriverDesc();
@@ -284,21 +308,7 @@ Status ToolCommandDriver::DisplayDriverInDetails(
     printf("\n");
   }
 
-  auto flow_list = flowunit_info.GetFlowUnitManager()->GetAllFlowUnitDesc();
-  index = 0;
-  for (const auto &flow : flow_list) {
-    auto driverdesc = flow->GetDriverDesc();
-    if (filter_name.length() > 0 && (filter_name != driverdesc->GetName() &&
-                                     filter_name != driverdesc->GetType() &&
-                                     filter_name != flow->GetFlowUnitName())) {
-      continue;
-    }
-    index++;
-    if (index == 1) {
-      printf("FlowUnit Information\t\t:\n");
-    }
-    DisplayFlowunit(flow);
-  }
+  DisplayFlowunitByFilter(flowunit_info, filter_name);
 
   return STATUS_OK;
 }
@@ -432,20 +442,15 @@ void ToolCommandDriver::DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flow) {
 
 Status ToolCommandDriver::DisplayFlowunitInDetails(
     std::shared_ptr<Configuration> config, const std::string &filter_name) {
-  FlowUnitInfo flowunit_info;
-  auto status = flowunit_info.Init(config);
+  auto flowunit_info = std::make_shared<FlowUnitInfo>();
+  auto status = flowunit_info->Init(config);
   if (!status) {
     std::cerr << status << std::endl;
     return status;
   }
 
-  auto flow_list = flowunit_info.GetFlowUnitManager()->GetAllFlowUnitDesc();
-  for (const auto &flow : flow_list) {
-    if (filter_name.length() > 0 && filter_name != flow->GetFlowUnitName()) {
-      continue;
-    }
-    DisplayFlowunit(flow);
-  }
+  DisplayFlowunitByFilter(flowunit_info, filter_name);
+
   return STATUS_OK;
 }
 
