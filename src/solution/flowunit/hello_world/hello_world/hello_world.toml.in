@@ -6,12 +6,6 @@ description = "show hello world"
 entry = "hello_world@HelloWorld" 
 type = "python" 
 
-stream = false
-condition  = false
-collapse = false 
-collapse_all = false 
-expand = false 
-
 [config]
 item = "value"
 

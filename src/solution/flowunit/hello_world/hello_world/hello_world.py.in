@@ -15,6 +15,7 @@
 
 
 import _flowunit as modelbox
+import json
 
 class HelloWorld(modelbox.FlowUnit):
     def __init__(self):
@@ -28,7 +29,9 @@ class HelloWorld(modelbox.FlowUnit):
         out_data = data_context.output("Out_1")
 
         for buffer in in_data:
-            out_data.push_back(buffer)
+            msg = json.loads(buffer.as_object().strip(chr(0))).get("msg")
+            out_buffer = modelbox.Buffer(self.get_bind_device(), msg.title())
+            out_data.push_back(out_buffer)
 
         return modelbox.Status.StatusCode.STATUS_SUCCESS
 

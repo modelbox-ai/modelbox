@@ -14,14 +14,13 @@
 # limitations under the License.
 
 
-import base64
 import http.client
 import json
 
 class HttpConfig:
     def __init__(self, msg):
         self.hostIP = "127.0.0.1"
-        self.Port = 8080
+        self.Port = 7770
 
         self.httpMethod = "POST"
         self.requstURL = "/v1/hello_world"
@@ -36,7 +35,7 @@ class HttpConfig:
 
         self.body = json.dumps(self.data)
 
-http_config = HttpConfig("Hello World!")
+http_config = HttpConfig("hello world!")
 
 conn = http.client.HTTPConnection(host=http_config.hostIP, port=http_config.Port)
 conn.request(method=http_config.httpMethod, url=http_config.requstURL, body=http_config.body,
