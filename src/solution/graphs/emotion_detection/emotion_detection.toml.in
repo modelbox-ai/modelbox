@@ -1,0 +1,54 @@
+[driver]
+dir = [
+"@SOLUTION_FLOWUNIT_EMOTION_DIR@"
+]
+[flow]
+desc = "face emotion detection for video"
+[log]
+level="INFO"
+[graph]
+format = "graphviz"
+graphconf = """digraph emotion_detection {
+    video_input[type=flowunit, flowunit=video_input, device=cpu, source_url="@SOLUTION_VIDEO_DIR@/emotion_test_video.mp4"]
+    videodemuxer[type=flowunit, flowunit=video_demuxer, device=cpu]
+    videodecoder[type=flowunit, flowunit=video_decoder, device=cuda, pix_fmt=bgr]
+    custom_resize[type=flowunit, flowunit=custom_resize, device=cpu]
+    image_transpose[type=flowunit, flowunit=packed_planar_transpose, device=cpu]
+    mean[type=flowunit, flowunit=mean, device=cpu, mean="104, 117, 123"]
+    normalize[type=flowunit, flowunit=normalize, device=cpu, standard_deviation_inverse="1, 1, 1"]
+    face_detect[type=flowunit, flowunit=face_detect, device=cuda]
+    face_post[type=flowunit, flowunit=face_post, device=cpu, batch_size=1]
+    expand_box[type=flowunit, flowunit=expand_box, device=cpu]
+    face_resize[type=flowunit, flowunit=resize, device=cpu, image_width=224, image_height=224]
+    face_transpose[type=flowunit, flowunit=packed_planar_transpose, device=cpu]
+    face_mean[type=flowunit, flowunit=mean, device=cpu, mean="123.675, 116.28, 103.53"]
+    face_normalize[type=flowunit, flowunit=normalize, device=cpu, standard_deviation_inverse="0.0171247538316637, 0.0175070028011204, 0.0174291938997821"]
+    emotion_infer[type=flowunit, flowunit=emotion_infer, device=cuda, batch_size=1]
+    collapse_emotion[type=flowunit, flowunit=collapse_emotion, device=cpu]
+    draw_emotion[type=flowunit, flowunit=draw_emotion, device=cpu]
+    videoencoder[type=flowunit, flowunit=video_encoder, device=cpu, encoder=mpeg4, format=mp4, default_dest_url="/tmp/emotion_detection_result.mp4"]
+
+    video_input:out_video_url -> videodemuxer:in_video_url
+    videodemuxer:out_video_packet -> videodecoder:in_video_packet
+    videodecoder:out_video_frame -> custom_resize:in_image
+    custom_resize:out_image -> image_transpose:in_image
+    image_transpose:out_image -> mean:in_data
+    mean:out_data -> normalize:in_data
+    normalize:out_data -> face_detect:input
+    face_detect:out_loc -> face_post:in_loc
+    face_detect:out_conf -> face_post:in_conf
+    face_detect:out_cls -> face_post:in_cls
+    videodecoder:out_video_frame -> face_post:in_image
+    face_post:has_face -> expand_box:in_data
+    expand_box:roi_image -> face_resize:in_image
+    face_resize:out_image -> face_transpose:in_image
+    face_transpose:out_image -> face_mean:in_data
+    face_mean:out_data -> face_normalize:in_data
+    face_normalize:out_data -> emotion_infer:input
+    emotion_infer:confidence -> collapse_emotion:confidence
+    emotion_infer:predicts -> collapse_emotion:predicts
+    collapse_emotion:out_data -> draw_emotion:in_emotion
+    face_post:has_face -> draw_emotion:in_face
+    draw_emotion:out_data -> videoencoder:in_video_frame
+    face_post:no_face -> videoencoder:in_video_frame
+}"""
