@@ -63,7 +63,7 @@ class YoloXPost(modelbox.FlowUnit):
             else:
                 out_data.push_back(buffer_img)
             
-            return modelbox.Status.StatusCode.STATUS_SUCCESS
+        return modelbox.Status.StatusCode.STATUS_SUCCESS
 
     def close(self):
         return modelbox.Status()
