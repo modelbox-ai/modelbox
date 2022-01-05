@@ -55,7 +55,7 @@ set(TEST_LINK_LIBRARIES
 
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
-include_directories(${MODELBOX_SREVER_INCLUDE})
+include_directories(${MODELBOX_SERVER_INCLUDE})
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
