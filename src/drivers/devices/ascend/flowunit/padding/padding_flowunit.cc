@@ -220,6 +220,10 @@ modelbox::Status SetInImageSize(std::shared_ptr<modelbox::Buffer> &in_image,
   }
 
   ori_image.width_stride_ = align_up(ori_image.width_, ASCEND_WIDTH_ALIGN);
+  ori_image.width_stride_ = ori_image.width_stride_ < MINI_WIDTH_STRIDE
+                                ? MINI_WIDTH_STRIDE
+                                : ori_image.width_stride_;
+
   ori_image.height_stride_ = align_up(ori_image.height_, ASCEND_HEIGHT_ALIGN);
   return modelbox::STATUS_SUCCESS;
 }
@@ -299,6 +303,8 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(
     std::shared_ptr<acldvppRoiConfig> &crop_area,
     std::shared_ptr<acldvppRoiConfig> &paste_area) {
   if (need_scale_) {
+    MBLOG_DEBUG << "in image width:" << in_image_size.width_
+                << ",height:" << in_image_size.height_;
     auto w_scale = (float)in_image_size.width_ / out_image_.width_;
     auto h_scale = (float)in_image_size.height_ / out_image_.height_;
     auto scale = std::max(w_scale, h_scale);
@@ -315,6 +321,12 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(
     scale = (float)in_image_size.width_ / dest_roi.width;
     dest_roi.height = in_image_size.height_ / scale;
     dest_roi.height = dest_roi.height >> 1 << 1;
+    dest_roi.width =
+        dest_roi.width > out_image_.width_ ? out_image_.width_ : dest_roi.width;
+    dest_roi.height = dest_roi.height > out_image_.height_ ? out_image_.height_
+                                                           : dest_roi.height;
+    MBLOG_DEBUG << "dest_roi width:" << dest_roi.width
+                << ",height:" << dest_roi.height;
   } else {
     if (in_image_size.width_ > out_image_.width_ ||
         in_image_size.height_ > out_image_.height_) {
