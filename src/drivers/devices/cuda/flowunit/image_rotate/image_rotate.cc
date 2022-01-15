@@ -23,6 +23,13 @@ modelbox::Status ImageRotateGpuFlowUnit::RotateOneImage(
     std::shared_ptr<modelbox::Buffer> input_buffer,
     std::shared_ptr<modelbox::Buffer> output_buffer, int32_t rotate_angle,
     int32_t width, int32_t height) {
+  auto cuda_ret = cudaSetDevice(dev_id_);
+  if (cuda_ret != cudaSuccess) {
+    MBLOG_ERROR << "Set cuda device " << dev_id_ << " failed, cuda ret "
+                << cuda_ret;
+    return modelbox::STATUS_FAULT;
+  }
+
   std::shared_ptr<modelbox::CudaStream> stream;
   if (GetStream(input_buffer, output_buffer, stream) != modelbox::STATUS_OK) {
     return modelbox::STATUS_FAULT;
