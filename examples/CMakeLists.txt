@@ -21,6 +21,7 @@ subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
 file(GLOB_RECURSE EXAMPLE_BIN_FILES ${CMAKE_CURRENT_LIST_DIR}/bin/*)
 
 include_directories(${LIBMODELBOX_INCLUDE})
+include_directories(${MODELBOX_SERVER_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})
 include_directories(${LIBMODELBOX_DEVICE_CPU_INCLUDE})
 include_directories(${LIBMODELBOX_DEVICE_CUDA_INCLUDE})

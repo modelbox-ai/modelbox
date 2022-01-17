@@ -45,7 +45,6 @@ constexpr const char *FLOWUNIT_DESC =
     "\t\tField Name: type,          Type: ModelBoxDataType::MODELBOX_UINT8\n"
     "\t@Constraint: The field value range of this flowunit supports: 'pix_fmt': "
     "[rgb, bgr, nv12], 'layout': [hwc]. ";
-constexpr const char *STREAM_META_INPUT = "stream_meta";
 constexpr const char *DEST_URL = "dest_url";
 constexpr const char *COLOR_CVT_CTX = "color_cvt_ctx";
 constexpr const char *FRAME_INDEX_CTX = "frame_index_ctx";

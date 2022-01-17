@@ -89,7 +89,9 @@ class TorchInferenceFlowUnit : public modelbox::FlowUnit {
 
   modelbox::Status InitConfig(
       const std::shared_ptr<modelbox::Configuration> &config);
-  modelbox::Status LoadModel(const std::string &model_path);
+  modelbox::Status LoadModel(
+      const std::string &model_path,
+      const std::shared_ptr<modelbox::Configuration> &config);
   void FillInput(
       const std::vector<modelbox::FlowUnitInput> &flowunit_input_list);
   void FillOutput(

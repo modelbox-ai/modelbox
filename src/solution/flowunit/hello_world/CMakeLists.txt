@@ -18,16 +18,9 @@ cmake_minimum_required(VERSION 3.10)
 
 subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
 
-set(SOLUTION_FLOWUNIT_DIR "${MODELBOX_SOLUTION_INSTALL_DIR}/flowunit")
-
-set(SOLUTION_FLOWUNIT_CAR_DETECT_DIR "${SOLUTION_FLOWUNIT_DIR}/car_detect" CACHE INTERNAL "")
-set(SOLUTION_FLOWUNIT_MNIST_DIR "${SOLUTION_FLOWUNIT_DIR}/mnist" CACHE INTERNAL "")
-set(SOLUTION_FLOWUNIT_HELLO_WORLD_DIR "${SOLUTION_FLOWUNIT_DIR}/hello_world" CACHE INTERNAL "")
-
 foreach(subdir ${SUBDIRS})
     add_subdirectory(${subdir})
 endforeach()
-
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")

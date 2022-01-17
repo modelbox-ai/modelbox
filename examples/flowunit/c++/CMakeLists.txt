@@ -19,6 +19,20 @@ cmake_minimum_required(VERSION 3.10)
 set(UNIT_NAME "example")
 set(UNIT_DEVICE "cpu")
 
+if(NOT DEFINED MODELBOX_PROJECT_VERSION_MAJOR)
+    # build from flowunit cmakelists, not from project cmakelists
+    set(MODELBOX_PROJECT_VERSION_MAJOR 0)
+    set(MODELBOX_PROJECT_VERSION_MINOR 0)
+    set(MODELBOX_PROJECT_VERSION_PATCH 1)
+    set(RELEASE_PACKAGE_DIR_ROOT /opt/modelbox/project/default )
+    set(RELEASE_PACKAGE_DIR_LIB ${RELEASE_PACKAGE_DIR_ROOT}/lib ) 
+    set(RELEASE_PACKAGE_DIR_BIN ${RELEASE_PACKAGE_DIR_ROOT}/bin ) 
+    if(${UNIT_DEVICE} STREQUAL "cuda" )
+        find_package(CUDA 10.0)
+    endif()
+endif()
+
+
 if(${UNIT_DEVICE} STREQUAL "cuda" )
     if(NOT CUDA_FOUND)
         message(FATAL_ERROR "cannot find cuda in current environment ,please checkout you flowunit device type!")
@@ -54,7 +68,7 @@ target_link_libraries(${UNIT_SHARED} pthread)
 target_link_libraries(${UNIT_SHARED} rt)
 target_link_libraries(${UNIT_SHARED} dl)
 target_link_libraries(${UNIT_SHARED} modelbox)
-target_link_libraries(${UNIT_SHARED} modelbox-device-{UNIT_DEVICE})
+target_link_libraries(${UNIT_SHARED} modelbox-device-${UNIT_DEVICE})
 
 install(TARGETS ${UNIT_SHARED} 
     COMPONENT ${UNIT_COMPONENT}

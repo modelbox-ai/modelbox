@@ -15,13 +15,12 @@
  */
 
 #include "crop_flowunit.h"
-
 #include "image_process.h"
 #include "modelbox/flowunit_api_helper.h"
 
 using namespace imageprocess;
-
-const std::string output_img_pix_fmt = "nv12";
+const int MIN_WIDTH_STRIDE = 32;
+const std::string OUTPUT_IMG_PIX_FMT = "nv12";
 
 modelbox::Status CropFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
@@ -75,8 +74,9 @@ modelbox::Status CropFlowUnit::PrepareOutput(
     auto box_ptr = (BoxInt32 *)box_buffer->ConstData();
     size_t bytes = 0;
     int32_t align_w = align_up(box_ptr->w, ASCEND_WIDTH_ALIGN);
+    align_w = std::max(align_w, MIN_WIDTH_STRIDE);
     int32_t align_h = align_up(box_ptr->h, ASCEND_HEIGHT_ALIGN);
-    auto ret = GetImageBytes(output_img_pix_fmt, align_w, align_h, bytes);
+    auto ret = GetImageBytes(OUTPUT_IMG_PIX_FMT, align_w, align_h, bytes);
     if (!ret) {
       return ret;
     }
@@ -119,7 +119,7 @@ modelbox::Status CropFlowUnit::ProcessOneImg(
     return ret;
   }
 
-  return SetOutImgMeta(out_image, output_img_pix_fmt, out_img_desc);
+  return SetOutImgMeta(out_image, OUTPUT_IMG_PIX_FMT, out_img_desc);
 }
 
 modelbox::Status CropFlowUnit::GetInputDesc(
@@ -162,10 +162,11 @@ modelbox::Status CropFlowUnit::GetOutputDesc(
   }
 
   auto align_w = align_up(box_ptr->w, ASCEND_WIDTH_ALIGN);
+  align_w = std::max(align_w, MIN_WIDTH_STRIDE);
   auto align_h = align_up(box_ptr->h, ASCEND_HEIGHT_ALIGN);
   out_img_desc = CreateImgDesc(
       out_image->GetBytes(), (void *)out_image->MutableData(),
-      output_img_pix_fmt, ImageShape{box_ptr->w, box_ptr->h, align_w, align_h},
+      OUTPUT_IMG_PIX_FMT, ImageShape{box_ptr->w, box_ptr->h, align_w, align_h},
       ImgDescDestroyFlag::DESC_ONLY);
   if (out_img_desc == nullptr) {
     return modelbox::StatusError;

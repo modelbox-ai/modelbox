@@ -1,0 +1,21 @@
+[graph]
+format = "graphviz"
+graphconf = '''digraph hello_world_diagraph {
+    queue_size=32
+    batch_size=1
+    httpserver_sync_receive[type=flowunit, flowunit=httpserver_sync_receive, device=cpu, deviceid=0, time_out_ms=5000, endpoint="http://0.0.0.0:7770", max_requests=100]
+    hello_world[type=flowunit, flowunit=hello_world, device=cpu, deviceid=0]
+    httpserver_sync_reply[type=flowunit, flowunit=httpserver_sync_reply, device=cpu, deviceid=0]
+
+    httpserver_sync_receive:out_request_info -> hello_world:In_1
+    hello_world:Out_1 -> httpserver_sync_reply:in_reply_info
+}
+'''
+[driver]
+dir = [
+    "@SOLUTION_FLOWUNIT_HELLO_WORLD_DIR@/hello_world"
+    ]
+[log]
+level="INFO"
+[flow]
+desc = "HELLO_WORLD"

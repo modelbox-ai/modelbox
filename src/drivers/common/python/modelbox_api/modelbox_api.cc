@@ -594,8 +594,7 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
                       auto buffer = std::make_shared<Buffer>(device);
                       const char *s = str.c_str();
                       Py_ssize_t len = str.length();
-                      buffer->BuildFromHost(const_cast<char *>(s), len,
-                                            [str](void *data) {});
+                      buffer->BuildFromHost(const_cast<char *>(s), len);
                       buffer->SetGetBufferType(modelbox::BufferEnumType::STR);
                       return buffer;
                     }),
