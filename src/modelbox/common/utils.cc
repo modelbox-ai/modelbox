@@ -15,8 +15,6 @@
  */
 
 #include "modelbox/common/utils.h"
-#include "modelbox/base/utils.h"
-#include "securec.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -24,6 +22,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "modelbox/base/utils.h"
+#include "securec.h"
 
 namespace modelbox {
 
@@ -107,11 +108,102 @@ int modelbox_sig_register(const int sig_list[], int sig_num,
   for (i = 0; i < sig_num; i++) {
     memset_s(&sig_act, sizeof(sig_act), 0, sizeof(sig_act));
     sig_act.sa_sigaction = action;
-    sig_act.sa_flags = SA_SIGINFO | SA_RESTART;
+    sig_act.sa_flags = SA_SIGINFO;
 
     if (sigaction(sig_list[i], &sig_act, NULL) < 0) {
       fprintf(stderr, "Register signal %d failed.", sig_list[i]);
     }
+  }
+
+  return 0;
+}
+
+#if defined(__aarch64__)
+enum {
+  REG_R0 = 0,
+  REG_R1,
+  REG_R2,
+  REG_R3,
+  REG_R4,
+  REG_R5,
+  REG_R6,
+  REG_R7,
+  REG_R8,
+  REG_R9,
+  REG_R10,
+  REG_R11,
+  REG_R12,
+  REG_R13,
+  REG_R14,
+  REG_R15,
+  REG_R16,
+  REG_R17,
+  REG_R18,
+  REG_R19,
+  REG_R20,
+  REG_R21,
+  REG_R22,
+  REG_R23,
+  REG_R24,
+  REG_R25,
+  REG_R26,
+  REG_R27,
+  REG_R28,
+  REG_R29,
+  REG_R30
+};
+#endif
+
+int modelbox_cpu_register_data(char *buf, int buf_size, ucontext_t *ucontext) {
+  greg_t *gregs = nullptr;
+  if (buf == nullptr || buf_size <= 0 || ucontext == nullptr) {
+    return -1;
+  }
+
+  int len = -1;
+  gregs = ucontext->uc_mcontext.gregs;
+#if defined(__aarch64__)
+  len = snprintf_s(
+      buf, buf_size, buf_size - 1,
+      "[R0]=0x%.16lx\t\t[R1]=0x%.16lx\t\t[R2]=0x%.16lx\t\t[R3]=0x%.16lx\n"
+      "[R4]=0x%.16lx\t\t[R5]=0x%.16lx\t\t[R6]=0x%.16lx\t\t[R7]=0x%.16lx\n"
+      "[R8]=0x%.16lx\t\t[R9]=0x%.16lx\t\t[R10]=0x%.16lx\t[R11]=0x%.16lx\n"
+      "[R12]=0x%.16lx\t\t[R13]=0x%.16lx\t[R14]=0x%.16lx\t[R15]=0x%.16lx\n"
+      "[R16]=0x%.16lx\t\t[R17]=0x%.16lx\t[R18]=0x%.16lx\t[R19]=0x%.16lx\n"
+      "[R20]=0x%.16lx\t\t[R21]=0x%.16lx\t[R22]=0x%.16lx\t[R23]=0x%.16lx\n"
+      "[R24]=0x%.16lx\t\t[R25]=0x%.16lx\t[R26]=0x%.16lx\t[R27]=0x%.16lx\n"
+      "[R28]=0x%.16lx\t\t[R29]=0x%.16lx\t[R30]=0x%.16lx\n"
+      "sp: 0x%.16llx\t\tpc: 0x%.16llx\t\tpstate: 0x%.16llx\tfault_address: "
+      "0x%.16llx\n",
+      *(gregs + REG_R1), *(gregs + REG_R2), *(gregs + REG_R3),
+      *(gregs + REG_R4), *(gregs + REG_R5), *(gregs + REG_R6),
+      *(gregs + REG_R7), *(gregs + REG_R8), *(gregs + REG_R9),
+      *(gregs + REG_R10), *(gregs + REG_R11), *(gregs + REG_R12),
+      *(gregs + REG_R13), *(gregs + REG_R14), *(gregs + REG_R15),
+      *(gregs + REG_R16), *(gregs + REG_R17), *(gregs + REG_R18),
+      *(gregs + REG_R19), *(gregs + REG_R20), *(gregs + REG_R21),
+      *(gregs + REG_R22), *(gregs + REG_R23), *(gregs + REG_R24),
+      *(gregs + REG_R25), *(gregs + REG_R26), *(gregs + REG_R27),
+      *(gregs + REG_R28), *(gregs + REG_R29), *(gregs + REG_R30),
+      ucontext->uc_mcontext.sp, ucontext->uc_mcontext.pc,
+      ucontext->uc_mcontext.pstate, ucontext->uc_mcontext.fault_address);
+#elif defined(__x86_64__)
+  len = snprintf_s(
+      buf, buf_size, buf_size - 1,
+      "[R8]=0x%.16lx\t\t[R9]=0x%.16lx\t\t[R10]=0x%.16lx\t[R11]=0x%.16lx\n"
+      "[R12]=0x%.16lx\t[R13]=0x%.16lx\t[R14]=0x%.16lx\t[R15]=0x%.16lx\n"
+      "[RDI]=0x%.16lx\t[RSI]=0x%.16lx\t[RBP]=0x%.16lx\t[RBX]=0x%.16lx\n"
+      "[RDX]=0x%.16lx\t[RAX]=0x%.16lx\t[RCX]=0x%.16lx\t[RSP]=0x%.16lx\n"
+      "[RIP]=0x%.16lx\t[RFLAGS]=0x%.16lx\n",
+      *(gregs + REG_R8), *(gregs + REG_R9), *(gregs + REG_R10),
+      *(gregs + REG_R12), *(gregs + REG_R13), *(gregs + REG_R14),
+      *(gregs + REG_R15), *(gregs + REG_RDI), *(gregs + REG_RSI),
+      *(gregs + REG_RBP), *(gregs + REG_RBX), *(gregs + REG_RDX),
+      *(gregs + REG_RAX), *(gregs + REG_RCX), *(gregs + REG_RSP),
+      *(gregs + REG_RIP), *(gregs + REG_EFL));
+#endif
+  if (len < 0 || len >= buf_size) {
+    return -1;
   }
 
   return 0;

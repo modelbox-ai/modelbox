@@ -45,6 +45,15 @@ int modelbox_sig_register(const int sig_list[], int sig_num,
                           void (*action)(int, siginfo_t *, void *));
 
 /**
+ * @brief Get cpu register data in string format
+ * @param buf output message buffer
+ * @param buf_size max size of buffer
+ * @param ucontext signal context
+ * @return result.
+ */
+int modelbox_cpu_register_data(char *buf, int buf_size, ucontext_t *ucontext);
+
+/**
  * @brief Custom stream
  */
 class OutStream {

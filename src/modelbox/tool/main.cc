@@ -111,13 +111,18 @@ static void modelbox_tool_sig_handler(int volatile sig_no, siginfo_t *sig_info,
     case SIGFPE:
     case SIGABRT:
     case SIGBUS:
-    case SIGILL:
+    case SIGILL: {
+      char buf[4096];
       MBLOG_ERROR << "Segment fault"
                   << ", Signal: " << sig_no << ", Addr: " << sig_info->si_addr
                   << ", Code: " << sig_info->si_code << ", Caused by: ";
+      if (modelbox::modelbox_cpu_register_data(buf, sizeof(buf),
+                                               (ucontext_t *)ptr) == 0) {
+        MBLOG_ERROR << "CPU Register Info:\n" << buf;
+      }
       MBLOG_STACKTRACE(modelbox::LOG_FATAL);
       sleep(1);
-      break;
+    } break;
     default:
       break;
   }

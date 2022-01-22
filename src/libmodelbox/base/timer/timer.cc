@@ -313,7 +313,7 @@ void Timer::WaitTimerTask(std::unique_lock<std::mutex> &lock,
       MBLOG_WARN << "timer period: " << timer->GetPeriod();
       timer->SetHitTime(now);
     } else if (time_diff > timer->GetPeriod() + timer->GetDelay()) {
-      MBLOG_WARN << "timer [" << timer->GetName() << "] stall for " << time_diff
+      MBLOG_DEBUG << "timer [" << timer->GetName() << "] stall for " << time_diff
                  << "ms";
     }
   }
