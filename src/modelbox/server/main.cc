@@ -86,13 +86,18 @@ static void modelbox_sig_handler(int volatile sig_no, siginfo_t *sig_info,
     case SIGFPE:
     case SIGABRT:
     case SIGBUS:
-    case SIGILL:
+    case SIGILL: {
+      char buf[4096];
       MBLOG_ERROR << "Segment fault"
                   << ", Signal: " << sig_no << ", Addr: " << sig_info->si_addr
                   << ", Code: " << sig_info->si_code << ", Caused by: ";
+      if (modelbox::modelbox_cpu_register_data(buf, sizeof(buf),
+                                               (ucontext_t *)ptr) == 0) {
+        MBLOG_ERROR << "CPU Register Info:\n" << buf;
+      }
       MBLOG_STACKTRACE(modelbox::LOG_FATAL);
       sleep(1);
-      break;
+    } break;
     default:
       break;
   }
@@ -169,17 +174,18 @@ int modelbox_run(std::shared_ptr<Server> server, const std::string &keep_name,
   std::shared_ptr<TimerTask> heart_beattask = std::make_shared<TimerTask>();
   heart_beattask->Callback([&]() { app_monitor_heartbeat(); });
 
-  auto future = std::async(std::launch::async, [heart_beattask, keep_name, keep_time]() {
-    if (keep_time > 0 && keep_name.length() > 0) {
-      if (app_monitor_init(keep_name.c_str()) != 0) {
-        MBLOG_ERROR << "init app monitor failed.";
-        return;
-      }
+  auto future =
+      std::async(std::launch::async, [heart_beattask, keep_name, keep_time]() {
+        if (keep_time > 0 && keep_name.length() > 0) {
+          if (app_monitor_init(keep_name.c_str()) != 0) {
+            MBLOG_ERROR << "init app monitor failed.";
+            return;
+          }
 
-      sleep(1);
-      kServerTimer->Schedule(heart_beattask, 0, 1000 * keep_time);
-    }
-  });
+          sleep(1);
+          kServerTimer->Schedule(heart_beattask, 0, 1000 * keep_time);
+        }
+      });
 
   // run timer loop.
   kServerTimer->Run();
