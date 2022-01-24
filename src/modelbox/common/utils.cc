@@ -161,8 +161,8 @@ int modelbox_cpu_register_data(char *buf, int buf_size, ucontext_t *ucontext) {
   }
 
   int len = -1;
-  gregs = ucontext->uc_mcontext.gregs;
 #if defined(__aarch64__)
+  gregs = (greg_t *)&(ucontext->uc_mcontext.regs);
   len = snprintf_s(
       buf, buf_size, buf_size - 1,
       "[R0]=0x%.16lx\t\t[R1]=0x%.16lx\t\t[R2]=0x%.16lx\t\t[R3]=0x%.16lx\n"
@@ -188,6 +188,7 @@ int modelbox_cpu_register_data(char *buf, int buf_size, ucontext_t *ucontext) {
       ucontext->uc_mcontext.sp, ucontext->uc_mcontext.pc,
       ucontext->uc_mcontext.pstate, ucontext->uc_mcontext.fault_address);
 #elif defined(__x86_64__)
+  gregs = (greg_t *)&(ucontext->uc_mcontext.gregs);
   len = snprintf_s(
       buf, buf_size, buf_size - 1,
       "[R8]=0x%.16lx\t\t[R9]=0x%.16lx\t\t[R10]=0x%.16lx\t[R11]=0x%.16lx\n"
