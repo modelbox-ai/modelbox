@@ -1860,6 +1860,7 @@ void MockFlow::Register_Stream_Tail_Filter_Flowunit() {
   auto mock_desc =
       GenerateFlowunitDesc("stream_tail_filter", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
+  mock_desc->SetMaxBatchSize(16);
   auto process_func =
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
@@ -2496,6 +2497,7 @@ void MockFlow::Register_Stream_In_Process_Error_Flowunit() {
   auto mock_desc =
       GenerateFlowunitDesc("stream_in_process_error", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
+  mock_desc->SetMaxBatchSize(16);
   auto data_pre_func =
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
@@ -2539,6 +2541,7 @@ void MockFlow::Register_Stream_Process_Error_Flowunit() {
   auto mock_desc =
       GenerateFlowunitDesc("stream_process_error", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
+  mock_desc->SetMaxBatchSize(16);
 
   auto process_func =
       [=](std::shared_ptr<DataContext> data_ctx,
@@ -2588,6 +2591,7 @@ void MockFlow::Register_Error_End_Flowunit() {
 void MockFlow::Register_Stream_Process_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("stream_process", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
+  mock_desc->SetMaxBatchSize(16);
 
   auto process_func =
       [=](std::shared_ptr<DataContext> data_ctx,

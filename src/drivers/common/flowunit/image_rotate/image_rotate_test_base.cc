@@ -30,6 +30,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
   {
     auto mock_desc = GenerateFlowunitDesc("test_0_1_rotate", {}, {"out_1"});
     mock_desc->SetFlowType(STREAM);
+    mock_desc->SetMaxBatchSize(16);
     auto open_func = [=](const std::shared_ptr<Configuration>& opts,
                          std::shared_ptr<MockFlowUnit> mock_flowunit) {
       auto ext_data = mock_flowunit->CreateExternalData();
@@ -104,6 +105,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
   {
     auto mock_desc = GenerateFlowunitDesc("test_1_0_rotate", {"in_1"}, {});
     mock_desc->SetFlowType(STREAM);
+    mock_desc->SetMaxBatchSize(16);
 
     auto process_func =
         [=](std::shared_ptr<DataContext> data_ctx,

@@ -453,7 +453,17 @@ Status FlowUnitGroup::Open(const CreateExternalDataFunc &create_func) {
   bool need_check_output = false;
   if (config_) {
     batch_size_ = config_->GetProperty<uint32_t>("batch_size", 1);
+    uint32_t max_batch_size =
+        GetExecutorUnit()->GetFlowUnitDesc()->GetMaxBatchSize();
+    if (max_batch_size != 0 && batch_size_ > max_batch_size) {
+      batch_size_ = max_batch_size;
+    }
     need_check_output = config_->GetProperty<bool>("need_check_output", false);
+  }
+
+  auto node = node_.lock();
+  if (node != nullptr) {
+    MBLOG_INFO << "node: " << node->GetName() << " get batch size is " << batch_size_;
   }
 
   balancer_ = FlowUnitBalancerFactory::GetInstance().CreateBalancer();
