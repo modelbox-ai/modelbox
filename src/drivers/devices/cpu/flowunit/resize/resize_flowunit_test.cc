@@ -73,6 +73,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
     mock_flowunit_desc->SetFlowUnitName("test_0_1_resize");
     mock_flowunit_desc->AddFlowUnitOutput(modelbox::FlowUnitOutput("Out_1"));
     mock_flowunit_desc->SetFlowType(STREAM);
+    mock_flowunit_desc->SetMaxBatchSize(16);
     mock_flowunit->SetFlowUnitDesc(mock_flowunit_desc);
     std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
     mock_flowunit_wp = mock_flowunit;
@@ -200,6 +201,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
     mock_flowunit_desc->SetFlowUnitName("test_1_0_resize");
     mock_flowunit_desc->AddFlowUnitInput(modelbox::FlowUnitInput("In_1"));
     mock_flowunit_desc->SetFlowType(STREAM);
+    mock_flowunit_desc->SetMaxBatchSize(16);
     mock_flowunit->SetFlowUnitDesc(mock_flowunit_desc);
     std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
     mock_flowunit_wp = mock_flowunit;

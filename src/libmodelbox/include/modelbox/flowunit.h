@@ -263,7 +263,8 @@ class FlowUnitDesc {
         is_collapse_all_(false),
         is_exception_visible_(false),
         is_input_contiguous_{true},
-        is_resource_nice_{true} {};
+        is_resource_nice_{true},
+        max_batch_size_{0} {};
   virtual ~FlowUnitDesc(){};
 
   const std::string GetFlowUnitName() { return flowunit_name_; };
@@ -302,6 +303,18 @@ class FlowUnitDesc {
   const LoopType GetLoopType() { return loop_type_; };
 
   const std::string GetGroupType() { return group_type_; };
+
+  const uint32_t GetMaxBatchSize() {
+    if (max_batch_size_ != 0) {
+      return max_batch_size_;
+    }
+
+    // set default max_batch_size
+    if (flow_type_ == STREAM) {
+      max_batch_size_ = 1;
+    }
+    return max_batch_size_;
+  };
 
   std::vector<FlowUnitInput> &GetFlowUnitInput() {
     return flowunit_input_list_;
@@ -391,6 +404,14 @@ class FlowUnitDesc {
     flowunit_description_ = description;
   }
 
+  void SetMaxBatchSize(const uint32_t &max_batch_size) {
+    if (max_batch_size == 0) {
+      MBLOG_ERROR << "max_batch_size must be greater than zero.";
+      return;
+    }
+    max_batch_size_ = max_batch_size;
+  }
+
  protected:
   FlowOutputType output_type_;
 
@@ -415,6 +436,7 @@ class FlowUnitDesc {
   std::shared_ptr<DriverDesc> driver_desc_;
   bool is_input_contiguous_;
   bool is_resource_nice_;
+  uint32_t max_batch_size_;
 
  private:
   Status CheckInputDuplication(const FlowUnitInput &flowunit_input);
