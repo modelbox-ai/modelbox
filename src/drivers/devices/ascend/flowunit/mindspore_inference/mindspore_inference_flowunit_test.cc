@@ -227,8 +227,8 @@ TEST_F(InferenceMindSporeFlowUnitTest, RunUnit) {
           mindspore_inference[type=flowunit, flowunit=mindspore_inference, device=ascend, deviceid=0, batch_size=2]
           check_ms_infer_result[type=flowunit, flowunit=check_ms_infer_result, device=cpu, deviceid=0, batch_size=2]  
                                   
-          prepare_ms_infer_data:out1 -> mindspore_inference:"8_7_5_construct_wrapper_x_"
-          prepare_ms_infer_data:out2 -> mindspore_inference:"8_7_5_construct_wrapper_y_"
+          prepare_ms_infer_data:out1 -> mindspore_inference:x_
+          prepare_ms_infer_data:out2 -> mindspore_inference:y_
           mindspore_inference:output_0_trans_Cast_2_0 -> check_ms_infer_result:in
         }'''
     format = "graphviz"
@@ -238,7 +238,8 @@ TEST_F(InferenceMindSporeFlowUnitTest, RunUnit) {
   EXPECT_EQ(ret, STATUS_STOP);
 }
 
-TEST_F(InferenceMindSporeFlowUnitTest, RunUnitEncrypt) {
+// wait for mindspore update change AclEnvGuard shared_ptr into weak_ptr 
+TEST_F(InferenceMindSporeFlowUnitTest, DISABLED_RunUnitEncrypt) {
   std::string toml_content = R"(
     [driver]
     skip-default=true
@@ -250,8 +251,8 @@ TEST_F(InferenceMindSporeFlowUnitTest, RunUnitEncrypt) {
           mindspore_inference[type=flowunit, flowunit=mindspore_inference_encrypt, device=ascend, deviceid=0, batch_size=2]
           check_ms_infer_result[type=flowunit, flowunit=check_ms_infer_result, device=cpu, deviceid=0, batch_size=2]  
                                   
-          prepare_ms_infer_data:out1 -> mindspore_inference:"8_7_5_construct_wrapper_x_"
-          prepare_ms_infer_data:out2 -> mindspore_inference:"8_7_5_construct_wrapper_y_"
+          prepare_ms_infer_data:out1 -> mindspore_inference:x_
+          prepare_ms_infer_data:out2 -> mindspore_inference:y_
           mindspore_inference:output_0_trans_Cast_2_0 -> check_ms_infer_result:in
         }'''
     format = "graphviz"
