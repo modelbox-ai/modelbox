@@ -15,12 +15,12 @@ passwd = "seBOMRLhAcPEElOAwDYSRyad0Szrke73OPrbK0DES0d50VSA7qRaC3lKukKkLZQL9GU3Q6
 
 [input]
 [input.input1]
-name = "8_7_5_construct_wrapper_x_"
+name = "x_"
 type = "float"
 device = "cpu"
 
 [input.input2]
-name = "8_7_5_construct_wrapper_y_"
+name = "y_"
 type = "float"
 device = "cpu"
 

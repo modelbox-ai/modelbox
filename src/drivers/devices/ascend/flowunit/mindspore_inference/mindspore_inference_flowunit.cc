@@ -107,7 +107,10 @@ modelbox::Status MindSporeInferenceFlowUnit::Process(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status MindSporeInferenceFlowUnit::Close() { return modelbox::STATUS_OK; }
+modelbox::Status MindSporeInferenceFlowUnit::Close() { 
+  infer_ = nullptr;
+  return modelbox::STATUS_OK; 
+}
 
 void MindSporeInferenceFlowUnitDesc::SetModelEntry(
     const std::string model_entry) {

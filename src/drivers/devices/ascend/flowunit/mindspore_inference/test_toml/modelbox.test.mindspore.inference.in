@@ -8,16 +8,16 @@ type = "inference"
 virtual_type = "mindspore"
 
 [config]
-input_format = "nchw"
+input_format = "NCHW"
 
 [input]
 [input.input1]
-name = "8_7_5_construct_wrapper_x_"
+name = "x_"
 type = "float"
 device = "cpu"
 
 [input.input2]
-name = "8_7_5_construct_wrapper_y_"
+name = "y_"
 type = "float"
 device = "cpu"
 
