@@ -11,6 +11,7 @@ condition  = false
 collapse = false 
 collapse_all = false 
 expand = false 
+exception_visible = true
 
 [config]
 item = "value"

@@ -9,6 +9,7 @@ level="INFO"
 [graph]
 format = "graphviz"
 graphconf = """digraph emotion_detection {
+    node [shape=Mrecord]
     video_input[type=flowunit, flowunit=video_input, device=cpu, source_url="@SOLUTION_VIDEO_DIR@/emotion_test_video.mp4"]
     videodemuxer[type=flowunit, flowunit=video_demuxer, device=cpu]
     videodecoder[type=flowunit, flowunit=video_decoder, device=cuda, pix_fmt=bgr]
