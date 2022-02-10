@@ -34,18 +34,23 @@ class MnistPreprocess(modelbox.FlowUnit):
         for buffer in in_data:
             # get image from request body
             request_body = json.loads(buffer.as_object().strip(chr(0)))
-            img_base64 = request_body["image_base64"]
-            img_file = base64.b64decode(img_base64)
-
-            # reshape img
-            img = cv2.imdecode(np.fromstring(img_file, np.uint8), cv2.IMREAD_GRAYSCALE)
-            img = cv2.resize(img, (28, 28))
-            infer_data = np.array([255 - img], dtype=np.float32)
-            infer_data = np.reshape(infer_data, (784,)) / 255.
             
-            # build buffer
-            add_buffer = modelbox.Buffer(self.get_bind_device(), infer_data)
-            out_data.push_back(add_buffer)
+            if  request_body.get("image_base64"):
+                img_base64 = request_body["image_base64"]
+                img_file = base64.b64decode(img_base64)
+
+                # reshape img
+                img = cv2.imdecode(np.fromstring(img_file, np.uint8), cv2.IMREAD_GRAYSCALE)
+                img = cv2.resize(img, (28, 28))
+                infer_data = np.array([255 - img], dtype=np.float32)
+                infer_data = np.reshape(infer_data, (784,)) / 255.
+                
+                # build buffer
+                add_buffer = modelbox.Buffer(self.get_bind_device(), infer_data)
+                out_data.push_back(add_buffer)
+            else:
+                print("wrong key of request_body")
+                return modelbox.Status.StatusCode.STATUS_FAULT
 
         return modelbox.Status.StatusCode.STATUS_SUCCESS
 
