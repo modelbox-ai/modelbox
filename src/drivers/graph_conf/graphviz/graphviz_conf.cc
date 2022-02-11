@@ -138,8 +138,8 @@ std::shared_ptr<Agraph_t> GraphvizConfig::LoadGraphFromFile() {
   FILE *fp = fopen(file.c_str(), "r");
   if (fp == NULL) {
     MBLOG_ERROR << "open file failed, file: " << file << ", "
-                << strerror(errno);
-    StatusError = {STATUS_BADCONF, strerror(errno)};
+                << StrError(errno);
+    StatusError = {STATUS_BADCONF, StrError(errno)};
     return nullptr;
   }
 

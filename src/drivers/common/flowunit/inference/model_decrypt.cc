@@ -52,7 +52,7 @@ Status ModelDecryption::Init(const std::string& model_path,
   fmodel_.open(model_path, std::ios::binary);
   if (fmodel_.fail() || !fmodel_.is_open()) {
     MBLOG_ERROR << "open model '" << model_path << "' failed, "
-                << strerror(errno);
+                << StrError(errno);
     return STATUS_FAULT;
   }
   fmodel_.seekg(0, std::ios::end);

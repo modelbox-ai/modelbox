@@ -259,7 +259,7 @@ std::shared_ptr<FILE> ObsClient::OpenLocalFile(
 
   if (modelbox::CreateDirectory(path) != modelbox::STATUS_OK) {
     MBLOG_ERROR << "Failed to create folder for obs object (" << full_file_path
-                << "), error info: " << strerror(errno);
+                << "), error info: " << modelbox::StrError(errno);
     return nullptr;
   }
 
@@ -267,7 +267,7 @@ std::shared_ptr<FILE> ObsClient::OpenLocalFile(
   FILE *out_file = fopen(path_name.c_str(), "wb");
   if (!out_file) {
     MBLOG_ERROR << "Failed to create file " << full_file_path
-                << ", because: " << strerror(errno);
+                << ", because: " << modelbox::StrError(errno);
     return nullptr;
   }
   auto file_ptr = std::shared_ptr<FILE>(out_file, [](FILE *file) {

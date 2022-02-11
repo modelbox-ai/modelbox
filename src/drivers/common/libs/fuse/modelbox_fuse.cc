@@ -190,7 +190,7 @@ Status ModelBoxFuse::InitLowLevelFuse() {
   if (chan == nullptr) {
     std::string err = "mount directory ";
     err += mount_point_ + " failed, ";
-    err += strerror(errno);
+    err += StrError(errno);
     MBLOG_ERROR << err;
     if (errno == ENOENT) {
       return {STATUS_NOENT, err};

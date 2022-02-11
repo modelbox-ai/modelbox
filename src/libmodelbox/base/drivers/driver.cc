@@ -377,7 +377,7 @@ Status Drivers::Scan(const std::string &path, const std::string &filter) {
   struct stat s;
   auto ret = lstat(path.c_str(), &s);
   if (ret) {
-    auto err_msg = "lstat " + path + " failed, errno:" + strerror(errno);
+    auto err_msg = "lstat " + path + " failed, errno:" + StrError(errno);
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
@@ -596,7 +596,7 @@ bool Drivers::CheckPathAndMagicCode() {
     struct stat s;
     auto ret = lstat(dir.c_str(), &s);
     if (ret) {
-      MBLOG_ERROR << "lstat " << dir << " failed, errno:" << strerror(errno);
+      MBLOG_ERROR << "lstat " << dir << " failed, errno:" << StrError(errno);
       return false;
     }
 
@@ -622,7 +622,7 @@ bool Drivers::CheckPathAndMagicCode() {
       struct stat buf;
       auto ret = lstat(driver_file.c_str(), &buf);
       if (ret) {
-        MBLOG_DEBUG << "lstat " << dir << " failed, errno:" << strerror(errno);
+        MBLOG_DEBUG << "lstat " << dir << " failed, errno:" << StrError(errno);
         continue;
       }
 

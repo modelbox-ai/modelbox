@@ -86,7 +86,7 @@ modelbox::Status ToolCommandServer::InitClient(const std::string &connect_url) {
   struct stat stat_buf;
   if (stat(connect_url.c_str(), &stat_buf) < 0) {
     auto errmsg = "cannot access control file: " + connect_url +
-                  ", error: " + strerror(errno) + ". Maybe server is down";
+                  ", error: " + modelbox::StrError(errno) + ". Maybe server is down";
     std::cout << errmsg << std::endl;
     return {modelbox::STATUS_PERMIT};
   }
@@ -94,7 +94,7 @@ modelbox::Status ToolCommandServer::InitClient(const std::string &connect_url) {
   int fd = socket(AF_UNIX, SOCK_DGRAM, 0);
   if (fd <= 0) {
     std::string errmsg = "create socket: ";
-    errmsg += strerror(errno);
+    errmsg += modelbox::StrError(errno);
     MBLOG_ERROR << errmsg;
     ret = {modelbox::STATUS_FAULT, errmsg};
     return ret;
@@ -115,14 +115,14 @@ modelbox::Status ToolCommandServer::InitClient(const std::string &connect_url) {
       bind(fd, (struct sockaddr *)&client_sockaddr, sizeof(client_sockaddr));
   if (rc != 0) {
     std::string errmsg = "bind socket: ";
-    errmsg += strerror(errno);
+    errmsg += modelbox::StrError(errno);
     MBLOG_ERROR << errmsg;
     ret = {modelbox::STATUS_FAULT, errmsg};
     return ret;
   }
   auto ss = chmod(client_sockaddr.sun_path, 0660);
   if (ss != 0) {
-    MBLOG_ERROR << "ss chmod client ret: " << ss << ", " << strerror(errno);
+    MBLOG_ERROR << "ss chmod client ret: " << ss << ", " << modelbox::StrError(errno);
   }
 
   chown(client_sockaddr.sun_path, -1, stat_buf.st_gid);
@@ -157,7 +157,7 @@ modelbox::Status ToolCommandServer::SendMsg(std::shared_ptr<ControlMsg> msg,
                   (struct sockaddr *)&remote, sizeof(remote));
   if (rc <= 0) {
     errmsg = "send data to server failed, err: ";
-    errmsg += strerror(errno);
+    errmsg += modelbox::StrError(errno);
     if (errno == ENOENT) {
       errmsg += ", No such file or directory. Maybe server is down";
       status = {modelbox::STATUS_NOENT, errmsg};

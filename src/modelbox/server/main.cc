@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 
   if (kForground == false) {
     if (daemon(0, 0) < 0) {
-      fprintf(stderr, "run daemon process failed, %s\n", strerror(errno));
+      fprintf(stderr, "run daemon process failed, %s\n", modelbox::StrError(errno).c_str());
       return 1;
     }
   }

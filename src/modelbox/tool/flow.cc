@@ -149,7 +149,7 @@ int ToolCommandFlow::RunConfConvertCommand(int argc, char *argv[]) {
 
   std::ifstream infile(path);
   if (infile.fail()) {
-    std::cerr << "read file " << path << " failed, " << strerror(errno)
+    std::cerr << "read file " << path << " failed, " << modelbox::StrError(errno)
               << std::endl;
     return 1;
   }
