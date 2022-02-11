@@ -182,16 +182,16 @@ modelbox::Status ModelboxPlugin::SaveGraphFile(const std::string& job_id,
   auto ret = modelbox::CreateDirectory(oneshot_flow_path_);
   if (!ret) {
     return {modelbox::STATUS_FAULT,
-            std::string("create graph directory failed, ") + strerror(errno) +
-                ", path: " + oneshot_flow_path_};
+            std::string("create graph directory failed, ") +
+                modelbox::StrError(errno) + ", path: " + oneshot_flow_path_};
   }
 
   std::vector<std::string> list_files;
   ret = modelbox::ListSubDirectoryFiles(oneshot_flow_path_, "*", &list_files);
   if (!ret) {
     return {modelbox::STATUS_FAULT,
-            std::string("list subdirectoryfiles failed, ") + strerror(errno) +
-                ", path: " + oneshot_flow_path_};
+            std::string("list subdirectoryfiles failed, ") +
+                modelbox::StrError(errno) + ", path: " + oneshot_flow_path_};
   }
 
   while (list_files.size() > MAX_FILES) {
@@ -202,9 +202,9 @@ modelbox::Status ModelboxPlugin::SaveGraphFile(const std::string& job_id,
                << earliest_file_path;
     auto ret = remove(earliest_file_path.c_str());
     if (ret) {
-      return {
-          modelbox::STATUS_FAULT,
-          std::string("remove earlier access file failed, ") + strerror(errno)};
+      return {modelbox::STATUS_FAULT,
+              std::string("remove earlier access file failed, ") +
+                  modelbox::StrError(errno)};
     }
     list_files.erase(list_files.begin() + earliest_file_index);
   }
@@ -213,7 +213,8 @@ modelbox::Status ModelboxPlugin::SaveGraphFile(const std::string& job_id,
   std::ofstream out(path, std::ios::trunc);
   if (out.fail()) {
     return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
-                                        strerror(errno) + ", path: " + path};
+                                        modelbox::StrError(errno) +
+                                        ", path: " + path};
   }
 
   chmod(path.c_str(), 0600);
@@ -222,7 +223,8 @@ modelbox::Status ModelboxPlugin::SaveGraphFile(const std::string& job_id,
   out << toml_graph;
   if (out.fail()) {
     return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
-                                        strerror(errno) + ", path: " + path};
+                                        modelbox::StrError(errno) +
+                                        ", path: " + path};
   }
 
   return modelbox::STATUS_OK;

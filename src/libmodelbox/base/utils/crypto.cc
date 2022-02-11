@@ -221,7 +221,7 @@ static Status ReadBytes(int fd, void *buffer, int len) {
       if (errno == EINTR || errno == EAGAIN) {
         continue;
       }
-      MBLOG_ERROR << "errno is " << std::strerror(errno);
+      MBLOG_ERROR << "errno is " << StrError(errno);
       return {STATUS_FAULT, "Generate Seed Failed."};
     }
     bytesRead += result;

@@ -59,7 +59,7 @@ modelbox::Status Control::Init(
   int fd = socket(AF_UNIX, SOCK_DGRAM, 0);
   if (fd <= 0) {
     std::string errmsg = "create socket: ";
-    errmsg += strerror(errno);
+    errmsg += modelbox::StrError(errno);
     MBLOG_ERROR << errmsg;
     ret = {modelbox::STATUS_FAULT, errmsg};
     return ret;
@@ -75,7 +75,7 @@ modelbox::Status Control::Init(
   if (rc != 0) {
     std::string errmsg =
         "bind socket: " + std::string(server_sockaddr.sun_path) + " failed, ";
-    errmsg += strerror(errno);
+    errmsg += modelbox::StrError(errno);
     MBLOG_ERROR << errmsg;
     ret = {modelbox::STATUS_FAULT, errmsg};
     return ret;
@@ -213,7 +213,7 @@ modelbox::Status Control::RecvMsg(std::shared_ptr<ControlMsg> recv_msg) {
       (struct sockaddr *)((void *)&client), (socklen_t *)(&client_len));
   if (len < 0) {
     std::string errmsg = "recv from client failed.";
-    errmsg += strerror(errno);
+    errmsg += modelbox::StrError(errno);
     MBLOG_ERROR << errmsg;
     return {modelbox::STATUS_FAULT, errmsg};
   }
@@ -225,7 +225,7 @@ modelbox::Status Control::RecvMsg(std::shared_ptr<ControlMsg> recv_msg) {
     int rc = sendto(fd, data, len, 0, (struct sockaddr *)&client, client_len);
     if (rc < 0) {
       MBLOG_ERROR << "send failed, " << client.sun_path
-                  << ", error: " << strerror(errno);
+                  << ", error: " << modelbox::StrError(errno);
     }
 
     return rc;

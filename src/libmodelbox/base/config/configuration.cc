@@ -669,7 +669,7 @@ std::shared_ptr<Configuration> ConfigurationBuilder::Build(
     const std::string &file, const ConfigType &type) {
   std::ifstream ifs(file.c_str());
   if (!ifs.good()) {
-    auto msg = "file open " + file + " error: " + strerror(errno);
+    auto msg = "file open " + file + " error: " + StrError(errno);
     MBLOG_ERROR << msg;
     StatusError = {STATUS_INVALID, msg};
     return nullptr;

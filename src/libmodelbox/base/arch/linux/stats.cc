@@ -152,7 +152,7 @@ std::string LinuxOSInfo::GetSystemID() {
 
   struct utsname buf;
   if (uname(&buf) != 0) {
-    StatusError = {STATUS_FAULT, strerror(errno)};
+    StatusError = {STATUS_FAULT, StrError(errno)};
     return "";
   }
 

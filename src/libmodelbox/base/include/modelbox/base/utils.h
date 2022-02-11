@@ -326,6 +326,14 @@ Status TomlToJson(const std::string &toml_data, std::string *json_data,
 Status HardeningSSL(SSL_CTX *ctx);
 
 /**
+ * @brief Get errno in string
+ * @param errnum error number
+ * @return errno in string
+ */
+
+std::string StrError(int errnum);
+
+/**
  * @brief Get compiled time
  * @return version
  */

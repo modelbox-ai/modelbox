@@ -51,7 +51,7 @@ Status SubProcessRun(func &&fun, ts &&...params) {
   if (ret < 0) {
     auto err_msg =
         "subprocess run failed, wait error, ret:" + std::to_string(errno) +
-        ", msg: " + strerror(errno);
+        ", msg: " + StrError(errno);
     MBLOG_ERROR << err_msg;
     return {STATUS_FAULT, err_msg};
   }

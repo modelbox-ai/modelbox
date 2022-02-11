@@ -81,9 +81,9 @@ std::string ExternalCommandKey::GetCommandDesc() { return desc_; }
 Status ExternalCommandLoader::LoadCmds(const std::string &cmd_json_file) {
   std::ifstream infile(cmd_json_file);
   if (infile.fail()) {
-    std::cerr << "read file " << cmd_json_file << " failed, " << strerror(errno)
+    std::cerr << "read file " << cmd_json_file << " failed, " << modelbox::StrError(errno)
               << std::endl;
-    return {STATUS_BADCONF, strerror(errno)};
+    return {STATUS_BADCONF, modelbox::StrError(errno)};
   }
 
   Defer { infile.close(); };

@@ -83,14 +83,14 @@ Status OpenFile(const std::string &plain_path, const std::string &encypt_path,
   fplain.open(plain_path, std::ios::binary);
   if (fplain.fail() || !fplain.is_open()) {
     std::cout << "open model '" << plain_path << "' failed, "
-              << strerror(errno);
+              << modelbox::StrError(errno);
     return STATUS_FAULT;
   }
 
   fencypt.open(encypt_path, std::ios::binary);
   if (fencypt.fail() || !fencypt.is_open()) {
     std::cout << "write en_model '" << encypt_path << " failed, "
-              << strerror(errno);
+              << modelbox::StrError(errno);
     return STATUS_FAULT;
   }
   return STATUS_SUCCESS;
@@ -253,7 +253,7 @@ Status ToolCommandKey::ReadPassword(std::string *pass) {
 
   std::cout << "Please input password: ";
   if (tcgetattr(STDIN_FILENO, &oldt) != 0) {
-    return {STATUS_FAULT, strerror(errno)};
+    return {STATUS_FAULT, modelbox::StrError(errno)};
   }
   Defer { tcsetattr(STDIN_FILENO, TCSANOW, &oldt); };
 

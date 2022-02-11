@@ -113,7 +113,7 @@ bool MockDriverCtl::AddMockDriverFlowUnit(std::string drive_name,
 
   driver_mock_func = (GetDriverMock)dlsym(driver_handler, "GetDriverMock");
   if (driver_handler == nullptr) {
-    MBLOG_ERROR << "Cannot find symbol GetDriverMock, " << strerror(errno);
+    MBLOG_ERROR << "Cannot find symbol GetDriverMock, " << modelbox::StrError(errno);
     goto errout;
   }
 
@@ -199,7 +199,7 @@ bool MockDriverCtl::AddMockDriverDevice(std::string device_name,
 
   driver_mock_func = (GetDriverMock)dlsym(driver_handler, "GetDriverMock");
   if (driver_mock_func == nullptr) {
-    MBLOG_ERROR << "Cannot find symbol GetDriverMock, " << strerror(errno);
+    MBLOG_ERROR << "Cannot find symbol GetDriverMock, " << modelbox::StrError(errno);
     goto errout;
   }
 

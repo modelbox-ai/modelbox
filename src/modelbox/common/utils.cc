@@ -46,21 +46,21 @@ int modelbox_create_pid(const char *pid_file) {
   fd = open(pid_file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
   if (fd == -1) {
     fprintf(stderr, "create pid file failed, path %s, %s\n", pid_file,
-            strerror(errno));
+            StrError(errno).c_str());
     return -1;
   }
 
   flags = fcntl(fd, F_GETFD);
   if (flags < 0) {
     fprintf(stderr, "Could not get flags for PID file %s, %s\n", pid_file,
-            strerror(errno));
+            StrError(errno).c_str());
     goto errout;
   }
 
   flags |= FD_CLOEXEC;
   if (fcntl(fd, F_SETFD, flags) == -1) {
     fprintf(stderr, "Could not set flags for PID file %s, %s\n", pid_file,
-            strerror(errno));
+            StrError(errno).c_str());
     goto errout;
   }
 
@@ -80,7 +80,8 @@ int modelbox_create_pid(const char *pid_file) {
   }
 
   if (write(fd, buff, strnlen(buff, TMP_BUFF_LEN_32)) < 0) {
-    fprintf(stderr, "write pid to file failed, %s.\n", strerror(errno));
+    fprintf(stderr, "write pid to file failed, %s.\n",
+            StrError(errno).c_str());
     goto errout;
   }
 
