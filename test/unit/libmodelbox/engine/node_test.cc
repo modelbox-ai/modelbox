@@ -1912,6 +1912,8 @@ TEST_F(NodeRunTest, Normal_Process_Error_Recieve_InVisible) {
   simple_error_node->SetPriority(2);
   error_end_node->SetName("error_end_normal_node");
   error_end_node->SetPriority(3);
+  EXPECT_EQ(error_end_node->IsExceptionVisible(), true);
+  error_end_node->SetExceptionVisible(false);
 
   EXPECT_EQ(stream_info_node->GetOutputPort("Out_1")->AddPort(
                 stream_start_node->GetInputPort("In_1")),
