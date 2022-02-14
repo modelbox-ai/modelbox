@@ -42,7 +42,7 @@ class ExecutorMockMemMgr : public DeviceMemoryManager {
   }
 
   void *Malloc(size_t size, uint32_t mem_flags) override {
-    return new uint8_t[size];
+    return new (std::nothrow) uint8_t[size];
   }
 
   void Free(void *mem_ptr, uint32_t mem_flags) override {
