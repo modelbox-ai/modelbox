@@ -334,6 +334,7 @@ void InferenceCudaFlowUnitTest::Register_Test_1_0_Batch_Flowunit(
   mock_flowunit_desc->SetFlowUnitName("test_1_0_batch");
   mock_flowunit_desc->AddFlowUnitInput(modelbox::FlowUnitInput("In_1"));
   mock_flowunit_desc->SetFlowType(STREAM);
+  mock_flowunit_desc->SetMaxBatchSize(10);
   mock_flowunit->SetFlowUnitDesc(mock_flowunit_desc);
   std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
   mock_flowunit_wp = mock_flowunit;

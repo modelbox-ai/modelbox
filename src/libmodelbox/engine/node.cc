@@ -759,9 +759,8 @@ void Node::InitNodeWithFlowunit() {
 
   auto exception_visible = flowunit_desc->IsExceptionVisible();
 
-  if (exception_visible) {
-    SetExceptionVisible(config_->GetBool("is_exception_visible", false));
-  }
+  SetExceptionVisible(exception_visible);
+  MBLOG_DEBUG << unit_name_ << " exception visible " << exception_visible;
 
   if (flowunit_desc->GetOutputType() == COLLAPSE) {
     SetOutputType(COLLAPSE);
