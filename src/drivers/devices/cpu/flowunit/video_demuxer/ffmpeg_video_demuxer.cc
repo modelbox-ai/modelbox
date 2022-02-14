@@ -350,7 +350,7 @@ modelbox::Status FfmpegVideoDemuxer::GetBsfName(uint32_t codec_tag,
 bool FfmpegVideoDemuxer::IsAnnexb(uint8_t *extra_data, size_t extra_size) {
   auto size_test = !extra_size;
   auto start_code1 = extra_size >= 3 && extra_data[0] == 0 &&
-                     extra_data[1] == 0 && extra_data[2] == 0;
+                     extra_data[1] == 0 && extra_data[2] == 1;
   auto start_code2 = extra_size >= 4 && extra_data[0] == 0 &&
                      extra_data[1] == 0 && extra_data[2] == 0 &&
                      extra_data[3] == 1;
