@@ -18,6 +18,7 @@
 #include <dsmi_common_interface.h>
 #include <securec.h>
 
+#include <fstream>
 #include <functional>
 #include <future>
 #include <opencv2/opencv.hpp>
@@ -114,9 +115,10 @@ TEST_F(AscendPaddingFlowUnitTest, TestPaddingImage) {
   int size = img.cols * img.rows * 3 / 2;
   cv::Mat nv12_data(img.cols * 3 / 2, img.rows, CV_8UC1);
 
-  auto convert_status = yuvI420ToNV12(I420data.data, img.cols, img.rows, nv12_data.data);
+  auto convert_status =
+      yuvI420ToNV12(I420data.data, img.cols, img.rows, nv12_data.data);
   ASSERT_EQ(convert_status, modelbox::STATUS_SUCCESS);
-  
+
   auto extern_data = driver_flow->GetFlow()->CreateExternalDataMap();
 
   auto in_img_buffer_list = extern_data->CreateBufferList();
@@ -151,23 +153,13 @@ TEST_F(AscendPaddingFlowUnitTest, TestPaddingImage) {
                         aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST);
   EXPECT_EQ(acl_ret, ACL_SUCCESS);
 
-  cv::Mat bgr_out_img;
-  cv::cvtColor(yuv_out_img, bgr_out_img, cv::COLOR_YUV2BGR_NV12);
+  auto image_size = yuv_out_img.rows * yuv_out_img.cols * yuv_out_img.elemSize();
+  char expected_img[image_size];
+  std::ifstream infile;
+  infile.open(std::string(TEST_ASSETS) + "/ascend_padding_yuv");
+  infile.read((char *)expected_img, image_size);
 
-  auto expected_img =
-      cv::imread(std::string(TEST_ASSETS) + "/ascend_padding.png");
-  ASSERT_EQ(expected_img.cols, bgr_out_img.cols);
-  ASSERT_EQ(expected_img.rows, bgr_out_img.rows);
-
-  for (int32_t y = 0; y < expected_img.rows; ++y) {
-    for (int32_t x = 0; x < expected_img.cols; ++x) {
-      auto expected_pix = expected_img.at<cv::Vec3b>(y, x);
-      auto pix = bgr_out_img.at<cv::Vec3b>(y, x);
-      ASSERT_EQ(expected_pix[0], pix[0]);
-      ASSERT_EQ(expected_pix[1], pix[1]);
-      ASSERT_EQ(expected_pix[2], pix[2]);
-    }
-  }
+  EXPECT_EQ(memcmp((char *)yuv_out_img.data, expected_img, image_size), 0);
 
   driver_flow->GetFlow()->Wait(3 * 1000);
 }

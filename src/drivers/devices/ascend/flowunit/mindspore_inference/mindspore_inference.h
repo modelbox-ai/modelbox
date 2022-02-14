@@ -28,7 +28,7 @@
 class MindSporeInference {
  public:
   MindSporeInference() = default;
-  ~MindSporeInference() = default;
+  ~MindSporeInference();
 
   modelbox::Status Init(const std::string &model_entry,
                       std::shared_ptr<modelbox::Configuration> &config,

@@ -43,7 +43,7 @@ Status GenerateCert(std::string* enPass, std::string* ekRootKey,
 
   if (system(openssl_cmd.c_str()) != 0) {
     std::string errmsg = "run command failed, ";
-    errmsg += strerror(errno);
+    errmsg += modelbox::StrError(errno);
     return {STATUS_FAULT, errmsg};
   }
 
@@ -60,7 +60,7 @@ Status GenerateCert(const std::string& private_key,
 
   if (system(openssl_cmd.c_str()) != 0) {
     std::string errmsg = "run command failed, ";
-    errmsg += strerror(errno);
+    errmsg += modelbox::StrError(errno);
     return {STATUS_FAULT, errmsg};
   }
 

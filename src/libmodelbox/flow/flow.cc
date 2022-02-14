@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/flow.h"
 
 #include <fstream>
@@ -204,7 +203,7 @@ Status Flow::ConfigFileRead(const std::string& configfile, Format format,
   Format config_format = format;
 
   if (infile.fail()) {
-    std::string msg = "read file " + configfile + " failed, " + strerror(errno);
+    std::string msg = "read file " + configfile + " failed, " + StrError(errno);
     return {STATUS_BADCONF, msg};
   }
 

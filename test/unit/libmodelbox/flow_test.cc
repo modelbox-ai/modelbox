@@ -617,7 +617,7 @@ TEST_F(FlowTest, NormalError) {
                              R"([graph]
     graphconf = '''digraph demo {                                                                            
           error_input[type=flowunit, flowunit=error_start_normal, device=cpu, deviceid=0, label= "<Out_1>"]             
-          error_output[type=flowunit, flowunit=error_end_normal, device=cpu, deviceid=0, label="<In_1>", is_exception_visible=true]                                
+          error_output[type=flowunit, flowunit=error_end_normal, device=cpu, deviceid=0, label="<In_1>"]                                
           error_input:Out_1 -> error_output:In_1
         }'''
     format = "graphviz"

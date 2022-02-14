@@ -83,14 +83,14 @@ Status OpenFile(const std::string &plain_path, const std::string &encypt_path,
   fplain.open(plain_path, std::ios::binary);
   if (fplain.fail() || !fplain.is_open()) {
     std::cout << "open model '" << plain_path << "' failed, "
-              << strerror(errno);
+              << modelbox::StrError(errno);
     return STATUS_FAULT;
   }
 
   fencypt.open(encypt_path, std::ios::binary);
   if (fencypt.fail() || !fencypt.is_open()) {
     std::cout << "write en_model '" << encypt_path << " failed, "
-              << strerror(errno);
+              << modelbox::StrError(errno);
     return STATUS_FAULT;
   }
   return STATUS_SUCCESS;
@@ -111,11 +111,17 @@ Status EncryptWithFile(const std::string &plain_path,
     fencypt.close();
   };
 
-  std::shared_ptr<uint8_t> read_buf(new uint8_t[ENCRYPT_BLOCK_SIZE],
+  std::shared_ptr<uint8_t> read_buf(new (std::nothrow)
+                                        uint8_t[ENCRYPT_BLOCK_SIZE],
                                     [](uint8_t *p) { delete[] p; });
   std::shared_ptr<uint8_t> en_buf(
-      new uint8_t[ENCRYPT_BLOCK_SIZE + EVP_MAX_BLOCK_LENGTH + 1],
+      new (std::nothrow) uint8_t[ENCRYPT_BLOCK_SIZE + EVP_MAX_BLOCK_LENGTH + 1],
       [](uint8_t *p) { delete[] p; });
+
+  if (en_buf.get() == nullptr || read_buf.get() == nullptr) {
+    return {STATUS_NOMEM, "no memory to encode"};
+  }
+
   std::shared_ptr<EVP_CIPHER_CTX> ctx;
   const EVP_CIPHER *cipher = nullptr;
   EVP_CIPHER_CTX *ctx_new = nullptr;
@@ -156,8 +162,8 @@ Status EncryptWithFile(const std::string &plain_path,
     if (read_len != ENCRYPT_BLOCK_SIZE && !fplain.eof()) {
       return {STATUS_FAULT, "Read file fail."};
     }
-    if (1 !=
-        EVP_EncryptUpdate(ctx.get(), en_buf.get(), &len, read_buf.get(), read_len)) {
+    if (1 != EVP_EncryptUpdate(ctx.get(), en_buf.get(), &len, read_buf.get(),
+                               read_len)) {
       return {STATUS_FAULT, "encrypt update failed."};
     }
     fencypt.write((char *)en_buf.get(), len);
@@ -206,7 +212,7 @@ Status ModelEncrypt(const std::string &model_path,
   if (ret != STATUS_SUCCESS) {
     return ret;
   }
-  
+
   return STATUS_SUCCESS;
 }
 
@@ -253,7 +259,7 @@ Status ToolCommandKey::ReadPassword(std::string *pass) {
 
   std::cout << "Please input password: ";
   if (tcgetattr(STDIN_FILENO, &oldt) != 0) {
-    return {STATUS_FAULT, strerror(errno)};
+    return {STATUS_FAULT, modelbox::StrError(errno)};
   }
   Defer { tcsetattr(STDIN_FILENO, TCSANOW, &oldt); };
 

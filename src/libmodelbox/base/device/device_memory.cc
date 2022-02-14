@@ -327,9 +327,13 @@ Status DeviceMemory::TransferInHost(
     const std::shared_ptr<const DeviceMemory> &src_memory, size_t src_offset,
     size_t src_size, size_t dest_offset) {
   // TODO: consider 4k cache
-  uint8_t *host_cache_ptr = new uint8_t[src_size];
-  std::shared_ptr<uint8_t> host_cache(host_cache_ptr,
+  std::shared_ptr<uint8_t> host_cache(new (std::nothrow) uint8_t[src_size],
                                       [](uint8_t *ptr) { delete[] ptr; });
+  if (host_cache.get() == nullptr) {
+    MBLOG_ERROR << "No memory for host cache";
+    return STATUS_NOMEM;
+  }
+  
   auto src_mem_mgr = src_memory->mem_mgr_;
   auto src_dev = src_memory->GetDevice();
   auto ret =

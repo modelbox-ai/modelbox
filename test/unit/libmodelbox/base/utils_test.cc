@@ -20,6 +20,7 @@
 
 #include <list>
 #include <toml.hpp>
+#include <string.h>
 
 #include <nlohmann/json.hpp>
 #include "gtest/gtest.h"
@@ -383,6 +384,15 @@ TEST_F(BaseUtilsTest, FindTheEarliestFileIndex) {
   }
   ret = remove(dir.c_str());
   EXPECT_EQ(ret, 0);
+}
+
+TEST_F(BaseUtilsTest, StrError) {
+  int err = EACCES;
+  MBLOG_INFO << modelbox::StrError(err);
+  EXPECT_EQ(modelbox::StrError(err), strerror(err));
+  err = 245;
+  MBLOG_INFO << modelbox::StrError(err);
+  EXPECT_EQ(modelbox::StrError(err), strerror(err));
 }
 
 }  // namespace modelbox

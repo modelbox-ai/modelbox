@@ -81,7 +81,7 @@ Status ListFiles(const std::string &path, const std::string &filter,
   struct stat buffer;
   if (stat(path.c_str(), &buffer) == -1) {
     MBLOG_ERROR << path << " does not exist.";
-    return {STATUS_NOTFOUND, strerror(errno)};
+    return {STATUS_NOTFOUND, StrError(errno)};
   }
 
   if (S_ISDIR(buffer.st_mode) == 0) {
@@ -127,7 +127,7 @@ size_t FindTheEarliestFileIndex(std::vector<std::string> &listfiles) {
   for (size_t i = 0; i < listfiles.size(); ++i) {
     if (stat(listfiles[i].c_str(), &buffer) == -1) {
       MBLOG_WARN << "stat " << listfiles[i]
-                 << " failed, errno: " << strerror(errno);
+                 << " failed, errno: " << StrError(errno);
       continue;
     }
 
@@ -150,7 +150,7 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
 
   pDir = opendir(path.c_str());
   if (pDir == nullptr) {
-    return {STATUS_NOTFOUND, strerror(errno)};
+    return {STATUS_NOTFOUND, StrError(errno)};
   }
 
   Defer {
@@ -163,7 +163,7 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
     std::string temp_path = path + "/" + std::string(ptr->d_name);
     if (stat(temp_path.c_str(), &buffer) == -1) {
       MBLOG_WARN << "stat " << temp_path
-                 << " failed, errno: " << strerror(errno);
+                 << " failed, errno: " << StrError(errno);
       continue;
     };
 
@@ -202,7 +202,7 @@ Status CreateDirectory(const std::string &directory_path) {
 
     int32_t ret = mkdir(dir_path, 0700);
     if (ret != 0) {
-      return {STATUS_FAULT, strerror(errno)};
+      return {STATUS_FAULT, StrError(errno)};
     }
   }
 
@@ -517,6 +517,11 @@ Status HardeningSSL(SSL_CTX *ctx) {
   SSL_CTX_set_cipher_list(ctx, tls1_2_ciphers.data());
 
   return STATUS_OK;
+}
+
+std::string StrError(int errnum) {
+  char buf[32];
+  return strerror_r(errnum, buf, sizeof(buf));
 }
 
 void GetCompiledTime(struct tm *compiled_time) {

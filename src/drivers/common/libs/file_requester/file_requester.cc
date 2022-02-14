@@ -83,7 +83,7 @@ modelbox::Status FileRequester::RegisterUrlHandler(
 void FileRequester::SetMaxFileReadSize(int read_size) {
   if (read_size <= 0 || read_size > MAX_READ_SIZE) {
     MBLOG_ERROR << "Invalid read size, use default value for instead."
-    << "Your read size:" << read_size;
+                << "Your read size:" << read_size;
     return;
   }
   max_read_size_ = read_size * MAX_BLOCK_SIZE;
@@ -114,7 +114,8 @@ bool FileRequester::IsValidRequest(const web::http::http_request &request) {
 }
 
 bool FileRequester::ReadRequestRange(const web::http::http_request &request,
-                                     const uint64_t file_size, uint64_t &range_start,
+                                     const uint64_t file_size,
+                                     uint64_t &range_start,
                                      uint64_t &range_end) {
   auto headers = request.headers();
   auto range_value = headers["Range"];
@@ -174,8 +175,15 @@ void FileRequester::ProcessRequest(
   response.headers().set_content_type(U("application/octet-stream"));
   response.headers().set_content_length((size_t)(range_end - range_start + 1));
 
-  std::shared_ptr<unsigned char> raw_data(new unsigned char[MAX_BLOCK_SIZE],
-                                          [](unsigned char *p) { delete[] p; });
+  std::shared_ptr<unsigned char> raw_data(
+      new (std::nothrow) unsigned char[MAX_BLOCK_SIZE],
+      [](unsigned char *p) { delete[] p; });
+
+  if (raw_data.get() == nullptr) {
+    MBLOG_ERROR << "create raw data buffer failed.";
+    request.reply(web::http::status_codes::InternalError);
+    return;
+  }
 
   auto rep = request.reply(response);
   while (range_start < range_end) {

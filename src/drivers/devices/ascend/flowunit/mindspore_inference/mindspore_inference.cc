@@ -62,6 +62,11 @@ static std::map<mindspore::DataType, modelbox::ModelBoxDataType>
         {mindspore::DataType::kObjectTypeString, modelbox::MODELBOX_STRING},
         {mindspore::DataType::kNumberTypeBool, modelbox::MODELBOX_BOOL}};
 
+MindSporeInference::~MindSporeInference() {
+  model_ = nullptr;
+  context_ = nullptr;
+}
+
 modelbox::Status MindSporeInference::GetModelType(
     const std::string &model_entry, mindspore::ModelType &model_type) {
   auto type_vec = modelbox::StringSplit(model_entry, '.');
@@ -144,10 +149,12 @@ void MindSporeInference::InitContext(
   context_ = std::make_shared<mindspore::Context>();
   auto ascend310_info = std::make_shared<mindspore::Ascend310DeviceInfo>();
   auto device_id = config->GetInt32("deviceid", 0);
-  // nchw or nhwc
-  auto input_format = config->GetString("input_format", "nchw");
+  // NCHW or NHWC
+  auto input_format = config->GetString("input_format", "NCHW");
   ascend310_info->SetDeviceID(device_id);
   ascend310_info->SetInputFormat(input_format);
+  auto &device_list = context_->MutableDeviceInfo();
+  device_list.push_back(ascend310_info);
 }
 
 modelbox::Status MindSporeInference::Init(
