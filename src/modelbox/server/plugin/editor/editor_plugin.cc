@@ -291,8 +291,14 @@ void ModelboxEditorPlugin::SendFile(const std::string& file_name,
   }
 
   size_t data_size = 4096;
-  auto data = std::shared_ptr<char>(new char[data_size],
+  auto data = std::shared_ptr<char>(new (std::nothrow) char[data_size],
                                     [](char* ptr) { delete[] ptr; });
+  if (data.get() == nullptr) {
+    response.status = HttpStatusCodes::INTERNAL_ERROR;
+    response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+    return;
+  }
+
   response.status = HttpStatusCodes::OK;
   response.set_content_provider(
       content_type.c_str(),
