@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <cuda_runtime.h>
 #include <modelbox/base/timer.h>
 #include <stdio.h>
 
@@ -21,6 +22,16 @@
 
 #include "modelbox/base/driver_api_helper.h"
 #include "modelbox/device/cuda/device_cuda.h"
+
+#define CUDA_DEVICE_SCHEDULE_FLAG "CUDA_DEVICE_SCHEDULE_FLAG"
+
+static std::map<std::string, unsigned int> device_flags_map = {
+  {"cudaDeviceScheduleAuto", cudaDeviceScheduleAuto},
+  {"cudaDeviceScheduleSpin", cudaDeviceScheduleSpin},
+  {"cudaDeviceScheduleYield", cudaDeviceScheduleYield},
+  {"cudaDeviceScheduleBlockingSync", cudaDeviceScheduleBlockingSync},
+  {"cudaDeviceMapHost", cudaDeviceMapHost}
+};
 
 std::shared_ptr<modelbox::Timer> kDeviceTimer;
 
@@ -49,6 +60,24 @@ modelbox::Status DriverInit() {
   kDeviceTimer = std::make_shared<modelbox::Timer>();
   kDeviceTimer->SetName("Cuda-Timer");
   kDeviceTimer->Start();
+
+  auto env_flag = getenv(CUDA_DEVICE_SCHEDULE_FLAG);
+  std::string cudaDeviceScheduleFlag;
+  if (env_flag != nullptr) {
+    cudaDeviceScheduleFlag = std::string(env_flag);
+  }
+
+  unsigned int flag = cudaDeviceScheduleAuto;
+  if (device_flags_map.find(cudaDeviceScheduleFlag) != device_flags_map.end()) {
+    flag = device_flags_map[cudaDeviceScheduleFlag];
+  }
+
+  auto cuda_ret = cudaSetDeviceFlags(flag);
+  if (cuda_ret != cudaSuccess) {
+    MBLOG_ERROR << "set cuda device flags " << flag << " failed, cuda ret " << cuda_ret;
+    return modelbox::STATUS_OK;
+  }
+
   return modelbox::STATUS_OK;
 }
 
