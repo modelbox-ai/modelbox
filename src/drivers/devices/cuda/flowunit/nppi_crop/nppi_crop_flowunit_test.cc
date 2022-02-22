@@ -74,6 +74,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
     auto mock_desc = GenerateFlowunitDesc("c3r_test_0_1_nppi_crop", {},
                                           {"Out_img", "Out_box"});
     mock_desc->SetFlowType(STREAM);
+    mock_desc->SetMaxBatchSize(16);
     auto open_func = [=](const std::shared_ptr<Configuration>& opts,
                          std::shared_ptr<MockFlowUnit> mock_flowunit) {
       std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
@@ -177,6 +178,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
     auto mock_desc =
         GenerateFlowunitDesc("c3r_test_1_0_nppi_crop", {"In_img"}, {});
     mock_desc->SetFlowType(STREAM);
+    mock_desc->SetMaxBatchSize(16);
     auto process_func =
         [=](std::shared_ptr<DataContext> op_ctx,
             std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {

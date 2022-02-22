@@ -214,6 +214,7 @@ void MockFlow::AddFlowUnitDesc(
 
 void MockFlow::Register_Test_0_2_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("test_0_2", {}, {"Out_1", "Out_2"});
+  mock_desc->SetDefaultBatchSize(1);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
 
   auto open_func = [=](const std::shared_ptr<Configuration>& opts,
@@ -289,6 +290,7 @@ void MockFlow::Register_Test_0_2_Flowunit() {
 
 void MockFlow::Register_Test_0_1_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("test_0_1", {}, {"Out_1"});
+  mock_desc->SetDefaultBatchSize(1);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
 
   auto open_func = [=](const std::shared_ptr<Configuration>& opts,
@@ -385,6 +387,7 @@ void MockFlow::Register_Test_1_0_Flowunit() {
 
 void MockFlow::Register_Test_0_1_Batch_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("test_0_1_batch", {}, {"Out_1"});
+  mock_desc->SetDefaultBatchSize(1);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
 
   auto open_func = [=](const std::shared_ptr<Configuration>& opts,
@@ -452,6 +455,7 @@ void MockFlow::Register_Test_0_1_Batch_Flowunit() {
 
 void MockFlow::Register_Test_0_1_Batch_Thread_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("test_0_1_batch_thread", {}, {"Out_1"});
+  mock_desc->SetDefaultBatchSize(1);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
 
   static std::atomic<bool> is_closed(false);
@@ -698,6 +702,7 @@ void MockFlow::Register_Test_Orgin_0_2_Flowunit() {
 void MockFlow::Register_Loop_End_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("loop_end", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(NORMAL);
+  mock_desc->SetDefaultBatchSize(1);
   auto process_func =
       [=](std::shared_ptr<DataContext> ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
@@ -732,6 +737,7 @@ void MockFlow::Register_Loop_End_Flowunit() {
 
 void MockFlow::Register_Listen_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("listen", {}, {"Out_1", "Out_2"});
+  mock_desc->SetDefaultBatchSize(1);
 
   static std::atomic<bool> is_closed(false);
   static std::shared_ptr<std::thread> listener_thread = nullptr;
@@ -832,6 +838,7 @@ void MockFlow::Register_Listen_Flowunit() {
 
 void MockFlow::Register_ExternData_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("extern_data", {}, {"Out_1"});
+  mock_desc->SetDefaultBatchSize(1);
 
   static std::atomic<bool> is_closed(false);
   static std::shared_ptr<std::thread> listener_thread = nullptr;
@@ -921,6 +928,7 @@ void MockFlow::Register_Test_2_inputs_2_outputs_Flowunit() {
 
 void MockFlow::Register_Loop_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("loop", {"In_1"}, {"Out_1", "Out_2"});
+  mock_desc->SetDefaultBatchSize(1);
   mock_desc->SetLoopType(LOOP);
   mock_desc->SetFlowType(NORMAL);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -2429,6 +2437,7 @@ Status Simple_Pass(std::shared_ptr<DataContext> data_ctx,
 
 void MockFlow::Register_Simple_Pass_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("simple_pass", {"In_1"}, {"Out_1"});
+  mock_desc->SetDefaultBatchSize(1);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   mock_funcitons->RegisterProcessFunc(Simple_Pass);
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc(true));
@@ -2453,6 +2462,7 @@ void MockFlow::Register_Stream_Simple_Pass_Flowunit() {
 
 void MockFlow::Register_Simple_Error_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("simple_error", {"In_1"}, {"Out_1"});
+  mock_desc->SetDefaultBatchSize(1);
   auto process_func =
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
@@ -2555,6 +2565,7 @@ void MockFlow::Register_Stream_Process_Error_Flowunit() {
 
 void MockFlow::Register_Error_End_Normal_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("error_end_normal", {"In_1"}, {});
+  mock_desc->SetDefaultBatchSize(1);
   mock_desc->SetExceptionVisible(true);
 
   auto process_func =

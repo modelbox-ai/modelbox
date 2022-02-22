@@ -452,7 +452,10 @@ Status FlowUnitGroup::Open(const CreateExternalDataFunc &create_func) {
 
   bool need_check_output = false;
   if (config_) {
-    batch_size_ = config_->GetProperty<uint32_t>("batch_size", 1);
+    uint32_t default_batch_size =
+        GetExecutorUnit()->GetFlowUnitDesc()->GetDefaultBatchSize();
+    batch_size_ =
+        config_->GetProperty<uint32_t>("batch_size", default_batch_size);
     uint32_t max_batch_size =
         GetExecutorUnit()->GetFlowUnitDesc()->GetMaxBatchSize();
     if (max_batch_size != 0 && batch_size_ > max_batch_size) {
@@ -463,7 +466,8 @@ Status FlowUnitGroup::Open(const CreateExternalDataFunc &create_func) {
 
   auto node = node_.lock();
   if (node != nullptr) {
-    MBLOG_INFO << "node: " << node->GetName() << " get batch size is " << batch_size_;
+    MBLOG_INFO << "node: " << node->GetName() << " get batch size is "
+               << batch_size_;
   }
 
   balancer_ = FlowUnitBalancerFactory::GetInstance().CreateBalancer();

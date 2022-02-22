@@ -18,8 +18,8 @@
 
 namespace modelbox {
 
-#define DEFAULT_QUEUE_SIZE 8192
-#define DEFAULT_QUEUE_SIZE_EVENT 8192
+#define DEFAULT_QUEUE_SIZE 32
+#define DEFAULT_QUEUE_SIZE_EVENT 32
 
 SingleMatchCache::SingleMatchCache(std::shared_ptr<NodeBase> node) {
   single_match_buffer_ = std::make_shared<SingleMatch>();
