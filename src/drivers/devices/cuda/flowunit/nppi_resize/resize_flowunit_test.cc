@@ -82,6 +82,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
     mock_flowunit_desc->SetFlowUnitName("p3_test_0_1_resize");
     mock_flowunit_desc->AddFlowUnitOutput(modelbox::FlowUnitOutput("Out_1"));
     mock_flowunit_desc->SetFlowType(STREAM);
+    mock_flowunit_desc->SetMaxBatchSize(16);
     mock_flowunit->SetFlowUnitDesc(mock_flowunit_desc);
     std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
     mock_flowunit_wp = mock_flowunit;
@@ -216,6 +217,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
     mock_flowunit_desc->SetFlowUnitName("p3_test_1_0_resize");
     mock_flowunit_desc->AddFlowUnitInput(modelbox::FlowUnitInput("In_1"));
     mock_flowunit_desc->SetFlowType(STREAM);
+    mock_flowunit_desc->SetMaxBatchSize(16);
     mock_flowunit->SetFlowUnitDesc(mock_flowunit_desc);
     std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
     mock_flowunit_wp = mock_flowunit;
@@ -301,6 +303,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
     mock_flowunit_desc->SetFlowUnitName("c3r_test_0_1_resize");
     mock_flowunit_desc->AddFlowUnitOutput(modelbox::FlowUnitOutput("Out_1"));
     mock_flowunit_desc->SetFlowType(STREAM);
+    mock_flowunit_desc->SetMaxBatchSize(16);
     mock_flowunit->SetFlowUnitDesc(mock_flowunit_desc);
     std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
     mock_flowunit_wp = mock_flowunit;
@@ -426,6 +429,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
     mock_flowunit_desc->SetFlowUnitName("c3r_test_1_0_resize");
     mock_flowunit_desc->AddFlowUnitInput(modelbox::FlowUnitInput("In_1"));
     mock_flowunit_desc->SetFlowType(STREAM);
+    mock_flowunit_desc->SetMaxBatchSize(16);
     mock_flowunit->SetFlowUnitDesc(mock_flowunit_desc);
     std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
     mock_flowunit_wp = mock_flowunit;

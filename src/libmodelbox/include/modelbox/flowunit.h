@@ -41,6 +41,10 @@ namespace modelbox {
 constexpr const char *EVENT_PORT_NAME = "Event_Port";
 constexpr const char *EXTERNAL_PORT_NAME = "External_Port";
 constexpr const char *DRIVER_CLASS_FLOWUNIT = "DRIVER-FLOWUNIT";
+constexpr uint32_t STREAM_DEFAULT_BATCH_SIZE = 1;
+constexpr uint32_t NORMAL_DEFAULT_BATCH_SIZE = 8;
+constexpr uint32_t STREAM_MAX_BATCH_SIZE = 1;
+constexpr uint32_t NORMAL_MAX_BATCH_SIZE = 0;
 
 using BufferPtr = std::shared_ptr<Buffer>;
 using BufferPtrList = std::vector<BufferPtr>;
@@ -264,7 +268,8 @@ class FlowUnitDesc {
         is_exception_visible_(false),
         is_input_contiguous_{true},
         is_resource_nice_{true},
-        max_batch_size_{0} {};
+        max_batch_size_{0},
+        default_batch_size_{0} {};
   virtual ~FlowUnitDesc(){};
 
   const std::string GetFlowUnitName() { return flowunit_name_; };
@@ -309,11 +314,23 @@ class FlowUnitDesc {
       return max_batch_size_;
     }
 
-    // set default max_batch_size
+    // return default value
     if (flow_type_ == STREAM) {
-      max_batch_size_ = 1;
+      return STREAM_MAX_BATCH_SIZE;
     }
-    return max_batch_size_;
+    return NORMAL_MAX_BATCH_SIZE;
+  };
+
+  const uint32_t GetDefaultBatchSize() {
+    if (default_batch_size_ != 0) {
+      return default_batch_size_;
+    }
+
+    // return default value
+    if (flow_type_ == STREAM) {
+      return STREAM_DEFAULT_BATCH_SIZE;
+    }
+    return NORMAL_DEFAULT_BATCH_SIZE;
   };
 
   std::vector<FlowUnitInput> &GetFlowUnitInput() {
@@ -412,6 +429,14 @@ class FlowUnitDesc {
     max_batch_size_ = max_batch_size;
   }
 
+  void SetDefaultBatchSize(const uint32_t &default_batch_size) {
+    if (default_batch_size == 0) {
+      MBLOG_ERROR << "default_batch_size must be greater than zero.";
+      return;
+    }
+    default_batch_size_ = default_batch_size;
+  }
+
  protected:
   FlowOutputType output_type_;
 
@@ -437,6 +462,7 @@ class FlowUnitDesc {
   bool is_input_contiguous_;
   bool is_resource_nice_;
   uint32_t max_batch_size_;
+  uint32_t default_batch_size_;
 
  private:
   Status CheckInputDuplication(const FlowUnitInput &flowunit_input);
