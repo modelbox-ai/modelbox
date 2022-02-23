@@ -1,0 +1,110 @@
+ARG BASE_IMAGE=openeuler/openeuler:20.03-lts-sp2
+FROM ${BASE_IMAGE} as base
+
+COPY release /opt/release
+COPY docker/repo/*.repo /etc/yum.repos.d/
+COPY docker/pkgconfig /usr/lib/pkgconfig
+
+ADD *.tar.gz /usr/local/
+
+ARG CUDA_VER
+ARG CUDA_VERSION
+ARG TRT_VERSION
+ARG TORCH_VERSION
+ARG CUDA_CUDART_VERSION
+ARG NVIDIA_CUDA_VERSION
+ARG NVIDIA_REQUIRE_CUDA
+
+WORKDIR /root
+
+RUN umask 0022 && \
+    ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
+    yum update -y && \
+    yum install -y vim gcc gcc-c++ make cmake libnsl python3-perf rsyslog doxygen pciutils gdb net-tools zlib-devel \
+            rpm-build gcc-gfortran alsa-lib nss-devel fuse-devel gdbm-devel krb5-devel expat-devel curl-devel bzip2-devel \
+            boost-devel ncurses-devel libxml2-devel libssh2-devel openssh-server python3-devel glibc-debuginfo libatomic \
+            git clang xauth graphviz-devel sqlite-devel openssl-devel readline-devel mesa-libGL-devel protobuf-c-devel && \
+    ls -lh /usr/bin/python* && ln -s python3 /usr/bin/python && yum clean all && \
+    rm -rf /var/cache /tmp/* /var/tmp/*
+
+RUN umask 0022 && \
+    #安装cuda
+    NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
+    echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict - && \
+    if [ "${CUDA_VERSION}" = "10.2" ]; then \
+        yum install -y --nogpgcheck --setopt=obsoletes=0 \
+            libcublas10-10.2.2.89-1; \
+    elif [ "${CUDA_VERSION}" = "11.2" ]; then \
+        yum install -y --nogpgcheck --setopt=obsoletes=0 \
+            libcudnn8-8.1.1.33-1.cuda11.2 \
+            libcublas-11-2-11.4.1.1043; fi && \
+    yum install -y --nogpgcheck --setopt=obsoletes=0 \
+        cuda-compat-${CUDA_VER} \
+        cuda-nvtx-${CUDA_VER} \
+        cuda-libraries-${CUDA_VER} && \
+    ln -s cuda-${CUDA_VERSION} /usr/local/cuda && \
+    find / -name libcublas.so.${CUDA_VERSION%.*}|xargs -i ln -s {} /usr/local/lib64/libcublas.so.${CUDA_VERSION} && \
+    yum clean all && rm -rf /root/* /var/cache /etc/yum.repos.d/cuda.repo
+
+RUN mkdir -p /root/.pip && \
+    echo "[global]" > /root/.pip/pip.conf && \
+    echo "index-url = https://pypi.mirrors.ustc.edu.cn/simple" >>/root/.pip/pip.conf && \
+    echo "trusted-host = pypi.mirrors.ustc.edu.cn" >>/root/.pip/pip.conf && \
+    echo "timeout = 120" >>/root/.pip/pip.conf && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir numpy wheel pyyaml requests opencv-python pillow && \
+    if [ "${CUDA_VERSION}" = "10.2" ]; then \
+        yum install -y --nogpgcheck --setopt=obsoletes=0 \
+            libcudnn8-8.0.0.180-1.cuda10.2; \
+    elif [ "${CUDA_VERSION}" = "11.2" ]; then \
+        curl -LJO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz && \
+        tar zxf libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz -C /usr/local/ && \
+        rm -rf /usr/local/include/tensorflow && \
+        python3 -m pip install --no-cache-dir tensorflow-gpu==2.6.0; fi && \
+    if [ -n "${TRT_VERSION}" ]; then \
+        v="7.1.3-1.cuda10.2" && \
+        yum install -y libnvinfer7-${v} libnvonnxparsers7-${v} libnvparsers7-${v} libnvinfer-plugin7-${v}; \
+    elif [ -n "${TORCH_VERSION}" ]; then \
+        curl -LJO https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-abi-shared-with-deps-1.9.1%2Bcu102.zip && \
+        unzip libtorch-*.zip -d /root >/dev/null 2>&1 && \
+        cp -af libtorch/lib /usr/local/; fi && \
+    yum clean all && rm -rf /var/lib/apt/lists/* /root/*
+
+RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && \
+    ls /opt/release|egrep 'devel|document|solution'|xargs -i rm -f /opt/release/{} && \
+    rpm -ivh /opt/release/*.rpm && \
+    (cd /lib/systemd/system/sysinit.target.wants/; for i in *; \
+    do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+    rm -f /lib/systemd/system/multi-user.target.wants/*; \
+    rm -f /etc/systemd/system/*.wants/*; \
+    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+    rm -f /lib/systemd/system/basic.target.wants/*; \
+    rm -f /lib/systemd/system/anaconda.target.wants/*; \
+    sed -i 's/^SystemMaxUse=.*/SystemMaxUse=16M/g' /etc/systemd/journald.conf && \
+    sed -i '/ForwardToSyslog/s/^#//g' /etc/systemd/journald.conf && \
+    systemctl set-default multi-user.target && \
+    systemctl mask dev-hugepages.mount sys-fs-fuse-connections.mount && \
+    echo "/usr/local/cuda/compat" >> /etc/ld.so.conf.d/cuda.conf && \
+    echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf && \
+    ldconfig &>/dev/null && systemctl enable modelbox systemd-journald && \
+    echo "export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig" > /etc/profile.d/pkgconfig.sh && \
+    sed -i 's/^\(module(load="imklog")\)/#\1/' /etc/rsyslog.conf && \
+    echo "export JAVA_HOME=/usr/local/jdk-17" >> /etc/bashrc && \
+    echo "export PATH=\${JAVA_HOME}/bin:$PATH" >> /etc/bashrc
+
+VOLUME ["/sys/fs/cgroup", "/tmp", "/run", "/run/lock"]
+STOPSIGNAL SIGRTMIN+3
+
+LABEL com.nvidia.volumes.needed="nvidia_driver" com.nvidia.cuda.verison="${NVIDIA_CUDA_VERSION}"
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin${PATH:+:${PATH}}
+ENV LD_LIBRARY_PATH /usr/local/cuda/compat:/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES video,compute,utility
+ENV NVIDIA_REQUIRE_CUDA "${NVIDIA_REQUIRE_CUDA}"
+
+CMD ["/sbin/init", "--log-target=journal"]

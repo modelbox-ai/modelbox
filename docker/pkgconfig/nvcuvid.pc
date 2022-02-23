@@ -1,0 +1,9 @@
+cudaroot=/usr/local/cuda
+libdir=${cudaroot}/lib64/stubs
+includedir=${cudaroot}/include
+
+Name: nvcuvid
+Description: NVIDIA Video Codec SDK - Decoder
+Version: 9.1.23
+Libs: -L${libdir} -lnvcuvid
+Cflags: -I${includedir}

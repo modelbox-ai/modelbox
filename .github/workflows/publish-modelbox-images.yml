@@ -1,0 +1,1907 @@
+name: Publish modelbox images
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'new image tag(e.g. v1.1.0)'
+        required: true
+        default: 'latest'
+
+env:
+  BUILD_TYPE: Release
+  IMAGE_VERSION: ${{ github.event.inputs.version }}
+
+jobs:
+  compile_cuda112_ubuntu:
+    runs-on: ubuntu-latest
+    container: ubuntu:18.04
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    env:
+        CUDA_VER: "11-2"
+        CUDA_VERSION: "11.2"
+        CUDA_CUDART_VERSION: "11.2.152-1"
+    steps:
+    - id: env
+      run: |
+        echo "::set-output name=CUDA_VER::$(echo '11-2')"
+        echo "::set-output name=CUDA_VERSION::$(echo '11.2')"
+        echo "::set-output name=CUDA_CUDART_VERSION::$(echo '11.2.152-1')"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::$(echo '11.2.2')"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::$(echo 'cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461')"
+        echo "::set-output name=IMAGE_NAME_DEV::$(echo 'zxk114/modelbox-develop-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64')"
+        echo "::set-output name=IMAGE_NAME_RUN::$(echo 'zxk114/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64')"
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        echo "Asia/Shanghai" > /etc/timezone
+        apt-get update
+        apt-get upgrade -y
+        apt-get remove --purge python3-apt
+        apt-get install --no-install-recommends -y dbus iproute2 gnupg2 curl ca-certificates
+        apt-get install -y python3.7-dev python3-pip python3-apt python3-setuptools
+        apt-get install -y \
+            build-essential unzip ffmpeg sudo bash vim gdb git doxygen autoconf cmake openssh-server \
+            python3-wheel python3-numpy python3-opencv libopencv-dev pkg-config kmod net-tools pciutils \
+            libssl-dev libcpprest-dev libswscale-dev libavformat-dev graphviz libgraphviz-dev libfuse-dev \
+            libprotobuf-c-dev protobuf-c-compiler duktape-dev libmosquitto-dev
+        echo "Install dependencies finished"
+    - name: Install cuda
+      run: |
+        curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add -
+        cp -af ./docker/repo/*.list /etc/apt/sources.list.d/
+        apt-get update
+        apt install -y --no-install-recommends \
+            libcudnn8=8.1.1.33-1+cuda11.2 \
+            libcudnn8-dev=8.1.1.33-1+cuda11.2 \
+            libcublas-11-2=11.4.1.1043-1 \
+            libcublas-dev-11-2=11.4.1.1043-1
+        apt install -y --no-install-recommends \
+            cuda-cudart-${CUDA_VER}=${CUDA_CUDART_VERSION} \
+            cuda-compat-${CUDA_VER} \
+            cuda-minimal-build-${CUDA_VER} \
+            cuda-libraries-dev-${CUDA_VER} \
+            cuda-command-line-tools-${CUDA_VER}
+        ln -s cuda-${CUDA_VERSION} /usr/local/cuda
+        cp -af /usr/local/cuda/compat/* /usr/local/lib/
+        ln -s /usr/local/cuda/lib64/libcublas.so.${CUDA_VERSION%.*} /usr/local/lib/libcublas.so.${CUDA_VERSION}
+        echo "Install cuda finished"
+    - name: Install ThirdParty
+      run: |
+        curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+        apt-get install -y nodejs
+        npm install -g npm@latest
+        npm install -g @angular/cli
+        npm -v && node -v
+        npm cache clean --force
+        
+        echo "download libtensorflow"
+        curl -LJO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz
+        echo "download openjdk"
+        curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+        echo "download maven"
+        curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+        echo "download obs"
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev-ubuntu.tar.gz
+        for tar in *.tar.gz; do echo $tar && tar zxf $tar -C /usr/local/; done
+
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.zip
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/include/cuviddec.h \
+            Video_Codec_SDK_9.1.23/include/nvcuvid.h \
+            Video_Codec_SDK_9.1.23/include/nvEncodeAPI.h \
+            -d /usr/local/include
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvcuvid.so \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvidia-encode.so \
+            -d /usr/local/lib
+        ln -s libnvcuvid.so /usr/local/lib/libnvcuvid.so.1
+
+        rm -f /usr/bin/python3 /usr/bin/python
+        update-alternatives --install /usr/bin/python python /usr/bin/python3.7 100
+        update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100
+        update-alternatives --config python3
+        ls -lh /usr/bin/python*
+        /usr/bin/python -V && /usr/bin/python3 -V
+        yes | python3 -m pip install --upgrade pip
+        yes | pip3 install pillow numpy wheel
+        echo "Install thirdparty finished"
+    - name: CMake
+      run: |
+        export JAVA_HOME=/usr/local/jdk-17
+        export MAVEN_HOME=/usr/local/apache-maven-3.8.4
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        export PATH=/usr/local/cuda/bin:$JAVA_HOME/bin:$MAVEN_HOME/bin${PATH:+:${PATH}}
+        export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
+        ldconfig
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on
+    - name: Build
+      working-directory: ./build
+      run: |
+        make package -j8
+        rm -f release/*.rpm
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.deb" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "cuda"| wc -l)
+        if [ ${filecount} -ge 13 ] && [ ${dpkgcount} -ge 11 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
+    - name: Prepare Artifact
+      run: |
+        mkdir ./artifact
+        cp -af ./build/release ./artifact/
+        ls -lh ./artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: modelbox_cuda112_ubuntu
+        path: ./artifact
+          
+  build_cuda112_ubuntu_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda112_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda112_ubuntu
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev-ubuntu.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.develop.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_ubuntu.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_ubuntu.outputs.CUDA_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_ubuntu.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda112_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda112_ubuntu_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda112_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda112_ubuntu
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8-ubuntu.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.runtime.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_ubuntu.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_ubuntu.outputs.CUDA_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_ubuntu.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda112_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_cuda112_ubuntu:
+    runs-on: ubuntu-latest
+    needs: [compile_cuda112_ubuntu,build_cuda112_ubuntu_develop_image]
+    container:
+      image: ${{ needs.compile_cuda112_ubuntu.outputs.IMAGE_NAME_DEV }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
+
+  compile_cuda102_trt_ubuntu:
+    runs-on: ubuntu-latest
+    container: ubuntu:18.04
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      TRT_VERSION: ${{ steps.env.outputs.TRT_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    env:
+      CUDA_VER: "10-2"
+      CUDA_VERSION: "10.2"
+      CUDA_CUDART_VERSION: "10.2.89-1"
+      TRT_VERSION: "7.1.3.4"
+    steps:
+    - id: env
+      run: |
+        echo "::set-output name=CUDA_VER::$(echo '10-2')"
+        echo "::set-output name=CUDA_VERSION::$(echo '10.2')"
+        echo "::set-output name=CUDA_CUDART_VERSION::$(echo '10.2.89-1')"
+        echo "::set-output name=TRT_VERSION::$(echo '7.1.3.4')"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::$(echo '10.2.89')"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::$(echo 'cuda>=10.2 brand=tesla,driver>=396,driver<397 brand=tesla,driver>=410,driver<411 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441')"
+        echo "::set-output name=IMAGE_NAME_DEV::$(echo 'zxk114/modelbox-develop-tensorrt_7.1.3-cuda_10.2-ubuntu-x86_64')"
+        echo "::set-output name=IMAGE_NAME_RUN::$(echo 'zxk114/modelbox-runtime-tensorrt_7.1.3-cuda_10.2-ubuntu-x86_64')"
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        echo "Asia/Shanghai" > /etc/timezone
+        apt-get update
+        apt-get upgrade -y
+        apt-get remove --purge python3-apt
+        apt-get install --no-install-recommends -y dbus iproute2 gnupg2 curl ca-certificates
+        apt-get install -y python3.7-dev python3-pip python3-apt python3-setuptools
+        apt-get install -y \
+            build-essential unzip ffmpeg sudo bash vim gdb git doxygen autoconf cmake openssh-server \
+            python3-wheel python3-numpy python3-opencv libopencv-dev pkg-config kmod net-tools pciutils \
+            libssl-dev libcpprest-dev libswscale-dev libavformat-dev graphviz libgraphviz-dev libfuse-dev \
+            libprotobuf-c-dev protobuf-c-compiler duktape-dev libmosquitto-dev
+        echo "Install dependencies finished"
+    - name: Install cuda+trt
+      run: |
+        curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add -
+        cp -af ./docker/repo/*.list /etc/apt/sources.list.d/
+
+        apt-get update
+        apt install -y --no-install-recommends \
+            cuda-cudart-${CUDA_VER}=${CUDA_CUDART_VERSION} \
+            cuda-compat-${CUDA_VER} \
+            cuda-minimal-build-${CUDA_VER} \
+            cuda-libraries-dev-${CUDA_VER} \
+            cuda-command-line-tools-${CUDA_VER} \
+            libcublas10=10.2.2.89-1 \
+            libcublas-dev=10.2.2.89-1
+        ln -s cuda-${CUDA_VERSION} /usr/local/cuda
+        cp -af /usr/local/cuda/compat/* /usr/local/lib/
+        ln -s /usr/local/cuda/lib64/libcublas.so.${CUDA_VERSION%.*} /usr/local/lib/libcublas.so.${CUDA_VERSION}
+        rm -f /etc/apt/sources.list.d/cuda.list
+        apt update
+        v="7.1.3-1+cuda10.2"
+        apt install -y --no-install-recommends \
+            libnvinfer7=${v} \
+            libnvinfer-dev=${v} \
+            libnvonnxparsers7=${v} \
+            libnvonnxparsers-dev=${v} \
+            libnvparsers7=${v} \
+            libnvparsers-dev=${v} \
+            libnvinfer-plugin7=${v} \
+            libnvinfer-plugin-dev=${v} \
+            python3-libnvinfer=${v} \
+            libcudnn8=8.0.0.180-1+cuda10.2 \
+            libcudnn8-dev=8.0.0.180-1+cuda10.2
+        echo "Install dependencies finished"
+    - name: Install ThirdParty
+      run: |
+        curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+        apt-get install -y nodejs
+        npm install -g npm@latest
+        npm install -g @angular/cli
+        npm -v && node -v
+        npm cache clean --force
+
+        curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+        curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev-ubuntu.tar.gz
+        for tar in *.tar.gz; do tar zxf $tar -C /usr/local/ && echo "$tar"; done
+
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.zip
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/include/cuviddec.h \
+            Video_Codec_SDK_9.1.23/include/nvcuvid.h \
+            Video_Codec_SDK_9.1.23/include/nvEncodeAPI.h \
+            -d /usr/local/include
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvcuvid.so \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvidia-encode.so \
+            -d /usr/local/lib
+        ln -s libnvcuvid.so /usr/local/lib/libnvcuvid.so.1
+
+        rm -f /usr/bin/python3 /usr/bin/python
+        update-alternatives --install /usr/bin/python python /usr/bin/python3.7 100
+        update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100
+        update-alternatives --config python3
+        ls -lh /usr/bin/python*
+        /usr/bin/python -V && /usr/bin/python3 -V
+        yes | python3 -m pip install --upgrade pip
+        yes | pip3 install pillow numpy wheel
+        echo "Install thirdparty finished"
+    - name: CMake
+      run: |
+        export JAVA_HOME=/usr/local/jdk-17
+        export MAVEN_HOME=/usr/local/apache-maven-3.8.4
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        export PATH=/usr/local/cuda/bin:$JAVA_HOME/bin:$MAVEN_HOME/bin${PATH:+:${PATH}}
+        export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
+        ldconfig
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on
+    - name: Build
+      working-directory: ./build
+      run: |
+        make package -j8
+        rm -f release/*.rpm
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.deb" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "cuda"| wc -l)
+        if [ ${filecount} -ge 13 ] && [ ${dpkgcount} -ge 11 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
+    - name: Prepare Artifact
+      run: |
+        mkdir ./artifact
+        cp -af ./build/release ./artifact/
+        ls -lh ./artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: modelbox_cuda102_trt_ubuntu
+        path: ./artifact
+
+  build_cuda102_trt_ubuntu_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda102_trt_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda102_trt_ubuntu
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev-ubuntu.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.develop.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_VERSION }}
+            TRT_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.TRT_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda102_trt_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda102_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda102_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda102_trt_ubuntu_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda102_trt_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda102_trt_ubuntu
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8-ubuntu.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.runtime.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_VERSION }}
+            TRT_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.TRT_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda102_trt_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda102_trt_ubuntu.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda102_trt_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_cuda102_trt_ubuntu:
+    runs-on: ubuntu-latest
+    needs: [compile_cuda102_trt_ubuntu,build_cuda102_trt_ubuntu_develop_image]
+    container:
+      image: ${{ needs.compile_cuda102_trt_ubuntu.outputs.IMAGE_NAME_DEV }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
+
+  compile_cuda102_torch_ubuntu:
+    runs-on: ubuntu-latest
+    container: ubuntu:18.04
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      TORCH_VERSION: ${{ steps.env.outputs.TORCH_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    env:
+      CUDA_VER: "10-2"
+      CUDA_VERSION: "10.2"
+      CUDA_CUDART_VERSION: "10.2.89-1"
+      TORCH_VERSION: "1.9.1"
+    steps:
+    - id: env
+      run: |
+        echo "::set-output name=CUDA_VER::$(echo '10-2')"
+        echo "::set-output name=CUDA_VERSION::$(echo '10.2')"
+        echo "::set-output name=CUDA_CUDART_VERSION::$(echo '10.2.89-1')"
+        echo "::set-output name=TORCH_VERSION::$(echo '1.9.1')"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::$(echo '10.2.89')"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::$(echo 'cuda>=10.2 brand=tesla,driver>=396,driver<397 brand=tesla,driver>=410,driver<411 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441')"
+        echo "::set-output name=IMAGE_NAME_DEV::$(echo 'zxk114/modelbox-develop-libtorch_1.9.1-cuda_10.2-ubuntu-x86_64')"
+        echo "::set-output name=IMAGE_NAME_RUN::$(echo 'zxk114/modelbox-runtime-libtorch_1.9.1-cuda_10.2-ubuntu-x86_64')"
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        echo "Asia/Shanghai" > /etc/timezone
+        apt-get update
+        apt-get upgrade -y
+        apt-get remove --purge python3-apt
+        apt-get install --no-install-recommends -y dbus iproute2 gnupg2 curl ca-certificates
+        apt-get install -y python3.7-dev python3-pip python3-apt python3-setuptools
+        apt-get install -y \
+            build-essential unzip ffmpeg sudo bash vim gdb git doxygen autoconf cmake openssh-server \
+            python3-wheel python3-numpy python3-opencv libopencv-dev pkg-config kmod net-tools pciutils \
+            libssl-dev libcpprest-dev libswscale-dev libavformat-dev graphviz libgraphviz-dev libfuse-dev \
+            libprotobuf-c-dev protobuf-c-compiler duktape-dev libmosquitto-dev
+        echo "Install dependencies finished"
+    - name: Install cuda+torch
+      run: |
+        curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add -
+        cp -af ./docker/repo/*.list /etc/apt/sources.list.d/
+
+        apt-get update
+        apt install -y --no-install-recommends \
+            cuda-cudart-${CUDA_VER}=${CUDA_CUDART_VERSION} \
+            cuda-compat-${CUDA_VER} \
+            cuda-minimal-build-${CUDA_VER} \
+            cuda-libraries-dev-${CUDA_VER} \
+            cuda-command-line-tools-${CUDA_VER} \
+            libcublas10=10.2.2.89-1 \
+            libcublas-dev=10.2.2.89-1
+        ln -s cuda-${CUDA_VERSION} /usr/local/cuda
+
+        rm -f /etc/apt/sources.list.d/cuda.list
+        apt update
+        apt install -y --no-install-recommends \
+            libcudnn8=8.0.0.180-1+cuda10.2 \
+            libcudnn8-dev=8.0.0.180-1+cuda10.2
+        cp -af /usr/local/cuda/compat/* /usr/local/lib/
+        ln -s /usr/local/cuda/lib64/libcublas.so.${CUDA_VERSION%.*} /usr/local/lib/libcublas.so.${CUDA_VERSION}
+
+        curl -LJO https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-abi-shared-with-deps-1.9.1%2Bcu102.zip
+        unzip libtorch-*.zip -d . >/dev/null 2>&1
+        cp -af libtorch/* /usr/local/
+        echo "Install cuda+torch finished"
+    - name: Install ThirdParty
+      run: |
+        curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+        apt-get install -y nodejs
+        npm install -g npm@latest
+        npm install -g @angular/cli
+        npm -v && node -v
+        npm cache clean --force
+
+        curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+        curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev-ubuntu.tar.gz
+        for tar in *.tar.gz; do tar zxf $tar -C /usr/local/ && echo "$tar"; done
+
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.zip
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/include/cuviddec.h \
+            Video_Codec_SDK_9.1.23/include/nvcuvid.h \
+            Video_Codec_SDK_9.1.23/include/nvEncodeAPI.h \
+            -d /usr/local/include
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvcuvid.so \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvidia-encode.so \
+            -d /usr/local/lib
+        ln -s libnvcuvid.so /usr/local/lib/libnvcuvid.so.1
+
+        rm -f /usr/bin/python3 /usr/bin/python
+        update-alternatives --install /usr/bin/python python /usr/bin/python3.7 100
+        update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100
+        update-alternatives --config python3
+        ls -lh /usr/bin/python*
+        /usr/bin/python -V && /usr/bin/python3 -V
+        yes | python3 -m pip install --upgrade pip
+        yes | pip3 install pillow numpy wheel
+        echo "Install thirdparty finished"
+    - name: CMake
+      run: |
+        export JAVA_HOME=/usr/local/jdk-17
+        export MAVEN_HOME=/usr/local/apache-maven-3.8.4
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        export PATH=/usr/local/cuda/bin:$JAVA_HOME/bin:$MAVEN_HOME/bin${PATH:+:${PATH}}
+        export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
+        ldconfig
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on
+    - name: Build
+      working-directory: ./build
+      run: |
+        make package -j8
+        rm -f release/*.rpm
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.deb" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "cuda"| wc -l)
+        if [ ${filecount} -ge 13 ] && [ ${dpkgcount} -ge 11 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
+    - name: Prepare Artifact
+      run: |
+        mkdir ./artifact
+        cp -af ./build/release ./artifact/
+        ls -lh ./artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: modelbox_cuda102_torch_ubuntu
+        path: ./artifact
+
+  build_cuda102_torch_ubuntu_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda102_torch_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda102_torch_ubuntu
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev-ubuntu.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.develop.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_VERSION }}
+            TORCH_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.TORCH_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda102_torch_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda102_torch_ubuntu.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda102_torch_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda102_torch_ubuntu_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda102_torch_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda102_torch_ubuntu
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8-ubuntu.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.runtime.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_VERSION }}
+            TORCH_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.TORCH_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda102_torch_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda102_torch_ubuntu.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda102_torch_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_cuda102_torch_ubuntu:
+    runs-on: ubuntu-latest
+    needs: [compile_cuda102_torch_ubuntu,build_cuda102_torch_ubuntu_develop_image]
+    container:
+      image: ${{ needs.compile_cuda102_torch_ubuntu.outputs.IMAGE_NAME_DEV }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
+
+  compile_ascend_ubuntu:
+    runs-on: ubuntu-latest
+    container: modelbox/modelbox_base_ubuntu:latest
+    outputs:
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+    - id: env
+      run: |
+        echo "::set-output name=IMAGE_NAME_DEV::$(echo 'zxk114/modelbox-develop-mindspore_1.3.0-cann_5.0.2-ubuntu-x86_64')"
+        echo "::set-output name=IMAGE_NAME_RUN::$(echo 'zxk114/modelbox-runtime-mindspore_1.3.0-cann_5.0.2-ubuntu-x86_64')"
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        echo "Asia/Shanghai" > /etc/timezone
+        apt-get update
+        apt-get upgrade -y
+        apt-get remove --purge python3-apt
+        apt-get install --no-install-recommends -y dbus iproute2 gnupg2 curl ca-certificates
+        apt-get install -y python3.7-dev python3-pip python3-apt python3-setuptools
+        apt-get install -y \
+            build-essential unzip ffmpeg sudo bash vim gdb git doxygen autoconf cmake openssh-server \
+            python3-wheel python3-numpy python3-opencv libopencv-dev pkg-config kmod net-tools pciutils \
+            libssl-dev libcpprest-dev libswscale-dev libavformat-dev graphviz libgraphviz-dev libfuse-dev \
+            libprotobuf-c-dev protobuf-c-compiler duktape-dev libmosquitto-dev
+        echo "Install dependencies finished"
+    - name: Install ThirdParty
+      run: |
+        curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+        apt-get install -y nodejs
+        npm install -g npm@latest
+        npm install -g @angular/cli
+        npm -v && node -v
+        npm cache clean --force
+
+        curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+        curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev-ubuntu.tar.gz
+        for tar in *.tar.gz; do tar zxf $tar -C /usr/local/ && echo "$tar"; done
+
+        rm -f /usr/bin/python3 /usrgit stat/bin/python
+        update-alternatives --install /usr/bin/python python /usr/bin/python3.7 100
+        update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100
+        update-alternatives --config python3
+        ls -lh /usr/bin/python*
+        /usr/bin/python -V && /usr/bin/python3 -V
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --no-cache-dir wheel attrs psutil decorator numpy protobuf scipy sympy cffi grpcio grpcio-tools requests pillow
+        python3 -m pip install --no-cache-dir https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.3.0/MindSpore/ascend/x86_64/mindspore_ascend-1.3.0-cp37-cp37m-linux_x86_64.whl
+        python3 -m pip install --no-cache-dir /usr/local/Ascend/ascend-toolkit/latest/atc/lib64/topi-0.4.0-py3-none-any.whl && \
+        python3 -m pip install --no-cache-dir /usr/local/Ascend/ascend-toolkit/latest/atc/lib64/te-0.4.0-py3-none-any.whl
+        echo "Install thirdparty finished"
+    - name: CMake
+      run: |
+        export MINDSPORE_PATH=/usr/local/lib/python3.7/dist-packages/mindspore
+        export DDK_PATH=/usr/local/Ascend/ascend-toolkit/latest/acllib
+        export DRIVER_PATH=/usr/local/Ascend/driver
+        export LD_LIBRARY_PATH=/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/ascend-toolkit/latest/fwkacllib/lib64:/usr/local/Ascend/ascend-toolkit/latest/acllib/lib64:/usr/local/Ascend/ascend-toolkit/latest/atc/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        export JAVA_HOME=/usr/local/jdk-17
+        export MAVEN_HOME=/usr/local/apache-maven-3.8.4
+        export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on
+    - name: Build
+      working-directory: ./build
+      run: |
+        make package -j8
+        rm -f release/*.rpm
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.deb" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "ascend"| wc -l)
+        if [ ${filecount} -ge 13 ] && [ ${dpkgcount} -ge 11 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
+    - name: Prepare Artifact
+      run: |
+        mkdir ./artifact
+        cp -af ./build/release ./artifact/
+        ls -lh ./artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: modelbox_ascend_ubuntu
+        path: ./artifact
+
+  build_ascend_ubuntu_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_ascend_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_ascend_ubuntu
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev-ubuntu.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.ascend.develop.ubuntu
+          tags: |
+            ${{ needs.compile_ascend_ubuntu.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_ascend_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_ascend_ubuntu_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_ascend_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_ascend_ubuntu
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8-ubuntu.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.ascend.runtime.ubuntu
+          tags: |
+            ${{ needs.compile_ascend_ubuntu.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_ascend_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_ascend_ubuntu:
+    runs-on: ubuntu-latest
+    needs: [compile_ascend_ubuntu,build_ascend_ubuntu_develop_image]
+    container:
+      image: ${{ needs.compile_ascend_ubuntu.outputs.IMAGE_NAME_DEV }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
+
+  compile_cuda112_openeuler:
+    runs-on: ubuntu-latest
+    container: openeuler/openeuler:20.03-lts-sp2
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    env:
+        CUDA_VER: "11-2"
+        CUDA_VERSION: "11.2"
+        CUDA_CUDART_VERSION: "11.2.152-1"
+    steps:
+    - id: env
+      run: |
+        echo "::set-output name=CUDA_VER::$(echo '11-2')"
+        echo "::set-output name=CUDA_VERSION::$(echo '11.2')"
+        echo "::set-output name=CUDA_CUDART_VERSION::$(echo '11.2.152-1')"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::$(echo '11.2.2')"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::$(echo 'cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461')"
+        echo "::set-output name=IMAGE_NAME_DEV::$(echo 'zxk114/modelbox-develop-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64')"
+        echo "::set-output name=IMAGE_NAME_RUN::$(echo 'zxk114/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64')"
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        echo "Asia/Shanghai" > /etc/timezone
+        yum update -y && \
+        yum install -y vim gcc gcc-c++ make cmake libnsl perf rsyslog doxygen gcc-gfortran pciutils alsa-lib gdb clang  \
+            zlib-devel curl-devel bzip2-devel rpm-build sqlite-devel libffi-devel openssl-devel xz-devel git \
+            krb5-devel expat-devel boost-devel ncurses-devel libxml2-devel libssh2-devel python3-devel python3-perf \
+            readline-devel nss-devel fuse-devel gdbm-devel glibc-devel glibc-debuginfo gnutls-devel net-tools libatomic \
+            xauth tk-devel lapack-devel graphviz-devel mesa-libGL-devel openblas-devel protobuf-c-devel
+        rm -f /usr/bin/python3 /usr/bin/python
+        ln -s python3.7 /usr/bin/python3
+        ln -s python3 /usr/bin/python
+        ls -lh /usr/bin/python*
+        /usr/bin/python -V && /usr/bin/python3 -V
+        echo "Install dependencies finished"
+    - name: Install cuda
+      run: |
+        NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5
+        curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+        echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
+        cp -af ./docker/repo/cuda.repo /etc/yum.repos.d/
+        yum install -y --nogpgcheck --setopt=obsoletes=0 \
+            cuda-cudart-${CUDA_VER}-${CUDA_CUDART_VERSION} \
+            cuda-compat-${CUDA_VER} \
+            cuda-minimal-build-${CUDA_VER} \
+            cuda-libraries-devel-${CUDA_VER} \
+            cuda-command-line-tools-${CUDA_VER} \
+            libcudnn8-8.1.1.33-1.cuda11.2 \
+            libcudnn8-devel-8.1.1.33-1.cuda11.2 \
+            libcublas-11-2-11.4.1.1043-1 \
+            libcublas-devel-11-2-11.4.1.1043-1
+        ln -s cuda-${CUDA_VERSION} /usr/local/cuda
+        cp -af /usr/local/cuda/compat/* /usr/local/lib64/
+        ln -s /usr/local/cuda/lib64/libcublas.so.${CUDA_VERSION%.*} /usr/local/lib64/libcublas.so.${CUDA_VERSION}
+        echo "Install cuda finished"
+    - name: Install ThirdParty
+      run: |
+        curl https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-x64.tar.xz|tar -xJ
+        cp -af node-v16.13.2-linux-x64/{bin,include,lib,share} /usr/local/
+        npm install -g npm@latest
+        npm install -g @angular/cli
+        npm -v && node -v
+        npm cache clean --force
+
+        curl -LJO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz
+        curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+        curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
+        for tar in *.tar.gz; do tar zxf $tar -C /usr/local/; done
+
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.zip
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/include/cuviddec.h \
+            Video_Codec_SDK_9.1.23/include/nvcuvid.h \
+            Video_Codec_SDK_9.1.23/include/nvEncodeAPI.h \
+            -d /usr/local/include
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvcuvid.so \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvidia-encode.so \
+            -d /usr/local/lib64
+        ln -s libnvcuvid.so /usr/local/lib64/libnvcuvid.so.1
+
+        mkdir -p /root/.pip
+        echo "[global]" > /root/.pip/pip.conf
+        echo "index-url = https://pypi.mirrors.ustc.edu.cn/simple" >>/root/.pip/pip.conf
+        echo "trusted-host = pypi.mirrors.ustc.edu.cn" >>/root/.pip/pip.conf
+        echo "timeout = 120" >>/root/.pip/pip.conf 
+        yes | python3 -m pip install --upgrade pip
+        yes | pip3 install pillow numpy wheel
+        echo "Install thirdparty finished"
+    - name: CMake
+      run: |
+        export JAVA_HOME=/usr/local/jdk-17
+        export MAVEN_HOME=/usr/local/apache-maven-3.8.4
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:/usr/local/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        export PATH=/usr/local/cuda/bin:$JAVA_HOME/bin:$MAVEN_HOME/bin${PATH:+:${PATH}}
+        export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
+        ldconfig
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on
+    - name: Build
+      working-directory: ./build
+      run: |
+        make package -j8
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.rpm" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "cuda"| wc -l)
+        if [ ${filecount} -ge 13 ] && [ ${dpkgcount} -ge 11 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
+    - name: Prepare Artifact
+      run: |
+        mkdir ./artifact
+        cp -af ./build/release ./artifact/
+        ls -lh ./artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: modelbox_cuda112_openeuler
+        path: ./artifact
+          
+  build_cuda112_openeuler_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda112_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda112_openeuler
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.develop.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_openeuler.outputs.CUDA_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_openeuler.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda112_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda112_openeuler_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda112_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda112_openeuler
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.runtime.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_openeuler.outputs.CUDA_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_openeuler.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda112_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_cuda112_openeuler:
+    runs-on: ubuntu-latest
+    needs: [compile_cuda112_openeuler,build_cuda112_openeuler_develop_image]
+    container:
+      image: ${{ needs.compile_cuda112_openeuler.outputs.IMAGE_NAME_DEV }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
+
+  compile_cuda102_trt_openeuler:
+    runs-on: ubuntu-latest
+    container: openeuler/openeuler:20.03-lts-sp2
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      TRT_VERSION: ${{ steps.env.outputs.TRT_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    env:
+      CUDA_VER: "10-2"
+      CUDA_VERSION: "10.2"
+      CUDA_CUDART_VERSION: "10.2.89-1"
+      TRT_VERSION: "7.1.3.4"
+    steps:
+    - id: env
+      run: |
+        echo "::set-output name=CUDA_VER::$(echo '10-2')"
+        echo "::set-output name=CUDA_VERSION::$(echo '10.2')"
+        echo "::set-output name=CUDA_CUDART_VERSION::$(echo '10.2.89-1')"
+        echo "::set-output name=TRT_VERSION::$(echo '7.1.3.4')"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::$(echo '10.2.89')"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::$(echo 'cuda>=10.2 brand=tesla,driver>=396,driver<397 brand=tesla,driver>=410,driver<411 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441')"
+        echo "::set-output name=IMAGE_NAME_DEV::$(echo 'zxk114/modelbox-develop-tensorrt_7.1.3-cuda_10.2-openeuler-x86_64')"
+        echo "::set-output name=IMAGE_NAME_RUN::$(echo 'zxk114/modelbox-runtime-tensorrt_7.1.3-cuda_10.2-openeuler-x86_64')"
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        echo "Asia/Shanghai" > /etc/timezone
+        yum update -y && \
+        yum install -y vim gcc gcc-c++ make cmake libnsl perf rsyslog doxygen gcc-gfortran pciutils alsa-lib gdb clang  \
+            zlib-devel curl-devel bzip2-devel rpm-build sqlite-devel libffi-devel openssl-devel xz-devel git \
+            krb5-devel expat-devel boost-devel ncurses-devel libxml2-devel libssh2-devel python3-devel python3-perf \
+            readline-devel nss-devel fuse-devel gdbm-devel glibc-devel glibc-debuginfo gnutls-devel net-tools libatomic \
+            xauth tk-devel lapack-devel graphviz-devel mesa-libGL-devel openblas-devel protobuf-c-devel
+        rm -f /usr/bin/python3 /usr/bin/python
+        ln -s python3.7 /usr/bin/python3
+        ln -s python3 /usr/bin/python
+        ls -lh /usr/bin/python*
+        /usr/bin/python -V && /usr/bin/python3 -V
+        echo "Install dependencies finished"
+    - name: Install cuda+trt
+      run: |
+        NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
+        curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+        echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
+        cp -af ./docker/repo/*.repo /etc/yum.repos.d/
+        yum install -y --nogpgcheck --setopt=obsoletes=0 \
+            cuda-cudart-${CUDA_VER}-${CUDA_CUDART_VERSION} \
+            cuda-compat-${CUDA_VER} \
+            cuda-minimal-build-${CUDA_VER} \
+            cuda-libraries-dev-${CUDA_VER} \
+            cuda-command-line-tools-${CUDA_VER} \
+            libcublas-devel-10.2.2.89-1 \
+            libcublas10-10.2.2.89-1
+        rm -f /etc/yum.repos.d/cuda.repo
+        v="7.1.3-1.cuda10.2"
+        yum install -y --nogpgcheck --setopt=obsoletes=0 \
+            libnvinfer7-${v} \
+            libnvinfer-devel-${v} \
+            libnvonnxparsers7-${v} \
+            libnvonnxparsers-devel-${v} \
+            libnvparsers7-${v} \
+            libnvparsers-devel-${v} \
+            libnvinfer-plugin7-${v} \
+            libnvinfer-plugin-devel-${v} \
+            libcudnn8-devel-8.0.0.180-1.cuda10.2 \
+            libcudnn8-8.0.0.180-1.cuda10.2
+        ln -s cuda-${CUDA_VERSION} /usr/local/cuda
+        cp -af /usr/local/cuda/compat/* /usr/local/lib64/
+        ln -s /usr/local/cuda/lib64/libcublas.so.${CUDA_VERSION%.*} /usr/local/lib64/libcublas.so.${CUDA_VERSION}
+        echo "Install cuda+trt finished"
+    - name: Install ThirdParty
+      run: |
+        curl https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-x64.tar.xz|tar -xJ
+        cp -af node-v16.13.2-linux-x64/{bin,include,lib,share} /usr/local/
+        npm config set registry https://registry.npm.taobao.org
+        npm install -g npm@latest
+        npm install -g @angular/cli
+        npm -v && node -v
+        npm cache clean --force
+
+        curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+        curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
+        for tar in *.tar.gz; do tar zxf $tar -C /usr/local/; done
+
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.zip
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/include/cuviddec.h \
+            Video_Codec_SDK_9.1.23/include/nvcuvid.h \
+            Video_Codec_SDK_9.1.23/include/nvEncodeAPI.h \
+            -d /usr/local/include
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvcuvid.so \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvidia-encode.so \
+            -d /usr/local/lib64
+        ln -s libnvcuvid.so /usr/local/lib64/libnvcuvid.so.1
+
+        mkdir -p /root/.pip
+        echo "[global]" > /root/.pip/pip.conf
+        echo "index-url = https://pypi.mirrors.ustc.edu.cn/simple" >>/root/.pip/pip.conf
+        echo "trusted-host = pypi.mirrors.ustc.edu.cn" >>/root/.pip/pip.conf
+        echo "timeout = 120" >>/root/.pip/pip.conf 
+        yes | python3 -m pip install --upgrade pip
+        yes | pip3 install pillow numpy wheel
+        echo "Install thirdparty finished"
+    - name: CMake
+      run: |
+        pwd
+        export JAVA_HOME=/usr/local/jdk-17
+        export MAVEN_HOME=/usr/local/apache-maven-3.8.4
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:/usr/local/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        export PATH=/usr/local/cuda/bin:$JAVA_HOME/bin:$MAVEN_HOME/bin${PATH:+:${PATH}}
+        export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
+        ldconfig
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on
+    - name: Build
+      working-directory: ./build
+      run: |
+        make package -j8
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.rpm" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "cuda"| wc -l)
+        if [ ${filecount} -ge 13 ] && [ ${dpkgcount} -ge 11 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
+    - name: Prepare Artifact
+      run: |
+        mkdir ./artifact
+        cp -af ./build/release ./artifact/
+        ls -lh ./artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: modelbox_cuda102_trt_openeuler
+        path: ./artifact
+
+  build_cuda102_trt_openeuler_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda102_trt_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda102_trt_openeuler
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.develop.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda102_trt_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda102_trt_openeuler.outputs.CUDA_VERSION }}
+            TRT_VERSION=${{ needs.compile_cuda102_trt_openeuler.outputs.TRT_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda102_trt_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda102_trt_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda102_trt_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda102_trt_openeuler.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda102_trt_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda102_trt_openeuler_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda102_trt_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda102_trt_openeuler
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.runtime.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda102_trt_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda102_trt_openeuler.outputs.CUDA_VERSION }}
+            TRT_VERSION=${{ needs.compile_cuda102_trt_openeuler.outputs.TRT_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda102_trt_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda102_trt_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda102_trt_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda102_trt_openeuler.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda102_trt_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_cuda102_trt_openeuler:
+    runs-on: ubuntu-latest
+    needs: [compile_cuda102_trt_openeuler,build_cuda102_trt_openeuler_develop_image]
+    container:
+      image: ${{ needs.compile_cuda102_trt_openeuler.outputs.IMAGE_NAME_DEV }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
+
+  compile_cuda102_torch_openeuler:
+    runs-on: ubuntu-latest
+    container: openeuler/openeuler:20.03-lts-sp2
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      TORCH_VERSION: ${{ steps.env.outputs.TORCH_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    env:
+      CUDA_VER: "10-2"
+      CUDA_VERSION: "10.2"
+      CUDA_CUDART_VERSION: "10.2.89-1"
+      TORCH_VERSION: "1.9.1"
+    steps:
+    - id: env
+      run: |
+        echo "::set-output name=CUDA_VER::$(echo '10-2')"
+        echo "::set-output name=CUDA_VERSION::$(echo '10.2')"
+        echo "::set-output name=CUDA_CUDART_VERSION::$(echo '10.2.89-1')"
+        echo "::set-output name=TORCH_VERSION::$(echo '1.9.1')"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::$(echo '10.2.89')"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::$(echo 'cuda>=10.2 brand=tesla,driver>=396,driver<397 brand=tesla,driver>=410,driver<411 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441')"
+        echo "::set-output name=IMAGE_NAME_DEV::$(echo 'zxk114/modelbox-develop-libtorch_1.9.1-cuda_10.2-openeuler-x86_64')"
+        echo "::set-output name=IMAGE_NAME_RUN::$(echo 'zxk114/modelbox-runtime-libtorch_1.9.1-cuda_10.2-openeuler-x86_64')"
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        echo "Asia/Shanghai" > /etc/timezone
+        yum update -y && \
+        yum install -y vim gcc gcc-c++ make cmake libnsl perf rsyslog doxygen gcc-gfortran pciutils alsa-lib gdb clang  \
+            zlib-devel curl-devel bzip2-devel rpm-build sqlite-devel libffi-devel openssl-devel xz-devel git \
+            krb5-devel expat-devel boost-devel ncurses-devel libxml2-devel libssh2-devel python3-devel python3-perf \
+            readline-devel nss-devel fuse-devel gdbm-devel glibc-devel glibc-debuginfo gnutls-devel net-tools libatomic \
+            xauth tk-devel lapack-devel graphviz-devel mesa-libGL-devel openblas-devel protobuf-c-devel
+        rm -f /usr/bin/python3 /usr/bin/python
+        ln -s python3.7 /usr/bin/python3
+        ln -s python3 /usr/bin/python
+        ls -lh /usr/bin/python*
+        /usr/bin/python -V && /usr/bin/python3 -V
+        echo "Install dependencies finished"
+    - name: Install cuda+torch
+      run: |
+        NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5
+        curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+        echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
+        cp -af ./docker/repo/*.repo /etc/yum.repos.d/
+        yum install -y --nogpgcheck --setopt=obsoletes=0 \
+            cuda-cudart-${CUDA_VER}-${CUDA_CUDART_VERSION} \
+            cuda-compat-${CUDA_VER} \
+            cuda-minimal-build-${CUDA_VER} \
+            cuda-libraries-dev-${CUDA_VER} \
+            cuda-command-line-tools-${CUDA_VER} \
+            libcublas-devel-10.2.2.89-1 \
+            libcublas10-10.2.2.89-1
+        ln -s cuda-${CUDA_VERSION} /usr/local/cuda
+        cp -af /usr/local/cuda/compat/* /usr/local/lib64/
+        ln -s /usr/local/cuda/lib64/libcublas.so.${CUDA_VERSION%.*} /usr/local/lib64/libcublas.so.${CUDA_VERSION}
+
+        curl -LJO https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-abi-shared-with-deps-1.9.1%2Bcu102.zip
+        unzip libtorch-*.zip -d . >/dev/null 2>&1
+        cp -af libtorch/* /usr/local/
+        rm -f /etc/yum.repos.d/cuda.repo
+        yum install -y --nogpgcheck --setopt=obsoletes=0 \
+            libcudnn8-devel-8.0.0.180-1.cuda10.2 \
+            libcudnn8-8.0.0.180-1.cuda10.2
+        echo "Install cuda+torch finished"
+    - name: Install ThirdParty
+      run: |
+        curl https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-x64.tar.xz|tar -xJ
+        cp -af node-v16.13.2-linux-x64/{bin,include,lib,share} /usr/local/
+        npm install -g npm@latest
+        npm install -g @angular/cli
+        npm -v && node -v
+        npm cache clean --force
+
+        curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+        curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
+        for tar in *.tar.gz; do tar zxf $tar -C /usr/local/; done
+
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.zip
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/include/cuviddec.h \
+            Video_Codec_SDK_9.1.23/include/nvcuvid.h \
+            Video_Codec_SDK_9.1.23/include/nvEncodeAPI.h \
+            -d /usr/local/include
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvcuvid.so \
+            Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvidia-encode.so \
+            -d /usr/local/lib64
+        ln -s libnvcuvid.so /usr/local/lib64/libnvcuvid.so.1
+
+        mkdir -p /root/.pip
+        echo "[global]" > /root/.pip/pip.conf
+        echo "index-url = https://pypi.mirrors.ustc.edu.cn/simple" >>/root/.pip/pip.conf
+        echo "trusted-host = pypi.mirrors.ustc.edu.cn" >>/root/.pip/pip.conf
+        echo "timeout = 120" >>/root/.pip/pip.conf 
+        yes | python3 -m pip install --upgrade pip
+        yes | pip3 install pillow numpy wheel
+        echo "Install thirdparty finished"
+    - name: CMake
+      run: |
+        pwd
+        export JAVA_HOME=/usr/local/jdk-17
+        export MAVEN_HOME=/usr/local/apache-maven-3.8.4
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:/usr/local/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        export PATH=/usr/local/cuda/bin:$JAVA_HOME/bin:$MAVEN_HOME/bin${PATH:+:${PATH}}
+        export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
+        ldconfig
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on
+    - name: Build
+      working-directory: ./build
+      run: |
+        make package -j8
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.rpm" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "cuda"| wc -l)
+        if [ ${filecount} -ge 13 ] && [ ${dpkgcount} -ge 11 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
+    - name: Prepare Artifact
+      run: |
+        mkdir ./artifact
+        cp -af ./build/release ./artifact/
+        ls -lh ./artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: modelbox_cuda102_torch_openeuler
+        path: ./artifact
+
+  build_cuda102_torch_openeuler_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda102_torch_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda102_torch_openeuler
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.develop.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda102_torch_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda102_torch_openeuler.outputs.CUDA_VERSION }}
+            TORCH_VERSION=${{ needs.compile_cuda102_torch_openeuler.outputs.TORCH_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda102_torch_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda102_torch_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda102_torch_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda102_torch_openeuler.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda102_torch_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda102_torch_openeuler_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_cuda102_torch_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_cuda102_torch_openeuler
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.cuda.runtime.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda102_torch_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda102_torch_openeuler.outputs.CUDA_VERSION }}
+            TORCH_VERSION=${{ needs.compile_cuda102_torch_openeuler.outputs.TORCH_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda102_torch_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda102_torch_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda102_torch_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda102_torch_openeuler.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda102_torch_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_cuda102_torch_openeuler:
+    runs-on: ubuntu-latest
+    needs: [compile_cuda102_torch_openeuler,build_cuda102_torch_openeuler_develop_image]
+    container:
+      image: ${{ needs.compile_cuda102_torch_openeuler.outputs.IMAGE_NAME_DEV }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
+
+  compile_ascend_openeuler:
+    runs-on: ubuntu-latest
+    container: modelbox/modelbox_base_openeuler:latest
+    outputs:
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+    - id: env
+      run: |
+        echo "::set-output name=IMAGE_NAME_DEV::$(echo 'zxk114/modelbox-develop-mindspore_1.3.0-cann_5.0.2-openeuler-x86_64')"
+        echo "::set-output name=IMAGE_NAME_RUN::$(echo 'zxk114/modelbox-runtime-mindspore_1.3.0-cann_5.0.2-openeuler-x86_64')"
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        echo "Asia/Shanghai" > /etc/timezone
+        yum update -y
+        yum install -y vim gcc gcc-c++ make cmake libnsl perf rsyslog doxygen gcc-gfortran pciutils alsa-lib gdb clang  \
+            zlib-devel curl-devel bzip2-devel rpm-build sqlite-devel libffi-devel openssl-devel xz-devel git \
+            krb5-devel expat-devel boost-devel ncurses-devel libxml2-devel libssh2-devel python3-devel python3-perf \
+            readline-devel nss-devel fuse-devel gdbm-devel glibc-devel glibc-debuginfo gnutls-devel net-tools libatomic \
+            xauth tk-devel lapack-devel graphviz-devel mesa-libGL-devel openblas-devel protobuf-c-devel
+        rm -f /usr/bin/python3 /usr/bin/python
+        ln -s python3.7 /usr/bin/python3
+        ln -s python3 /usr/bin/python
+        ls -lh /usr/bin/python*
+        /usr/bin/python -V && /usr/bin/python3 -V
+        echo "Install dependencies finished"
+    - name: Install ThirdParty
+      run: |
+        curl https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-x64.tar.xz|tar -xJ
+        cp -af node-v16.13.2-linux-x64/{bin,include,lib,share} /usr/local/
+        npm install -g npm@latest
+        npm install -g @angular/cli
+        npm -v && node -v
+        npm cache clean --force
+
+        curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+        curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev.tar.gz
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
+        for tar in *.tar.gz; do tar zxf $tar -C /usr/local/; done
+
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --no-cache-dir wheel attrs psutil decorator numpy protobuf scipy sympy cffi grpcio grpcio-tools requests pillow
+        python3 -m pip install --no-cache-dir https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.3.0/MindSpore/ascend/x86_64/mindspore_ascend-1.3.0-cp37-cp37m-linux_x86_64.whl
+        echo "Install thirdparty finished"
+    - name: CMake
+      run: |
+        pwd
+        export MINDSPORE_PATH=/usr/local/lib/python3.7/site-packages/mindspore
+        export DDK_PATH=/usr/local/Ascend/ascend-toolkit/latest/acllib
+        export DRIVER_PATH=/usr/local/Ascend/driver
+        export LD_LIBRARY_PATH=/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/ascend-toolkit/latest/fwkacllib/lib64:/usr/local/Ascend/ascend-toolkit/latest/acllib/lib64:/usr/local/Ascend/ascend-toolkit/latest/atc/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        export JAVA_HOME=/usr/local/jdk-17
+        export MAVEN_HOME=/usr/local/apache-maven-3.8.4
+        export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on
+    - name: Build
+      working-directory: ./build
+      run: |
+        make package -j8
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.rpm" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "ascend"| wc -l)
+        if [ ${filecount} -ge 13 ] && [ ${dpkgcount} -ge 11 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
+    - name: Prepare Artifact
+      run: |
+        mkdir ./artifact
+        cp -af ./build/release ./artifact/
+        ls -lh ./artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: modelbox_ascend_openeuler
+        path: ./artifact
+
+  build_ascend_openeuler_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_ascend_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_ascend_openeuler
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://dlcdn.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8_dev.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.ascend.develop.openeuler
+          tags: |
+            ${{ needs.compile_ascend_openeuler.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_ascend_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_ascend_openeuler_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_ascend_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: modelbox_ascend_openeuler
+          path: ./
+      - name: Prepare and Recheck
+        run: |
+          curl -LJO https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/duktape_2.6.0.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obs_3.21.8.tar.gz
+          curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0.tar.gz
+          ls -lh .
+          ls -lh ./release
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./docker/Dockerfile.ascend.runtime.openeuler
+          tags: |
+            ${{ needs.compile_ascend_openeuler.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_ascend_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_ascend_openeuler:
+    runs-on: ubuntu-latest
+    needs: [compile_ascend_openeuler,build_ascend_openeuler_develop_image]
+    container:
+      image: ${{ needs.compile_ascend_openeuler.outputs.IMAGE_NAME_DEV }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j8
+        unset LD_LIBRARY_PATH
+        make unittest
