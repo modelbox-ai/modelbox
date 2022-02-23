@@ -24,10 +24,30 @@ set(THIRDPARTY_DOWNLOAD_DIR @THIRDPARTY_DOWNLOAD_DIR@)
 include(ExternalProject)
 find_package(Git)
 
+if (NOT @USE_CN_MIRROR@) 
+  set(GOOGLETEST_DOWNLOAD_URL "https://github.com/google/googletest/archive/refs/tags/release-1.10.0.zip")
+  set(HUAWEI_SECURE_C_DOWNLOAD_URL "https://gitee.com/Janisa/huawei_secure_c/repository/archive/master.zip")
+  set(TINYLOG_DOWNLOAD_URL "https://github.com/pymumu/tinylog/archive/refs/tags/1.5.zip")
+  set(PYBIND11_DOWNLOAD_URL "https://github.com/pybind/pybind11/archive/refs/tags/v2.5.0.zip")
+  set(TOML11_DOWNLOAD_URL "https://github.com/ToruNiina/toml11/archive/refs/tags/v3.7.0.zip")
+  set(NLOHMANN_DOWNLOAD_URL "https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip")
+  set(CPP_HTTPLIB_DOWNLOAD_URL "https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.9.9.zip")
+  set(APIGW_CPP_SDK_DOWNLOAD_URL "https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/APIGW-cpp-sdk.zip")
+else()
+  set(GOOGLETEST_DOWNLOAD_URL "https://gitcode.net/mirrors/google/googletest/-/archive/release-1.10.0/googletest-release-1.10.0.zip")
+  set(HUAWEI_SECURE_C_DOWNLOAD_URL "https://gitee.com/Janisa/huawei_secure_c/repository/archive/master.zip")
+  set(TINYLOG_DOWNLOAD_URL "https://download.fastgit.org/pymumu/tinylog/archive/refs/tags/1.5.zip")
+  set(PYBIND11_DOWNLOAD_URL "https://gitcode.net/mirrors/pybind/pybind11/-/archive/v2.5.0/pybind11-v2.5.0.zip")
+  set(TOML11_DOWNLOAD_URL "https://download.fastgit.org/ToruNiina/toml11/archive/refs/tags/v3.7.0.zip")
+  set(NLOHMANN_DOWNLOAD_URL "https://gitcode.net/mirrors/nlohmann/json/-/archive/v3.9.1/json-v3.9.1.zip")
+  set(CPP_HTTPLIB_DOWNLOAD_URL "https://gitcode.net/mirrors/yhirose/cpp-httplib/-/archive/v0.9.9/cpp-httplib-v0.9.9.zip")
+  set(APIGW_CPP_SDK_DOWNLOAD_URL "https://obs.cn-north-1.myhuaweicloud.com/apig-sdk/APIGW-cpp-sdk.zip")
+endif()
+
 # 下载googletest
 ExternalProject_Add(
   GoogleTest
-  URL               https://github.com/google/googletest/archive/refs/tags/release-1.10.0.zip
+  URL               ${GOOGLETEST_DOWNLOAD_URL}
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/googletest
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -38,7 +58,7 @@ ExternalProject_Add(
 # 下载安全C库
 ExternalProject_Add(
   Huawei_Secure_C_download
-  URL               https://gitee.com/Janisa/huawei_secure_c/repository/archive/master.zip
+  URL               ${HUAWEI_SECURE_C_DOWNLOAD_URL}
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/Huawei_Secure_C
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -49,7 +69,7 @@ ExternalProject_Add(
 # 下载安全tinylog
 ExternalProject_Add(
   tinylog
-  URL               https://github.com/pymumu/tinylog/archive/refs/tags/1.5.zip
+  URL               ${TINYLOG_DOWNLOAD_URL}
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/tinylog
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -60,7 +80,7 @@ ExternalProject_Add(
 # pybind11
 ExternalProject_Add(
   pybind11
-  URL               https://github.com/pybind/pybind11/archive/refs/tags/v2.5.0.zip
+  URL               ${PYBIND11_DOWNLOAD_URL}
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/pybind11
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -71,7 +91,7 @@ ExternalProject_Add(
 # toml11
 ExternalProject_Add(
   toml11
-  URL               https://github.com/ToruNiina/toml11/archive/refs/tags/v3.7.0.zip
+  URL               ${TOML11_DOWNLOAD_URL}
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/toml11
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -82,7 +102,7 @@ ExternalProject_Add(
 # nlohmann json
 ExternalProject_Add(
   nlohmann
-  URL               https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
+  URL               ${NLOHMANN_DOWNLOAD_URL}
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/nlohmann
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -93,7 +113,7 @@ ExternalProject_Add(
 # cpp-httplib
 ExternalProject_Add(
   cpp-httplib
-  URL               https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.9.9.zip
+  URL               ${CPP_HTTPLIB_DOWNLOAD_URL}
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib
   CONFIGURE_COMMAND ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib/split.py -o ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib/build
   BUILD_COMMAND     ""
@@ -104,7 +124,7 @@ ExternalProject_Add(
 # APIGW-cpp-sdk
 ExternalProject_Add(
   APIGW-cpp-sdk
-  URL                https://obs.cn-north-1.myhuaweicloud.com/apig-sdk/APIGW-cpp-sdk.zip https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/APIGW-cpp-sdk.zip
+  URL                ${APIGW_CPP_SDK_DOWNLOAD_URL}
   SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/APIGW-cpp-sdk-1.0.2
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
