@@ -25,6 +25,7 @@ option(WITH_SECURE_C "include libsecurec.so" ON)
 option(WITH_SOLUTION "build solution" ON)
 option(TEST_COVERAGE "build with coverage" OFF)
 option(WITH_JAVA "build java support" OFF)
+option(USE_CN_MIRROR "download from cn mirror" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-strict-aliasing -std=c++11")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fno-strict-aliasing")
