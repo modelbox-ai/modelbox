@@ -104,7 +104,7 @@ ExternalProject_Add(
 # APIGW-cpp-sdk
 ExternalProject_Add(
   APIGW-cpp-sdk
-  URL                https://obs.cn-north-1.myhuaweicloud.com/apig-sdk/APIGW-cpp-sdk.zip
+  URL                https://obs.cn-north-1.myhuaweicloud.com/apig-sdk/APIGW-cpp-sdk.zip https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/APIGW-cpp-sdk.zip
   SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/APIGW-cpp-sdk-1.0.2
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
