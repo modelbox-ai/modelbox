@@ -611,10 +611,8 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
     selector->RegisterExternalData(ext_data_1);
     selector->RegisterExternalData(ext_data_2);
 
-    usleep(1 * 1000 * 1000);
-    ext_data_2->Close();
     int size = 0;
-
+    int recv_count = 0;
     Status last_status_1 = STATUS_SUCCESS;
     Status last_status_2 = STATUS_SUCCESS;
 
@@ -625,6 +623,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
       if (select_status == STATUS_TIMEDOUT) {
         break;
       }
+      
       for (auto external : external_list) {
         OutputBufferList map_buffer_list;
         auto status = external->Recv(map_buffer_list);
@@ -638,6 +637,10 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
 
         if (external == ext_data_2) {
           last_status_2 = status;
+          recv_count++;
+          if (recv_count >= 10) {
+            ext_data_2->Close();
+          }
         }
       }
     }
