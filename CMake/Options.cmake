@@ -26,6 +26,7 @@ option(WITH_SOLUTION "build solution" ON)
 option(TEST_COVERAGE "build with coverage" OFF)
 option(WITH_JAVA "build java support" OFF)
 option(USE_CN_MIRROR "download from cn mirror" OFF)
+option(WITH_WEBUI "build modelbox webui" ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-strict-aliasing -std=c++11")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fno-strict-aliasing")

@@ -106,3 +106,12 @@ add_subdirectory(${CPP_HTTPLIB_DIR} ${THIRDPARTY_DOWNLOAD_WORKING_DIR}/cpp_httpl
 set(APIGW_CPP_DIR ${THIRDPARTY_DOWNLOAD_BINARY_DIR}/APIGW-cpp-sdk-1.0.2)
 configure_file(CMake/APIGW_CPP_CMakeList.in ${APIGW_CPP_DIR}/CMakeLists.txt @ONLY)
 add_subdirectory(${APIGW_CPP_DIR} ${THIRDPARTY_DOWNLOAD_WORKING_DIR}/APIGW-cpp-sdk-1.0.2 EXCLUDE_FROM_ALL)
+
+if (WITH_WEBUI)
+  set(MODELBOX_WEBUI ${THIRDPARTY_DOWNLOAD_DIR}/modelbox-webui)
+  if (IS_DIRECTORY ${MODELBOX_WEBUI}) 
+    add_subdirectory(${MODELBOX_WEBUI} ${THIRDPARTY_DOWNLOAD_WORKING_DIR}/modelbox-webui)
+  else()
+    message(STATUS "Skip build modelbox editor webui")
+  endif()
+endif()

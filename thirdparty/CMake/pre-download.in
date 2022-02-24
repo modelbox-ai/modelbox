@@ -33,6 +33,7 @@ if (NOT @USE_CN_MIRROR@)
   set(NLOHMANN_DOWNLOAD_URL "https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip")
   set(CPP_HTTPLIB_DOWNLOAD_URL "https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.9.9.zip")
   set(APIGW_CPP_SDK_DOWNLOAD_URL "https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/APIGW-cpp-sdk.zip")
+  set(MODELBOX_WEBUI_DOWNLOAD_URL "https://github.com/modelbox-ai/modelbox-webui/archive/refs/tags/0.0.1.zip")
 else()
   set(GOOGLETEST_DOWNLOAD_URL "https://gitcode.net/mirrors/google/googletest/-/archive/release-1.10.0/googletest-release-1.10.0.zip")
   set(HUAWEI_SECURE_C_DOWNLOAD_URL "https://gitee.com/Janisa/huawei_secure_c/repository/archive/master.zip")
@@ -42,6 +43,7 @@ else()
   set(NLOHMANN_DOWNLOAD_URL "https://gitcode.net/mirrors/nlohmann/json/-/archive/v3.9.1/json-v3.9.1.zip")
   set(CPP_HTTPLIB_DOWNLOAD_URL "https://gitcode.net/mirrors/yhirose/cpp-httplib/-/archive/v0.9.9/cpp-httplib-v0.9.9.zip")
   set(APIGW_CPP_SDK_DOWNLOAD_URL "https://obs.cn-north-1.myhuaweicloud.com/apig-sdk/APIGW-cpp-sdk.zip")
+  set(MODELBOX_WEBUI_DOWNLOAD_URL "https://gitee.com/modelbox/modelbox-webui/repository/archive/main.zip")
 endif()
 
 # 下载googletest
@@ -132,6 +134,16 @@ ExternalProject_Add(
   TEST_COMMAND      ""
 )
 
+# webui
+ExternalProject_Add(
+  modelbox-webui
+  URL                ${MODELBOX_WEBUI_DOWNLOAD_URL}
+  SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/modelbox-webui
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
 
 
 
