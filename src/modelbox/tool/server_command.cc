@@ -44,11 +44,13 @@ REG_MODELBOX_TOOL_COMMAND(ToolCommandServer)
 enum MODELBOX_TOOL_SERVER_COMMAND {
   MODELBOX_TOOL_SERVER_CONNECT,
   MODELBOX_TOOL_SERVER_INFO_FROM_CONF,
+  MODELBOX_TOOL_SERVER_HELP,
 };
 
 static struct option server_options[] = {
     {"conn", 1, 0, MODELBOX_TOOL_SERVER_CONNECT},
     {"conf", 1, 0, MODELBOX_TOOL_SERVER_INFO_FROM_CONF},
+    {"h", 0, 0, MODELBOX_TOOL_SERVER_HELP},
     {0, 0, 0, 0},
 };
 
@@ -86,7 +88,7 @@ modelbox::Status ToolCommandServer::InitClient(const std::string &connect_url) {
   struct stat stat_buf;
   if (stat(connect_url.c_str(), &stat_buf) < 0) {
     auto errmsg = "cannot access control file: " + connect_url +
-                  ", error: " + modelbox::StrError(errno) + ". Maybe server is down";
+                  ", error: " + modelbox::StrError(errno) + ". Maybe server is down, or try -h for help";
     std::cout << errmsg << std::endl;
     return {modelbox::STATUS_PERMIT};
   }
@@ -321,6 +323,9 @@ int ToolCommandServer::Run(int argc, char *argv[]) {
     case MODELBOX_TOOL_SERVER_INFO_FROM_CONF:
       conf_file = optarg;
       break;
+    case MODELBOX_TOOL_SERVER_HELP:
+      std::cout << GetHelp();
+      return 0;
     default:
       break;
   }

@@ -15,172 +15,310 @@
 # limitations under the License.
 
 
-MODELBOX_CONF_FILE="/usr/local/etc/modelbox/modelbox.conf"
-MODELBOX_CONF_BACKUP_FILE="${MODELBOX_CONF_FILE}.origin"
-MODELBOX_DEV_FILE="/usr/local/etc/modelbox/modelbox-dev.conf.template"
+MODELBOX_DEV_FILE="/usr/local/share/modelbox/misc/modelbox-template.conf"
+MODELBOX_USER_HOME="$HOME/modelbox"
 
-restart_modelbox() {
-    systemctl restart modelbox
+MODELBOX_SYS_FLOW_DIR="/usr/local/etc/modelbox/graph/"
+MODELBOX_DEFAULT_PORT="1104"
+
+setup_env() {
+    MODELBOX_FLOW_DIR="$MODELBOX_USER_HOME/graph"
+    MODELBOX_USER_OPT="$MODELBOX_USER_HOME/modelbox-opt"
+    MODELBOX_USER_CONF_FILE="$MODELBOX_USER_HOME/modelbox.conf"
+    MODELBOX_LOG_DIR="$MODELBOX_USER_HOME/log"
+    MODELBOX_LOG_FILE="$MODELBOX_LOG_DIR/modelbox.log"
+    MODELBOX_PID_DIR="$MODELBOX_USER_HOME/run"
+    MODELBOX_PID_FILE="$MODELBOX_PID_DIR/modelbox.pid"
+    MODELBOX_SOCK_FILE="$MODELBOX_PID_DIR/modelbox.sock"
+    MODELBOX_RUN_SCRIPT="$MODELBOX_USER_HOME/modelbox"
+
+    MODELBOX_USER_SERVER_IP="0.0.0.0"
+    MODELBOX_USER_SERVER_PORT="$MODELBOX_DEFAULT_PORT"
 }
 
-backup_origin() {
-    if [ ! -e $MODELBOX_CONF_FILE ] && [ -e $MODELBOX_CONF_BACKUP_FILE ]; then
-        return 0
-    fi
+debug_mode_info() {
+    echo "Debug ModelBox Info:"
+    echo "  Home:            $MODELBOX_USER_HOME"
+    echo "  Config:          $MODELBOX_USER_CONF_FILE"
+    echo "  Log:             $MODELBOX_LOG_DIR"
+    echo "  Service command: $MODELBOX_RUN_SCRIPT {start|stop|restart|status}"
+    echo "  Tool Command:    modelbox-tool server -conf $MODELBOX_USER_CONF_FILE" 
+    echo "  UI URL:          http://$MODELBOX_USER_SERVER_IP:${MODELBOX_USER_SERVER_PORT}/editor/"  
+    return 0;
+}
 
-    mv $MODELBOX_CONF_FILE $MODELBOX_CONF_BACKUP_FILE
+checkportbind() {
+    IP=$1
+    PORT=$2
+    modelbox --check-port $IP:$PORT
     return $?
 }
 
-restore_origin() {
-    if [ -e $MODELBOX_CONF_FILE ] && [ ! -e $MODELBOX_CONF_BACKUP_FILE ]; then
-        return 0
+setup_init_script() {
+    if [ ! -f "/etc/init.d/modelbox" ]; then
+        echo "/etc/init.d/modelbox not exists, please reinstall modelbox server"
+        return 1
+    fi
+    
+    cp /etc/init.d/modelbox $MODELBOX_RUN_SCRIPT
+    if [ $? -ne 0 ]; then
+        return 1
     fi
 
-    mv ${MODELBOX_CONF_BACKUP_FILE} $MODELBOX_CONF_FILE
-    return $?
+    sed -i "s@CUSTOM_ENV_FILE=\"\"@CUSTOM_ENV_FILE=\"$MODELBOX_USER_OPT\"@" $MODELBOX_RUN_SCRIPT
+    if [ $? -ne 0 ]; then
+        echo "Modify script failed, please check permission"
+        return 1
+    fi
+
+    return 0;
 }
 
-develop_switch_is_on() {
-    if [ ! -e "$MODELBOX_CONF_FILE" ]; then
-        return 1
-    fi
-
-    if [ ! -e "$MODELBOX_CONF_BACKUP_FILE" ]; then
-        return 1
-    fi
+setup_debug_env() {
+    echo "PIDDIR=$MODELBOX_PID_DIR" >> $MODELBOX_USER_OPT
+    echo "PIDFILE=$MODELBOX_PID_FILE" >> $MODELBOX_USER_OPT
+    echo "MODELBOX_OPTS=\"-c $MODELBOX_USER_CONF_FILE\"" >> $MODELBOX_USER_OPT
 
     return 0
 }
 
-develop_switch_on() {
-    develop_switch_is_on
-    if [ $? -eq 0 ]; then
-        echo "develop mode already enabled"
-        return 0
-    fi
-
-    backup_origin
+setup_config_file() {
+    cp -a ${MODELBOX_DEV_FILE} ${MODELBOX_USER_CONF_FILE}
     if [ $? -ne 0 ]; then
-        echo "backup origin conf failed"
-        return 1
-    fi
-    cp -a ${MODELBOX_DEV_FILE} ${MODELBOX_CONF_FILE}
-    if [ $? -ne 0 ]; then
-        echo "setup develop mode failed"
+        echo "Setup develop enviroment failed"
         restore_origin
         return 1
     fi
 
-    PORT=`grep "^ *port" ${MODELBOX_CONF_FILE} | awk '{print $3}' | sed 's/"//g'`
-    sed -i 's/^[[:space:]]*ip[[:space:]]*=.*$/ip = "0.0.0.0"/g' ${MODELBOX_CONF_FILE}
+    sed -i "s@#LOG_FILE_PATH@$MODELBOX_LOG_FILE@g" ${MODELBOX_USER_CONF_FILE}
     if [ $? -ne 0 ]; then
-        echo "setup develop mode failed"
-        restore_origin
+        echo "setup conf for log failed."
+        return 1
+    fi
+
+    sed -i "s@#LISTEN_PATH@$MODELBOX_SOCK_FILE@g" ${MODELBOX_USER_CONF_FILE}
+    if [ $? -ne 0 ]; then
+        echo "Setup conf for sock failed."
+        return 1
+    fi
+
+    sed -i "s@#SERVER_IP@$MODELBOX_USER_SERVER_IP@g" ${MODELBOX_USER_CONF_FILE}
+    if [ $? -ne 0 ]; then
+        echo "Setup conf for server ip failed."
+        return 1
+    fi
+
+    sed -i "s@#SERVER_PORT@$MODELBOX_USER_SERVER_PORT@g" ${MODELBOX_USER_CONF_FILE}
+    if [ $? -ne 0 ]; then
+        echo "Setup conf for listen port failed."
+        return 1
+    fi
+
+    sed -i "s@#FLOW_PATH@$MODELBOX_FLOW_DIR@g" ${MODELBOX_USER_CONF_FILE}
+    if [ $? -ne 0 ]; then
+        echo "Setup conf for graph dir failed."
         return 1
     fi
 
     CLIENTIP=`env | grep SSH_CLIENT | awk -F'=' '{print $2}' | awk '{print $1}'`
     if [ ! -z "$CLIENTIP" ]; then
-        sed -i "s/\(# ADD CLIENT HOST HERE\)/\"${CLIENTIP}\"\n    \1/g" ${MODELBOX_CONF_FILE}
+        sed -i "s@#ACL_IPS@\"${CLIENTIP}\"@g" ${MODELBOX_USER_CONF_FILE}
         if [ $? -ne 0 ]; then
-            echo "setup develop mode failed"
+            echo "Setup develop mode failed"
             restore_origin
             return 1
         fi
     fi
 
-    echo "Warning: This command can reset the IP address (change from 127.0.0.1 to 0.0.0.0), which means that other people in the same network may access and attack the service.
+    echo "Warning: This command will make modelbox listen 0.0.0.0, which means that other people in the same network may access and attack the service.
   For network security, we have added an access control list to allow only legitimate IPs to access the service.
   The default whitelist only includes your local IP.
 For more details on security, please refer to the manual.
 "
 
-    
-    echo "please visit http://[ip]:${PORT}/editor/"
-
-    return $?
+    debug_mode_info
+    echo ""
+    echo "Starting modelbox at $MODELBOX_USER_HOME for `id -un`:" 
+    return 0
 }
 
-develop_switch_off() {
-    develop_switch_is_on
-    if [ $? -ne 0 ]; then
-        echo "develop mode already disabled"
-        return 0
-    fi
-
-    rm -f $MODELBOX_CONF_FILE
-    if [ $? -ne 0 ]; then
-        echo "disable conf failed"
+init_debug_home() {
+    if [ -d "$MODELBOX_USER_HOME" ]; then
+        if [ -x "$MODELBOX_RUN_SCRIPT" ]; then
+            echo "Modelbox already exists."
+            $MODELBOX_RUN_SCRIPT status
+        else
+            echo "Directory $MODELBOX_USER_HOME already exists, please choose another one with --home argument."
+        fi
         return 1
     fi
 
-    restore_origin
-    return $?
-}
-
-develop_switch_status() {
-    develop_switch_is_on
+    checkportbind "$MODELBOX_USER_SERVER_IP" "$MODELBOX_USER_SERVER_PORT"
     if [ $? -ne 0 ]; then
-        echo "develop mode disabled"
-        return 0
-    else 
-        echo "develop mode enabled"
-        echo "please visit http://[ip]:1104"
+        echo "Port $MODELBOX_USER_SERVER_PORT already used by other service or you have no permisson."
+        echo "Please choose another port with --port [port] option."
+        echo "Or stop related service."
+        return 1
+    fi
+
+    mkdir -p $MODELBOX_USER_HOME
+    mkdir -p $MODELBOX_FLOW_DIR
+    mkdir -p $MODELBOX_LOG_DIR
+
+    setup_init_script
+    if [ $? -ne 0 ]; then
+        echo "Init debug home failed, failed to setup init script"
+        return 1
+    fi
+
+    setup_debug_env
+    if [ $? -ne 0 ]; then
+        echo "Init debug home failed, failed to setup debug env"
+        return 1
+    fi
+
+    setup_config_file
+    if [ $? -ne 0 ]; then
+        echo "Init debug home failed, failed to setup config file"
+        return 1
     fi
 
     return 0
 }
 
-develop_switch() {
-    case "$1" in
-        on)
-        develop_switch_on
-        restart_modelbox
-        ;;
-        off)
-        develop_switch_off
-        restart_modelbox
-        ;;
-    esac
+change_user() {
+    SYSTEMFILE=`systemctl show -p FragmentPath modelbox | awk -F= '{print $2}' 2>&1`
+    if [ -z "$SYSTEMFILE" ]; then
+        return
+    fi
+
+    CONF_DIR="${SYSTEMFILE}.d"
+    mkdir -p "$CONF_DIR"
+}
+
+restart_sys_modelbox() {
+    systemctl restart modelbox
+    if [ $? -eq 0 ]; then
+        return 
+    fi
+
+    /etc/init/modelbox restart
+
+    return $?
+}
+
+restart_modelbox() {
+    $MODELBOX_RUN_SCRIPT restart 2>&1 > /dev/null
+}
+
+stop_modelbox() {
+    $MODELBOX_RUN_SCRIPT stop
+}
+
+develop_status() {
+    if [ ! -d "$MODELBOX_USER_HOME" ] || [ ! -x "$MODELBOX_RUN_SCRIPT" ] || [ ! -f "$MODELBOX_USER_CONF_FILE" ]; then
+        echo "Debug modelbox not found, please run -s to setup, or sepcify home with --home run again."
+        return 1
+    fi
+
+    MODELBOX_USER_SERVER_IP="`modelbox -c $MODELBOX_USER_CONF_FILE --get-conf-value server.ip`"
+    MODELBOX_USER_SERVER_PORT="`modelbox -c $MODELBOX_USER_CONF_FILE --get-conf-value server.port`"
+
+    debug_mode_info
+    MSG=`$MODELBOX_RUN_SCRIPT status 2>/dev/null`
+    echo "  Server Status:   $MSG"
+
+    return 0
+}
+
+setup_develop_mode() {
+    init_debug_home
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    restart_modelbox
+
+    $MODELBOX_RUN_SCRIPT status
+}
+
+install_modelbox_server() {
+    if [ "$EUID" -ne 0 ]; then 
+        echo "Please run as root"  
+        return 1
+    fi
+
+    echo "install modelbox"
+
+    cp $MODELBOX_FLOW_DIR/*.toml $MODELBOX_SYS_FLOW_DIR/ -av
+    if [ $? -ne 0 ]; then
+        echo "Install graph failed."
+        return 1
+    fi
+
+
+    restart_sys_modelbox
+    if [ $? -ne 0 ]; then
+        echo "restart sys modelbox failed."
+        return 1
+    fi
 
     return $?
 }
 
 showhelp() {
-    echo " -e, --on     turn on editor."
-    echo " -d, --off    turn off editor."
-    echo " -q, --query  editor switch status."
+    echo " -s            setup modelbox develop enviroment."
+    echo "  --port       setup develop modelbox port, default is 1104."
+    echo " -q            develop modelbox status."
+    echo " -h            show this help message."
+    echo ""
+    echo "addition options"
+    echo " --home        home directory, default is \$HOME/modelbox"
 }
 
 main() {
-    OPTS=`getopt -o hedsq --long help,on,off,query: \
-		-n  "" -- "$@"`
+    OPTS=`getopt -o siqh --long home:,port: \
+        -n  "" -- "$@"`
 
     if [ $# -lt 1 ]; then showhelp; exit 1; fi
-	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+    if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 
-	# Note the quotes around `$TEMP': they are essential!
-	eval set -- "$OPTS"
+    # Note the quotes around `$TEMP': they are essential!
+    eval set -- "$OPTS"
+    action="NONE"
 
-	while true; do
-		case "$1" in
-        -e | --on)
-            develop_switch "on"
+    while true; do
+        case "$1" in
+        -s | --on)
+            action="setup"
             shift ;;
-        -d | --off)
-            develop_switch "off"
+        --home)
+            MODELBOX_USER_HOME="$2"
+            shift 2;;
+        --port)
+            MODELBOX_DEFAULT_PORT="$2"
+            shift 2;;
+        -q)
+            action="query"
             shift ;;
-        -q | --query)
-            develop_switch_status
-            shift ;;
-        -h | --help)
+        -h)
             showhelp
+            exit 0
             shift ;;
         -- ) shift; break ;;
         * ) break ;;
-  		esac
-	done
+          esac
+    done
+
+    setup_env
+
+    if [ "$action" = "setup" ]; then
+        setup_develop_mode
+    elif [ "$action" = "query" ]; then
+        develop_status
+    else 
+        showhelp
+    fi
 
     return $?
 }

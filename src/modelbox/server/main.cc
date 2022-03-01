@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
+#include <getopt.h>
+#include <netdb.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <memory>
@@ -25,10 +29,13 @@
 
 #include "config.h"
 #include "modelbox/base/utils.h"
+#include "modelbox/common/command.h"
 #include "modelbox/common/log.h"
 #include "modelbox/common/utils.h"
 #include "modelbox/manager/manager_monitor_client.h"
 #include "modelbox/server/timer.h"
+#include "modelbox/server/utils.h"
+#include "securec.h"
 #include "server.h"
 
 using namespace modelbox;
@@ -48,6 +55,34 @@ static int g_sig_list[] = {
 static int g_sig_num = sizeof(g_sig_list) / sizeof(g_sig_list[0]);
 static bool kVerbose = false;
 static bool kForground = false;
+
+enum MODELBOX_SERVER_ARG {
+  MODELBOX_SERVER_ARG_CONF,
+  MODELBOX_SERVER_ARG_FORGROUND,
+  MODELBOX_SERVER_ARG_PIDFILE,
+  MODELBOX_SERVER_ARG_OUTPUTLOG_SCREEN,
+  MODELBOX_SERVER_ARG_SHOW_VER,
+  MODELBOX_SERVER_ARG_NAME,
+  MODELBOX_SERVER_ARG_KEEPALIVE_TIME,
+  MODELBOX_SERVER_ARG_SHOWHELP,
+  MODELBOX_SERVER_ARG_CHECKPORT,
+  MODELBOX_SERVER_ARG_GETCONF,
+};
+
+static struct option options[] = {
+    {"c", 1, 0, MODELBOX_SERVER_ARG_CONF},
+    {"f", 0, 0, MODELBOX_SERVER_ARG_FORGROUND},
+    {"p", 1, 0, MODELBOX_SERVER_ARG_PIDFILE},
+    {"V", 0, 0, MODELBOX_SERVER_ARG_OUTPUTLOG_SCREEN},
+    {"v", 0, 0, MODELBOX_SERVER_ARG_SHOW_VER},
+    {"n", 1, 0, MODELBOX_SERVER_ARG_NAME},
+    {"k", 1, 0, MODELBOX_SERVER_ARG_KEEPALIVE_TIME},
+    {"h", 0, 0, MODELBOX_SERVER_ARG_SHOWHELP},
+    /* internal command for develop mode */
+    {"check-port", 1, 0, MODELBOX_SERVER_ARG_CHECKPORT},
+    {"get-conf-value", 1, 0, MODELBOX_SERVER_ARG_GETCONF},
+    {0, 0, 0, 0},
+};
 
 static void showhelp(void) {
   /* clang-format off */
@@ -194,6 +229,72 @@ int modelbox_run(std::shared_ptr<Server> server, const std::string &keep_name,
   return 0;
 }
 
+int GetConfig(const std::string key) {
+  if (LoadConfig(kConfigPath) == false) {
+    fprintf(stderr, "can not load configuration : %s \n", kConfigPath.c_str());
+    return 1;
+  }
+
+  auto values = kConfig->GetStrings(key);
+  if (values.size() <= 0) {
+    fprintf(stderr, "Not found key %s\n", key.c_str());
+    return 1;
+  }
+
+  for (auto value : values) {
+    std::cout << value << std::endl;
+  }
+
+  return 0;
+}
+
+int CheckPort(const std::string host) {
+  struct addrinfo hints;
+  struct addrinfo *result = NULL;
+
+  memset_s(&hints, sizeof(hints), 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;
+
+  std::string ip;
+  std::string port;
+
+  auto ret_val = SplitIPPort(host, ip, port);
+  if (!ret_val) {
+    std::cerr << ret_val.Errormsg() << std::endl;
+    return 1;
+  }
+
+  auto ret = getaddrinfo(ip.c_str(), port.c_str(), &hints, &result);
+  if (ret != 0) {
+    std::cerr << "check port failed, " << gai_strerror(ret) << std::endl;
+    return 1;
+  }
+
+  Defer { freeaddrinfo(result); };
+
+  int sock = socket(result->ai_family, SOCK_STREAM, 0);
+  if (sock < 0) {
+    std::cerr << "create socket failed\n";
+    return 1;
+  }
+  Defer { close(sock); };
+
+  if (bind(sock, result->ai_addr, result->ai_addrlen) != 0) {
+    if (errno == EADDRINUSE) {
+      /* in use */
+      return 2;
+    } else if (errno == EACCES) {
+      /* no permission */
+      return 3;
+    }
+
+    std::cerr << "check failed, errno is " << errno << "\n";
+    return 1;
+  }
+
+  return 0;
+}
+
 static void onexit(void) {}
 
 #ifdef BUILD_TEST
@@ -202,44 +303,58 @@ int modelbox_server_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
-  int opt = 0;
   std::string pidfile = MODELBOX_SERVER_PID_FILE;
   std::string keep_name = "";
   int keep_time = 30;
-  while ((opt = getopt(argc, argv, "hc:Vvfp:n:k")) != -1) {
-    switch (opt) {
-      case 'p':
-        pidfile = optarg;
-        break;
-      case 'V':
-        kVerbose = true;
-        break;
-      case 'f':
-        kForground = true;
-        break;
-      case 'h':
-        showhelp();
-        return 1;
-      case 'c':
-        kConfigPath = optarg;
-        break;
-      case 'n':
-        keep_name = optarg;
-        break;
-      case 'k':
-        keep_time = atoi(optarg);
-        break;
-      case 'v':
-        printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
-        return 0;
-      default:
-        break;
-    }
+  int cmdtype = 0;
+  std::string get_conf_key;
+
+  MODELBOX_COMMAND_GETOPT_BEGIN(cmdtype, options)
+  switch (cmdtype) {
+    case MODELBOX_SERVER_ARG_PIDFILE:
+      pidfile = optarg;
+      break;
+    case MODELBOX_SERVER_ARG_OUTPUTLOG_SCREEN:
+      kVerbose = true;
+      break;
+    case MODELBOX_SERVER_ARG_FORGROUND:
+      kForground = true;
+      break;
+    case MODELBOX_SERVER_ARG_SHOWHELP:
+      showhelp();
+      return 0;
+    case MODELBOX_SERVER_ARG_CONF:
+      kConfigPath = optarg;
+      break;
+    case MODELBOX_SERVER_ARG_NAME:
+      keep_name = optarg;
+      break;
+    case MODELBOX_SERVER_ARG_KEEPALIVE_TIME:
+      keep_time = atoi(optarg);
+      break;
+    case MODELBOX_SERVER_ARG_CHECKPORT:
+      return CheckPort(optarg);
+    case MODELBOX_SERVER_ARG_GETCONF:
+      get_conf_key = optarg;
+      break;
+    case MODELBOX_SERVER_ARG_SHOW_VER:
+      printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
+      return 0;
+    default:
+      printf("Try %s -h for more information.\n", argv[0]);
+      return 1;
+      break;
+  }
+  MODELBOX_COMMAND_GETOPT_END()
+
+  if (get_conf_key.length()) {
+    return GetConfig(get_conf_key);
   }
 
   if (kForground == false) {
     if (daemon(0, 0) < 0) {
-      fprintf(stderr, "run daemon process failed, %s\n", modelbox::StrError(errno).c_str());
+      fprintf(stderr, "run daemon process failed, %s\n",
+              modelbox::StrError(errno).c_str());
       return 1;
     }
   }
