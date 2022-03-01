@@ -3,7 +3,7 @@
         {
             "name": "develop",
             "exec": "@MODELBOX_TOOLS_PATH@/develop",
-            "desc": "Develop mode switch",
+            "desc": "Setup develop enviroment",
             "help-cmd": "@MODELBOX_TOOLS_PATH@/develop --help"
         }
     ]

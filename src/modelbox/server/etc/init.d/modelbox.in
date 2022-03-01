@@ -25,10 +25,18 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 
-. @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox-opts
+# this env may changed by script, do not modify
+CUSTOM_ENV_FILE=""
+
 MODELBOX=@CMAKE_INSTALL_FULL_BINDIR@/modelbox
-PIDDIR=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox
-PIDFILE=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid
+
+if [ -f "$CUSTOM_ENV_FILE" ]; then
+	. $CUSTOM_ENV_FILE
+else
+	. @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox-opts
+	PIDDIR=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox
+	PIDFILE=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid
+fi
 
 test -x $MODELBOX || exit 5
 
@@ -107,7 +115,7 @@ case $1 in
 			echo "modelbox server is not running."
 			exit 1
 		fi
-		echo "modelbox server is running."
+		echo "modelbox server is running. pid $PID"
 		status=$?
 		;;
 	*)

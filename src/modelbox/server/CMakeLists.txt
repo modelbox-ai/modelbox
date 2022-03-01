@@ -73,6 +73,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/modelbox-opts ${CMAKE_CURRENT_BINAR
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/init.d/modelbox.in ${CMAKE_CURRENT_BINARY_DIR}/etc/init.d/modelbox @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/modelbox.conf.in ${CMAKE_CURRENT_BINARY_DIR}/etc/${MODELBOX_CONFIG_FILE_NAME} @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/modelbox-dev.conf.in ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox-dev.conf.template @ONLY)
+configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/modelbox-template.conf.in ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox-template.conf @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/modelbox.service.in ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox.service @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/misc/modelbox-server-cmd.json.in ${CMAKE_CURRENT_BINARY_DIR}/misc/modelbox-server-cmd.json @ONLY)
 
@@ -105,6 +106,13 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox-dev.conf.template
     ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox-opts
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/modelbox/ 
+    PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+    COMPONENT server
+    )
+
+install(FILES 
+    ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox-template.conf
+    DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/modelbox/misc
     PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
     COMPONENT server
     )

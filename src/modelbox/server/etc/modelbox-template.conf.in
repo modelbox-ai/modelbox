@@ -1,0 +1,38 @@
+[server]
+ip = "#SERVER_IP"
+port = "#SERVER_PORT"
+flow_path = "#FLOW_PATH"
+
+[plugin]
+files = [
+    "@CMAKE_INSTALL_FULL_LIBDIR@/modelbox-plugin.so",
+    "@CMAKE_INSTALL_FULL_LIBDIR@/modelbox-plugin-editor.so"
+]
+
+[control]
+enable = true
+listen = "#LISTEN_PATH"
+
+[acl]
+allow = [
+    "127.0.0.1/8",
+    # ADD CLIENT HOST HERE
+    #ACL_IPS
+]
+
+[editor]
+enable = true
+# ip = "127.0.0.1"
+# port = "1104"
+root = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/www"
+solution_graphs = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/solution/graphs"
+
+[log]
+# log level, DEBUG, INFO, NOTICE, WARN, ERROR, FATAL, OFF
+level = "INFO"
+
+# log archive number
+num = 32
+
+# log file path
+path = "#LOG_FILE_PATH"

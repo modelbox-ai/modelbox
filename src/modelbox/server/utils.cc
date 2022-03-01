@@ -105,4 +105,38 @@ std::shared_ptr<struct addrinfo> IPACL::GetAddrInfo(const std::string &host) {
   return addrinfo;
 }
 
+Status SplitIPPort(const std::string host, std::string &ip, std::string &port) {
+  auto pos = host.find_last_of(':');
+
+  if (pos == std::string::npos) {
+    auto msg = "invalid ip address, please try ip:port";
+    return {STATUS_INVALID, msg};
+  }
+
+  port = host.substr(pos + 1, host.length());
+  int n_port = atol(port.c_str());
+  if (n_port <=0 || n_port > 65535) {
+    auto msg = "invalid port";
+    return {STATUS_INVALID, msg};
+  }
+
+  ip = host.substr(0, pos);
+  /* process ipv6 format */
+  pos = ip.find_first_of('[');
+  if (pos != std::string::npos) {
+    ip = ip.substr(pos + 1, ip.length());
+  }
+
+  pos = ip.find_first_of(']');
+  if (pos != std::string::npos) {
+    ip = ip.substr(0, pos);
+  }
+
+  if (ip == "") {
+    ip = "0.0.0.0";
+  };
+
+  return STATUS_OK;
+}
+
 }  // namespace modelbox
