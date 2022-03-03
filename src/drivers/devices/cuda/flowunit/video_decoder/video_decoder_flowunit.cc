@@ -58,27 +58,32 @@ modelbox::Status VideoDecoderFlowUnit::Process(
 
   std::vector<std::shared_ptr<NvcodecFrame>> frame_list;
   modelbox::Status decode_ret = modelbox::STATUS_SUCCESS;
-  try {
-    for (auto &pkt : pkt_list) {
+
+  for (auto &pkt : pkt_list) {
+    try {
       decode_ret = video_decoder->Decode(pkt, frame_list);
-      if (decode_ret == modelbox::STATUS_FAULT) {
-        MBLOG_ERROR << "Video decoder failed";
-        // TODO: Process decoder fault
-        return modelbox::STATUS_FAULT;
+    } catch (NVDECException &e) {
+      MBLOG_ERROR << "Nvcodec decode frame failed, detail: " << e.what();
+      if (skip_err_frame_) {
+        MBLOG_WARN << "Skip error frame";
+        continue;
       }
-
-      ret = WriteData(ctx, frame_list, decode_ret == modelbox::STATUS_NODATA,
-                      video_decoder->GetFileUrl());
-      if (ret != modelbox::STATUS_SUCCESS) {
-        MBLOG_ERROR << "Send frame data failed";
-        return modelbox::STATUS_FAULT;
-      }
-
-      frame_list.clear();
+      return modelbox::STATUS_FAULT;
     }
-  } catch (NVDECException &e) {
-    MBLOG_ERROR << "Nvcodec decode frame failed, detail: " << e.what();
-    return modelbox::STATUS_FAULT;
+    if (decode_ret == modelbox::STATUS_FAULT) {
+      MBLOG_ERROR << "Video decoder failed";
+      // TODO: Process decoder fault
+      return modelbox::STATUS_FAULT;
+    }
+
+    ret = WriteData(ctx, frame_list, decode_ret == modelbox::STATUS_NODATA,
+                    video_decoder->GetFileUrl());
+    if (ret != modelbox::STATUS_SUCCESS) {
+      MBLOG_ERROR << "Send frame data failed";
+      return modelbox::STATUS_FAULT;
+    }
+
+    frame_list.clear();
   }
 
   if (decode_ret == modelbox::STATUS_NODATA) {
