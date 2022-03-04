@@ -57,30 +57,15 @@ static bool kVerbose = false;
 static bool kForground = false;
 
 enum MODELBOX_SERVER_ARG {
-  MODELBOX_SERVER_ARG_CONF,
-  MODELBOX_SERVER_ARG_FORGROUND,
-  MODELBOX_SERVER_ARG_PIDFILE,
-  MODELBOX_SERVER_ARG_OUTPUTLOG_SCREEN,
-  MODELBOX_SERVER_ARG_SHOW_VER,
-  MODELBOX_SERVER_ARG_NAME,
-  MODELBOX_SERVER_ARG_KEEPALIVE_TIME,
-  MODELBOX_SERVER_ARG_SHOWHELP,
   MODELBOX_SERVER_ARG_CHECKPORT,
   MODELBOX_SERVER_ARG_GETCONF,
 };
 
+static int option_flag = 0;
 static struct option options[] = {
-    {"c", 1, 0, MODELBOX_SERVER_ARG_CONF},
-    {"f", 0, 0, MODELBOX_SERVER_ARG_FORGROUND},
-    {"p", 1, 0, MODELBOX_SERVER_ARG_PIDFILE},
-    {"V", 0, 0, MODELBOX_SERVER_ARG_OUTPUTLOG_SCREEN},
-    {"v", 0, 0, MODELBOX_SERVER_ARG_SHOW_VER},
-    {"n", 1, 0, MODELBOX_SERVER_ARG_NAME},
-    {"k", 1, 0, MODELBOX_SERVER_ARG_KEEPALIVE_TIME},
-    {"h", 0, 0, MODELBOX_SERVER_ARG_SHOWHELP},
     /* internal command for develop mode */
-    {"check-port", 1, 0, MODELBOX_SERVER_ARG_CHECKPORT},
-    {"get-conf-value", 1, 0, MODELBOX_SERVER_ARG_GETCONF},
+    {"check-port", 1, &option_flag, MODELBOX_SERVER_ARG_CHECKPORT},
+    {"get-conf-value", 1, &option_flag, MODELBOX_SERVER_ARG_GETCONF},
     {0, 0, 0, 0},
 };
 
@@ -309,41 +294,49 @@ int main(int argc, char *argv[])
   int cmdtype = 0;
   std::string get_conf_key;
 
-  MODELBOX_COMMAND_GETOPT_BEGIN(cmdtype, options)
+  MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "hc:Vvfp:n:k", options)
   switch (cmdtype) {
-    case MODELBOX_SERVER_ARG_PIDFILE:
-      pidfile = optarg;
-      break;
-    case MODELBOX_SERVER_ARG_OUTPUTLOG_SCREEN:
-      kVerbose = true;
-      break;
-    case MODELBOX_SERVER_ARG_FORGROUND:
-      kForground = true;
-      break;
-    case MODELBOX_SERVER_ARG_SHOWHELP:
-      showhelp();
-      return 0;
-    case MODELBOX_SERVER_ARG_CONF:
-      kConfigPath = optarg;
-      break;
-    case MODELBOX_SERVER_ARG_NAME:
-      keep_name = optarg;
-      break;
-    case MODELBOX_SERVER_ARG_KEEPALIVE_TIME:
-      keep_time = atoi(optarg);
-      break;
-    case MODELBOX_SERVER_ARG_CHECKPORT:
-      return CheckPort(optarg);
-    case MODELBOX_SERVER_ARG_GETCONF:
-      get_conf_key = optarg;
-      break;
-    case MODELBOX_SERVER_ARG_SHOW_VER:
-      printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
-      return 0;
-    default:
-      printf("Try %s -h for more information.\n", argv[0]);
-      return 1;
-      break;
+    case 0: {
+      switch (option_flag) {
+        case MODELBOX_SERVER_ARG_CHECKPORT:
+          return CheckPort(optarg);
+        case MODELBOX_SERVER_ARG_GETCONF:
+          get_conf_key = optarg;
+          break;
+        default:
+          printf("Try %s -h for more information.\n", argv[0]);
+          return 1;
+          break;
+      }
+      case 'p':
+        pidfile = optarg;
+        break;
+      case 'V':
+        kVerbose = true;
+        break;
+      case 'f':
+        kForground = true;
+        break;
+      case 'h':
+        showhelp();
+        return 1;
+      case 'c':
+        kConfigPath = optarg;
+        break;
+      case 'n':
+        keep_name = optarg;
+        break;
+      case 'k':
+        keep_time = atoi(optarg);
+        break;
+      case 'v':
+        printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
+        return 0;
+      default:
+        printf("Try %s -h for more information.\n", argv[0]);
+        return 1;
+        break;
+    }
   }
   MODELBOX_COMMAND_GETOPT_END()
 
