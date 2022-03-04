@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_COMMON_TOOL_COMMANDS_H
 #define MODELBOX_COMMON_TOOL_COMMANDS_H
 
@@ -40,14 +39,14 @@ extern std::recursive_mutex ToolCommandGetOptLock;
   ::modelbox::ToolCommandList::Instance()->AddCommand(new_func);
 
 #define REG_MODELBOX_TOOL_COMMAND(class)                               \
-  static auto __attribute__((unused))                                \
-  MODELBOX_TOOL_STRCAT(__auto_reg__, __LINE__) = []() {               \
+  static auto __attribute__((unused))                                  \
+  MODELBOX_TOOL_STRCAT(__auto_reg__, __LINE__) = []() {                \
     auto new_func = []() -> std::shared_ptr<::modelbox::ToolCommand> { \
-      auto cmd = std::make_shared<class>();                          \
-      return cmd;                                                    \
-    };                                                               \
+      auto cmd = std::make_shared<class>();                            \
+      return cmd;                                                      \
+    };                                                                 \
     ::modelbox::ToolCommandList::Instance()->AddCommand(new_func);     \
-    return 0;                                                        \
+    return 0;                                                          \
   }();
 
 #define MODELBOX_COMMAND_SUB_ARGC argc_sub
@@ -56,26 +55,36 @@ extern std::recursive_mutex ToolCommandGetOptLock;
 
 /**
  * @brief Lock globally in the macro to avoid concurrent access to the getopt
- * function. You can use the MODELBOX_COMMAND_SUB_UNLOCK() function to unlock, but
- * after unlocking, you need to return the function immediately
+ * function. You can use the MODELBOX_COMMAND_SUB_UNLOCK() function to unlock,
+ * but after unlocking, you need to return the function immediately
  */
-#define MODELBOX_COMMAND_GETOPT_BEGIN(cmdtype, options)                          \
-  optind = 1;                                                                  \
-  if (argc <= 0 || argv == nullptr) {                                          \
-    return -1;                                                                 \
-  }                                                                            \
-                                                                               \
-  std::unique_lock<std::recursive_mutex> get_opt_lock(                         \
-      ::modelbox::ToolCommandGetOptLock);                                        \
-  ::modelbox::ToolCommandGetOptReset();                                          \
-  while ((cmdtype = getopt_long_only(argc, argv, "", options, NULL)) != EOF) { \
-    int MODELBOX_COMMAND_SUB_ARGC = argc - optind + 1;                           \
-    char **MODELBOX_COMMAND_SUB_ARGV = argv + optind - 1;                        \
-    { auto &unused __attribute__((unused)) = MODELBOX_COMMAND_SUB_ARGC; }        \
+#define MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, short_options, options) \
+  optind = 1;                                                                \
+  int option_index = 0;                                                      \
+  if (argc <= 0 || argv == nullptr) {                                        \
+    return -1;                                                               \
+  }                                                                          \
+                                                                             \
+  std::unique_lock<std::recursive_mutex> get_opt_lock(                       \
+      ::modelbox::ToolCommandGetOptLock);                                    \
+  ::modelbox::ToolCommandGetOptReset();                                      \
+  while ((cmdtype = getopt_long_only(argc, argv, short_options, options,     \
+                                     &option_index)) != EOF) {               \
+    int MODELBOX_COMMAND_SUB_ARGC = argc - optind + 1;                       \
+    char **MODELBOX_COMMAND_SUB_ARGV = argv + optind - 1;                    \
+    { auto &unused __attribute__((unused)) = MODELBOX_COMMAND_SUB_ARGC; }    \
     { auto &unused __attribute__((unused)) = MODELBOX_COMMAND_SUB_ARGV; }
 
+/**
+ * @brief Lock globally in the macro to avoid concurrent access to the getopt
+ * function. You can use the MODELBOX_COMMAND_SUB_UNLOCK() function to unlock,
+ * but after unlocking, you need to return the function immediately
+ */
+#define MODELBOX_COMMAND_GETOPT_BEGIN(cmdtype, options) \
+  MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "", options)
+
 #define MODELBOX_COMMAND_GETOPT_END() \
-  }                                 \
+  }                                   \
   get_opt_lock.unlock();
 
 class StdOutStream : public OutStream {
