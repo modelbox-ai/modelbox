@@ -354,6 +354,11 @@ HttpServer::HttpServer(const std::string &endpoint,
 
   server_impl_->set_write_timeout(config.GetTimeout());
   server_impl_->set_read_timeout(config.GetTimeout());
+  server_impl_->set_socket_options([](socket_t sock) {
+    int yes = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<void *>(&yes),
+               sizeof(yes));
+  });
   server_impl_->set_keep_alive_max_count(1);
   if (!server_impl_->is_valid()) {
     status_ = {STATUS_FAULT, "server is not valid"};
@@ -403,37 +408,45 @@ void HttpServer::Unregister(const std::string &path, const HttpMethod &method) {
   }
 }
 
-void HttpServer::Start() {
+Status HttpServer::Start() {
   if (status_ != STATUS_OK) {
-    return;
+    return status_;
   }
 
-  auto state = is_running_.exchange(true);
-  if (state) {
-    return;
+  std::lock_guard<std::mutex> lock(server_running_lock_);
+  if (is_running_) {
+    return STATUS_SUCCESS;
   }
 
+  auto ret = server_impl_->bind_to_port(ip_.c_str(), port_);
+  if (!ret) {
+    status_ = {STATUS_FAULT, "bind to " + ip_ + ":" + std::to_string(port_) +
+                                 " failed, might be conflict, error " +
+                                 strerror(errno)};
+    return status_;
+  }
+
+  is_running_ = true;
   server_thread_ =
       std::make_shared<std::thread>(std::bind(&HttpServer::Listen, this));
+  return STATUS_SUCCESS;
 }
 
 void HttpServer::Listen() {
-  MBLOG_INFO << "Start server at " << ip_ << ":" << port_;
-  auto ret = server_impl_->listen(ip_.c_str(), port_);
+  MBLOG_INFO << "Start listen at " << ip_ << ":" << port_;
+  server_impl_->listen_after_bind();
+  MBLOG_INFO << "End listen at " << ip_ << ":" << port_;
   is_running_ = false;
-  if (!ret) {
-    status_ = {STATUS_FAULT, "listen " + ip_ + ":" + std::to_string(port_) +
-                                 " failed, might be conflict"};
-  }
 }
 
 void HttpServer::Stop() {
-  auto state = is_running_.exchange(false);
-  if (!state) {
+  std::lock_guard<std::mutex> lock(server_running_lock_);
+  if (!is_running_) {
     return;
   }
 
   server_impl_->stop();
+  is_running_ = false;
 }
 
 bool HttpServer::IsRunning() { return is_running_; }
