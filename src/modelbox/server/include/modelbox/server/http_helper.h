@@ -185,7 +185,7 @@ class HttpServer {
 
   void Unregister(const std::string &path, const HttpMethod &method);
 
-  void Start();
+  Status Start();
 
   void Stop();
 
@@ -203,6 +203,7 @@ class HttpServer {
   Status status_{STATUS_OK};
   std::shared_ptr<httplib::Server> server_impl_;
   std::string ip_;
+  std::mutex server_running_lock_;
   std::atomic_bool is_running_{false};
   int port_{0};
   std::shared_ptr<std::thread> server_thread_;
