@@ -123,6 +123,9 @@ void ModelboxEditorPlugin::RegistHandlers() {
   listener_->Register(solution_url, HttpMethods::GET,
                       std::bind(&ModelboxEditorPlugin::HandlerSolutionGet, this,
                                 std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(project_url, HttpMethods::PUT,
+                      std::bind(&ModelboxEditorPlugin::HandlerProjectPut, this,
+                                std::placeholders::_1, std::placeholders::_2));
   listener_->Register(flowunit_url, HttpMethods::PUT,
                       std::bind(&ModelboxEditorPlugin::HandlerFlowUnitPut, this,
                                 std::placeholders::_1, std::placeholders::_2));
@@ -272,6 +275,42 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
   return;
 }
 
+void ModelboxEditorPlugin::HandlerProjectPut(const httplib::Request& request,
+                                             httplib::Response& response) {
+  try {
+    auto body = nlohmann::json::parse(request.body);
+    std::string cmd = body["path"].get<std::string>();
+    char path[PATH_MAX * 2];
+
+    AddSafeHeader(response);
+    snprintf(path, PATH_MAX * 2 - 1, "mkdir -p \"%s\"", cmd.c_str());
+    MBLOG_INFO << "exec: " << path;
+    auto ret = system(path);
+
+    cmd = "modelbox-tool create -t project -n " +
+          body["projectName"].get<std::string>() + " -d " +
+          body["path"].get<std::string>();
+    ret = system(cmd.c_str());
+    MBLOG_INFO << "exec: " << cmd;
+
+    if (ret < 0) {
+      response.status = HttpStatusCodes::BAD_REQUEST;
+      std::string errmsg = "internal error";
+      response.set_content(errmsg, TEXT_PLAIN);
+      return;
+    }
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content(errmsg, TEXT_PLAIN);
+    return;
+  }
+
+  response.status = HttpStatusCodes::CREATED;
+  return;
+}
+
 void ModelboxEditorPlugin::HandlerFlowUnitInfo(
     const httplib::Request& request, httplib::Response& response,
     std::shared_ptr<modelbox::Configuration> config) {
@@ -297,6 +336,44 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfo(
 
   response.status = HttpStatusCodes::OK;
   response.set_content(info, JSON);
+}
+
+void ModelboxEditorPlugin::HandlerDirectoryGet(const httplib::Request& request,
+                                               httplib::Response& response) {
+  AddSafeHeader(response);
+  nlohmann::json response_json;
+  response_json["folder_list"] = nlohmann::json::array();
+  try {
+    std::string path;
+
+    DIR* dir;
+    struct dirent* ent;
+
+    auto last_split_start_pos = request.path.find('"');
+    auto last_split_end_pos = request.path.rfind('"');
+    path = request.path.substr(last_split_start_pos + 1,
+                               last_split_end_pos - last_split_start_pos - 1);
+    MBLOG_INFO << "Search path: " << path;
+    MBLOG_INFO << "Search path: " << opendir(path.c_str());
+    if ((dir = opendir(path.c_str())) != NULL) {
+      /* print all the files and directories within directory */
+      while ((ent = readdir(dir)) != NULL) {
+        MBLOG_INFO << ent->d_name;
+        response_json["folder_list"].push_back(ent->d_name);
+      }
+      closedir(dir);
+      response.status = HttpStatusCodes::OK;
+    } else {
+      /* could not open directory */
+      MBLOG_ERROR << "Can't open " << path;
+      response.status = HttpStatusCodes::NOT_FOUND;
+    }
+  } catch (const std::exception& e) {
+    response.status = HttpStatusCodes::INTERNAL_ERROR;
+    return;
+  }
+  response.set_content(response_json.dump(), JSON);
+  return;
 }
 
 void ModelboxEditorPlugin::HandlerUIGet(const httplib::Request& request,
