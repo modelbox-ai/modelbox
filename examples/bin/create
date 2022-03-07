@@ -20,7 +20,12 @@ FLOWUNIT_TEMPLATE_PATH=/usr/local/share/modelbox/project-template/
 showhelp() {
 	echo " -t, --template=[c++|python|infer|project|service-plugin]    create a c++, python, inference, project, service-plugin template"
 	echo " -d, --dir=[directory]                target output directory, default is './'"
-	echo " -n, --name=[target-name]             target name, default is 'exapmle'"
+	echo " -n, --name=[target-name]             target name, default is 'example'"
+	echo " --device=[device]                       target device, default is 'cpu'"
+	echo " --type=[type]                        target flowunit type, default is 'normal'"
+	echo " --desc=[desc]                 				target flowunit description, default is 'description'"
+	echo " --out=[outport]                 			target flowunit outport"
+	echo " --in=[inport]                 				target flowunit inport"
 }
 
 create_python_template()
@@ -59,6 +64,96 @@ create_python_template()
 		return 1
 	fi
 
+	sed -i "s/device = \"cpu\"/device = \"$device\"/g" $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "add device failed"
+		return 1
+	fi
+
+	sed -i "s/$type = false/$type = true/g" $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "add type failed"
+		return 1
+	fi
+
+	sed -i "s/\"description\"/\"$desc\"/g" $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "add property description failed"
+		return 1
+	fi
+
+	for(( i=0;i<${#out_array[@]}/3;i++)) do
+		if [ $i -eq 0 ]; then
+			sed -i "s/out_1/${out_array[0]}/g" $directory/$name/$name.toml
+			if [ $? -ne 0 ]; then
+				echo "add output_$1 failed"
+				return 1
+			fi
+
+			sed -i "s/type = \"string\" # Output port type/type = \"${out_array[2]}\" # Output port type/g" $directory/$name/$name.toml
+			if [ $? -ne 0 ]; then
+				echo "add output_$1 failed"
+				return 1
+			fi
+
+			sed -i "s/device = \"cpu\" # Output port device/device = \"${out_array[1]}\" # Output port device/g" $directory/$name/$name.toml
+			if [ $? -ne 0 ]; then
+				echo "add output_$1 failed"
+				return 1
+			fi
+			
+			sed -i "48 a\ \n" $directory/$name/$name.toml
+		else
+			let i_plus=$i+1
+			let num_line=$i*5+44
+			
+			sed -i "$num_line a\[output.output$i_plus]" $directory/$name/$name.toml
+			sed -i "$(($num_line + 1)) a\name = \"${out_array[i*3]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 2)) a\type = \"${out_array[i*3+1]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 3)) a\device = \"${out_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 4)) a\ " $directory/$name/$name.toml
+			if [ $? -ne 0 ]; then
+				echo "add output_$1 failed"
+				return 1
+			fi
+		fi
+	done;
+	
+	for(( i=0;i<${#in_array[@]}/3;i++)) do
+		if [ $i -eq 0 ]; then
+			sed -i "s/in_1/${in_array[0]}/g" $directory/$name/$name.toml
+			if [ $? -ne 0 ]; then
+				echo "add input_$1 failed"
+				return 1
+			fi
+
+			sed -i "s/type = \"string\" # Input port type/type = \"${in_array[2]}\" # Input port type/g" $directory/$name/$name.toml
+			if [ $? -ne 0 ]; then
+				echo "add input_$1 failed"
+				return 1
+			fi
+
+			sed -i "s/device = \"cpu\" # Input port device/device = \"${in_array[1]}\" # Input port device/g" $directory/$name/$name.toml
+			if [ $? -ne 0 ]; then
+				echo "add input_$1 failed"
+				return 1
+			fi
+		else
+			let i_plus=$i+1
+			let num_line=$i*5+37
+			
+			sed -i "$num_line a\[input.input$i_plus]" $directory/$name/$name.toml
+			sed -i "$(($num_line + 1)) a\name = \"${in_array[i*3]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 2)) a\type = \"${in_array[i*3+1]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 3)) a\device = \"${in_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 4)) a\ " $directory/$name/$name.toml
+			if [ $? -ne 0 ]; then
+				echo "add input_$1 failed"
+				return 1
+			fi
+		fi
+	done;
+	
 	sed -i "s/example/$name/g" $directory/$name/CMakeLists.txt
 	if [ $? -ne 0 ]; then
 		echo "sed CMakeLists.txt failed"
@@ -273,7 +368,7 @@ create_template()
 
 
 main() {
-	OPTS=`getopt -o n:t:d:h --long template:,name:,dir:,help \
+	OPTS=`getopt -o n:t:d:h --long template:,name:,dir:,help:,desc:,device:,type:,in:,out \
 		-n  "" -- "$@"`
 
 	if [ $# -lt 2 ]; then showhelp; exit 1; fi
@@ -281,6 +376,20 @@ main() {
 
 	directory="./"
 	name="example"
+	desc="description"
+	type=""
+	device="cpu"
+	outport=""
+	out_type=""
+	out_dev=""
+	out_num=0
+	inport=""
+	in_type=""
+	in_dev=""
+	in_num=0
+	in_array=()
+	out_array=()
+	
 
 	while true; do
 		case "$1" in
@@ -296,6 +405,33 @@ main() {
 		-h | --help)
 			showhelp
 			shift ;;
+		--device)
+			device="$2"
+			shift 2;;
+		--type)
+			type="$2"
+			shift 2;;
+		--desc)
+			desc="$2"
+			shift 2;;
+		--in)
+			inport="$2"
+			in_type="$3"
+			in_dev="$4"
+			in_array[0+3*$in_num]=$inport
+			in_array[1+3*$in_num]=$in_type
+			in_array[2+3*$in_num]=$in_dev
+			let in_num++;
+			shift 4;;
+		--out)
+			outport="$2"
+			out_type="$3"
+			out_dev="$4"
+			out_array[0+3*$out_num]=$outport
+			out_array[1+3*$out_num]=$out_type
+			out_array[2+3*$out_num]=$out_dev
+			let out_num++;
+			shift 4;;
 		-- ) shift; break ;;
 		* ) break ;;
   		esac

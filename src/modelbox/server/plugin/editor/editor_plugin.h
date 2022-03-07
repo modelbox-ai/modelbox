@@ -42,6 +42,8 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   void HandlerFlowUnitInfoGet(const httplib::Request &request, httplib::Response &response);
   void HandlerFlowUnitInfo(const httplib::Request &request, httplib::Response &response,
                            std::shared_ptr<modelbox::Configuration> config);
+  void HandlerFlowUnitPut(const httplib::Request &request, httplib::Response &response);
+  void HandlerProjectPut(const httplib::Request &request, httplib::Response &response);
   bool GetHtmlFile(const std::string &in_file, std::string *out_file, std::string *redirect_file);
   modelbox::Status GraphFileToJson(const std::string &file,
                                  std::string &json_data);

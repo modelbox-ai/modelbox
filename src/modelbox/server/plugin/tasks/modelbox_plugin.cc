@@ -92,7 +92,7 @@ bool ModelboxPlugin::Start() {
 
   auto ret = listener_->GetStatus();
   if (!ret) {
-    MBLOG_ERROR << "Start mdeolbox plugin failed, err " << ret;
+    MBLOG_ERROR << "Start modelbox plugin failed, err " << ret;
     return false;
   }
 

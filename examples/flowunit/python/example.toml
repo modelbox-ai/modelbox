@@ -24,7 +24,7 @@ type = "python" # Fixed value
 
 # Flowunit Type
 stream = false # Whether the flowunit is a stream flowunit
-condition  = false # Whether the flowunit is a condition flowunit
+condition = false # Whether the flowunit is a condition flowunit
 collapse = false # Whether the flowunit is a collapse flowunit
 collapse_all = false # Whether the flowunit will collapse all the data
 expand = false #  Whether the flowunit is a expand flowunit
@@ -38,9 +38,11 @@ item = "value"
 [input.input1] # Input port number, the format is input.input[N]
 name = "in_1" # Input port name
 type = "string" # Input port type
+device = "cpu" # Input port device
 
 # Output ports description
 [output]
 [output.output1] # Output port number, the format is output.output[N]
 name = "out_1" # Output port name
 type = "string" # Output port type
+device = "cpu" # Output port device

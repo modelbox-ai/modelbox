@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "editor_plugin.h"
 
 #include <dirent.h>
+#include <stdlib.h>
 
 #include <nlohmann/json.hpp>
 #include <toml.hpp>
@@ -36,6 +36,9 @@ const std::string DEFAULT_SOLUTION_GRAPHS_ROOT =
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
 const std::string solution_url = "/editor/solution";
+const std::string project_url = "/editor/project";
+const std::string flowunit_url = "/editor/flowunit";
+const std::string open_directory_url = "/editor/directory";
 
 constexpr const char* HTTP_RESP_ERR_GETINFO_FAILED = "Get info failed";
 constexpr const char* HTTP_RESP_ERR_PATH_NOT_FOUND = "Path not found";
@@ -120,6 +123,9 @@ void ModelboxEditorPlugin::RegistHandlers() {
   listener_->Register(solution_url, HttpMethods::GET,
                       std::bind(&ModelboxEditorPlugin::HandlerSolutionGet, this,
                                 std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(flowunit_url, HttpMethods::PUT,
+                      std::bind(&ModelboxEditorPlugin::HandlerFlowUnitPut, this,
+                                std::placeholders::_1, std::placeholders::_2));
 }
 
 bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
@@ -167,7 +173,6 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoGet(
 void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
     const httplib::Request& request, httplib::Response& response) {
   modelbox::ConfigurationBuilder config_builder;
-
   try {
     auto body = nlohmann::json::parse(request.body);
     if (body.find("skip-default") != body.end()) {
@@ -184,7 +189,6 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
           dirs.push_back(dir);
         }
       }
-
       config_builder.AddProperty("driver." + std::string(DRIVER_DIR), dirs);
     }
   } catch (const std::exception& e) {
@@ -197,6 +201,75 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
   }
 
   return HandlerFlowUnitInfo(request, response, config_builder.Build());
+}
+
+void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
+                                              httplib::Response& response) {
+  try {
+    auto body = nlohmann::json::parse(request.body);
+    std::string cmd = "modelbox-tool create -t " +
+                      body["programLanguage"].get<std::string>() + " -n " +
+                      body["flowunitName"].get<std::string>() + " -d " +
+                      body["path"].get<std::string>() + " --type " +
+                      body["flowunitType"].get<std::string>();
+
+    auto device = body["deviceType"].get<std::string>();
+    if (device != "") {
+      cmd += " --device " + device;
+    }
+    if (body["desc"].get<std::string>() != "") {
+      cmd += " --desc \"" + body["desc"].get<std::string>() + "\"";
+    }
+
+    auto port = body["portInfos"].get<nlohmann::json>();
+    int in_num = 1;
+    int out_num = 1;
+    std::string p_type;
+    std::string dev_type;
+    std::string data_type;
+
+    for (auto& p : port.items()) {
+      if (p.key().empty()) {
+        response.status = HttpStatusCodes::BAD_REQUEST;
+        std::string errmsg = "port info has empty value";
+        response.set_content(errmsg, TEXT_PLAIN);
+        return;
+      }
+      p_type = p.value()["portType"].get<std::string>();
+      data_type = p.value()["dataType"].get<std::string>();
+      dev_type = p.value()["deviceType"].get<std::string>();
+
+      if (p_type.compare("input") == 0) {
+        cmd += " --in in_" + std::to_string(in_num) + " ";
+        in_num += 1;
+      } else {
+        cmd += " --out out_" + std::to_string(out_num) + " ";
+        out_num += 1;
+      }
+
+      cmd += dev_type + " ";
+      cmd += data_type;
+    }
+
+    MBLOG_INFO << "exec: " << cmd;
+    auto ret = system(cmd.c_str());
+    if (ret < 0) {
+      response.status = HttpStatusCodes::BAD_REQUEST;
+      return;
+    }
+    nlohmann::json response_json;
+
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content(errmsg, TEXT_PLAIN);
+    AddSafeHeader(response);
+    return;
+  }
+
+  response.status = HttpStatusCodes::CREATED;
+  return;
 }
 
 void ModelboxEditorPlugin::HandlerFlowUnitInfo(
@@ -443,7 +516,6 @@ void ModelboxEditorPlugin::HandlerSolutionGet(const httplib::Request& request,
     }
 
     std::string json_data;
-    MBLOG_INFO << "load solution file " << solution_file;
     auto ret = GraphFileToJson(solution_file, json_data);
     if (!ret) {
       std::string msg = "solution file is invalid.";

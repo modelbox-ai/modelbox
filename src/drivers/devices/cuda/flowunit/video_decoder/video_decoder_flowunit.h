@@ -15,8 +15,8 @@
  */
 
 
-#ifndef MODELBOX_FLOWUNIT_VIDEO_DECODER_CPU_H_
-#define MODELBOX_FLOWUNIT_VIDEO_DECODER_CPU_H_
+#ifndef MODELBOX_FLOWUNIT_VIDEO_DECODER_CUDA_H_
+#define MODELBOX_FLOWUNIT_VIDEO_DECODER_CUDA_H_
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
@@ -28,7 +28,7 @@
 constexpr const char *FLOWUNIT_NAME = "video_decoder";
 constexpr const char *FLOWUNIT_TYPE = "cuda";
 constexpr const char *FLOWUNIT_DESC =
-    "\n\t@Brief: A resize flowunit on cpu. \n"
+    "\n\t@Brief: A video decoder on cuda. \n"
     "\t@Port parameter: The input port buffer type is video_packet, the output "
     "port buffer type is video_frame.\n"
     "\t  The video_packet buffer contain the following meta fields:\n"
@@ -109,4 +109,4 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
   std::string device_id_;
 };
 
-#endif  // MODELBOX_FLOWUNIT_VIDEO_DECODER_CPU_H_
+#endif  // MODELBOX_FLOWUNIT_VIDEO_DECODER_CUDA_H_
