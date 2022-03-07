@@ -422,7 +422,7 @@ Status HttpServer::Start() {
   if (!ret) {
     status_ = {STATUS_FAULT, "bind to " + ip_ + ":" + std::to_string(port_) +
                                  " failed, might be conflict, error " +
-                                 strerror(errno)};
+                                 StrError(errno)};
     return status_;
   }
 
