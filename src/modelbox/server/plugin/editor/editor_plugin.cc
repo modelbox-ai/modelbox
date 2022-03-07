@@ -44,6 +44,7 @@ const std::string project_url = "/editor/project";
 const std::string save_project_url = "/editor/all";
 const std::string flowunit_url = "/editor/flowunit";
 const std::string open_directory_url = "/editor/directory";
+const std::string solution_project_url = "/editor/solutionToProject";
 
 const char* HTTP_GRAPH_FORMAT_JSON = "json";
 const char* HTTP_GRAPH_FORMAT_TOML = "toml";
@@ -148,6 +149,10 @@ void ModelboxEditorPlugin::RegistHandlers() {
   listener_->Register(save_project_url, HttpMethods::PUT,
                       std::bind(&ModelboxEditorPlugin::SaveAllProject, this,
                                 std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(
+      solution_project_url, HttpMethods::PUT,
+      std::bind(&ModelboxEditorPlugin::SaveSolutionFlowunitToProject, this,
+                std::placeholders::_1, std::placeholders::_2));
 }
 
 bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
@@ -239,10 +244,11 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
     if (device != "") {
       cmd += " --device " + device;
     }
-    if (body["desc"].get<std::string>() != "") {
+
+    if (body.find("desc") != body.end()) {
       cmd += " --desc \"" + body["desc"].get<std::string>() + "\"";
     }
-
+    
     auto port = body["portInfos"].get<nlohmann::json>();
     int in_num = 1;
     int out_num = 1;
@@ -272,16 +278,16 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
       cmd += dev_type + " ";
       cmd += data_type;
     }
-    
-    if (body["modelEntry"].get<std::string>() != ""){
+
+    if (body.find("modelEntry") != body.end()) {
       cmd += " --entry " + body["modelEntry"].get<std::string>();
     }
 
-    if (body["flowunitVirtualType"].get<std::string>() != ""){
+    if (body.find("flowunitVirtualType") != body.end()) {
       cmd += " --virtual " + body["flowunitVirtualType"].get<std::string>();
     }
 
-    if (body["plugin"].get<std::string>() != ""){
+    if (body.find("plugin") != body.end()) {
       cmd += " --plugin " + body["plugin"].get<std::string>();
     }
 
@@ -323,7 +329,6 @@ void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
       response.status = HttpStatusCodes::BAD_REQUEST;
       response.set_content(errmsg, TEXT_PLAIN);
     }
-
     ConfigJobid(jobid);
     // //保存图信息
     auto ret = SaveGraphFile(jobid, toml_data, path);
@@ -332,6 +337,38 @@ void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
       response.status = HttpStatusCodes::BAD_REQUEST;
       response.set_content(errmsg, TEXT_PLAIN);
       return;
+    }
+
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content(errmsg, TEXT_PLAIN);
+    return;
+  }
+
+  response.status = HttpStatusCodes::OK;
+}
+
+void ModelboxEditorPlugin::SaveSolutionFlowunitToProject(
+    const httplib::Request& request, httplib::Response& response) {
+  try {
+    auto body = nlohmann::json::parse(request.body);
+    auto dirs = body["dirs"];
+    auto flowunitPath = body["flowunitPath"].get<std::string>();
+    std::string cmd = "cp -r ";
+    int ret = 0;
+    MBLOG_INFO << "Save Solution Flowunit To Project: " << flowunitPath;
+    AddSafeHeader(response);
+    for (auto& elem : dirs) {
+      MBLOG_INFO << "exec: "
+                 << cmd + " " + elem.get<std::string>() + " " + flowunitPath;
+      ret = system(
+          (cmd + " " + elem.get<std::string>() + " " + flowunitPath).c_str());
+      if (ret < 0) {
+        response.status = HttpStatusCodes::BAD_REQUEST;
+        return;
+      }
     }
 
   } catch (const std::exception& e) {
@@ -386,7 +423,7 @@ modelbox::Status ModelboxEditorPlugin::SaveGraphFile(
   }
 
   std::string path_graph = path + "/" + job_id;
-  MBLOG_INFO << "!!!" << path_graph;
+  MBLOG_INFO << "path_graph: " << path_graph;
   std::ofstream out(path_graph, std::ios::trunc);
   if (out.fail()) {
     return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
@@ -428,7 +465,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
     json["path"] = project_path.substr(0, project_path.find_last_of("/\\"));
     json["flowunits"] = nlohmann::json::array();
     json["graphs"] = nlohmann::json::array();
-    
+
     MBLOG_INFO << "project path: " << json["path"];
     //加载功能单元信息
     DIR* dir;
