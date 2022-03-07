@@ -272,6 +272,18 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
       cmd += dev_type + " ";
       cmd += data_type;
     }
+    
+    if (body["modelEntry"].get<std::string>() != ""){
+      cmd += " --entry " + body["modelEntry"].get<std::string>();
+    }
+
+    if (body["flowunitVirtualType"].get<std::string>() != ""){
+      cmd += " --virtual " + body["flowunitVirtualType"].get<std::string>();
+    }
+
+    if (body["plugin"].get<std::string>() != ""){
+      cmd += " --plugin " + body["plugin"].get<std::string>();
+    }
 
     MBLOG_INFO << "exec: " << cmd;
     auto ret = system(cmd.c_str());

@@ -28,13 +28,14 @@ plugin = ""  # it take effect when 'virtual_type' is 'tensorrt', it can be set t
 
 # input port description, suporrt multiple input ports
 [input]
-[input.input1]  # input port number, Format is input.input[N]
-name = "Input"  # input port name
-type = "float"  # input port data type ,e.g. float or uint8
-#device = "cpu"  # input buffer type: cpu, cuda or ascend ,  tensorflow must set device = "cpu" ,others can leave this field blank
+[input.input1] # input port number, Format is input.input[N]
+name = "in_1" # input port name
+type = "float" # input port data type ,e.g. float or uint8
+device = "cpu" # input buffer type: cpu, cuda or ascend ,  tensorflow must set device = "cpu" ,others can leave this field blank
 
 # output port description, suporrt multiple output ports
 [output]
 [output.output1] # output port number, Format is output.output[N]
-name = "Output"  # output port name
-type = "float"   # output port data type ,e.g. float or uint8
+name = "out_1" # output port name
+type = "float" # output port data type ,e.g. float or uint8
+device = "cpu" # output buffer type: cpu, cuda or ascend ,  tensorflow must set device = "cpu" ,others can leave this field blank
