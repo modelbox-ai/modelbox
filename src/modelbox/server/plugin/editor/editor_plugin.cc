@@ -18,8 +18,12 @@
 #include <dirent.h>
 #include <stdlib.h>
 
+#include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
+#include <regex>
 #include <toml.hpp>
+#include <typeinfo>
 
 #include "config.h"
 #include "modelbox/base/log.h"
@@ -329,10 +333,10 @@ void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
   response.status = HttpStatusCodes::OK;
 }
 
-void ModelboxEditorPlugin::ConfigJobid(std::string& job_id){
+void ModelboxEditorPlugin::ConfigJobid(std::string& job_id) {
   auto type = ".toml";
-  if (job_id.rfind(type) < 0){
-    job_id += type;
+  if (job_id.rfind(type) == std::string::npos) {
+    job_id = job_id + type;
   }
 }
 
@@ -370,6 +374,7 @@ modelbox::Status ModelboxEditorPlugin::SaveGraphFile(
   }
 
   std::string path_graph = path + "/" + job_id;
+  MBLOG_INFO << "!!!" << path_graph;
   std::ofstream out(path_graph, std::ios::trunc);
   if (out.fail()) {
     return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
@@ -393,12 +398,174 @@ modelbox::Status ModelboxEditorPlugin::SaveGraphFile(
 void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
                                              httplib::Response& response) {
   try {
-    auto body = nlohmann::json::parse(request.body);
-    std::string path = body["path"].get<std::string>();
-    MBLOG_INFO << "get Project Info: " << path;
+    std::string relative_path = request.path;
+    int pos_1 = relative_path.find("\"");
+    int pos_2 = relative_path.find_last_of("\"");
+    std::string project_path = "";
+    project_path = relative_path.substr(pos_1 + 1, pos_2 - pos_1 - 1);
+    MBLOG_INFO << "get project path: " << project_path;
     AddSafeHeader(response);
+
     //加载项目信息
+    auto temp = modelbox::StringSplit(project_path, '/');
+    auto project_name = temp[temp.size() - 1];
+    MBLOG_INFO << "loading project: " << project_name;
+    nlohmann::json json;
+    std::string result;
+    json["projectName"] = project_name;
+    json["path"] = project_path.substr(0, project_path.find_last_of("/\\"));
+    json["flowunits"] = nlohmann::json::array();
+    json["graphs"] = nlohmann::json::array();
+    
+    MBLOG_INFO << "project path: " << json["path"];
     //加载功能单元信息
+    DIR* dir;
+    struct dirent* ent;
+    std::string temp_name;
+    std::string temp_type;
+    std::string in_path;
+    std::string toml = ".toml";
+    std::string s = "";
+    std::string title = "";
+    std::string current_property = "";
+    nlohmann::json flowunit;
+
+    std::regex txt_regex("\\[(.*?)]");
+    std::regex txt_regex1("[\\w-]+ = [\"?\\w./\"?]+");
+    std::smatch matched;
+
+    auto flowunit_path = project_path + "/src/flowunit";
+    if ((dir = opendir(flowunit_path.c_str())) != NULL) {
+      /* print all the files and directories within directory */
+      while ((ent = readdir(dir)) != NULL) {
+        temp_name = ent->d_name;
+        temp_type = ent->d_type;
+        if (ent->d_type == DT_DIR && temp_name != "." && temp_name != ".." &&
+            temp_name != "example") {
+          flowunit["name"] = temp_name;
+          in_path = flowunit_path + "/" + temp_name + "/" + temp_name + toml;
+          flowunit["file"] = in_path;
+          std::ifstream ifs(in_path.c_str());
+          if (!ifs.is_open()) {
+            std::string errmsg = "open flowunit " + temp_name + "file failed!";
+            response.status = HttpStatusCodes::BAD_REQUEST;
+            response.set_content(errmsg, TEXT_PLAIN);
+            return;
+          }
+          auto index_port = 0;
+          flowunit["ports"] = nlohmann::json::array();
+          nlohmann::json port;
+          while (getline(ifs, s)) {
+            //处理数据保存
+            if (std::regex_search(s, matched, txt_regex1) == 1) {
+              s = matched[0];  // content
+              auto vec = modelbox::StringSplit(s, ' ');
+              if ((vec.size() > 3) || (vec.size() < 1) ||
+                  std::find(vec.begin(), vec.end(), "=") == vec.end()) {
+                std::string errmsg = "base value is invalid.";
+                response.status = HttpStatusCodes::BAD_REQUEST;
+                response.set_content(errmsg, TEXT_PLAIN);
+                return;
+              }
+
+              if (current_property == "base") {
+                flowunit[vec[0]] = vec[2];
+              } else {
+                if (index_port % 3 == 0 && index_port != 0) {
+                  flowunit["ports"].push_back(port);
+                }
+                port[vec[0]] = vec[2];
+                index_port += 1;
+              }
+
+            } else if (std::regex_search(s, matched, txt_regex) == 1) {
+              // title
+              if (matched[1] == "base") {
+                current_property = "base";
+              } else if (matched[1] == "input") {
+                current_property = "input";
+              } else if (matched[1] == "output") {
+                current_property = "output";
+              }
+            }
+          }
+          ifs.close();
+        }
+      }
+      json["flowunits"].push_back(flowunit);
+      closedir(dir);
+    }
+
+    //加载graph信息
+    auto graph_path = project_path + "/src/graph";
+
+    if ((dir = opendir(graph_path.c_str())) != NULL) {
+      /* print all the files and directories within directory */
+      nlohmann::json graph;
+      while ((ent = readdir(dir)) != NULL) {
+        temp_name = ent->d_name;
+        if (temp_name.rfind(toml) != std::string::npos &&
+            ent->d_type != DT_DIR && temp_name != "example.toml") {
+          graph["name"] = temp_name;
+          in_path = graph_path + "/" + temp_name;
+          std::ifstream ifs(in_path.c_str());
+          if (!ifs.is_open()) {
+            std::string errmsg = "open graph file failed!";
+            response.status = HttpStatusCodes::BAD_REQUEST;
+            response.set_content(errmsg, TEXT_PLAIN);
+            return;
+          }
+          std::string cont = "";
+          int flag = -1;
+          while (getline(ifs, s)) {
+            //处理数据保存
+            if (s.find("\"\"\"") != std::string::npos) {
+              flag *= -1;
+              if (s == "\"\"\"" && current_property == "graph") {
+                graph["dotSrc"] = cont;
+                cont = "";
+              } else if (s == "\"\"\"" && current_property == "driver") {
+                graph["dir"] = cont;
+              }
+              continue;
+            }
+            if (flag > 0) {
+              cont += s + "\n";
+            }
+            if (std::regex_search(s, matched, txt_regex1) == 1) {
+              s = matched[0];  // content
+              auto vec = modelbox::StringSplit(s, ' ');
+              if ((vec.size() > 3) || (vec.size() < 1) ||
+                  std::find(vec.begin(), vec.end(), "=") == vec.end()) {
+                std::string errmsg = "base value is invalid.";
+                response.status = HttpStatusCodes::BAD_REQUEST;
+                response.set_content(errmsg, TEXT_PLAIN);
+                return;
+              }
+              graph[vec[0]] = vec[2];
+            } else if (std::regex_search(s, matched, txt_regex) == 1) {
+              // title
+              if (matched[1] == "profile") {
+                current_property = "profile";
+              } else if (matched[1] == "graph") {
+                current_property = "graph";
+              } else if (matched[1] == "driver") {
+                current_property = "driver";
+              } else if (matched[1] == "flow") {
+                current_property = "flow";
+              }
+            }
+          }
+          ifs.close();
+        }
+      }
+      json["graphs"].push_back(graph);
+      closedir(dir);
+    }
+
+    result = json.dump();
+    MBLOG_INFO << "infos: " << result;
+    response.set_content(result, JSON);
   } catch (const std::exception& e) {
     std::string errmsg = "Get info failed: ";
     errmsg += e.what();
@@ -489,11 +656,9 @@ void ModelboxEditorPlugin::HandlerDirectoryGet(const httplib::Request& request,
     path = request.path.substr(last_split_start_pos + 1,
                                last_split_end_pos - last_split_start_pos - 1);
     MBLOG_INFO << "Search path: " << path;
-    MBLOG_INFO << "Search path: " << opendir(path.c_str());
     if ((dir = opendir(path.c_str())) != NULL) {
       /* print all the files and directories within directory */
       while ((ent = readdir(dir)) != NULL) {
-        MBLOG_INFO << ent->d_name;
         response_json["folder_list"].push_back(ent->d_name);
       }
       closedir(dir);
