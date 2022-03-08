@@ -14,212 +14,20 @@
  * limitations under the License.
  */
 
+#include "tensorflow_inference_mock.h"
 
-#include <cuda_runtime.h>
 #include <dlfcn.h>
 
-#include <functional>
-#include <future>
-#include <random>
-#include <thread>
-
-#include "modelbox/base/log.h"
-#include "modelbox/base/utils.h"
-#include "modelbox/buffer.h"
-#include "driver_flow_test.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+using namespace modelbox;
 using ::testing::_;
 
-static std::set<std::string> SUPPORT_TF_VERSION = {"1.13.1", "1.15.0"};
+namespace tensorflow_inference {
 
-namespace modelbox {
-class InferenceCudaFlowUnitTest : public testing::Test {
- public:
-  InferenceCudaFlowUnitTest()
-      : driver_flow_(std::make_shared<DriverFlowTest>()) {}
-
- protected:
-  virtual void SetUp() {
-    int count = 0;
-    cudaGetDeviceCount(&count);
-    if (count <= 0) {
-      MBLOG_INFO << "no cuda device, skip test suit";
-      GTEST_SKIP();
-    }
-
-    auto version = GetTFVersion();
-
-    if (SUPPORT_TF_VERSION.find(version) == SUPPORT_TF_VERSION.end()) {
-      MBLOG_INFO << "the version is " << version
-                 << ", not in support version, skip test suit";
-      GTEST_SKIP();
-    }
-
-    auto ret = AddMockFlowUnit();
-    EXPECT_EQ(ret, STATUS_OK);
-
-    SetUpTomlFiles(version);
-  }
-
-  virtual void TearDown() {
-    int count = 0;
-    cudaGetDeviceCount(&count);
-    if (count <= 0) {
-      GTEST_SKIP();
-    }
-
-    auto version = GetTFVersion();
-    if (SUPPORT_TF_VERSION.find(version) == SUPPORT_TF_VERSION.end()) {
-      GTEST_SKIP();
-    }
-
-    RemoveFiles();
-    driver_flow_->Clear();
-  };
-  std::shared_ptr<DriverFlowTest> GetDriverFlow();
-
-  const std::string test_lib_dir = TEST_DRIVER_DIR,
-                    test_data_dir = TEST_DATA_DIR, test_assets = TEST_ASSETS,
-                    test_toml_file = "virtual_tfgpu_test.toml",
-                    test_toml_plugin_file = "virtual_tfgpu_plugin_test.toml",
-                    test_toml_save_model_file =
-                        "virtual_tfgpu_save_model_test.toml";
-  std::string tensorflow_cuda_path, dest_toml_file;
-  std::string tensorflow_cuda_plugin_path, dest_toml_plugin_file;
-  std::string tensorflow_cuda_save_model_path, dest_toml_save_model_file;
-
- private:
-  std::string GetTFVersion();
-  Status AddMockFlowUnit();
-  void Register_Test_0_1_Batch_Flowunit(std::shared_ptr<MockDriverCtl> &ctl);
-  void Register_Test_1_0_Batch_Flowunit(std::shared_ptr<MockDriverCtl> &ctl);
-  void Register_Test_0_1_Flowunit(std::shared_ptr<MockDriverCtl> &ctl);
-  void Register_Test_1_0_Flowunit(std::shared_ptr<MockDriverCtl> &ctl);
-  void SetUpTomlFiles(const std::string &version);
-  modelbox::Status ReplaceVersion(const std::string &src, const std::string &dest,
-                                const std::string &version);
-  void RemoveFiles();
-
-  std::shared_ptr<DriverFlowTest> driver_flow_;
-};
-
-std::string InferenceCudaFlowUnitTest::GetTFVersion() {
-  std::string ans = "";
-  void *handler = dlopen(MODELBOX_TF_SO_PATH, RTLD_LAZY | RTLD_NODELETE);
-  if (handler == nullptr) {
-    MBLOG_ERROR << "dlopen error: " << dlerror();
-    return ans;
-  }
-
-  Defer { dlclose(handler); };
-  typedef const char *(*TF_Version)();
-  TF_Version func = nullptr;
-
-  func = (TF_Version)dlsym(handler, "TF_Version");
-  if (func == nullptr) {
-    MBLOG_ERROR << "dlsym TF_Version failed, " << dlerror();
-    return ans;
-  }
-
-  ans = std::string(func());
-  return ans;
-}
-
-modelbox::Status InferenceCudaFlowUnitTest::ReplaceVersion(
-    const std::string &src, const std::string &dest,
-    const std::string &version) {
-  if (access(dest.c_str(), F_OK) == 0) {
-    return modelbox::STATUS_FAULT;
-  }
-
-  std::ifstream src_file(src, std::ios::binary);
-  std::ofstream dst_file(dest, std::ios::binary | std::ios::trunc);
-
-  if (src_file.fail() || dst_file.fail()) {
-    return modelbox::STATUS_FAULT;
-  }
-
-  std::string line;
-  std::string tf_version = "TF_VERSION";
-
-  while (std::getline(src_file, line)) {
-    auto pos = line.find(tf_version);
-    if (pos != std::string::npos) {
-      line.replace(pos, tf_version.size(), version);
-    }
-    dst_file << line << "\n";
-  }
-
-  src_file.close();
-  if (dst_file.fail()) {
-    dst_file.close();
-    remove(dest.c_str());
-    return modelbox::STATUS_FAULT;
-  }
-  dst_file.close();
-
-  return modelbox::STATUS_OK;
-}
-
-void InferenceCudaFlowUnitTest::RemoveFiles() {
-  auto ret = remove(dest_toml_file.c_str());
-  EXPECT_EQ(ret, 0);
-  ret = remove(tensorflow_cuda_path.c_str());
-  EXPECT_EQ(ret, 0);
-
-  ret = remove(dest_toml_plugin_file.c_str());
-  EXPECT_EQ(ret, 0);
-  ret = remove(tensorflow_cuda_plugin_path.c_str());
-  EXPECT_EQ(ret, 0);
-
-  ret = remove(dest_toml_save_model_file.c_str());
-  EXPECT_EQ(ret, 0);
-  ret = remove(tensorflow_cuda_save_model_path.c_str());
-  EXPECT_EQ(ret, 0);
-}
-
-void InferenceCudaFlowUnitTest::SetUpTomlFiles(const std::string &version) {
-  const std::string src_file_dir = test_assets + "/tensorflow_cuda/" + version;
-
-  const std::string src_file_pb_toml = test_data_dir + "/" + test_toml_file;
-  const std::string src_plugin_toml =
-      test_data_dir + "/" + test_toml_plugin_file;
-  const std::string src_save_model_toml =
-      test_data_dir + "/" + test_toml_save_model_file;
-
-  tensorflow_cuda_path = test_data_dir + "/tensorflow_cuda";
-  auto mkdir_ret = mkdir(tensorflow_cuda_path.c_str(), 0700);
-  EXPECT_EQ(mkdir_ret, 0);
-
-  tensorflow_cuda_plugin_path = test_data_dir + "/tensorflow_cuda_plugin";
-  mkdir_ret = mkdir(tensorflow_cuda_plugin_path.c_str(), 0700);
-  EXPECT_EQ(mkdir_ret, 0);
-
-  tensorflow_cuda_save_model_path =
-      test_data_dir + "/tensorflow_cuda_save_model";
-  mkdir_ret = mkdir(tensorflow_cuda_save_model_path.c_str(), 0700);
-  EXPECT_EQ(mkdir_ret, 0);
-
-  dest_toml_file = tensorflow_cuda_path + "/" + test_toml_file;
-  auto status = ReplaceVersion(src_file_pb_toml, dest_toml_file, version);
-  EXPECT_EQ(status, STATUS_OK);
-
-  dest_toml_plugin_file =
-      tensorflow_cuda_plugin_path + "/" + test_toml_plugin_file;
-  status = ReplaceVersion(src_plugin_toml, dest_toml_plugin_file, version);
-  EXPECT_EQ(status, STATUS_OK);
-
-  dest_toml_save_model_file =
-      tensorflow_cuda_save_model_path + "/" + test_toml_save_model_file;
-  status =
-      ReplaceVersion(src_save_model_toml, dest_toml_save_model_file, version);
-  EXPECT_EQ(status, STATUS_OK);
-}
-
-void InferenceCudaFlowUnitTest::Register_Test_0_1_Batch_Flowunit(
+static void Register_Test_0_1_Batch_Flowunit(
     std::shared_ptr<MockDriverCtl> &ctl) {
   MockFlowUnitDriverDesc desc_flowunit;
   desc_flowunit.SetClass("DRIVER-FLOWUNIT");
@@ -318,7 +126,7 @@ void InferenceCudaFlowUnitTest::Register_Test_0_1_Batch_Flowunit(
                              std::string(TEST_DRIVER_DIR));
 };
 
-void InferenceCudaFlowUnitTest::Register_Test_1_0_Batch_Flowunit(
+static void Register_Test_1_0_Batch_Flowunit(
     std::shared_ptr<MockDriverCtl> &ctl) {
   MockFlowUnitDriverDesc desc_flowunit;
   desc_flowunit.SetClass("DRIVER-FLOWUNIT");
@@ -400,8 +208,7 @@ void InferenceCudaFlowUnitTest::Register_Test_1_0_Batch_Flowunit(
                              std::string(TEST_DRIVER_DIR));
 };
 
-void InferenceCudaFlowUnitTest::Register_Test_0_1_Flowunit(
-    std::shared_ptr<MockDriverCtl> &ctl) {
+static void Register_Test_0_1_Flowunit(std::shared_ptr<MockDriverCtl> &ctl) {
   MockFlowUnitDriverDesc desc_flowunit;
   desc_flowunit.SetClass("DRIVER-FLOWUNIT");
   desc_flowunit.SetType("cpu");
@@ -498,8 +305,7 @@ void InferenceCudaFlowUnitTest::Register_Test_0_1_Flowunit(
                              std::string(TEST_DRIVER_DIR));
 };
 
-void InferenceCudaFlowUnitTest::Register_Test_1_0_Flowunit(
-    std::shared_ptr<MockDriverCtl> &ctl) {
+static void Register_Test_1_0_Flowunit(std::shared_ptr<MockDriverCtl> &ctl) {
   MockFlowUnitDriverDesc desc_flowunit;
   desc_flowunit.SetClass("DRIVER-FLOWUNIT");
   desc_flowunit.SetType("cpu");
@@ -579,104 +385,71 @@ void InferenceCudaFlowUnitTest::Register_Test_1_0_Flowunit(
                              std::string(TEST_DRIVER_DIR));
 };
 
-Status InferenceCudaFlowUnitTest::AddMockFlowUnit() {
-  auto ctl = driver_flow_->GetMockFlowCtl();
+modelbox::Status AddMockFlowUnit(
+    std::shared_ptr<modelbox::DriverFlowTest> &flow) {
+  auto ctl = flow->GetMockFlowCtl();
   Register_Test_0_1_Batch_Flowunit(ctl);
   Register_Test_1_0_Batch_Flowunit(ctl);
   Register_Test_0_1_Flowunit(ctl);
   Register_Test_1_0_Flowunit(ctl);
-  return STATUS_OK;
+  return STATUS_SUCCESS;
 }
 
-std::shared_ptr<DriverFlowTest> InferenceCudaFlowUnitTest::GetDriverFlow() {
-  return driver_flow_;
+modelbox::Status ReplaceVersion(const std::string &src, const std::string &dest,
+                                const std::string &version) {
+  if (access(dest.c_str(), F_OK) == 0) {
+    return modelbox::STATUS_FAULT;
+  }
+
+  std::ifstream src_file(src, std::ios::binary);
+  std::ofstream dst_file(dest, std::ios::binary | std::ios::trunc);
+
+  if (src_file.fail() || dst_file.fail()) {
+    return modelbox::STATUS_FAULT;
+  }
+
+  std::string line;
+  std::string tf_version = "TF_VERSION";
+
+  while (std::getline(src_file, line)) {
+    auto pos = line.find(tf_version);
+    if (pos != std::string::npos) {
+      line.replace(pos, tf_version.size(), version);
+    }
+    dst_file << line << "\n";
+  }
+
+  src_file.close();
+  if (dst_file.fail()) {
+    dst_file.close();
+    remove(dest.c_str());
+    return modelbox::STATUS_FAULT;
+  }
+  dst_file.close();
+
+  return modelbox::STATUS_OK;
 }
 
-TEST_F(InferenceCudaFlowUnitTest, RunUnitBatch) {
-  std::string toml_content = R"(
-    [driver]
-    skip-default=true
-    dir=[")" + test_lib_dir + "\",\"" +
-                             test_data_dir + "/tensorflow_cuda\"]\n    " +
-                             R"([graph]
-    graphconf = '''digraph demo {                                                                            
-          test_0_1_batch[type=flowunit, flowunit=test_0_1_batch, device=cpu, deviceid=0, label="<Out_1>"]             
-          inference[type=flowunit, flowunit=inference, device=cuda, deviceid=0, label="<input> | <output>", batch_size=10]
-          test_1_0_batch[type=flowunit, flowunit=test_1_0_batch, device=cpu, deviceid=0, label="<In_1>", batch_size=10]  
-                                  
-          test_0_1_batch:Out_1 -> inference:input
-          inference:output -> test_1_0_batch:In_1                                                                  
-        }'''
-    format = "graphviz"
-  )";
-  auto driver_flow = GetDriverFlow();
-  auto ret = driver_flow->BuildAndRun("RunUnit", toml_content, 99999);
-  EXPECT_EQ(ret, STATUS_STOP);
+std::string GetTFVersion() {
+  std::string ans = "";
+  void *handler = dlopen(MODELBOX_TF_SO_PATH, RTLD_LAZY | RTLD_NODELETE);
+  if (handler == nullptr) {
+    MBLOG_ERROR << "dlopen error: " << dlerror();
+    return ans;
+  }
+
+  Defer { dlclose(handler); };
+  typedef const char *(*TF_Version)();
+  TF_Version func = nullptr;
+
+  func = (TF_Version)dlsym(handler, "TF_Version");
+  if (func == nullptr) {
+    MBLOG_ERROR << "dlsym TF_Version failed, " << dlerror();
+    return ans;
+  }
+
+  ans = std::string(func());
+  return ans;
 }
 
-TEST_F(InferenceCudaFlowUnitTest, RunUnitSingle) {
-  std::string toml_content = R"(
-    [driver]
-    skip-default=true
-    dir=[")" + test_lib_dir + "\",\"" +
-                             test_data_dir + "/tensorflow_cuda\"]\n    " +
-                             R"([graph]
-    graphconf = '''digraph demo {                                                                            
-          test_0_1[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]             
-          inference[type=flowunit, flowunit=inference, device=cuda, deviceid=0, label="<input> | <output>"]
-          test_1_0[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0, label="<In_1>"]                          
-          test_0_1:Out_1 -> inference:input
-          inference:output -> test_1_0:In_1                                                                  
-        }'''
-    format = "graphviz"
-  )";
-  auto driver_flow = GetDriverFlow();
-  auto ret = driver_flow->BuildAndRun("RunUnit", toml_content, 99999);
-  EXPECT_EQ(ret, STATUS_STOP);
-}
-
-TEST_F(InferenceCudaFlowUnitTest, RunPlugin) {
-  std::string toml_content = R"(
-    [driver]
-    skip-default=true
-    dir=[")" + test_lib_dir + "\",\"" +
-                             test_data_dir +
-                             "/tensorflow_cuda_plugin\"]\n    " +
-                             R"([graph]
-    graphconf = '''digraph demo {                                                                            
-          test_0_1[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]             
-          inference[type=flowunit, flowunit=inference_plugin, device=cuda, deviceid=0, label="<input> | <output>"]
-          test_1_0[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0, label="<In_1>"]                          
-          test_0_1:Out_1 -> inference:input
-          inference:output -> test_1_0:In_1                                                                  
-        }'''
-    format = "graphviz"
-  )";
-  auto driver_flow = GetDriverFlow();
-  auto ret = driver_flow->BuildAndRun("RunPlugin", toml_content, 99999);
-  EXPECT_EQ(ret, STATUS_STOP);
-}
-
-TEST_F(InferenceCudaFlowUnitTest, RunSaveModel) {
-  std::string toml_content = R"(
-    [driver]
-    skip-default=true
-    dir=[")" + test_lib_dir + "\",\"" +
-                             test_data_dir +
-                             "/tensorflow_cuda_save_model\"]\n    " +
-                             R"([graph]
-    graphconf = '''digraph demo {                                                                            
-          test_0_1[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]             
-          inference[type=flowunit, flowunit=inference_save_model, device=cuda, deviceid=0, label="<input> | <output>"]
-          test_1_0[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0, label="<In_1>"]                          
-          test_0_1:Out_1 -> inference:input
-          inference:output -> test_1_0:In_1                                                                  
-        }'''
-    format = "graphviz"
-  )";
-  auto driver_flow = GetDriverFlow();
-  auto ret = driver_flow->BuildAndRun("RunSaveModel", toml_content, 99999);
-  EXPECT_EQ(ret, STATUS_STOP);
-}
-
-}  // namespace modelbox
+}  // namespace tensorflow_inference

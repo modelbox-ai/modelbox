@@ -16,7 +16,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(modelbox-drivers-python-flowunit)
+project(modelbox-drivers-virtual-flowunit)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
