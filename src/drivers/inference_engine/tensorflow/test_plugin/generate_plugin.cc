@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "generate_plugin.h"
 
 static std::map<std::string, TF_DataType> map = {
@@ -26,7 +25,7 @@ std::shared_ptr<InferencePlugin> CreatePlugin() {
 }
 
 modelbox::Status OriginInferencePlugin::ConvertType(const std::string &type,
-                                                  TF_DataType &TFType) {
+                                                    TF_DataType &TFType) {
   auto iter = map.find(type);
   if (iter == map.end()) {
     MBLOG_ERROR << "unsupported type " << type;
@@ -145,7 +144,8 @@ modelbox::Status OriginInferencePlugin::PreProcess(
     auto result = input_buf->At(0)->Get("shape", buffer_shape);
     if (!result) {
       MBLOG_ERROR << "the input buffer don't have meta shape.";
-      return {modelbox::STATUS_FAULT, "the input buffer don't have meta shape."};
+      return {modelbox::STATUS_FAULT,
+              "the input buffer don't have meta shape."};
     }
 
     if (std::any_of(input_buf->begin(), input_buf->end(),
