@@ -23,12 +23,12 @@ showhelp() {
 	echo " -n, --name=[target-name]             target name, default is 'example'"
 	echo " --device=[device]                    target device, default is 'cpu'"
 	echo " --type=[type]                        target flowunit type, default is 'normal'"
-	echo " --desc=[desc]                 				target flowunit description, default is 'description'"
-	echo " --out=[outport]                 			target flowunit outport"
-	echo " --in=[inport]                 				target flowunit inport"
+	echo " --desc=[desc]                        target flowunit description, default is 'description'"
+	echo " --out=[outport]                      target flowunit outport"
+	echo " --in=[inport]                        target flowunit inport"
 	echo " --entry=[entry]                      entry path of model if target flowunit type is inference"
 	echo " --virutal=[virtual-type]             target inference flowunit type"
-	echo " --plugin=[plugin]             				engine plugin interface"
+	echo " --plugin=[plugin]                    engine plugin interface"
 }
 
 create_python_template()
@@ -68,7 +68,7 @@ create_python_template()
 		return 1
 	fi
 
-	sed -i "s/device = \"cpu\"/device = \"$device\"/g" $directory/$name/$name.toml
+	sed -i "s/^device *= * \"cpu\"/device = \"$device\"/g" $directory/$name/$name.toml
 	if [ $? -ne 0 ]; then
 		echo "add device failed"
 		return 1
@@ -100,7 +100,7 @@ create_python_template()
 				return 1
 			fi
 
-			sed -i "s/device = \"cpu\" # Output port device/device = \"${out_array[1]}\" # Output port device/g" $directory/$name/$name.toml
+			sed -i "s/device = \"*\" # Output port device/device = \"${out_array[1]}\" # Output port device/g" $directory/$name/$name.toml
 			if [ $? -ne 0 ]; then
 				echo "add output_$1 failed"
 				return 1
@@ -113,15 +113,15 @@ create_python_template()
 			
 			sed -i "$num_line a\[output.output$i_plus]" $directory/$name/$name.toml
 			sed -i "$(($num_line + 1)) a\name = \"${out_array[i*3]}\"" $directory/$name/$name.toml
-			sed -i "$(($num_line + 2)) a\type = \"${out_array[i*3+1]}\"" $directory/$name/$name.toml
-			sed -i "$(($num_line + 3)) a\device = \"${out_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 2)) a\type = \"${out_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 3)) a\device = \"${out_array[i*3+1]}\"" $directory/$name/$name.toml
 			sed -i "$(($num_line + 4)) a\ " $directory/$name/$name.toml
 			if [ $? -ne 0 ]; then
 				echo "add output_$1 failed"
 				return 1
 			fi
 		fi
-	done;
+	done
 	
 	for(( i=0;i<${#in_array[@]}/3;i++)) do
 		if [ $i -eq 0 ]; then
@@ -148,15 +148,15 @@ create_python_template()
 			
 			sed -i "$num_line a\[input.input$i_plus]" $directory/$name/$name.toml
 			sed -i "$(($num_line + 1)) a\name = \"${in_array[i*3]}\"" $directory/$name/$name.toml
-			sed -i "$(($num_line + 2)) a\type = \"${in_array[i*3+1]}\"" $directory/$name/$name.toml
-			sed -i "$(($num_line + 3)) a\device = \"${in_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 2)) a\type = \"${in_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 3)) a\device = \"${in_array[i*3+1]}\"" $directory/$name/$name.toml
 			sed -i "$(($num_line + 4)) a\ " $directory/$name/$name.toml
 			if [ $? -ne 0 ]; then
 				echo "add input_$1 failed"
 				return 1
 			fi
 		fi
-	done;
+	done
 	
 	sed -i "s/example/$name/g" $directory/$name/CMakeLists.txt
 	if [ $? -ne 0 ]; then
@@ -251,7 +251,7 @@ create_infer_template()
 		return 1
 	fi
 
-	sed -i "s/model.pb/$entry/g" $directory/$name/$name.toml
+	sed -i "s/.\/model.pb/$entry/g" $directory/$name/$name.toml
 	if [ $? -ne 0 ]; then
 		echo "add property description failed"
 		return 1
@@ -263,7 +263,7 @@ create_infer_template()
 		return 1
 	fi
 
-	sed -i "s/plugin = \"\"/plugin = \"$plugin\"/g" $directory/$name/$name.toml
+	sed -i "s/plugin = \"\"/plugin = \"$inf_plugin\"/g" $directory/$name/$name.toml
 	if [ $? -ne 0 ]; then
 		echo "add property description failed"
 		return 1
@@ -297,15 +297,15 @@ create_infer_template()
 			
 			sed -i "$num_line a\[output.output$i_plus]" $directory/$name/$name.toml
 			sed -i "$(($num_line + 1)) a\name = \"${out_array[i*3]}\"" $directory/$name/$name.toml
-			sed -i "$(($num_line + 2)) a\type = \"${out_array[i*3+1]}\"" $directory/$name/$name.toml
-			sed -i "$(($num_line + 3)) a\device = \"${out_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 2)) a\type = \"${out_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 3)) a\device = \"${out_array[i*3+1]}\"" $directory/$name/$name.toml
 			sed -i "$(($num_line + 4)) a\ " $directory/$name/$name.toml
 			if [ $? -ne 0 ]; then
 				echo "add output_$1 failed"
 				return 1
 			fi
 		fi
-	done;
+	done
 	
 	for(( i=0;i<${#in_array[@]}/3;i++)) do
 		if [ $i -eq 0 ]; then
@@ -332,16 +332,18 @@ create_infer_template()
 			
 			sed -i "$num_line a\[input.input$i_plus]" $directory/$name/$name.toml
 			sed -i "$(($num_line + 1)) a\name = \"${in_array[i*3]}\"" $directory/$name/$name.toml
-			sed -i "$(($num_line + 2)) a\type = \"${in_array[i*3+1]}\"" $directory/$name/$name.toml
-			sed -i "$(($num_line + 3)) a\device = \"${in_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 2)) a\type = \"${in_array[i*3+2]}\"" $directory/$name/$name.toml
+			sed -i "$(($num_line + 3)) a\device = \"${in_array[i*3+1]}\"" $directory/$name/$name.toml
 			sed -i "$(($num_line + 4)) a\ " $directory/$name/$name.toml
 			if [ $? -ne 0 ]; then
 				echo "add input_$1 failed"
 				return 1
 			fi
 		fi
-	done;
-
+	done
+	if [[ $inf_plugin == "" ]]; then
+		sed -i '26,28d' $directory/$name/$name.toml
+	fi
 	
 }
 
@@ -500,7 +502,7 @@ main() {
 	out_array=()
 	entry="model.pb"
 	virtual="tensorflow"
-	plugin=""
+	inf_plugin=""
 	
 
 	while true; do
@@ -533,7 +535,7 @@ main() {
 			virtual="$2"
 			shift 2;;
 		--plugin)
-			plugin="$2"
+			inf_plugin="$2"
 			shift 2;;
 		--in)
 			inport="$2"

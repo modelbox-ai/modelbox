@@ -15,7 +15,7 @@
 
 # Basic config
 [base]
-name = "Example" # The FlowUnit name
+name = "example" # The FlowUnit name
 device = "cpu" # The device the flowunit runs on，cpu，cuda，ascend。
 version = "1.0.0" # The version of the flowunit
 description = "description" # The description of the flowunit

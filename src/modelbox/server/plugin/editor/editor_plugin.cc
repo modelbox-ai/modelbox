@@ -245,20 +245,22 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
       cmd += " --device " + device;
     }
 
-    if (body.find("desc") != body.end()) {
+    if (body.find("desc") != body.end() &&
+        body["desc"].get<std::string>().length() > 0) {
       cmd += " --desc \"" + body["desc"].get<std::string>() + "\"";
     }
-    
+
     auto port = body["portInfos"].get<nlohmann::json>();
     int in_num = 1;
     int out_num = 1;
     std::string p_type;
     std::string dev_type;
     std::string data_type;
+    std::string p_name;
 
     for (auto& p : port.items()) {
       if (p.key().empty()) {
-        response.status = HttpStatusCodes::BAD_REQUEST;
+        response.status = HttpStatusCodes::INTERNAL_ERROR;
         std::string errmsg = "port info has empty value";
         response.set_content(errmsg, TEXT_PLAIN);
         return;
@@ -267,12 +269,24 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
       data_type = p.value()["dataType"].get<std::string>();
       dev_type = p.value()["deviceType"].get<std::string>();
 
+      if (p.value().find("portName") != p.value().end()) {
+        p_name = p.value()["portName"].get<std::string>();
+      }
+
       if (p_type.compare("input") == 0) {
-        cmd += " --in in_" + std::to_string(in_num) + " ";
-        in_num += 1;
+        if (p_name.length() > 0) {
+          cmd += " --in " + p_name + " ";
+        } else {
+          cmd += " --in in_" + std::to_string(in_num) + " ";
+          in_num += 1;
+        }
       } else {
-        cmd += " --out out_" + std::to_string(out_num) + " ";
-        out_num += 1;
+        if (p_name.length() > 0) {
+          cmd += " --out " + p_name + " ";
+        } else {
+          cmd += " --out out_" + std::to_string(out_num) + " ";
+          out_num += 1;
+        }
       }
 
       cmd += dev_type + " ";
@@ -287,7 +301,8 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
       cmd += " --virtual " + body["flowunitVirtualType"].get<std::string>();
     }
 
-    if (body.find("plugin") != body.end()) {
+    if (body.find("plugin") != body.end() &&
+        body["plugin"].get<std::string>().length() > 0) {
       cmd += " --plugin " + body["plugin"].get<std::string>();
     }
 
@@ -326,7 +341,7 @@ void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
 
     if (modelbox::JsonToToml(graph_data, &toml_data) == false) {
       std::string errmsg = "Graph data is invalid.";
-      response.status = HttpStatusCodes::BAD_REQUEST;
+      response.status = HttpStatusCodes::INTERNAL_ERROR;
       response.set_content(errmsg, TEXT_PLAIN);
     }
     ConfigJobid(jobid);
@@ -334,7 +349,7 @@ void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
     auto ret = SaveGraphFile(jobid, toml_data, path);
     if (!ret) {
       std::string errmsg = "Failed to save file.";
-      response.status = HttpStatusCodes::BAD_REQUEST;
+      response.status = HttpStatusCodes::INTERNAL_ERROR;
       response.set_content(errmsg, TEXT_PLAIN);
       return;
     }
@@ -497,7 +512,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
           std::ifstream ifs(in_path.c_str());
           if (!ifs.is_open()) {
             std::string errmsg = "open flowunit " + temp_name + "file failed!";
-            response.status = HttpStatusCodes::BAD_REQUEST;
+            response.status = HttpStatusCodes::INTERNAL_ERROR;
             response.set_content(errmsg, TEXT_PLAIN);
             return;
           }
@@ -512,7 +527,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
               if ((vec.size() > 3) || (vec.size() < 1) ||
                   std::find(vec.begin(), vec.end(), "=") == vec.end()) {
                 std::string errmsg = "base value is invalid.";
-                response.status = HttpStatusCodes::BAD_REQUEST;
+                response.status = HttpStatusCodes::INTERNAL_ERROR;
                 response.set_content(errmsg, TEXT_PLAIN);
                 return;
               }
@@ -560,7 +575,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
           std::ifstream ifs(in_path.c_str());
           if (!ifs.is_open()) {
             std::string errmsg = "open graph file failed!";
-            response.status = HttpStatusCodes::BAD_REQUEST;
+            response.status = HttpStatusCodes::INTERNAL_ERROR;
             response.set_content(errmsg, TEXT_PLAIN);
             return;
           }
@@ -587,7 +602,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
               if ((vec.size() > 3) || (vec.size() < 1) ||
                   std::find(vec.begin(), vec.end(), "=") == vec.end()) {
                 std::string errmsg = "base value is invalid.";
-                response.status = HttpStatusCodes::BAD_REQUEST;
+                response.status = HttpStatusCodes::INTERNAL_ERROR;
                 response.set_content(errmsg, TEXT_PLAIN);
                 return;
               }
@@ -645,7 +660,7 @@ void ModelboxEditorPlugin::HandlerProjectPut(const httplib::Request& request,
     MBLOG_INFO << "exec: " << cmd;
 
     if (ret < 0) {
-      response.status = HttpStatusCodes::BAD_REQUEST;
+      response.status = HttpStatusCodes::INTERNAL_ERROR;
       std::string errmsg = "internal error";
       response.set_content(errmsg, TEXT_PLAIN);
       return;
