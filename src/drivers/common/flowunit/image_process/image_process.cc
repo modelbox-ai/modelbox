@@ -82,7 +82,7 @@ modelbox::Status GetWidthStride(const std::string &pix_fmt, int32_t width,
 
 static size_t RGBBytesCalcByStride(int32_t width_stride,
                                    int32_t height_stride) {
-  return (size_t)width_stride * height_stride;
+  return (size_t)width_stride * height_stride * 3;
 }
 
 static size_t NVBytesCalcByStride(int32_t width_stride, int32_t height_stride) {
@@ -336,9 +336,8 @@ modelbox::Status SetOutImgMeta(std::shared_ptr<modelbox::Buffer> &out_image,
   out_image->Set("channel", (int32_t)1);
   out_image->Set("pix_fmt", out_pix_fmt);
   out_image->Set("layout", std::string("hwc"));
-  out_image->Set("shape",
-                 std::vector<size_t>{(size_t)height_stride * 3 / 2,
-                                     (size_t)width_stride, 1});
+  out_image->Set("shape", std::vector<size_t>{(size_t)height_stride * 3 / 2,
+                                              (size_t)width_stride, 1});
   out_image->Set("type", modelbox::ModelBoxDataType::MODELBOX_UINT8);
   return modelbox::STATUS_OK;
 }
