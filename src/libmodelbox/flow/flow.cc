@@ -71,6 +71,18 @@ void Flow::Clear() {
   }
 }
 
+Status Flow::Init(const Solution& solution) {
+  std::string graph_path;
+  std::string solution_dir = solution.GetSolutionDir();
+  std::string solution_name = solution.GetSolutionName();
+  auto status = GetGraphFilePathByName(solution_name, solution_dir, graph_path);
+  if (status != STATUS_OK) {
+    MBLOG_ERROR << "failed find toml file, errmsg:" << status.Errormsg();
+    return status;
+  }
+  return Init(graph_path);
+}
+
 Status Flow::Init(std::shared_ptr<Configuration> config) {
   config_ = config;
   drivers_ = std::make_shared<Drivers>();
@@ -269,13 +281,63 @@ Status Flow::Init(const std::string& name, const std::string& graph,
   return ret;
 }
 
-Status Flow::Init(const std::string& configfile, Format format) {
-  Status ret;
+Status Flow::GetGraphFilePathByName(const std::string& flow_name,
+                                    const std::string& graph_dir,
+                                    std::string& graph_path) {
+  std::vector<std::string> toml_list;
+  std::map<std::string, std::string> toml_path_map;
+  std::string filter = "*.toml";
+  auto status = modelbox::ListSubDirectoryFiles(graph_dir, filter, &toml_list);
+  if (status != modelbox::STATUS_OK) {
+    MBLOG_WARN << "find " << flow_name << " toml file in directory "
+               << graph_dir << " failed.";
+  }
+
+  filter = "*.json";
+  std::vector<std::string> json_list;
+  status = modelbox::ListSubDirectoryFiles(graph_dir, filter, &json_list);
+  if (status != modelbox::STATUS_OK) {
+    MBLOG_WARN << "find " << flow_name << " json file in directory "
+               << graph_dir << " failed.";
+  }
+
+  toml_list.insert(toml_list.end(), json_list.begin(), json_list.end());
+  if (toml_list.empty()) {
+    std::string err_msg =
+        "there is no graph file for solution " + flow_name + " in " + graph_dir;
+    return {STATUS_NOTFOUND, err_msg};
+  }
+
+  for (auto iter : toml_list) {
+    std::shared_ptr<Configuration> config;
+    auto status = GetConfigByGraphFile(iter, config, Flow::FORMAT_AUTO);
+    if (status != STATUS_OK) {
+      continue;
+    }
+    MBLOG_DEBUG << "solution name: " << config->GetString("flow.name")
+                << ", toml path = " << iter;
+    if (config->GetString("flow.name") != "") {
+      auto name = config->GetString("flow.name");
+      toml_path_map.emplace(name, iter);
+    }
+  }
+
+  auto iter = toml_path_map.find(flow_name);
+  if (iter == toml_path_map.end()) {
+    return {STATUS_NOTFOUND,
+            "failed find solution:" + flow_name + "'s toml file"};
+  }
+  graph_path = iter->second;
+  return STATUS_OK;
+}
+
+Status Flow::GetConfigByGraphFile(const std::string& configfile,
+                                  std::shared_ptr<Configuration>& config,
+                                  Format format) {
   ConfigurationBuilder config_builder;
-  std::shared_ptr<Configuration> config;
   std::istringstream ifs;
 
-  ret = ConfigFileRead(configfile, format, &ifs);
+  auto ret = ConfigFileRead(configfile, format, &ifs);
   if (!ret) {
     return ret;
   }
@@ -285,7 +347,20 @@ Status Flow::Init(const std::string& configfile, Format format) {
     return {StatusError,
             "Load config file failed, detail: " + StatusError.Errormsg()};
   }
+  return STATUS_OK;
+}
 
+Status Flow::Init(const std::string& configfile, Format format) {
+  Status ret;
+  std::shared_ptr<Configuration> config;
+
+  ret = GetConfigByGraphFile(configfile, config, format);
+  if (ret != STATUS_OK) {
+    MBLOG_ERROR << "read config from  toml:" << configfile
+                << "failed, err :" << ret.Errormsg();
+    return ret;
+  }
+  // TODO: Add args configuration
   ret = Init(config);
   if (!ret) {
     MBLOG_WARN << "Init failed, configfile: " << configfile

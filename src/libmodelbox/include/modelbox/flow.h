@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOW_H_
 #define MODELBOX_FLOW_H_
 
@@ -24,6 +23,7 @@
 #include <modelbox/flowunit.h>
 #include <modelbox/graph.h>
 #include <modelbox/profiler.h>
+#include <modelbox/solution.h>
 
 #include <memory>
 #include <string>
@@ -80,6 +80,13 @@ class Flow {
    * @return init result.
    */
   Status Init(std::shared_ptr<Configuration> config);
+
+  /**
+   * @brief Init flow from solution
+   * @param solution solution object
+   * @return init result.
+   */
+  Status Init(const Solution& solution);
 
   /**
    * @brief Build graph
@@ -141,7 +148,16 @@ class Flow {
   Status ConfigFileRead(const std::string& configfile, Format format,
                         std::istringstream* ifs);
 
-  Status GuessConfFormat(const std::string& configfile, const std::string& data, enum Format *format);
+  Status GetConfigByGraphFile(const std::string& configfile,
+                              std::shared_ptr<Configuration>& config,
+                              Format format);
+
+  Status GetGraphFilePathByName(const std::string& flow_name,
+                                  const std::string& graph_dir,
+                                  std::string& graph_path);
+
+  Status GuessConfFormat(const std::string& configfile, const std::string& data,
+                         enum Format* format);
 
   std::shared_ptr<Drivers> drivers_;
   std::shared_ptr<DeviceManager> device_mgr_;

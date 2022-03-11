@@ -21,6 +21,7 @@
 #include <string>
 
 #include "mock_driver_ctl.h"
+#include "modelbox/solution.h"
 
 namespace modelbox {
 
@@ -36,6 +37,7 @@ class MockFlow {
   void Destroy();
   Status BuildAndRun(const std::string &name, const std::string &graph,
                      int timeout = 15 * 1000);
+  Status BuildAndRun(Solution& slu);
   std::shared_ptr<Flow> GetFlow();
   std::shared_ptr<Device> GetDevice() {
     auto device_mgr = DeviceManager::GetInstance();
