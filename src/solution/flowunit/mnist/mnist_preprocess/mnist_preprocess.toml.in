@@ -17,10 +17,10 @@ item = "value"
 
 [input]
 [input.input1] 
-name = "In_1" 
+name = "in_1" 
 type = "string" 
 
 [output]
 [output.output1] 
-name = "Out_1" 
+name = "out_1" 
 type = "float" 

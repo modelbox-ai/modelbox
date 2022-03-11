@@ -10,10 +10,10 @@ graphconf = '''digraph mnist_sample {
     mnist_response[type=flowunit, flowunit=mnist_response, device=cpu, deviceid=0]
     httpserver_sync_reply[type=flowunit, flowunit=httpserver_sync_reply, device=cpu, deviceid=0]
 
-    httpserver_sync_receive:out_request_info -> mnist_preprocess:In_1
-    mnist_preprocess:Out_1 -> mnist_infer:Input
-    mnist_infer:Output -> mnist_response:In_1
-    mnist_response:Out_1 -> httpserver_sync_reply:in_reply_info
+    httpserver_sync_receive:out_request_info -> mnist_preprocess:in_1
+    mnist_preprocess:out_1 -> mnist_infer:Input
+    mnist_infer:Output -> mnist_response:in_1
+    mnist_response:out_1 -> httpserver_sync_reply:in_reply_info
 }
 '''
 [driver]

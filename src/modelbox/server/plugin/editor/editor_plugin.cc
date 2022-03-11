@@ -17,6 +17,8 @@
 
 #include <dirent.h>
 #include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <fstream>
 #include <iostream>
@@ -24,6 +26,7 @@
 #include <regex>
 #include <toml.hpp>
 #include <typeinfo>
+#include <vector>
 
 #include "config.h"
 #include "modelbox/base/log.h"
@@ -35,7 +38,7 @@ using namespace modelbox;
 
 const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
 const std::string DEFAULT_SOLUTION_GRAPHS_ROOT =
-    std::string(MODELBOX_SOLUTION_PATH) + "/graphs";
+    "/usr/local/share/modelbox/solution/graphs";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
@@ -234,85 +237,117 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
                                               httplib::Response& response) {
   try {
     auto body = nlohmann::json::parse(request.body);
-    std::string cmd = "modelbox-tool create -t " +
-                      body["programLanguage"].get<std::string>() + " -n " +
-                      body["flowunitName"].get<std::string>() + " -d " +
-                      body["path"].get<std::string>() + " --type " +
-                      body["flowunitType"].get<std::string>();
+    pid_t pid = vfork();
 
-    auto device = body["deviceType"].get<std::string>();
-    if (device != "") {
-      cmd += " --device " + device;
-    }
+    if (pid < 0) {
+      MBLOG_INFO << "Fail to create subprocess";
+      return;
+    } else if (!pid) {
+      MBLOG_INFO << "Success to create subprocess of creating flowunit.";
+      std::vector<std::string> args = {"modelbox-tool", "create", "-t"};
+      std::string program_language = body["programLanguage"].get<std::string>();
+      std::string flowunitName(body["flowunitName"].get<std::string>());
+      std::string path(body["path"].get<std::string>());
+      args.push_back(program_language);
+      args.push_back("-n");
+      args.push_back(flowunitName);
+      args.push_back("-d");
+      args.push_back(path);
 
-    if (body.find("desc") != body.end() &&
-        body["desc"].get<std::string>().length() > 0) {
-      cmd += " --desc \"" + body["desc"].get<std::string>() + "\"";
-    }
+      if (body.find("flowunitType") != body.end() &&
+          body["flowunitType"].get<std::string>().length() > 0) {
+        std::string flowunit_type = body["flowunitType"].get<std::string>();
+        args.push_back("--type");
+        args.push_back(flowunit_type);
+      }
+      if (body.find("flowunitTypePro") != body.end() &&
+          body["flowunitTypePro"].get<std::string>().length() > 0) {
+        std::string flowunit_type_pro =
+            body["flowunitTypePro"].get<std::string>();
+        args.push_back("--type_pro");
+        args.push_back(flowunit_type_pro);
+      }
+      if (body.find("deviceType") != body.end() &&
+          body["deviceType"].get<std::string>().length() > 0) {
+        std::string device = body["deviceType"].get<std::string>();
+        args.push_back("--device");
+        args.push_back(device);
+      }
+      if (body.find("desc") != body.end() &&
+          body["desc"].get<std::string>().length() > 0) {
+        std::string desc = body["desc"].get<std::string>();
+        args.push_back("--desc");
+        args.push_back(desc);
+      }
+      if (body.find("modelEntry") != body.end() &&
+          body["modelEntry"].get<std::string>().length() > 0) {
+        std::string entry = body["modelEntry"].get<std::string>();
+        args.push_back("--entry");
+        args.push_back(entry);
+      }
+      if (body.find("plugin") != body.end() &&
+          body["plugin"].get<std::string>().length() > 0) {
+        std::string plugin = body["plugin"].get<std::string>();
+        args.push_back("--plugin");
+        args.push_back(plugin);
+      }
+      if (body.find("flowunitVirtualType") != body.end() &&
+          body["flowunitVirtualType"].get<std::string>().length() > 0) {
+        std::string virtual_type =
+            body["flowunitVirtualType"].get<std::string>();
+        args.push_back("--virtual");
+        args.push_back(virtual_type);
+      }
 
-    auto port = body["portInfos"].get<nlohmann::json>();
-    int in_num = 1;
-    int out_num = 1;
-    std::string p_type;
-    std::string dev_type;
-    std::string data_type;
-    std::string p_name;
+      auto port = body["portInfos"].get<nlohmann::json>();
+      std::string p_type;
+      std::string dev_type;
+      std::string data_type;
+      std::string p_name;
 
-    for (auto& p : port.items()) {
-      if (p.key().empty()) {
-        response.status = HttpStatusCodes::INTERNAL_ERROR;
-        std::string errmsg = "port info has empty value";
-        response.set_content(errmsg, TEXT_PLAIN);
+      for (auto& p : port.items()) {
+        if (p.key().empty()) {
+          response.status = HttpStatusCodes::INTERNAL_ERROR;
+          std::string errmsg = "port info has empty value";
+          response.set_content(errmsg, TEXT_PLAIN);
+          return;
+        }
+
+        p_type = p.value()["portType"].get<std::string>();
+        data_type = p.value()["dataType"].get<std::string>();
+        dev_type = p.value()["deviceType"].get<std::string>();
+
+        if (p.value().find("portName") != p.value().end()) {
+          p_name = p.value()["portName"].get<std::string>();
+        }
+
+        if (p_name.length() > 0) {
+          if (p_type.compare("input") == 0) {
+            args.push_back("--in");
+            args.push_back(p_name);
+          } else if (p_type.compare("output") == 0) {
+            args.push_back("--out");
+            args.push_back(p_name);
+          }
+        }
+
+        args.push_back(dev_type);
+        args.push_back(data_type);
+      }
+
+      char* argv[args.size() + 1];
+      for (size_t i = 0; i < args.size(); i++) {
+        argv[i] = (char*)args[i].c_str();
+      }
+      argv[args.size()] = 0;
+      auto ret = execvp(argv[0], argv);
+      if (ret < 0) {
+        response.status = HttpStatusCodes::BAD_REQUEST;
+        exit(0);
         return;
       }
-      p_type = p.value()["portType"].get<std::string>();
-      data_type = p.value()["dataType"].get<std::string>();
-      dev_type = p.value()["deviceType"].get<std::string>();
-
-      if (p.value().find("portName") != p.value().end()) {
-        p_name = p.value()["portName"].get<std::string>();
-      }
-
-      if (p_type.compare("input") == 0) {
-        if (p_name.length() > 0) {
-          cmd += " --in " + p_name + " ";
-        } else {
-          cmd += " --in in_" + std::to_string(in_num) + " ";
-          in_num += 1;
-        }
-      } else {
-        if (p_name.length() > 0) {
-          cmd += " --out " + p_name + " ";
-        } else {
-          cmd += " --out out_" + std::to_string(out_num) + " ";
-          out_num += 1;
-        }
-      }
-
-      cmd += dev_type + " ";
-      cmd += data_type;
+      exit(0);
     }
-
-    if (body.find("modelEntry") != body.end()) {
-      cmd += " --entry " + body["modelEntry"].get<std::string>();
-    }
-
-    if (body.find("flowunitVirtualType") != body.end()) {
-      cmd += " --virtual " + body["flowunitVirtualType"].get<std::string>();
-    }
-
-    if (body.find("plugin") != body.end() &&
-        body["plugin"].get<std::string>().length() > 0) {
-      cmd += " --plugin " + body["plugin"].get<std::string>();
-    }
-
-    MBLOG_INFO << "exec: " << cmd;
-    auto ret = system(cmd.c_str());
-    if (ret < 0) {
-      response.status = HttpStatusCodes::BAD_REQUEST;
-      return;
-    }
-    nlohmann::json response_json;
 
   } catch (const std::exception& e) {
     std::string errmsg = "Get info failed: ";
@@ -344,6 +379,8 @@ void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
       response.status = HttpStatusCodes::INTERNAL_ERROR;
       response.set_content(errmsg, TEXT_PLAIN);
     }
+    MBLOG_INFO << "AAAAAAAA";
+    MBLOG_INFO << toml_data;
     ConfigJobid(jobid);
     // //保存图信息
     auto ret = SaveGraphFile(jobid, toml_data, path);
@@ -370,22 +407,35 @@ void ModelboxEditorPlugin::SaveSolutionFlowunitToProject(
   try {
     auto body = nlohmann::json::parse(request.body);
     auto dirs = body["dirs"];
-    auto flowunitPath = body["flowunitPath"].get<std::string>();
-    std::string cmd = "cp -r ";
-    int ret = 0;
+    std::string flowunitPath = body["flowunitPath"].get<std::string>();
     MBLOG_INFO << "Save Solution Flowunit To Project: " << flowunitPath;
     AddSafeHeader(response);
+    std::vector<std::string> args;
+    std::string ele;
     for (auto& elem : dirs) {
-      MBLOG_INFO << "exec: "
-                 << cmd + " " + elem.get<std::string>() + " " + flowunitPath;
-      ret = system(
-          (cmd + " " + elem.get<std::string>() + " " + flowunitPath).c_str());
-      if (ret < 0) {
-        response.status = HttpStatusCodes::BAD_REQUEST;
+      pid_t pid = vfork();
+
+      if (pid < 0) {
+        MBLOG_INFO << "Fail to create subprocess";
         return;
+      } else if (!pid) {
+        args = {"cp", "-r"};
+        ele = elem.get<std::string>();
+        args.push_back(ele);
+        args.push_back(flowunitPath);
+        char* argv[args.size() + 1];
+        for (size_t i = 0; i < args.size(); i++) {
+          argv[i] = (char*)args[i].c_str();
+        }
+        argv[args.size()] = 0;
+        auto ret = execvp(argv[0], argv);
+        if (ret < 0) {
+          response.status = HttpStatusCodes::BAD_REQUEST;
+          exit(0);
+          return;
+        }
       }
     }
-
   } catch (const std::exception& e) {
     std::string errmsg = "Get info failed: ";
     errmsg += e.what();
@@ -645,25 +695,49 @@ void ModelboxEditorPlugin::HandlerProjectPut(const httplib::Request& request,
                                              httplib::Response& response) {
   try {
     auto body = nlohmann::json::parse(request.body);
-    std::string cmd = body["path"].get<std::string>();
-    char path[PATH_MAX * 2];
+    std::string path = body["path"].get<std::string>();
 
     AddSafeHeader(response);
-    snprintf(path, PATH_MAX * 2 - 1, "mkdir -p \"%s\"", cmd.c_str());
-    MBLOG_INFO << "exec: " << path;
-    auto ret = system(path);
-
-    cmd = "modelbox-tool create -t project -n " +
-          body["projectName"].get<std::string>() + " -d " +
-          body["path"].get<std::string>();
-    ret = system(cmd.c_str());
-    MBLOG_INFO << "exec: " << cmd;
-
-    if (ret < 0) {
-      response.status = HttpStatusCodes::INTERNAL_ERROR;
-      std::string errmsg = "internal error";
-      response.set_content(errmsg, TEXT_PLAIN);
+    pid_t pid = vfork();
+    if (pid < 0) {
+      MBLOG_INFO << "Fail to create subprocess";
       return;
+    } else if (!pid) {
+      std::vector<std::string> args = {"mkdir", "-p", path};
+      char* argv[args.size() + 1];
+      for (size_t i = 0; i < args.size(); i++) {
+        argv[i] = (char*)args[i].c_str();
+      }
+      argv[args.size()] = 0;
+      auto ret = execvp(argv[0], argv);
+      if (!ret) {
+        MBLOG_INFO << "Fail to create project path";
+      }
+    }
+
+    pid = vfork();
+    if (pid < 0) {
+      MBLOG_INFO << "Fail to create subprocess";
+      return;
+    } else if (!pid) {
+      std::vector<std::string> args = {"modelbox-tool", "create", "-t",
+                                       "project", "-n"};
+      std::string project_name = body["projectName"].get<std::string>();
+      std::string project_path(body["path"].get<std::string>());
+      args.push_back(project_name);
+      args.push_back("-d");
+      args.push_back(path);
+      char* argv[args.size() + 1];
+      for (size_t i = 0; i < args.size(); i++) {
+        argv[i] = (char*)args[i].c_str();
+      }
+      argv[args.size()] = 0;
+      auto ret = execvp(argv[0], argv);
+      if (ret < 0) {
+        response.status = HttpStatusCodes::BAD_REQUEST;
+        exit(0);
+        return;
+      }
     }
   } catch (const std::exception& e) {
     std::string errmsg = "Get info failed: ";

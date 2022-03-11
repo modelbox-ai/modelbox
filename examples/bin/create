@@ -23,6 +23,7 @@ showhelp() {
 	echo " -n, --name=[target-name]             target name, default is 'example'"
 	echo " --device=[device]                    target device, default is 'cpu'"
 	echo " --type=[type]                        target flowunit type, default is 'normal'"
+	echo " --type_pro=[type_pro]                target flowunit type_pro, default is ''"
 	echo " --desc=[desc]                        target flowunit description, default is 'description'"
 	echo " --out=[outport]                      target flowunit outport"
 	echo " --in=[inport]                        target flowunit inport"
@@ -77,6 +78,12 @@ create_python_template()
 	sed -i "s/$type = false/$type = true/g" $directory/$name/$name.toml
 	if [ $? -ne 0 ]; then
 		echo "add type failed"
+		return 1
+	fi
+
+	sed -i "s/$type_pro = false/$type_pro = true/g" $directory/$name/$name.toml
+	if [ $? -ne 0 ]; then
+		echo "add type_pro failed"
 		return 1
 	fi
 
@@ -479,7 +486,7 @@ create_template()
 
 
 main() {
-	OPTS=`getopt -o n:t:d:h --long template:,name:,dir:,help:,desc:,device:,type:,in:,out:,entry:,virtual:,plugin \
+	OPTS=`getopt -o n:t:d:h --long template:,name:,dir:,help:,desc:,device:,type:,in:,out:,entry:,virtual:,plugin:,type_pro \
 		-n  "" -- "$@"`
 
 	if [ $# -lt 2 ]; then showhelp; exit 1; fi
@@ -489,6 +496,7 @@ main() {
 	name="example"
 	desc="description"
 	type=""
+	type_pro=""
 	device="cpu"
 	outport=""
 	out_type=""
@@ -524,6 +532,9 @@ main() {
 			shift 2;;
 		--type)
 			type="$2"
+			shift 2;;
+		--type_pro)
+			type_pro="$2"
 			shift 2;;
 		--desc)
 			desc="$2"
