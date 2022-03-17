@@ -706,7 +706,7 @@ TEST_F(VirtualDriverTest, VirtualDriver) {
   EXPECT_EQ(desc_inference_test->GetName(), "inference");
   EXPECT_EQ(desc_inference_test->GetVersion(), "1.1.2");
   std::string file_path_inference =
-      std::string(TEST_ASSETS) + "/tensorflow_cpu/virtual_model_test.toml";
+      std::string(TEST_ASSETS) + "/test_inference/virtual_model_test.toml";
   EXPECT_EQ(desc_inference_test->GetFilePath(), file_path_inference);
 }
 
