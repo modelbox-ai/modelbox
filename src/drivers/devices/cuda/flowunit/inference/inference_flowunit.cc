@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include "tensorflow_inference_common.h"
+#include "inference_flowunit.h"
 
 #include <model_decrypt.h>
 #include <modelbox/base/crypto.h>
 
 #include "modelbox/base/status.h"
+#include "modelbox/device/cuda/device_cuda.h"
 #include "virtualdriver_inference.h"
 
 static std::map<std::string, TF_DataType> type_map = {
@@ -62,7 +63,7 @@ void DeleteTensor(TF_Tensor *tensor) {
   TF_DeleteTensor(tensor);
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::ClearTensor(
+modelbox::Status InferenceFlowUnit::ClearTensor(
     std::vector<TF_Tensor *> &input_tensor_list,
     std::vector<TF_Tensor *> &output_tensor_list) {
   for (auto &t : input_tensor_list) {
@@ -78,7 +79,7 @@ modelbox::Status InferenceTensorflowFlowUnit::ClearTensor(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowParams::Clear() {
+modelbox::Status InferenceTensorflowGpuParams::Clear() {
   input_name_list_.clear();
   output_name_list_.clear();
   input_type_list_.clear();
@@ -123,8 +124,8 @@ modelbox::Status InferenceTensorflowParams::Clear() {
   return modelbox::STATUS_OK;
 }
 
-InferenceTensorflowFlowUnit::InferenceTensorflowFlowUnit(){};
-InferenceTensorflowFlowUnit::~InferenceTensorflowFlowUnit() {
+InferenceFlowUnit::InferenceFlowUnit(){};
+InferenceFlowUnit::~InferenceFlowUnit() {
   pre_process_ = nullptr;
   post_process_ = nullptr;
   inference_plugin_ = nullptr;
@@ -135,7 +136,7 @@ InferenceTensorflowFlowUnit::~InferenceTensorflowFlowUnit() {
   }
 };
 
-modelbox::Status InferenceTensorflowFlowUnit::ReadBufferFromFile(const std::string file,
+modelbox::Status InferenceFlowUnit::ReadBufferFromFile(const std::string file,
                                                        TF_Buffer *buf) {
   int64_t model_len = 0;
   auto config = std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
@@ -159,7 +160,7 @@ modelbox::Status InferenceTensorflowFlowUnit::ReadBufferFromFile(const std::stri
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::LoadGraph(const std::string &model_path) {
+modelbox::Status InferenceFlowUnit::LoadGraph(const std::string &model_path) {
   modelbox::Status status;
   MBLOG_INFO << "model path: " << model_path;
   if (model_path.empty()) {
@@ -240,7 +241,7 @@ modelbox::Status InferenceTensorflowFlowUnit::LoadGraph(const std::string &model
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::FillInput(
+modelbox::Status InferenceFlowUnit::FillInput(
     const std::vector<modelbox::FlowUnitInput> &flowunit_input_list) {
   for (auto const &input_item : flowunit_input_list) {
     auto input_name = input_item.GetPortName();
@@ -259,7 +260,7 @@ modelbox::Status InferenceTensorflowFlowUnit::FillInput(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::FillOutput(
+modelbox::Status InferenceFlowUnit::FillOutput(
     const std::vector<modelbox::FlowUnitOutput> &flowunit_output_list) {
   for (auto const &output_item : flowunit_output_list) {
     auto output_name = output_item.GetPortName();
@@ -278,7 +279,7 @@ modelbox::Status InferenceTensorflowFlowUnit::FillOutput(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::NewSession(bool is_save_model,
+modelbox::Status InferenceFlowUnit::NewSession(bool is_save_model,
                                                const std::string &model_entry) {
   params_.status = TF_NewStatus();
   if (nullptr == params_.status) {
@@ -350,7 +351,7 @@ modelbox::Status InferenceTensorflowFlowUnit::NewSession(bool is_save_model,
   return modelbox::STATUS_OK;
 }
 
-bool InferenceTensorflowFlowUnit::IsSaveModelType(const std::string &model_path) {
+bool InferenceFlowUnit::IsSaveModelType(const std::string &model_path) {
   size_t found = model_path.find(".pb");
   if (found == std::string::npos) {
     return true;
@@ -371,7 +372,7 @@ static void StringHex2Hex(const std::vector<std::string> &string_vector,
   }
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::InitConfig(
+modelbox::Status InferenceFlowUnit::InitConfig(
     const std::shared_ptr<modelbox::Configuration> &fu_config) {
   auto inference_desc_ =
       std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
@@ -429,7 +430,7 @@ modelbox::Status InferenceTensorflowFlowUnit::InitConfig(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::Open(
+modelbox::Status InferenceFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   if (setenv("TF_CPP_MIN_LOG_LEVEL", "0", 1) == -1) {
     MBLOG_WARN << "set tensorflow cpp log level failed.";
@@ -466,12 +467,12 @@ modelbox::Status InferenceTensorflowFlowUnit::Open(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::SetUpInferencePlugin(
+modelbox::Status InferenceFlowUnit::SetUpInferencePlugin(
     std::shared_ptr<modelbox::Configuration> config) {
   if (plugin_.empty()) {
-    pre_process_ = std::bind(&InferenceTensorflowFlowUnit::PreProcess, this,
+    pre_process_ = std::bind(&InferenceFlowUnit::PreProcess, this,
                              std::placeholders::_1, std::placeholders::_2);
-    post_process_ = std::bind(&InferenceTensorflowFlowUnit::PostProcess, this,
+    post_process_ = std::bind(&InferenceFlowUnit::PostProcess, this,
                               std::placeholders::_1, std::placeholders::_2);
     return modelbox::STATUS_OK;
   }
@@ -484,7 +485,7 @@ modelbox::Status InferenceTensorflowFlowUnit::SetUpInferencePlugin(
   return SetUpDynamicLibrary(config);
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
+modelbox::Status InferenceFlowUnit::PreProcess(
     std::shared_ptr<modelbox::DataContext> ctx,
     std::vector<TF_Tensor *> &input_tf_tensor_list) {
   int index = 0;
@@ -543,7 +544,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::PostProcess(
+modelbox::Status InferenceFlowUnit::PostProcess(
     std::shared_ptr<modelbox::DataContext> ctx,
     std::vector<TF_Tensor *> &output_tf_tensor_list) {
   int index = 0;
@@ -587,7 +588,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PostProcess(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::SetUpDynamicLibrary(
+modelbox::Status InferenceFlowUnit::SetUpDynamicLibrary(
     std::shared_ptr<modelbox::Configuration> config) {
   typedef std::shared_ptr<InferencePlugin> (*PluginObject)();
   auto status = modelbox::STATUS_OK;
@@ -653,7 +654,7 @@ modelbox::Status InferenceTensorflowFlowUnit::SetUpDynamicLibrary(
   return status;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::Process(
+modelbox::Status InferenceFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> ctx) {
   // TODO consider without N model and nhwc check
 
@@ -690,7 +691,7 @@ modelbox::Status InferenceTensorflowFlowUnit::Process(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::CreateOutputBufferList(
+modelbox::Status InferenceFlowUnit::CreateOutputBufferList(
     std::shared_ptr<modelbox::BufferList> &output_buffer_list,
     const std::vector<size_t> &shape_vector, void *tensor_data,
     size_t tensor_byte, int index) {
@@ -718,7 +719,7 @@ modelbox::Status InferenceTensorflowFlowUnit::CreateOutputBufferList(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::ConvertType(const std::string &type,
+modelbox::Status InferenceFlowUnit::ConvertType(const std::string &type,
                                                 TF_DataType &TFType) {
   try {
     TFType = type_map[type];
@@ -728,7 +729,7 @@ modelbox::Status InferenceTensorflowFlowUnit::ConvertType(const std::string &typ
   }
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::Inference(
+modelbox::Status InferenceFlowUnit::Inference(
     const std::vector<TF_Tensor *> &input_tensor_list,
     std::vector<TF_Tensor *> &output_tensor_list) {
   TF_SessionRun(params_.session, nullptr, params_.input_op_list.data(),
@@ -748,12 +749,20 @@ modelbox::Status InferenceTensorflowFlowUnit::Inference(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::Close() { return params_.Clear(); }
+modelbox::Status InferenceFlowUnit::Close() { return params_.Clear(); }
 
-void InferenceTensorflowFlowUnitDesc::SetModelEntry(const std::string model_entry) {
+void InferenceFlowUnitDesc::SetModelEntry(const std::string model_entry) {
   model_entry_ = model_entry;
 }
 
-const std::string InferenceTensorflowFlowUnitDesc::GetModelEntry() {
+const std::string InferenceFlowUnitDesc::GetModelEntry() {
   return model_entry_;
 }
+
+std::shared_ptr<modelbox::FlowUnit>
+InferenceFlowUnitFactory::VirtualCreateFlowUnit(
+    const std::string &unit_name, const std::string &unit_type,
+    const std::string &virtual_type) {
+  auto inference_flowunit = std::make_shared<InferenceFlowUnit>();
+  return inference_flowunit;
+};

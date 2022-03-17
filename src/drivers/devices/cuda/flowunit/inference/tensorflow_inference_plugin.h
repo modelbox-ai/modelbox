@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #ifndef MODELBOX_INFER_PLUGIN_H_
 #define MODELBOX_INFER_PLUGIN_H_
 
@@ -55,6 +56,7 @@ MODELBOX_DLL_PUBLIC std::shared_ptr<InferencePlugin> CreatePlugin();
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
+
 }
 
 #endif

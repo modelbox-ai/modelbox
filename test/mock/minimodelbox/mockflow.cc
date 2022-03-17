@@ -1176,6 +1176,7 @@ void MockFlow::Register_Collapse_Stream_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
 }
 
+
 Status Add_Funciton(std::shared_ptr<DataContext> ctx,
                     std::shared_ptr<MockFlowUnit> mock_flowunit) {
   auto input_bufs_1 = ctx->Input("In_1");
@@ -3463,25 +3464,7 @@ bool MockFlow::Init(bool with_default_flowunit) {
 Status MockFlow::InitFlow(const std::string& name, const std::string& graph) {
   flow_ = std::make_shared<Flow>();
   return flow_->Init(name, graph);
-}
-
-Status MockFlow::BuildAndRun(Solution& slu) {
-  flow_ = std::make_shared<Flow>();
-  auto ret = flow_->Init(slu);
-  if (!ret) {
-    return ret;
-  }
-
-  ret = flow_->Build();
-  if (!ret) {
-    return ret;
-  }
-
-  ret = flow_->RunAsync();
-  if (!ret) {
-    return ret;
-  }
-  return STATUS_OK;
+  ;
 }
 
 Status MockFlow::BuildAndRun(const std::string& name, const std::string& graph,

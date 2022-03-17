@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef MODELBOX_TENSORFLOW_INFERENCE_COMMON_H_
-#define MODELBOX_TENSORFLOW_INFERENCE_COMMON_H_
 
-#include <dlfcn.h>
+#ifndef MODELBOX_FLOWUNIT_INFERENCE_H_
+#define MODELBOX_FLOWUNIT_INFERENCE_H_
+
 #include <modelbox/base/device.h>
 #include <modelbox/base/refcache.h>
 #include <modelbox/base/status.h>
@@ -27,12 +27,14 @@
 #include <modelbox/flowunit.h>
 #include <modelbox/tensor.h>
 #include <modelbox/tensor_list.h>
+#include <dlfcn.h>
 
 #include <typeinfo>
 
 #include "tensorflow/c/c_api.h"
 #include "tensorflow_inference_plugin.h"
 
+constexpr const char *FLOWUNIT_TYPE = "cuda";
 constexpr const char *INFERENCE_TYPE = "tensorflow";
 constexpr const char *TAGS = "serve";
 
@@ -62,11 +64,11 @@ class TFGraphCache {
   modelbox::RefCache<TFGraph> cache_;
 };
 
-class InferenceTensorflowParams {
+class InferenceTensorflowGpuParams {
  public:
-  InferenceTensorflowParams()
+  InferenceTensorflowGpuParams()
       : graph_(nullptr), session(nullptr), options(nullptr), status(nullptr){};
-  virtual ~InferenceTensorflowParams(){};
+  virtual ~InferenceTensorflowGpuParams(){};
 
   modelbox::Status Clear();
 
@@ -82,19 +84,19 @@ class InferenceTensorflowParams {
   TF_SessionOptions *options;
   TF_Status *status;
   std::vector<uint8_t> config_proto_binary_ = {
-      0x32, 0xe,  0x9,  0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc,
-      0xec, 0x3f, 0x20, 0x1,  0x2a, 0x1,  0x30, 0x38, 0x1};
+    0x32, 0xe,  0x9,  0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xec, 0x3f, 0x20, 0x1,  0x2a, 0x1,  0x30, 0x38, 0x1
+  };
 };
 
 using TensorflowProcess = std::function<modelbox::Status(
     std::shared_ptr<modelbox::DataContext>, std::vector<TF_Tensor *> &)>;
 
-class InferenceTensorflowFlowUnitDesc : public modelbox::FlowUnitDesc {
-  friend class InferenceTensorflowFlowUnit;
+class InferenceFlowUnitDesc : public modelbox::FlowUnitDesc {
+  friend class InferenceFlowUnit;
 
  public:
-  InferenceTensorflowFlowUnitDesc() = default;
-  virtual ~InferenceTensorflowFlowUnitDesc() = default;
+  InferenceFlowUnitDesc() = default;
+  virtual ~InferenceFlowUnitDesc() = default;
 
   void SetModelEntry(const std::string model_entry);
   const std::string GetModelEntry();
@@ -102,10 +104,10 @@ class InferenceTensorflowFlowUnitDesc : public modelbox::FlowUnitDesc {
   std::string model_entry_;
 };
 
-class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
+class InferenceFlowUnit : public modelbox::FlowUnit {
  public:
-  InferenceTensorflowFlowUnit();
-  virtual ~InferenceTensorflowFlowUnit();
+  InferenceFlowUnit();
+  virtual ~InferenceFlowUnit();
 
   modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
 
@@ -116,10 +118,10 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
 
  private:
   modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> ctx,
-                              std::vector<TF_Tensor *> &input_tf_tensor_list);
+                            std::vector<TF_Tensor *> &input_tf_tensor_list);
 
   modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> ctx,
-                               std::vector<TF_Tensor *> &input_tf_tensor_list);
+                             std::vector<TF_Tensor *> &input_tf_tensor_list);
   modelbox::Status SetUpInferencePlugin(
       std::shared_ptr<modelbox::Configuration> config);
   modelbox::Status SetUpDynamicLibrary(
@@ -130,10 +132,10 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
       const std::shared_ptr<modelbox::Configuration> &fu_config);
   modelbox::Status LoadGraph(const std::string &model_path);
   modelbox::Status Inference(const std::vector<TF_Tensor *> &input_tensor_list,
-                             std::vector<TF_Tensor *> &output_tensor_list);
+                           std::vector<TF_Tensor *> &output_tensor_list);
   modelbox::Status ConvertType(const std::string &type, TF_DataType &TFType);
   modelbox::Status ClearTensor(std::vector<TF_Tensor *> &input_tensor_list,
-                               std::vector<TF_Tensor *> &output_tensor_list);
+                             std::vector<TF_Tensor *> &output_tensor_list);
   modelbox::Status CreateOutputBufferList(
       std::shared_ptr<modelbox::BufferList> &output_buffer_list,
       const std::vector<size_t> &shape_vector, void *tensor_data,
@@ -145,7 +147,7 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
   modelbox::Status NewSession(bool save_model, const std::string &model_entry);
   bool IsSaveModelType(const std::string &model_path);
 
-  InferenceTensorflowParams params_;
+  InferenceTensorflowGpuParams params_;
   std::string plugin_;
   void *driver_handler_{nullptr};
 
@@ -154,5 +156,22 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
   TensorflowProcess post_process_{nullptr};
 };
 
+class InferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
+ public:
+  InferenceFlowUnitFactory() = default;
+  virtual ~InferenceFlowUnitFactory() = default;
+
+  std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
+      const std::string &unit_name, const std::string &unit_type,
+      const std::string &virtual_type);
+
+  const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
+  const std::string GetVirtualType() { return INFERENCE_TYPE; };
+
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe() {
+    return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
+  };
+};
+
 extern std::shared_ptr<TFGraphCache> GetTFGraphCache();
-#endif  // MODELBOX_TENSORFLOW_INFERENCE_COMMON_H_
+#endif  // MODELBOX_FLOWUNIT_INFERENCE_H_

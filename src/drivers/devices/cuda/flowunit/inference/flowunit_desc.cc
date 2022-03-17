@@ -18,7 +18,7 @@
 
 #include <memory>
 
-#include "tensorflow_gpu_inference_flowunit.h"
+#include "inference_flowunit.h"
 #include "modelbox/base/driver_api_helper.h"
 #include "modelbox/base/status.h"
 #include "modelbox/device/cuda/device_cuda.h"
@@ -33,7 +33,7 @@ std::shared_ptr<TFGraphCache> GetTFGraphCache() { return kGraphCache; }
 
 std::shared_ptr<modelbox::DriverFactory> CreateDriverFactory() {
   std::shared_ptr<modelbox::DriverFactory> factory =
-      std::make_shared<InferenceTensorflowGpuFlowUnitFactory>();
+      std::make_shared<InferenceFlowUnitFactory>();
   return factory;
 }
 

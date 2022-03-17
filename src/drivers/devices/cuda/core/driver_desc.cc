@@ -26,11 +26,12 @@
 #define CUDA_DEVICE_SCHEDULE_FLAG "CUDA_DEVICE_SCHEDULE_FLAG"
 
 static std::map<std::string, unsigned int> device_flags_map = {
-    {"cudaDeviceScheduleAuto", cudaDeviceScheduleAuto},
-    {"cudaDeviceScheduleSpin", cudaDeviceScheduleSpin},
-    {"cudaDeviceScheduleYield", cudaDeviceScheduleYield},
-    {"cudaDeviceScheduleBlockingSync", cudaDeviceScheduleBlockingSync},
-    {"cudaDeviceMapHost", cudaDeviceMapHost}};
+  {"cudaDeviceScheduleAuto", cudaDeviceScheduleAuto},
+  {"cudaDeviceScheduleSpin", cudaDeviceScheduleSpin},
+  {"cudaDeviceScheduleYield", cudaDeviceScheduleYield},
+  {"cudaDeviceScheduleBlockingSync", cudaDeviceScheduleBlockingSync},
+  {"cudaDeviceMapHost", cudaDeviceMapHost}
+};
 
 std::shared_ptr<modelbox::Timer> kDeviceTimer;
 
@@ -73,8 +74,7 @@ modelbox::Status DriverInit() {
 
   auto cuda_ret = cudaSetDeviceFlags(flag);
   if (cuda_ret != cudaSuccess) {
-    MBLOG_WARN << "set cuda device flags " << flag << " failed, cuda ret "
-               << cuda_ret;
+    MBLOG_ERROR << "set cuda device flags " << flag << " failed, cuda ret " << cuda_ret;
     return modelbox::STATUS_OK;
   }
 
@@ -90,3 +90,4 @@ void DriverFini() {
   kDeviceTimer->Stop();
   kDeviceTimer = nullptr;
 }
+

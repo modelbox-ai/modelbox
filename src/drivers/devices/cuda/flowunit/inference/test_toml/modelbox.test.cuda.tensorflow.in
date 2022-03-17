@@ -1,14 +1,11 @@
 [base]
-name = "inference_plugin"
+name = "inference"
 device = "cuda"
 version = "1.1.2"
 description = "a cuda inference flowunit"
-entry = "@CMAKE_SOURCE_DIR@/test/assets/tensorflow/TF_VERSION/tensorflow_pb/frozen_model.pb"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/tensorflow_cuda/TF_VERSION/tensorflow_cuda_pb/frozen_model.pb"
 type = "inference"
 virtual_type = "tensorflow"
-
-[config]
-plugin = "@CMAKE_SOURCE_DIR@/build/test/test-working-dir/drivers/libmodelbox-unit-inferece-plugin.so"
 
 [input]
 [input.input1]

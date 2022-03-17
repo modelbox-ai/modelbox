@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #ifndef MODELBOX_VIRTUAL_NODE_H_
 #define MODELBOX_VIRTUAL_NODE_H_
 
@@ -31,7 +32,7 @@ class ExternalDataMap {
   virtual std::shared_ptr<BufferList> CreateBufferList() = 0;
   virtual Status Send(std::string port_name,
                       std::shared_ptr<BufferList> buffer_list) = 0;
-  virtual Status Recv(OutputBufferList& map_buffer_list, int timeout = 0) = 0;
+  virtual Status Recv(OutputBufferList& map_buffer_list) = 0;
   virtual Status Close() = 0;
   virtual std::shared_ptr<SessionContext> GetSessionContext() = 0;
   virtual Status Shutdown() = 0;
@@ -60,7 +61,7 @@ class ExternalDataMapImpl
               std::shared_ptr<BufferList> buffer_list) override;
 
   // if we have no data to recv return STATUS_SUCESS else return STATUS_CONTINUE
-  Status Recv(OutputBufferList& map_buffer_list, int timeout = 0) override;
+  Status Recv(OutputBufferList& map_buffer_list) override;
 
   // unusual stop the stream
   Status Close() override;

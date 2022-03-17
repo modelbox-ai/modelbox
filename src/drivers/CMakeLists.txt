@@ -24,6 +24,6 @@ endif()
 
 add_subdirectory(common)
 add_subdirectory(virtual)
-add_subdirectory(inference_engine)
 add_subdirectory(devices)
+add_subdirectory(inference_engine)
 add_subdirectory(graph_conf)

@@ -139,15 +139,14 @@ Status ExternalDataMapImpl::Send(std::string port_name,
   return STATUS_OK;
 };
 
-Status ExternalDataMapImpl::Recv(OutputBufferList& map_buffer_list,
-                                 int timeout) {
+Status ExternalDataMapImpl::Recv(OutputBufferList& map_buffer_list) {
   if (output_buffer_cache_ == nullptr) {
     return STATUS_NODATA;
   }
 
   std::vector<OutputBufferList> output_bufferlist_vector;
 
-  auto size = output_buffer_cache_->Pop(&output_bufferlist_vector, timeout);
+  auto size = output_buffer_cache_->Pop(&output_bufferlist_vector);
   if (size == 0) {
     if (end_flag_) {
       MBLOG_DEBUG << "output_buffer_cache_ pop "
@@ -164,11 +163,6 @@ Status ExternalDataMapImpl::Recv(OutputBufferList& map_buffer_list,
         return STATUS_INVALID;
       }
     }
-
-    if (errno == ETIMEDOUT) {
-      return STATUS_TIMEDOUT;
-    }
-
     return STATUS_SUCCESS;
   }
 
