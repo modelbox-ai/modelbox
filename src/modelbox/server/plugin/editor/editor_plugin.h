@@ -20,6 +20,7 @@
 
 #include "modelbox/server/http_helper.h"
 #include "modelbox/server/plugin.h"
+#include <nlohmann/json.hpp>
 
 class ModelboxEditorPlugin : public modelbox::Plugin {
  public:
@@ -60,6 +61,9 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   modelbox::Status GraphFileToJson(const std::string &file,
                                  std::string &json_data);
   bool CheckBlackDir(std::string dir);
+  modelbox::Status CreateFlowunitByTool(const httplib::Request& request, httplib::Response& response);
+  void HandlerArgs(nlohmann::json &body, std::vector<std::string> &args, std::string key, std::string arg);
+  modelbox::Status execCommand(char * argv[]);
 
  private:
   std::shared_ptr<modelbox::HttpListener> listener_;

@@ -38,7 +38,7 @@ using namespace modelbox;
 
 const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
 const std::string DEFAULT_SOLUTION_GRAPHS_ROOT =
-    "/usr/local/share/modelbox/solution/graphs";
+    std::string(MODELBOX_SOLUTION_PATH) + "graphs";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
@@ -233,122 +233,107 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
   return HandlerFlowUnitInfo(request, response, config_builder.Build());
 }
 
+modelbox::Status ModelboxEditorPlugin::CreateFlowunitByTool(
+    const httplib::Request& request, httplib::Response& response) {
+  auto body = nlohmann::json::parse(request.body);
+  MBLOG_INFO << "Success to create subprocess of creating flowunit.";
+  std::vector<std::string> args = {"modelbox-tool", "create", "-t"};
+  std::string program_language = body["programLanguage"].get<std::string>();
+  std::string flowunitName(body["flowunitName"].get<std::string>());
+  std::string path(body["path"].get<std::string>());
+  args.push_back(program_language);
+  args.push_back("-n");
+  args.push_back(flowunitName);
+  args.push_back("-d");
+  args.push_back(path);
+
+  HandlerArgs(body, args, "flowunitType", "--type");
+  HandlerArgs(body, args, "flowunitTypePro", "--type_pro");
+  HandlerArgs(body, args, "deviceType", "--device");
+  HandlerArgs(body, args, "desc", "--desc");
+  HandlerArgs(body, args, "modelEntry", "--entry");
+  HandlerArgs(body, args, "plugin", "--plugin");
+  HandlerArgs(body, args, "flowunitVirtualType", "--virtual");
+
+  auto port = body["portInfos"].get<nlohmann::json>();
+  std::string p_type;
+  std::string dev_type;
+  std::string data_type;
+  std::string p_name;
+
+  for (auto& p : port.items()) {
+    if (p.key().empty()) {
+      response.status = HttpStatusCodes::INTERNAL_ERROR;
+      std::string errmsg = "port info has empty value";
+      response.set_content(errmsg, TEXT_PLAIN);
+      return modelbox::STATUS_FAULT;
+    }
+
+    p_type = p.value()["portType"].get<std::string>();
+    data_type = p.value()["dataType"].get<std::string>();
+    dev_type = p.value()["deviceType"].get<std::string>();
+
+    if (p.value().find("portName") != p.value().end()) {
+      p_name = p.value()["portName"].get<std::string>();
+    }
+
+    if (p_name.length() > 0) {
+      if (p_type.compare("input") == 0) {
+        args.push_back("--in");
+        args.push_back(p_name);
+      } else if (p_type.compare("output") == 0) {
+        args.push_back("--out");
+        args.push_back(p_name);
+      }
+    }
+
+    args.push_back(dev_type);
+    args.push_back(data_type);
+  }
+
+  char* argv[args.size() + 1];
+  for (size_t i = 0; i < args.size(); i++) {
+    argv[i] = (char*)args[i].c_str();
+  }
+  argv[args.size()] = 0;
+
+  auto ret = execvp(argv[0], argv);
+  if (ret < 0) {
+    return modelbox::STATUS_FAULT;
+  } else {
+    return modelbox::STATUS_SUCCESS;
+  }
+  return ret;
+}
+
+void ModelboxEditorPlugin::HandlerArgs(nlohmann::json& body,
+                                       std::vector<std::string>& args,
+                                       std::string key, std::string arg) {
+  if (body.find(key) != body.end() &&
+      body[key].get<std::string>().length() > 0) {
+    std::string value = body[key].get<std::string>();
+    args.push_back(arg);
+    args.push_back(value);
+  }
+}
+
 void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
                                               httplib::Response& response) {
   try {
-    auto body = nlohmann::json::parse(request.body);
     pid_t pid = vfork();
-
     if (pid < 0) {
-      MBLOG_INFO << "Fail to create subprocess";
+      MBLOG_ERROR << "Failed to create subprocess of creating flowunit."
+                  << modelbox::StrError(errno);
       return;
     } else if (!pid) {
-      MBLOG_INFO << "Success to create subprocess of creating flowunit.";
-      std::vector<std::string> args = {"modelbox-tool", "create", "-t"};
-      std::string program_language = body["programLanguage"].get<std::string>();
-      std::string flowunitName(body["flowunitName"].get<std::string>());
-      std::string path(body["path"].get<std::string>());
-      args.push_back(program_language);
-      args.push_back("-n");
-      args.push_back(flowunitName);
-      args.push_back("-d");
-      args.push_back(path);
-
-      if (body.find("flowunitType") != body.end() &&
-          body["flowunitType"].get<std::string>().length() > 0) {
-        std::string flowunit_type = body["flowunitType"].get<std::string>();
-        args.push_back("--type");
-        args.push_back(flowunit_type);
-      }
-      if (body.find("flowunitTypePro") != body.end() &&
-          body["flowunitTypePro"].get<std::string>().length() > 0) {
-        std::string flowunit_type_pro =
-            body["flowunitTypePro"].get<std::string>();
-        args.push_back("--type_pro");
-        args.push_back(flowunit_type_pro);
-      }
-      if (body.find("deviceType") != body.end() &&
-          body["deviceType"].get<std::string>().length() > 0) {
-        std::string device = body["deviceType"].get<std::string>();
-        args.push_back("--device");
-        args.push_back(device);
-      }
-      if (body.find("desc") != body.end() &&
-          body["desc"].get<std::string>().length() > 0) {
-        std::string desc = body["desc"].get<std::string>();
-        args.push_back("--desc");
-        args.push_back(desc);
-      }
-      if (body.find("modelEntry") != body.end() &&
-          body["modelEntry"].get<std::string>().length() > 0) {
-        std::string entry = body["modelEntry"].get<std::string>();
-        args.push_back("--entry");
-        args.push_back(entry);
-      }
-      if (body.find("plugin") != body.end() &&
-          body["plugin"].get<std::string>().length() > 0) {
-        std::string plugin = body["plugin"].get<std::string>();
-        args.push_back("--plugin");
-        args.push_back(plugin);
-      }
-      if (body.find("flowunitVirtualType") != body.end() &&
-          body["flowunitVirtualType"].get<std::string>().length() > 0) {
-        std::string virtual_type =
-            body["flowunitVirtualType"].get<std::string>();
-        args.push_back("--virtual");
-        args.push_back(virtual_type);
-      }
-
-      auto port = body["portInfos"].get<nlohmann::json>();
-      std::string p_type;
-      std::string dev_type;
-      std::string data_type;
-      std::string p_name;
-
-      for (auto& p : port.items()) {
-        if (p.key().empty()) {
-          response.status = HttpStatusCodes::INTERNAL_ERROR;
-          std::string errmsg = "port info has empty value";
-          response.set_content(errmsg, TEXT_PLAIN);
-          return;
-        }
-
-        p_type = p.value()["portType"].get<std::string>();
-        data_type = p.value()["dataType"].get<std::string>();
-        dev_type = p.value()["deviceType"].get<std::string>();
-
-        if (p.value().find("portName") != p.value().end()) {
-          p_name = p.value()["portName"].get<std::string>();
-        }
-
-        if (p_name.length() > 0) {
-          if (p_type.compare("input") == 0) {
-            args.push_back("--in");
-            args.push_back(p_name);
-          } else if (p_type.compare("output") == 0) {
-            args.push_back("--out");
-            args.push_back(p_name);
-          }
-        }
-
-        args.push_back(dev_type);
-        args.push_back(data_type);
-      }
-
-      char* argv[args.size() + 1];
-      for (size_t i = 0; i < args.size(); i++) {
-        argv[i] = (char*)args[i].c_str();
-      }
-      argv[args.size()] = 0;
-      auto ret = execvp(argv[0], argv);
-      if (ret < 0) {
+      auto status = CreateFlowunitByTool(request, response);
+      exit(0);
+      if (status != modelbox::STATUS_SUCCESS) {
         response.status = HttpStatusCodes::BAD_REQUEST;
-        exit(0);
+        response.set_content("Failed to create Flowunit", TEXT_PLAIN);
         return;
       }
-      exit(0);
     }
-
   } catch (const std::exception& e) {
     std::string errmsg = "Get info failed: ";
     errmsg += e.what();
@@ -360,6 +345,15 @@ void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
 
   response.status = HttpStatusCodes::CREATED;
   return;
+}
+
+modelbox::Status ModelboxEditorPlugin::execCommand(char* argv[]) {
+  auto ret = execvp(argv[0], argv);
+  if (ret < 0) {
+    return modelbox::STATUS_FAULT;
+  } else {
+    return modelbox::STATUS_SUCCESS;
+  }
 }
 
 void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
@@ -379,10 +373,8 @@ void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
       response.status = HttpStatusCodes::INTERNAL_ERROR;
       response.set_content(errmsg, TEXT_PLAIN);
     }
-    MBLOG_INFO << "AAAAAAAA";
-    MBLOG_INFO << toml_data;
     ConfigJobid(jobid);
-    // //保存图信息
+    // save graph data
     auto ret = SaveGraphFile(jobid, toml_data, path);
     if (!ret) {
       std::string errmsg = "Failed to save file.";
@@ -520,7 +512,6 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
     MBLOG_INFO << "get project path: " << project_path;
     AddSafeHeader(response);
 
-    //加载项目信息
     auto temp = modelbox::StringSplit(project_path, '/');
     auto project_name = temp[temp.size() - 1];
     MBLOG_INFO << "loading project: " << project_name;
@@ -532,10 +523,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
     json["graphs"] = nlohmann::json::array();
 
     MBLOG_INFO << "project path: " << json["path"];
-    //加载功能单元信息
-    DIR* dir;
-    struct dirent* ent;
-    std::string temp_name;
+
     std::string temp_type;
     std::string in_path;
     std::string toml = ".toml";
@@ -549,134 +537,150 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
     std::smatch matched;
 
     auto flowunit_path = project_path + "/src/flowunit";
-    if ((dir = opendir(flowunit_path.c_str())) != NULL) {
-      /* print all the files and directories within directory */
-      while ((ent = readdir(dir)) != NULL) {
-        temp_name = ent->d_name;
-        temp_type = ent->d_type;
-        if (ent->d_type == DT_DIR && temp_name != "." && temp_name != ".." &&
-            temp_name != "example") {
-          flowunit["name"] = temp_name;
-          in_path = flowunit_path + "/" + temp_name + "/" + temp_name + toml;
-          flowunit["file"] = in_path;
-          std::ifstream ifs(in_path.c_str());
-          if (!ifs.is_open()) {
-            std::string errmsg = "open flowunit " + temp_name + "file failed!";
-            response.status = HttpStatusCodes::INTERNAL_ERROR;
-            response.set_content(errmsg, TEXT_PLAIN);
-            return;
-          }
-          auto index_port = 0;
-          flowunit["ports"] = nlohmann::json::array();
-          nlohmann::json port;
-          while (getline(ifs, s)) {
-            //处理数据保存
-            if (std::regex_search(s, matched, txt_regex1) == 1) {
-              s = matched[0];  // content
-              auto vec = modelbox::StringSplit(s, ' ');
-              if ((vec.size() > 3) || (vec.size() < 1) ||
-                  std::find(vec.begin(), vec.end(), "=") == vec.end()) {
-                std::string errmsg = "base value is invalid.";
-                response.status = HttpStatusCodes::INTERNAL_ERROR;
-                response.set_content(errmsg, TEXT_PLAIN);
-                return;
-              }
 
-              if (current_property == "base") {
-                flowunit[vec[0]] = vec[2];
-              } else {
-                if (index_port % 3 == 0 && index_port != 0) {
-                  flowunit["ports"].push_back(port);
-                }
-                port[vec[0]] = vec[2];
-                index_port += 1;
-              }
+    std::vector<std::string> list_files;
+    auto ret = modelbox::ListSubDirectoryFiles(flowunit_path, "*", &list_files);
+    if (!ret) {
+      response.status = HttpStatusCodes::NOT_FOUND;
+      response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+      return;
+    }
+    /* print all the files and directories within directory */
+    for (auto i : list_files) {
+      auto temp = modelbox::StringSplit(i, '/');
+      auto flowunit_name = temp[temp.size() - 1];
+      auto flowunit_string = temp[temp.size() - 2];
+      if (flowunit_string == "flowunit" &&
+          flowunit_name.find(".") == std::string::npos &&
+          flowunit_name != "example") {
+        flowunit["name"] = flowunit_name;
+        in_path =
+            flowunit_path + "/" + flowunit_name + "/" + flowunit_name + toml;
+        flowunit["file"] = in_path;
+        std::ifstream ifs(in_path.c_str());
+        if (!ifs.is_open()) {
+          std::string errmsg =
+              "open flowunit " + flowunit_name + "file failed!";
+          response.status = HttpStatusCodes::INTERNAL_ERROR;
+          response.set_content(errmsg, TEXT_PLAIN);
+          continue;
+        }
+        auto index_port = 0;
+        flowunit["ports"] = nlohmann::json::array();
+        nlohmann::json port;
+        while (getline(ifs, s)) {
+          // save data
+          if (std::regex_search(s, matched, txt_regex1) == 1) {
+            s = matched[0];  // content
+            auto vec = modelbox::StringSplit(s, ' ');
+            if ((vec.size() > 3) || (vec.size() < 1) ||
+                std::find(vec.begin(), vec.end(), "=") == vec.end()) {
+              std::string errmsg = "base value is invalid.";
+              response.status = HttpStatusCodes::INTERNAL_ERROR;
+              response.set_content(errmsg, TEXT_PLAIN);
+              return;
+            }
 
-            } else if (std::regex_search(s, matched, txt_regex) == 1) {
-              // title
-              if (matched[1] == "base") {
-                current_property = "base";
-              } else if (matched[1] == "input") {
-                current_property = "input";
-              } else if (matched[1] == "output") {
-                current_property = "output";
+            if (current_property == "base") {
+              flowunit[vec[0]] = vec[2];
+            } else {
+              if (index_port % 3 == 0 && index_port != 0) {
+                flowunit["ports"].push_back(port);
               }
+              port[vec[0]] = vec[2];
+              index_port += 1;
+            }
+
+          } else if (std::regex_search(s, matched, txt_regex) == 1) {
+            // title
+            if (matched[1] == "base") {
+              current_property = "base";
+            } else if (matched[1] == "input") {
+              current_property = "input";
+            } else if (matched[1] == "output") {
+              current_property = "output";
             }
           }
-          ifs.close();
         }
+        ifs.close();
+        json["flowunits"].push_back(flowunit);
       }
-      json["flowunits"].push_back(flowunit);
-      closedir(dir);
     }
 
     //加载graph信息
     auto graph_path = project_path + "/src/graph";
-
-    if ((dir = opendir(graph_path.c_str())) != NULL) {
-      /* print all the files and directories within directory */
-      nlohmann::json graph;
-      while ((ent = readdir(dir)) != NULL) {
-        temp_name = ent->d_name;
-        if (temp_name.rfind(toml) != std::string::npos &&
-            ent->d_type != DT_DIR && temp_name != "example.toml") {
-          graph["name"] = temp_name;
-          in_path = graph_path + "/" + temp_name;
-          std::ifstream ifs(in_path.c_str());
-          if (!ifs.is_open()) {
-            std::string errmsg = "open graph file failed!";
-            response.status = HttpStatusCodes::INTERNAL_ERROR;
-            response.set_content(errmsg, TEXT_PLAIN);
-            return;
-          }
-          std::string cont = "";
-          int flag = -1;
-          while (getline(ifs, s)) {
-            //处理数据保存
-            if (s.find("\"\"\"") != std::string::npos) {
-              flag *= -1;
-              if (s == "\"\"\"" && current_property == "graph") {
-                graph["dotSrc"] = cont;
-                cont = "";
-              } else if (s == "\"\"\"" && current_property == "driver") {
-                graph["dir"] = cont;
-              }
-              continue;
-            }
-            if (flag > 0) {
-              cont += s + "\n";
-            }
-            if (std::regex_search(s, matched, txt_regex1) == 1) {
-              s = matched[0];  // content
-              auto vec = modelbox::StringSplit(s, ' ');
-              if ((vec.size() > 3) || (vec.size() < 1) ||
-                  std::find(vec.begin(), vec.end(), "=") == vec.end()) {
-                std::string errmsg = "base value is invalid.";
-                response.status = HttpStatusCodes::INTERNAL_ERROR;
-                response.set_content(errmsg, TEXT_PLAIN);
-                return;
-              }
-              graph[vec[0]] = vec[2];
-            } else if (std::regex_search(s, matched, txt_regex) == 1) {
-              // title
-              if (matched[1] == "profile") {
-                current_property = "profile";
-              } else if (matched[1] == "graph") {
-                current_property = "graph";
-              } else if (matched[1] == "driver") {
-                current_property = "driver";
-              } else if (matched[1] == "flow") {
-                current_property = "flow";
-              }
-            }
-          }
-          ifs.close();
-        }
-      }
-      json["graphs"].push_back(graph);
-      closedir(dir);
+    list_files.clear();
+    ret = modelbox::ListSubDirectoryFiles(graph_path, "*.toml", &list_files);
+    if (!ret) {
+      response.status = HttpStatusCodes::NOT_FOUND;
+      response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+      return;
     }
 
+    /* print all the files and directories within directory */
+    nlohmann::json graph;
+    for (auto i : list_files) {
+      auto temp = modelbox::StringSplit(i, '/');
+      auto graph_name = temp[temp.size() - 1];
+      graph["name"] = graph_name;
+      in_path = graph_path + "/" + graph_name;
+
+      if (graph_name.rfind(toml) != std::string::npos &&
+          graph_name != "example.toml") {
+        graph["name"] = graph_name;
+        in_path = graph_path + "/" + graph_name;
+        std::ifstream ifs(in_path.c_str());
+        if (!ifs.is_open()) {
+          std::string errmsg = "open graph file failed!";
+          response.status = HttpStatusCodes::INTERNAL_ERROR;
+          response.set_content(errmsg, TEXT_PLAIN);
+          return;
+        }
+        std::string cont = "";
+        int flag = -1;
+        while (getline(ifs, s)) {
+          if (s.find("\"\"\"") != std::string::npos) {
+            flag *= -1;
+            if (s == "\"\"\"" && current_property == "graph") {
+              graph["dotSrc"] = cont;
+              cont = "";
+            } else if (s == "\"\"\"" && current_property == "driver") {
+              graph["dir"] = cont;
+            }
+            continue;
+          }
+          if (flag > 0) {
+            cont += s + "\n";
+          }
+          if (std::regex_search(s, matched, txt_regex1) == 1) {
+            s = matched[0];  // content
+            auto vec = modelbox::StringSplit(s, ' ');
+            if ((vec.size() > 3) || (vec.size() < 1) ||
+                std::find(vec.begin(), vec.end(), "=") == vec.end()) {
+              std::string errmsg = "base value is invalid.";
+              response.status = HttpStatusCodes::INTERNAL_ERROR;
+              response.set_content(errmsg, TEXT_PLAIN);
+              return;
+            }
+            graph[vec[0]] = vec[2];
+          } else if (std::regex_search(s, matched, txt_regex) == 1) {
+            // title
+            if (matched[1] == "profile") {
+              current_property = "profile";
+            } else if (matched[1] == "graph") {
+              current_property = "graph";
+            } else if (matched[1] == "driver") {
+              current_property = "driver";
+            } else if (matched[1] == "flow") {
+              current_property = "flow";
+            }
+          }
+        }
+        ifs.close();
+      }
+
+      json["graphs"].push_back(graph);
+    }
     result = json.dump();
     MBLOG_INFO << "infos: " << result;
     response.set_content(result, JSON);

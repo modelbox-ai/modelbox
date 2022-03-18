@@ -34,6 +34,7 @@ showhelp() {
 
 create_python_template()
 {
+	# example.toml of python flowunit. Nb.line of [output]
 	let base=44
 	if [ -e $directory/$name/$name.py ]; then 
 		return 0
