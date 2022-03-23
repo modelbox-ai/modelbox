@@ -456,25 +456,28 @@ Status BufferList::MoveAllBufferToTargetDevice() {
       return modelbox::STATUS_FAULT;
     }
 
-    if (dev_mem_->IsSameDevice(buffer->dev_mem_)) {
-      // no need to copy real data.
-      // Clone dev_mem due to old dev_mem might be used in multi node
+    // No need to copy real data or need delayed copy .
+    if (dev_mem_->IsSameDevice(buffer->dev_mem_) ||
+        buffer->GetDelayedCopyFlag(target_device)) {
       auto new_mem = buffer->dev_mem_->Clone();
       auto new_buffer = std::make_shared<Buffer>(new_mem);
       new_buffer->CopyMeta(buffer);
+      new_buffer->SetDelayedCopyDestinationDevice(target_device);
+      new_buffer->SetDelayedCopyDestinationMemFlags(dev_mem_flags_);
       new_buffer_list.push_back(new_buffer);
       continue;
     }
-
     auto data_size = buffer->GetBytes();
-    auto new_buffer = std::make_shared<Buffer>(
-        target_device->MemAlloc(data_size, dev_mem_flags_));
+    auto dev_mem = target_device->MemAlloc(data_size, dev_mem_flags_);
+    if (!dev_mem) {
+      return modelbox::STATUS_NOMEM;
+    }
+    auto new_buffer = std::make_shared<Buffer>(dev_mem);
     new_buffer_list.push_back(new_buffer);
     new_buffer->CopyMeta(buffer);
     if (data_size == 0) {
       continue;
     }
-
     new_buffer->dev_mem_->ReadFrom(buffer->dev_mem_, 0, data_size);
   }
 

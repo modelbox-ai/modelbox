@@ -126,6 +126,12 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
   inline std::shared_ptr<Device> GetDevice() const { return device_; }
 
   /**
+   * @brief Get device memory flag. 
+   * @return device memory flag
+   */
+  inline uint32_t GetMemFlags() const { return mem_flags_; }
+
+  /**
    * @brief Check this memory belong to host
    * @return Host or not
    */

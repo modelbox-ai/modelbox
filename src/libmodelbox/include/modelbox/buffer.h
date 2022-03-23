@@ -196,7 +196,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @brief Get buffer data pointer, buffer pointer is readonly
    * @return const buffer data pointer
    */
-  virtual const void* ConstData() const;
+  virtual const void* ConstData();
 
   /**
    * @brief Is there an error
@@ -332,6 +332,31 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    */
   Status SetBufferMutable(bool is_mutable);
 
+  /**
+   * @brief Set delayed copy destination device
+   * @param dev target device
+   */
+  void SetDelayedCopyDestinationDevice(std::shared_ptr<Device> dev);
+
+  /**
+   * @brief Set delayed copy destination device memory flag
+   * @param mem_flags device memory flag
+   */
+  void SetDelayedCopyDestinationMemFlags(uint32_t mem_flags);
+
+  /**
+   * @brief Get whether need to delayed copy
+   * @param target_device destination device
+   * @return delayed copy flag.
+   */
+  bool GetDelayedCopyFlag(std::shared_ptr<Device> target_device);
+
+  /**
+   * @brief  copy buffer data to destination device
+   * @return copy result
+   */
+  Status MoveToTargetDevice();
+
  private:
   friend class BufferList;
   /// @brief Buffer meta
@@ -341,6 +366,12 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
   std::shared_ptr<DeviceMemory> dev_mem_;
 
   uint32_t dev_mem_flags_{0};
+
+  /// @brief Record delayed copy destination buffer device, when input buffer
+  /// device type is inconsistent with input port type.
+  std::shared_ptr<Device> delayed_copy_dest_device_;
+
+  uint32_t delayed_copy_dest_mem_flags_{0};
 
   /// @brief Buffer type
   BufferEnumType type_{BufferEnumType::RAW};

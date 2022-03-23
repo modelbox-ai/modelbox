@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/buffer.h"
 
 #include <functional>
 #include <future>
 #include <thread>
 
-#include "modelbox/base/log.h"
-#include "modelbox/device/mockdevice/device_mockdevice.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "mock_driver_ctl.h"
+#include "modelbox/base/log.h"
+#include "modelbox/device/mockdevice/device_mockdevice.h"
 
 namespace modelbox {
 class BufferTest : public testing::Test {
@@ -193,7 +192,6 @@ TEST_F(BufferTest, DeepCopy) {
 
   auto buffer2 = buffer.DeepCopy();
 
-
   int buffer_value = 0;
   int buffer2_value = -1;
   buffer.Get("Height", buffer_value);
@@ -215,6 +213,44 @@ TEST_F(BufferTest, DeepCopy) {
     EXPECT_EQ(buf_data[i], data[i]);
     EXPECT_EQ(buf_data2[i], data[i]);
   }
+}
+
+class MockBuffer : public Buffer {
+ public:
+  MockBuffer(const std::shared_ptr<Device> &device) : Buffer(device){};
+  ~MockBuffer() = default;
+  void SetDelayedCopyDestinationDevice(std::shared_ptr<Device> dest_device) {
+    Buffer::SetDelayedCopyDestinationDevice(dest_device);
+  }
+};
+
+TEST_F(BufferTest, MoveToTargetDevice) {
+  auto device_cuda_src_path = std::string(DEVICE_CUDA_SO_PATH);
+  auto device_cuda_dest_path =
+      std::string(TEST_LIB_DIR) + "/libmodelbox-device-cuda.so";
+  CopyFile(device_cuda_src_path, device_cuda_dest_path, 0, true);
+  auto drivers = Drivers::GetInstance();
+  drivers->Scan(TEST_LIB_DIR, "libmodelbox-device-cuda.so");
+  auto dev_mgr = DeviceManager::GetInstance();
+  ConfigurationBuilder configbuilder;
+  auto config = configbuilder.Build();
+  dev_mgr->Clear();
+  dev_mgr->Initialize(drivers, config);
+  auto device_cuda = dev_mgr->CreateDevice("cuda", "0");
+  if (device_cuda == nullptr) {
+    GTEST_SKIP();
+  }
+
+  MockBuffer buffer(device_cuda);
+  buffer.Build({3 * sizeof(int)});
+
+  auto device_cpu = dev_mgr->CreateDevice("cpu", "0");
+  buffer.SetDelayedCopyDestinationDevice(device_cpu);
+  EXPECT_EQ("cuda", buffer.GetDevice()->GetType());
+  auto data = buffer.ConstData();
+  EXPECT_NE(data, nullptr);
+  EXPECT_EQ("cpu", buffer.GetDevice()->GetType());
+  EXPECT_EQ({3 * sizeof(int)}, buffer.GetBytes());
 }
 
 }  // namespace modelbox
