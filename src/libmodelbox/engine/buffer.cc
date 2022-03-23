@@ -58,7 +58,9 @@ BufferMeta& BufferMeta::DeepCopy(const BufferMeta& other) {
   return *this;
 }
 
-Buffer::Buffer() : dev_mem_(nullptr) { meta_ = std::make_shared<BufferMeta>(); }
+Buffer::Buffer() : dev_mem_(nullptr), delayed_copy_dest_device_(nullptr) {
+  meta_ = std::make_shared<BufferMeta>();
+}
 
 Buffer::Buffer(const std::shared_ptr<Device>& device, uint32_t dev_mem_flags)
     : Buffer() {
@@ -75,6 +77,8 @@ Buffer::Buffer(const std::shared_ptr<DeviceMemory>& dev_mem) : Buffer() {
 Buffer::Buffer(const Buffer& other) : Buffer() {
   meta_->CopyMeta(other.meta_);
   dev_mem_ = other.dev_mem_;
+  delayed_copy_dest_device_ = other.delayed_copy_dest_device_;
+  delayed_copy_dest_mem_flags_ = other.delayed_copy_dest_mem_flags_;
   type_ = other.type_;
   dev_mem_flags_ = other.dev_mem_flags_;
 }
@@ -153,9 +157,15 @@ void* Buffer::MutableData() {
   return data.get();
 }
 
-const void* Buffer::ConstData() const {
+const void* Buffer::ConstData() {
   if (!dev_mem_) {
     MBLOG_WARN << "dev_mem_ is nullptr, may be exception buffer.";
+    return nullptr;
+  }
+
+  auto status = MoveToTargetDevice();
+  if (!status) {
+    MBLOG_WARN << "buffer move to target device faild." << status;
     return nullptr;
   }
 
@@ -270,6 +280,49 @@ Status Buffer::DeepCopy(const Buffer& other) {
   }
 
   return STATUS_OK;
+}
+
+void Buffer::SetDelayedCopyDestinationDevice(
+    std::shared_ptr<Device> dest_device) {
+  delayed_copy_dest_device_ = dest_device;
+}
+
+void Buffer::SetDelayedCopyDestinationMemFlags(uint32_t mem_flags) {
+  delayed_copy_dest_mem_flags_ = mem_flags;
+}
+
+bool Buffer::GetDelayedCopyFlag(std::shared_ptr<Device> dest_device) {
+  // if current buffer device type is "cuda"/"ascend" and input port device
+  // type is "cpu" , the real data will be copied to target device when the
+  // user calls Buffer::ConstData()
+  return "cpu" == dest_device->GetType() &&
+         "cpu" != dev_mem_->GetDevice()->GetType();
+}
+
+Status Buffer::MoveToTargetDevice() {
+  // no need move
+  if (delayed_copy_dest_device_ == nullptr) {
+    return STATUS_OK;
+  }
+
+  if (delayed_copy_dest_device_ == dev_mem_->GetDevice() &&
+      delayed_copy_dest_mem_flags_ == dev_mem_->GetMemFlags()) {
+    return STATUS_OK;
+  }
+
+  auto data_size = GetBytes();
+  auto dev_mem = delayed_copy_dest_device_->MemAlloc(
+      data_size, delayed_copy_dest_mem_flags_);
+  if (!dev_mem) {
+    return {STATUS_NOMEM, "target device memory alloc faied."};
+  }
+  if (data_size != 0) {
+    dev_mem->ReadFrom(dev_mem_, 0, data_size);
+  }
+
+  dev_mem_ = dev_mem;
+  delayed_copy_dest_device_ = nullptr;
+  return STATUS_SUCCESS;
 }
 
 }  // namespace modelbox
