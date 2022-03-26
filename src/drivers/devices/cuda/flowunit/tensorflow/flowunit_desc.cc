@@ -18,18 +18,14 @@
 
 #include <memory>
 
-#include "tensorflow_gpu_inference_flowunit.h"
 #include "modelbox/base/driver_api_helper.h"
 #include "modelbox/base/status.h"
 #include "modelbox/device/cuda/device_cuda.h"
 #include "modelbox/flowunit.h"
+#include "tensorflow_gpu_inference_flowunit.h"
 
 constexpr const char *FLOWUNIT_NAME = "tensorflow_inference";
 constexpr const char *FLOWUNIT_DESC = "A gpu tensorflow inference flowunit";
-
-std::shared_ptr<TFGraphCache> kGraphCache = nullptr;
-
-std::shared_ptr<TFGraphCache> GetTFGraphCache() { return kGraphCache; }
 
 std::shared_ptr<modelbox::DriverFactory> CreateDriverFactory() {
   std::shared_ptr<modelbox::DriverFactory> factory =
@@ -48,11 +44,9 @@ void DriverDescription(modelbox::DriverDesc *desc) {
 
 modelbox::Status DriverInit() {
   // Driver Init.
-  kGraphCache = std::make_shared<TFGraphCache>();
   return modelbox::STATUS_OK;
 }
 
 void DriverFini() {
   // Driver Fini.
-  kGraphCache = nullptr;
 }
