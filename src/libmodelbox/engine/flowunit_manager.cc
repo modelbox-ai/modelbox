@@ -434,6 +434,13 @@ FlowUnitManager::GetFlowUnitFactoryList() {
   return flowunit_factory_;
 }
 
+void FlowUnitManager::InsertFlowUnitFactory(
+    const std::string &name, const std::string &type,
+    const std::shared_ptr<FlowUnitFactory> &flowunit_factory) {
+  flowunit_factory_.insert(
+      std::make_pair(std::make_pair(type, name), flowunit_factory));
+}
+
 std::map<std::string, std::map<std::string, std::shared_ptr<FlowUnitDesc>>>
 FlowUnitManager::GetFlowUnitDescList() {
   return flowunit_desc_list_;

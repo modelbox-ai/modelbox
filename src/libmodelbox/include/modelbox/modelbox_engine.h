@@ -17,11 +17,12 @@
 #ifndef MODELBOX_ENGINE_H_
 #define MODELBOX_ENGINE_H_
 
+#include <queue>
 #include "data_handler.h"
 #include "node.h"
 #include "scheduler.h"
-
 namespace modelbox {
+
 using ConfigNodeMap =
     std::map<std::map<std::string, std::string>, std::shared_ptr<NodeBase>>;
 
@@ -29,18 +30,12 @@ using ConfigNodeMap =
  * @brief Job error info
  */
 struct ErrorInfo {
-  /**
-   * @brief Job error code
-   */
   std::string error_code_;
-  /**
-   *  @brief Job error message
-   */
   std::string error_msg_;
 };
 
 /**
- * @brief dynamic graph manager,graph start ,run and stop
+ * @brief API mode interface
  * */
 class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
  public:
@@ -55,23 +50,18 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
   Status Init(std::shared_ptr<Configuration> &config);
 
   /**
-   * @brief create input stream for external input
-   * @return datahandler bind to extern input
-   */
-  std::shared_ptr<DataHandler> CreateInput(const std::set<std::string> &ports);
-
-  /**
-   * @brief  choose right node to create graph and run graph
+   * @brief link a node to existing graph with name and config
    * @param name flowunit name
    * @param config flowunit config
    * @param data input data
-   * @return process result
+   * @return datahandler bind to current node
    */
   std::shared_ptr<DataHandler> Execute(
       const std::string &name, std::map<std::string, std::string> config,
       const std::shared_ptr<DataHandler> &data = nullptr);
+
   /**
-   * @brief choose right node to create graph and run graph
+   * @brief link a node to existing graph with name and config
    * @param name flowunit name
    * @param config flowunit config
    * @param data input data map
@@ -82,10 +72,54 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
       const std::map<std::string, std::shared_ptr<DataHandler>> &data);
 
   /**
-   * @brief close the graph
+   * @brief link a node to existing graph with name and process callback
+   * @param callback process callback
+   * @param inports inport names
+   * @param outports outport names
+   * @param data input port and node info
+   * @return process result
    */
+  std::shared_ptr<DataHandler> Execute(
+      std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
+      std::vector<std::string> inports, std::vector<std::string> outports,
+      const std::shared_ptr<DataHandler> &data = nullptr);
+  std::shared_ptr<DataHandler> Execute(
+      std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
+      std::vector<std::string> inports, std::vector<std::string> outports,
+      const std::map<std::string, std::shared_ptr<DataHandler>> &buffers);
+  /**
+   * @brief Create external data map for flow
+   * @return share pointer for external data map
+   * */
+  std::shared_ptr<ExternalDataMap> CreateExternalDataMap();
+  /**
+   * @brief bind input node to a inport of the node. port name can be ignored if
+   * node has only one input port.
+   * @param node datahandler bind for the node
+   * @param port_name inport name of the node
+   * @return datahandler bind the input node
+   **/
+  std::shared_ptr<DataHandler> BindInput(
+      std::shared_ptr<DataHandler> &node,
+      const std::string port_name = "__default__inport__");
+
+  /**
+   * @brief bind output node to a outport of the node.port name can be ignored
+   * if node has only one out port.
+   * @param node datahandler bind for the node
+   * @param port_name outport name of the node
+   * @return datahandler bind the output node
+   **/
+  std::shared_ptr<DataHandler> BindOutput(
+      std::shared_ptr<DataHandler> &node,
+      const std::string port_name = "__default__outport__");
+
   void Close();
   void ShutDown();
+  Status Run();
+  Status Wait(int64_t timeout);
+
+  std::shared_ptr<Graph> GetGraph();
 
   /**
    * @brief get error info from graph
@@ -93,12 +127,18 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
    */
   std::shared_ptr<ErrorInfo> GetErrorInfo() { return error_info_; }
 
+ private:
   void SetConfig(std::string &, std::string &);
   std::shared_ptr<Configuration> GetConfig();
 
-  std::shared_ptr<GCNode> CreateDynamicGCGraph(
-      const std::string &name, const std::map<std::string, std::string> &config,
-      const std::shared_ptr<DataHandler> &data_handler);
+  Status AddCallBackFactory(
+      const std::string unit_name, const std::set<std::string> input_ports,
+      const std::set<std::string> output_ports,
+      std::function<StatusCode(std::shared_ptr<DataContext>)> &callback);
+  Status AddToGCGraph(const std::string name, std::set<std::string> inputs,
+                      std::set<std::string> outputs,
+                      const std::map<std::string, std::string> &config,
+                      const std::shared_ptr<DataHandler> &data_handler);
 
   Status CheckBuffer(const std::shared_ptr<FlowUnitDesc> &desc,
                      const std::shared_ptr<DataHandler> &data);
@@ -107,8 +147,10 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
       const std::string &name,
       const std::map<std::string, std::string> &config);
 
-  std::shared_ptr<GCNode> CreateDynamicStreamNode(
-      const std::string &name, const std::map<std::string, std::string> &config,
+  std::shared_ptr<GCNode> CreateGCNode(
+      const std::string name, std::set<std::string> input_ports,
+      std::set<std::string> out_ports,
+      const std::map<std::string, std::string> &config,
       const std::shared_ptr<DataHandler> &data_handler);
 
   Status InsertGrahEdge(std::shared_ptr<GCGraph> &root_graph,
@@ -119,29 +161,13 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
   std::shared_ptr<NodeBase> CheckNodeExist(
       const std::string &name,
       const std::map<std::string, std::string> &config);
-
-  std::shared_ptr<NodeBase> CreateDynamicNormalNode(
-      const std::string &name,
-      const std::map<std::string, std::string> &config);
-
-  /*
-   feed data to graph
-   */
-  Status FeedData(std::shared_ptr<DynamicGraph> &dynamic_graph,
-                  std::shared_ptr<GCGraph> &graph);
-  /*
-  create a graph for gcgraph
-  */
-  std::shared_ptr<DynamicGraph> CreateDynamicGraph(
-      std::shared_ptr<GCGraph> &graph);
   std::shared_ptr<DeviceManager> GetDeviceManager();
   std::shared_ptr<FlowUnitManager> GetFlowUnitManager();
   std::shared_ptr<Scheduler> GetScheduler();
   std::shared_ptr<Profiler> GetProfiler();
   Status RunGraph(std::shared_ptr<DataHandler> &data_handler);
-  std::shared_ptr<DataHandler> BindDataHanlder(
-      std::shared_ptr<DataHandler> &data_handler,
-      std::shared_ptr<GCNode> &gcnode);
+  void BindDataHanlder(std::shared_ptr<DataHandler> &data_handler,
+                       std::shared_ptr<GCNode> &gcnode);
   Status CheckInputPort(const std::shared_ptr<FlowUnitDesc> &flowunit_desc,
                         const std::shared_ptr<DataHandler> &data_handler);
   bool CheckisStream(const std::shared_ptr<FlowUnitDesc> &desc,
@@ -154,12 +180,7 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
       const std::shared_ptr<FlowUnitDesc> &,
       const std::shared_ptr<DataHandler> &,
       std::map<std::string, std::string> &);
-  std::shared_ptr<DataHandler> ExecuteBufferListNode(
-      const std::string &, std::map<std::string, std::string> &,
-      const std::shared_ptr<DataHandler> &);
-  Status SendExternalData(std::shared_ptr<modelbox::ExternalDataMap> &,
-                          std::shared_ptr<modelbox::BufferList> &,
-                          const std::shared_ptr<GCNode> &);
+
   std::shared_ptr<GCNode> ProcessOutputHandler(
       const std::shared_ptr<DataHandler> &, std::shared_ptr<GCNode> &,
       std::shared_ptr<GCGraph> &);
@@ -174,11 +195,17 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
   std::shared_ptr<FlowUnitManager> flowunit_mgr_;
   std::shared_ptr<Scheduler> scheduler_;
   std::shared_ptr<Profiler> profiler_;
-  std::set<std::shared_ptr<Graph>> graphs_;
   std::unordered_map<std::string, std::string> global_config_map_;
   std::set<std::shared_ptr<NodeBase>> stream_nodes_;
   std::map<std::string, ConfigNodeMap> nodes_config_;
   std::shared_ptr<ErrorInfo> error_info_;
+  std::vector<std::shared_ptr<DataHandler>> node_handlers_;
+  std::shared_ptr<GCGraph> gcgraph_;
+
+  std::shared_ptr<Graph> graph_;
+  std::shared_ptr<ExternalDataMap> externdata_map_;
+  int node_sequence_{0};
+  bool closed_{false};
 };
 
 }  // namespace modelbox

@@ -57,6 +57,9 @@ static bool SkipJudge(const std::string &local_file_path) {
 static std::string GetModelPath(const std::string &toml_path) {
   auto conf_builder = std::make_shared<ConfigurationBuilder>();
   std::shared_ptr<Configuration> toml_config = conf_builder->Build(toml_path);
+  if(toml_config == nullptr){
+    return "";
+  }
   auto model_path = toml_config->GetString("base.entry");
   return model_path;
 }

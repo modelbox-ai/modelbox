@@ -28,6 +28,21 @@ ExternalDataSimple::~ExternalDataSimple() {
   }
 }
 
+Status ExternalDataSimple::PushData(const std::string& port_name,
+                                    std::shared_ptr<BufferList>& bufferlist) {
+  if (data_map_ == nullptr) {
+    return STATUS_INVALID;
+  }
+
+  auto temp = data_map_->CreateBufferList();
+  if (temp->GetDevice() != bufferlist->GetDevice()) {
+    MBLOG_ERROR << "pushed buffer is on different device";
+    return STATUS_INVALID;
+  }
+
+  return data_map_->Send(port_name, bufferlist);
+}
+
 Status ExternalDataSimple::PushData(
     const std::string& port_name, const void* data, const size_t& data_len,
     const std::map<std::string, std::string>& meta) {
@@ -91,9 +106,7 @@ Status ExternalDataSimple::GetResult(const std::string& port_name,
     };
 
     if (status_ != STATUS_SUCCESS) {
-      MBLOG_ERROR << "recv failed, error is "
-                  << data_map_->GetLastError()->GetDesc();
-
+      MBLOG_ERROR << "recv failed, error is " << data_map_->GetLastError();
       return status_;
     }
 
@@ -115,6 +128,13 @@ Status ExternalDataSimple::GetResult(const std::string& port_name,
   return STATUS_OK;
 }
 
+std::shared_ptr<BufferList> ExternalDataSimple::CreateBufferList() {
+  if (data_map_) {
+    return data_map_->CreateBufferList();
+  }
+  return nullptr;
+}
+
 Status ExternalDataSimple::GetResult(const std::string& port_name,
                                      std::shared_ptr<void>& data, size_t& len,
                                      const int& timeout) {
@@ -125,7 +145,7 @@ Status ExternalDataSimple::GetResult(const std::string& port_name,
   }
 
   len = buffer->GetBytes();
-  data.reset(buffer->MutableData(), [buffer](void*) {});
+  data.reset(buffer->MutableData(), [buffer](void* data) {});
 
   return STATUS_OK;
 }
@@ -134,6 +154,12 @@ void ExternalDataSimple::Close() {
   if (data_map_) {
     data_map_->Close();
     data_map_ = nullptr;
+  }
+}
+
+void ExternalDataSimple::ShutDown() {
+  if (data_map_) {
+    data_map_->Shutdown();
   }
 }
 

@@ -809,6 +809,10 @@ class FlowUnitManager {
    * only for test
    */
 
+  void InsertFlowUnitFactory(
+      const std::string &name, const std::string &type,
+      const std::shared_ptr<FlowUnitFactory> &flowunit_factory);
+
   std::map<std::pair<std::string, std::string>,
            std::shared_ptr<FlowUnitFactory>>
   GetFlowUnitFactoryList();
@@ -843,6 +847,7 @@ class FlowUnitManager {
   std::shared_ptr<FlowUnit> CreateSingleFlowUnit(
       const std::string &unit_name, const std::string &unit_type,
       const std::string &unit_device_id);
+
   std::shared_ptr<DeviceManager> device_mgr_;
   std::map<std::pair<std::string, std::string>,
            std::shared_ptr<FlowUnitFactory>>

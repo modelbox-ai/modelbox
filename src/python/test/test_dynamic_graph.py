@@ -14,11 +14,21 @@
 # limitations under the License.
 
 import unittest
-import sys
-import threading
 import modelbox
-import inspect
+import numpy as np
+import os
+import threading
 from test import test_config
+from PIL import Image
+from PIL import ImageChops
+import cv2
+
+def callback_func(ctx):
+    input = ctx.Input("In_1")
+    output = ctx.output("Out_1")
+    buffer = input[0]
+    output.push_back(buffer)
+    return modelbox.Status.StatusCode.STATUS_SUCCESS
 
 class TestDynamicGraph(unittest.TestCase):
     def setUp(self):
@@ -37,17 +47,35 @@ class TestDynamicGraph(unittest.TestCase):
         config.set("drivers.skip-default", "true")
         config.set("drivers.dir", [test_config.TEST_DRIVER_DIR])
         engine.init(config)
-        input_stream =  engine.create_input({"input"})
         source_url = f'{test_config.TEST_ASSETS}/video/jpeg_5s_480x320_24fps_yuv444_8bit.mp4'
-        input_stream.setmeta("source_url",source_url)
-        input_stream.close()
-
-        video_demuxer_output = engine.execute("video_demuxer",{},input_stream)
-        frame_num = 0
-        for packet in video_demuxer_output:
-            frame_num = frame_num + 1
+        video_demuxer_output = engine.execute("video_demuxer",{},{})
         
-        engine.shutdown()
+        engine.bindinput(video_demuxer_output,"in_video_url")
+        engine.bindoutput(video_demuxer_output,"out_video_packet")
+        engine.run()
+        engine.close()
+    
+    def test_callback(self):
+        engine = modelbox.ModelBoxEngine()
+        self.assertNotEqual(engine, None)
+        config = modelbox.Configuration()
+        config.set("graph.queue_size","32")
+        config.set("graph.queue_size_external","1000")
+        config.set("graph.batch_size","16")
+        config.set("drivers.skip-default", "true")
+        config.set("drivers.dir", [test_config.TEST_DRIVER_DIR])
+        engine.init(config)
+
+        resize_output = engine.execute("resize", {"width": "256", "height": "256"},{})
+        sadas = resize_output.get_datahandler("out_image")
+        callback_output = engine.execute(callback_func, ["In_1"],["Out_1"],{"In_1":sadas})
+        engine.bindinput(resize_output,"__default__inport__")
+        engine.bindoutput(callback_output,"__default__outport__")
+        engine.run()
+        engine.close()
+        
+            
+    
 
 if __name__ == '__main__':
     unittest.main()

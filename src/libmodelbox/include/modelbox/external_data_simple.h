@@ -27,7 +27,10 @@ class ExternalDataSimple {
   Status PushData(const std::string &port_name, const void *data,
                   const size_t &data_len,
                   const std::map<std::string, std::string> &meta = {});
+  std::shared_ptr<BufferList> CreateBufferList();
 
+  Status PushData(const std::string &port_name, std::shared_ptr<BufferList> &bufferlist);
+  
   Status GetResult(const std::string &port_name,
                    std::shared_ptr<Buffer> &buffer, const int &timeout = 0);
 
@@ -35,6 +38,8 @@ class ExternalDataSimple {
                    size_t &len, const int &timeout = 0);
 
   void Close();
+
+  void ShutDown();
 
  private:
   std::shared_ptr<ExternalDataMap> data_map_;

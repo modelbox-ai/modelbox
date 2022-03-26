@@ -17,6 +17,7 @@
 
 #include "modelbox_api.h"
 #include <modelbox/base/config.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -25,6 +26,7 @@
 
 #include <string>
 #include "modelbox/data_context.h"
+#include "modelbox/external_data_simple.h"
 #include "modelbox/flow.h"
 #include "modelbox/modelbox_engine.h"
 #include "modelbox/type.h"
@@ -1005,12 +1007,7 @@ void ModelboxPyApiSetUpEngine(pybind11::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def("close", &modelbox::ModelBoxEngine::Close,
            py::call_guard<py::gil_scoped_release>())
-      .def("create_input",
-           [](ModelBoxEngine &env, const std::set<std::string> &port_map) {
-             py::gil_scoped_release release;
-             return env.CreateInput(port_map);
-           },
-           py::keep_alive<0, 1>())
+
       .def("execute",
            [](ModelBoxEngine &env, const std::string &name,
               std::map<std::string, std::string> &config,
@@ -1026,27 +1023,70 @@ void ModelboxPyApiSetUpEngine(pybind11::module &m) {
              py::gil_scoped_release release;
              return env.Execute(name, config, data);
            },
-           py::keep_alive<0, 1>());
+           py::keep_alive<0, 1>())
+      .def("execute",
+           [](ModelBoxEngine &env,
+              std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
+              std::vector<std::string> inputs, std::vector<std::string> outputs,
+              std::shared_ptr<DataHandler> datahandler) {
+             py::gil_scoped_release release;
+             return env.Execute(callback, inputs, outputs, datahandler);
+           },
+           py::keep_alive<0, 1>())
+      .def("execute",
+           [](ModelBoxEngine &env,
+              std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
+              std::vector<std::string> inputs, std::vector<std::string> outputs,
+              std::map<std::string, std::shared_ptr<DataHandler>> &data) {
+             py::gil_scoped_release release;
+
+             return env.Execute(callback, inputs, outputs, data);
+           },
+           py::keep_alive<0, 1>())
+      .def("run", &modelbox::ModelBoxEngine::Run,
+           py::call_guard<py::gil_scoped_release>())
+      .def("bindinput", &modelbox::ModelBoxEngine::BindInput,
+           py::call_guard<py::gil_scoped_release>())
+      .def("bindoutput", &modelbox::ModelBoxEngine::BindOutput,
+           py::call_guard<py::gil_scoped_release>())
+      .def("createexternaldata",
+           &modelbox::ModelBoxEngine::CreateExternalDataMap,
+           py::call_guard<py::gil_scoped_release>());
+}
+
+void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m) {
+  py::class_<modelbox::ExternalDataSimple,
+             std::shared_ptr<modelbox::ExternalDataSimple>>(
+      m, "ExternalDataSimple")
+      .def(py::init<std::shared_ptr<ExternalDataMap> &>())
+      .def("pushdata",
+           [](ExternalDataSimple &extern_data_simple,
+              const std::string &port_name,
+              std::shared_ptr<BufferList> &bufferlist) {
+             py::gil_scoped_release release;
+             return extern_data_simple.PushData(port_name, bufferlist);
+           })
+      .def("getresult",
+           [](ExternalDataSimple &extern_data_simple,
+              const std::string &port_name,
+              int timeout = 0) -> std::shared_ptr<Buffer> {
+             py::gil_scoped_release release;
+             std::shared_ptr<Buffer> buffer;
+             if (STATUS_OK ==
+                 extern_data_simple.GetResult(port_name, buffer, timeout)) {
+               return buffer;
+             }
+             return nullptr;
+           });
 }
 
 void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
   py::class_<modelbox::DataHandler, std::shared_ptr<modelbox::DataHandler>>(
       m, "DataHandler")
       .def(py::init<>())
-      .def("close", &modelbox::DataHandler::Close,
+      .def("__iter__", [](DataHandler &data) -> DataHandler & { return data; },
            py::call_guard<py::gil_scoped_release>())
-      .def("__iter__", [](DataHandler &data) ->DataHandler&  { return data; },
-           py::call_guard<py::gil_scoped_release>())
-      .def("__next__",
-           [](DataHandler &data) {
-             py::gil_scoped_release release;
-             auto buffer = data.Next();
-             if (buffer == nullptr) {
-               throw pybind11::stop_iteration();
-             }
-             return buffer;
-           },
-           py::keep_alive<0, 1>())
+
       .def("__getitem__",
            [](DataHandler &data, const std::string &key) {
              auto sub_data = data.GetDataHandler(key);
@@ -1056,19 +1096,7 @@ void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
              return sub_data;
            },
            py::call_guard<py::gil_scoped_release>())
-      .def("setmeta",
-           py::overload_cast<const std::string &, const std::string &>(
-               &modelbox::DataHandler::SetMeta),
-           py::call_guard<py::gil_scoped_release>())
-      .def("pushdata",
-           py::overload_cast<std::shared_ptr<modelbox::Buffer> &,
-                             const std::string>(
-               &modelbox::DataHandler::PushData),
-           py::call_guard<py::gil_scoped_release>())
-      .def("pushdata",
-           py::overload_cast<std::shared_ptr<DataHandler> &, const std::string>(
-               &modelbox::DataHandler::PushData),
-           py::call_guard<py::gil_scoped_release>())
+
       .def("get_datahandler", &modelbox::DataHandler::GetDataHandler,
            py::call_guard<py::gil_scoped_release>())
       .def("set_datahandler", &modelbox::DataHandler::SetDataHandler,

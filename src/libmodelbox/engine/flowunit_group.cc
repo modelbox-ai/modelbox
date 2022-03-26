@@ -388,8 +388,7 @@ Status FlowUnitGroup::CheckInputAndOutput(
 
 Status FlowUnitGroup::Init(const std::set<std::string> &input_ports_name,
                            const std::set<std::string> &output_ports_name,
-                           std::shared_ptr<FlowUnitManager> flowunit_mgr,
-                           bool checkport) {
+                           std::shared_ptr<FlowUnitManager> flowunit_mgr) {
   if (flowunit_mgr == nullptr) {
     return STATUS_FAULT;
   }
@@ -409,12 +408,11 @@ Status FlowUnitGroup::Init(const std::set<std::string> &input_ports_name,
                                 "' config error, port not connect correctly."};
   }
 
-  if (checkport) {
-    auto status = CheckInputAndOutput(input_ports_name, output_ports_name);
-    if (status != STATUS_SUCCESS) {
-      return status;
-    }
+  auto status = CheckInputAndOutput(input_ports_name, output_ports_name);
+  if (status != STATUS_SUCCESS) {
+    return status;
   }
+
   return STATUS_OK;
 }
 
