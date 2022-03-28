@@ -451,7 +451,6 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
     TF_DataType tf_type;
     status = ConvertType(type, tf_type);
     if (status != modelbox::STATUS_OK) {
-      MBLOG_ERROR << "input type convert failed. " << status.WrapErrormsgs();
       return {status, "input type convert failed."};
     }
 
@@ -673,12 +672,12 @@ modelbox::Status InferenceTensorflowFlowUnit::CreateOutputBufferList(
 
 modelbox::Status InferenceTensorflowFlowUnit::ConvertType(
     const std::string &type, TF_DataType &TFType) {
-  try {
-    TFType = type_map[type];
-    return modelbox::STATUS_OK;
-  } catch (std::exception &e) {
-    return {modelbox::STATUS_FAULT, e.what()};
+  if (type_map.find(type) == type_map.end()) {
+    return {modelbox::STATUS_FAULT, "unsupported type " + type};
   }
+
+  TFType = type_map[type];
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::Inference(

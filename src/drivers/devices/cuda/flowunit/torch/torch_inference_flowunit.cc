@@ -159,12 +159,13 @@ modelbox::Status TorchInferenceFlowUnit::Open(
 
 modelbox::Status TorchInferenceFlowUnit::ConvertType(
     const std::string &type, c10::ScalarType &torch_type) {
-  try {
-    torch_type = type_map[type];
-    return modelbox::STATUS_OK;
-  } catch (std::exception &e) {
-    return {modelbox::STATUS_FAULT, e.what()};
+  if (type_map.find(type) == type_map.end()) {
+    return {modelbox::STATUS_FAULT, "unsupported type " + type};
   }
+
+  torch_type = type_map[type];
+  return modelbox::STATUS_OK;
+
 }
 
 modelbox::Status TorchInferenceFlowUnit::CreateTorchTensor(
@@ -261,7 +262,6 @@ modelbox::Status TorchInferenceFlowUnit::PreProcess(
     c10::ScalarType torch_type;
     status = ConvertType(type, torch_type);
     if (status != modelbox::STATUS_OK) {
-      MBLOG_ERROR << "input type convert failed. " << status.WrapErrormsgs();
       return {status, "input type convert failed."};
     }
 
