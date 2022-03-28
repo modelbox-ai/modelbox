@@ -28,12 +28,12 @@ add_subdirectory(develop)
 add_subdirectory(python)
 add_subdirectory(java)
 
-set(MODELBOX_SOLUTION_INSTALL_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/modelbox/solution")
+set(MODELBOX_DEMO_INSTALL_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/modelbox/demo")
 
 add_subdirectory(modelbox)
 
-if (${WITH_SOLUTION})
-    add_subdirectory(solution)
+if (${WITH_DEMO})
+    add_subdirectory(demo)
 else()
-    message(STATUS "Skip buiding solutions")
+    message(STATUS "Skip buiding demos")
 endif()

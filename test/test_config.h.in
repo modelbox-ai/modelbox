@@ -35,11 +35,11 @@ namespace modelbox {
 // test driver dir
 #define TEST_DRIVER_DIR             "@TEST_WORKING_DRIVERS_DIR@"
 
-// test solution dir
-#define TEST_SOLUTION_DRIVERS_DIR    "@TEST_SOLUTION_DRIVERS_DIR@"
+// test demo dir
+#define TEST_DEMO_DRIVERS_DIR       "@TEST_DEMO_DRIVERS_DIR@"
 
-// test solution video
-#define TEST_SOLUTION_VIDEO_DIR      "@MODELBOX_SOLUTION_DIR@/video"
+// test demo video
+#define TEST_DEMO_VIDEO_DIR         "@MODELBOX_DEMO_DIR@/video"
 
 // test asserts file
 #define TEST_ASSETS                 "@TEST_ASSETS@"

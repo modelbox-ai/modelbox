@@ -30,12 +30,12 @@
 using namespace modelbox;
 
 const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
-const std::string DEFAULT_SOLUTION_GRAPHS_ROOT =
-    std::string(MODELBOX_SOLUTION_PATH) + "/graphs";
+const std::string DEFAULT_DEMO_GRAPHS_ROOT =
+    std::string(MODELBOX_DEMO_PATH) + "/graphs";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
-const std::string solution_url = "/editor/solution";
+const std::string demo_url = "/editor/demo";
 
 constexpr const char* HTTP_RESP_ERR_GETINFO_FAILED = "Get info failed";
 constexpr const char* HTTP_RESP_ERR_PATH_NOT_FOUND = "Path not found";
@@ -117,8 +117,8 @@ void ModelboxEditorPlugin::RegistHandlers() {
       flowunit_info_url, HttpMethods::GET,
       std::bind(&ModelboxEditorPlugin::HandlerFlowUnitInfoGet, this,
                 std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(solution_url, HttpMethods::GET,
-                      std::bind(&ModelboxEditorPlugin::HandlerSolutionGet, this,
+  listener_->Register(demo_url, HttpMethods::GET,
+                      std::bind(&ModelboxEditorPlugin::HandlerDemoGet, this,
                                 std::placeholders::_1, std::placeholders::_2));
 }
 
@@ -326,14 +326,14 @@ modelbox::Status ModelboxEditorPlugin::GraphFileToJson(const std::string& file,
                                                        std::string& json_data) {
   std::ifstream infile(file);
   if (infile.fail()) {
-    return {modelbox::STATUS_NOTFOUND, "Get solution failed"};
+    return {modelbox::STATUS_NOTFOUND, "Get demo failed"};
   }
   Defer { infile.close(); };
 
   std::string data((std::istreambuf_iterator<char>(infile)),
                    std::istreambuf_iterator<char>());
   if (data.length() <= 0) {
-    return {modelbox::STATUS_BADCONF, "solution file is invalid."};
+    return {modelbox::STATUS_BADCONF, "demo file is invalid."};
   }
 
   std::string extension = file.substr(file.find_last_of(".") + 1);
@@ -342,25 +342,25 @@ modelbox::Status ModelboxEditorPlugin::GraphFileToJson(const std::string& file,
   } else {
     auto ret = modelbox::TomlToJson(data, &json_data);
     if (!ret) {
-      return {modelbox::STATUS_FAULT, "solution format error"};
+      return {modelbox::STATUS_FAULT, "demo format error"};
     }
   }
 
   return modelbox::STATUS_OK;
 }
 
-void ModelboxEditorPlugin::HandlerSolutionGetList(
+void ModelboxEditorPlugin::HandlerDemoGetList(
     const httplib::Request& request, httplib::Response& response) {
   AddSafeHeader(response);
   std::vector<std::string> files;
-  auto ret = modelbox::ListSubDirectoryFiles(solution_path_, "*.toml", &files);
+  auto ret = modelbox::ListSubDirectoryFiles(demo_path_, "*.toml", &files);
   if (!ret) {
     response.status = HttpStatusCodes::NOT_FOUND;
     response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
     return;
   }
 
-  ret = modelbox::ListSubDirectoryFiles(solution_path_, "*.json", &files);
+  ret = modelbox::ListSubDirectoryFiles(demo_path_, "*.json", &files);
   if (!ret) {
     response.status = HttpStatusCodes::NOT_FOUND;
     response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
@@ -368,9 +368,9 @@ void ModelboxEditorPlugin::HandlerSolutionGetList(
   }
 
   nlohmann::json response_json;
-  response_json["solution_list"] = nlohmann::json::array();
+  response_json["demo_list"] = nlohmann::json::array();
   for (const auto& file : files) {
-    nlohmann::json solution;
+    nlohmann::json demo;
     std::string filename = modelbox::GetBaseName(file);
     std::string name = filename;
 
@@ -386,10 +386,10 @@ void ModelboxEditorPlugin::HandlerSolutionGetList(
       }
     }
 
-    solution["desc"] = desc;
-    solution["name"] = name;
-    solution["file"] = file;
-    response_json["solution_list"].push_back(solution);
+    demo["desc"] = desc;
+    demo["name"] = name;
+    demo["file"] = file;
+    response_json["demo_list"].push_back(demo);
   }
 
   response.status = HttpStatusCodes::OK;
@@ -397,56 +397,56 @@ void ModelboxEditorPlugin::HandlerSolutionGetList(
   return;
 }
 
-void ModelboxEditorPlugin::HandlerSolutionGet(const httplib::Request& request,
+void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
                                               httplib::Response& response) {
   try {
-    std::string relative_path = request.path.substr(solution_url.size());
+    std::string relative_path = request.path.substr(demo_url.size());
     std::string pre_path;
-    std::string solution_file;
-    std::string solution_name;
-    SplitPath(relative_path, pre_path, solution_name);
-    if (solution_name.length() == 0) {
-      HandlerSolutionGetList(request, response);
+    std::string demo_file;
+    std::string demo_name;
+    SplitPath(relative_path, pre_path, demo_name);
+    if (demo_name.length() == 0) {
+      HandlerDemoGetList(request, response);
       return;
     }
 
     std::vector<std::string> files;
-    modelbox::ListSubDirectoryFiles(solution_path_, "*.toml", &files);
-    modelbox::ListSubDirectoryFiles(solution_path_, "*.json", &files);
+    modelbox::ListSubDirectoryFiles(demo_path_, "*.toml", &files);
+    modelbox::ListSubDirectoryFiles(demo_path_, "*.json", &files);
     for (const auto& file : files) {
       std::string filename = modelbox::GetBaseName(file);
-      if (filename == solution_name) {
-        solution_file = file;
+      if (filename == demo_name) {
+        demo_file = file;
         break;
       }
     }
 
     AddSafeHeader(response);
-    if (solution_file.length() == 0) {
+    if (demo_file.length() == 0) {
       response.status = HttpStatusCodes::NOT_FOUND;
       response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
       return;
     }
 
-    auto resolve_path = modelbox::PathCanonicalize(solution_file);
+    auto resolve_path = modelbox::PathCanonicalize(demo_file);
     if (resolve_path.length() == 0) {
       response.status = HttpStatusCodes::NOT_FOUND;
       response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
       return;
     }
 
-    solution_file = resolve_path;
-    if (solution_file.find(solution_path_) != 0) {
+    demo_file = resolve_path;
+    if (demo_file.find(demo_path_) != 0) {
       response.status = HttpStatusCodes::NOT_FOUND;
       response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
       return;
     }
 
     std::string json_data;
-    MBLOG_INFO << "load solution file " << solution_file;
-    auto ret = GraphFileToJson(solution_file, json_data);
+    MBLOG_INFO << "load demo file " << demo_file;
+    auto ret = GraphFileToJson(demo_file, json_data);
     if (!ret) {
-      std::string msg = "solution file is invalid.";
+      std::string msg = "demo file is invalid.";
       msg += ret.Errormsg();
       response.status = HttpStatusCodes::NOT_FOUND;
       response.set_content(msg, TEXT_PLAIN);
@@ -458,7 +458,7 @@ void ModelboxEditorPlugin::HandlerSolutionGet(const httplib::Request& request,
     response.set_content(json_data, JSON);
     return;
   } catch (const std::exception& e) {
-    MBLOG_ERROR << "solution get failed, " << e.what();
+    MBLOG_ERROR << "demo get failed, " << e.what();
     response.status = HttpStatusCodes::INTERNAL_ERROR;
     response.set_content(HTTP_RESP_ERR_GETINFO_FAILED, TEXT_PLAIN);
     return;
@@ -503,8 +503,8 @@ bool ModelboxEditorPlugin::ParseConfig(
                                  config->GetString("server.ip", "127.0.0.1"));
   server_port_ = config->GetString("editor.port",
                                    config->GetString("server.port", "1104"));
-  solution_path_ =
-      config->GetString("editor.solution_graphs", DEFAULT_SOLUTION_GRAPHS_ROOT);
+  demo_path_ =
+      config->GetString("editor.demo_graphs", DEFAULT_DEMO_GRAPHS_ROOT);
 
   acl_white_list_ = config->GetStrings("acl.allow");
   return true;
