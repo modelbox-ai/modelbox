@@ -34,8 +34,8 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   bool ParseConfig(std::shared_ptr<modelbox::Configuration> config);
 
  private:
-  void HandlerSolutionGet(const httplib::Request &request, httplib::Response &response);
-  void HandlerSolutionGetList(const httplib::Request &request, httplib::Response &response);
+  void HandlerDemoGet(const httplib::Request &request, httplib::Response &response);
+  void HandlerDemoGetList(const httplib::Request &request, httplib::Response &response);
   void HandlerUIGet(const httplib::Request &request, httplib::Response &response);
   void SendFile(const std::string &file_name, httplib::Response &response);
   void HandlerFlowUnitInfoPut(const httplib::Request &request, httplib::Response &response);
@@ -50,7 +50,7 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
  private:
   std::shared_ptr<modelbox::HttpListener> listener_;
   std::string web_root_;
-  std::string solution_path_;
+  std::string demo_path_;
   std::string server_ip_;
   std::string server_port_;
   std::vector<std::string> acl_white_list_;

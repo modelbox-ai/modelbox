@@ -149,11 +149,11 @@ httplib::Response GetFlowInfoSpecificDir(
   return server.DoRequest(request);
 }
 
-httplib::Response GetSolution(MockServer &server,
-                              const std::string &solution = "") {
-  auto url = server.GetServerURL() + "/editor/solution";
-  if (!solution.empty()) {
-    url = url + "/" + solution;
+httplib::Response GetDemo(MockServer &server,
+                          const std::string &demo = "") {
+  auto url = server.GetServerURL() + "/editor/demo";
+  if (!demo.empty()) {
+    url = url + "/" + demo;
   }
   HttpRequest request(HttpMethods::GET, url);
   return server.DoRequest(request);
@@ -248,14 +248,14 @@ TEST_F(ModelboxServerTest, DeleteJob) {
   EXPECT_EQ(response.status, HttpStatusCodes::NOT_FOUND);
 }
 
-TEST_F(ModelboxServerTest, QuerySolution) {
+TEST_F(ModelboxServerTest, QueryDemo) {
   MockServer server;
-  std::string solution_dir = std::string(TEST_DATA_DIR) + "/solution";
-  CreateDirectory(solution_dir);
-  Defer { remove(solution_dir.c_str()); };
+  std::string demo_dir = std::string(TEST_DATA_DIR) + "/demo";
+  CreateDirectory(demo_dir);
+  Defer { remove(demo_dir.c_str()); };
 
   auto conf = std::make_shared<Configuration>();
-  conf->SetProperty("editor.solution_graphs", solution_dir);
+  conf->SetProperty("editor.demo_graphs", demo_dir);
 
   auto create_file = [](const std::string &file, const std::string &content) {
     std::ofstream out(file, std::ios::trunc);
@@ -271,8 +271,8 @@ TEST_F(ModelboxServerTest, QuerySolution) {
     return true;
   };
 
-  create_file(solution_dir + "/flow1.json", "{\"key\":\"value\"}");
-  create_file(solution_dir + "/flow2.toml", "key = \"value\"");
+  create_file(demo_dir + "/flow1.json", "{\"key\":\"value\"}");
+  create_file(demo_dir + "/flow2.toml", "key = \"value\"");
 
   auto ret = server.Init(conf);
   if (ret == STATUS_NOTSUPPORT) {
@@ -280,21 +280,21 @@ TEST_F(ModelboxServerTest, QuerySolution) {
   }
   server.Start();
   sleep(1);
-  auto response = GetSolution(server);
+  auto response = GetDemo(server);
   EXPECT_EQ(response.status, HttpStatusCodes::OK);
   auto result = nlohmann::json::parse(response.body);
   MBLOG_INFO << response.body;
-  auto solutionlist = result["solution_list"];
-  EXPECT_EQ(solutionlist[0]["name"], "flow2.toml");
-  EXPECT_EQ(solutionlist[1]["name"], "flow1.json");
+  auto demo_list = result["demo_list"];
+  EXPECT_EQ(demo_list[0]["name"], "flow2.toml");
+  EXPECT_EQ(demo_list[1]["name"], "flow1.json");
 
-  response = GetSolution(server, "flow1.json");
+  response = GetDemo(server, "flow1.json");
   EXPECT_EQ(response.status, HttpStatusCodes::OK);
   result = nlohmann::json::parse(response.body);
   MBLOG_INFO << response.body;
   EXPECT_EQ(result["key"], "value");
 
-  response = GetSolution(server, "flow2.toml");
+  response = GetDemo(server, "flow2.toml");
   EXPECT_EQ(response.status, HttpStatusCodes::OK);
   MBLOG_INFO << response.body;
 }

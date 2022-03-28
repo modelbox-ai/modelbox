@@ -24,7 +24,7 @@ enable = true
 # ip = "127.0.0.1"
 # port = "1104"
 root = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/www"
-solution_graphs = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/solution/graphs"
+demo_graphs = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/demo/graphs"
 
 [log]
 # log level, DEBUG, INFO, NOTICE, WARN, ERROR, FATAL, OFF

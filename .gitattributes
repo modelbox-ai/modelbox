@@ -1,3 +1,0 @@
-src/solution/flowunit/emotion_detection/emotion_infer/emotion.pt filter=lfs diff=lfs merge=lfs -text
-src/solution/flowunit/emotion_detection/face_detect/face_detector.pt filter=lfs diff=lfs merge=lfs -text
-src/solution/graphs/emotion_detection/emotion_test_video.mp4 filter=lfs diff=lfs merge=lfs -text

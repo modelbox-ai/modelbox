@@ -19,6 +19,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # 替换的环境变量
 set(THIRDPARTY_DOWNLOAD_DIR @THIRDPARTY_DOWNLOAD_DIR@)
+set(WITH_DEMO @WITH_DEMO@)
 
 # 预先下载代码库列表，此处仅包含需要使用ADD_SUBDIRECTORY添加的外部项目。
 include(ExternalProject)
@@ -111,3 +112,16 @@ ExternalProject_Add(
   INSTALL_COMMAND   ""
   TEST_COMMAND      ""
 )
+
+# demo files
+if (${WITH_DEMO})
+  ExternalProject_Add(
+    emotion_demo_files
+    URL                @LOCAL_PACKAGE_PATH@/emotion_demo_files.zip
+    SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/demo/emotion_demo_files
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND     ""
+    INSTALL_COMMAND   ""
+    TEST_COMMAND      ""
+  )
+endif()
