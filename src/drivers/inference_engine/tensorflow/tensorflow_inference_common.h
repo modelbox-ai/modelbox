@@ -36,36 +36,10 @@
 constexpr const char *INFERENCE_TYPE = "tensorflow";
 constexpr const char *TAGS = "serve";
 
-class TFGraphCache;
-class TFGraph {
- public:
-  TFGraph(TF_Graph *graph);
-  virtual ~TFGraph();
-
-  TF_Graph *Get();
-
- private:
-  TFGraph(){};
-  TF_Graph *graph_ = nullptr;
-};
-
-class TFGraphCache {
- public:
-  TFGraphCache();
-  virtual ~TFGraphCache();
-
-  std::string GenerateKey(const void *data, size_t data_len);
-  std::shared_ptr<modelbox::RefInsertTransaction<TFGraph>> InsertAndGet(
-      const std::string &key);
-
- private:
-  modelbox::RefCache<TFGraph> cache_;
-};
-
 class InferenceTensorflowParams {
  public:
   InferenceTensorflowParams()
-      : graph_(nullptr), session(nullptr), options(nullptr), status(nullptr){};
+      : graph(nullptr), session(nullptr), options(nullptr), status(nullptr){};
   virtual ~InferenceTensorflowParams(){};
 
   modelbox::Status Clear();
@@ -77,7 +51,7 @@ class InferenceTensorflowParams {
   int device{0};
 
   // Tensorflow Options
-  std::shared_ptr<TFGraph> graph_;
+  TF_Graph *graph;
   TF_Session *session;
   TF_SessionOptions *options;
   TF_Status *status;
@@ -125,7 +99,7 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
   modelbox::Status SetUpDynamicLibrary(
       std::shared_ptr<modelbox::Configuration> config);
 
-  modelbox::Status ReadBufferFromFile(const std::string file, TF_Buffer *buf);
+  modelbox::Status ReadBufferFromFile(const std::string &file, TF_Buffer *buf);
   modelbox::Status InitConfig(
       const std::shared_ptr<modelbox::Configuration> &fu_config);
   modelbox::Status LoadGraph(const std::string &model_path);
@@ -138,13 +112,13 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
       std::shared_ptr<modelbox::BufferList> &output_buffer_list,
       const std::vector<size_t> &shape_vector, void *tensor_data,
       size_t tensor_byte, int index);
+  modelbox::Status GetTFOperation(const std::string &name, TF_Output &op);
   modelbox::Status FillInput(
       const std::vector<modelbox::FlowUnitInput> &flowunit_input_list);
   modelbox::Status FillOutput(
       const std::vector<modelbox::FlowUnitOutput> &flowunit_output_list);
   modelbox::Status NewSession(bool save_model, const std::string &model_entry);
   bool IsSaveModelType(const std::string &model_path);
-
   InferenceTensorflowParams params_;
   std::string plugin_;
   void *driver_handler_{nullptr};
@@ -152,7 +126,6 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
   std::shared_ptr<InferencePlugin> inference_plugin_{nullptr};
   TensorflowProcess pre_process_{nullptr};
   TensorflowProcess post_process_{nullptr};
-};
+}; 
 
-extern std::shared_ptr<TFGraphCache> GetTFGraphCache();
 #endif  // MODELBOX_TENSORFLOW_INFERENCE_COMMON_H_

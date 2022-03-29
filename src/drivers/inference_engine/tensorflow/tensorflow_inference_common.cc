@@ -26,35 +26,6 @@ static std::map<std::string, TF_DataType> type_map = {
     {"FLOAT", TF_FLOAT}, {"DOUBLE", TF_DOUBLE}, {"INT", TF_INT32},
     {"UINT8", TF_UINT8}, {"LONG", TF_INT64},    {"STRING", TF_STRING}};
 
-TFGraph::TFGraph(TF_Graph *graph) { graph_ = graph; }
-
-TF_Graph *TFGraph::Get() { return graph_; }
-
-TFGraph::~TFGraph() {
-  if (graph_) {
-    TF_DeleteGraph(graph_);
-  }
-}
-
-TFGraphCache::TFGraphCache() {}
-TFGraphCache::~TFGraphCache() {}
-
-std::string TFGraphCache::GenerateKey(const void *data, size_t data_len) {
-  std::vector<unsigned char> output;
-  auto status = modelbox::HmacEncode("sha256", data, data_len, &output);
-  if (!status) {
-    modelbox::StatusError = status;
-    return "";
-  }
-
-  return modelbox::HmacToString(output.data(), output.size());
-}
-
-std::shared_ptr<modelbox::RefInsertTransaction<TFGraph>>
-TFGraphCache::InsertAndGet(const std::string &key) {
-  return cache_.InsertAndGet(key);
-}
-
 void DeleteTensor(TF_Tensor *tensor) {
   if (tensor == nullptr) {
     return;
@@ -94,11 +65,7 @@ modelbox::Status InferenceTensorflowParams::Clear() {
   if (nullptr != session && nullptr != status) {
     TF_CloseSession(session, status);
     if (TF_GetCode(status) != TF_OK) {
-      auto tf_status = TF_Message(status);
-      if (tf_status == nullptr) {
-        tf_status = "null";
-      }
-      auto err_msg = "close session failed: " + std::string(tf_status);
+      auto err_msg = "close session failed: " + std::string(TF_Message(status));
       MBLOG_ERROR << err_msg;
       return {modelbox::STATUS_FAULT, err_msg};
     }
@@ -116,9 +83,13 @@ modelbox::Status InferenceTensorflowParams::Clear() {
 
   if (nullptr != status) {
     TF_DeleteStatus(status);
+    status = nullptr;
   }
 
-  graph_ = nullptr;
+  if (graph != nullptr) {
+    TF_DeleteGraph(graph);
+    graph = nullptr;
+  }
 
   return modelbox::STATUS_OK;
 }
@@ -135,8 +106,8 @@ InferenceTensorflowFlowUnit::~InferenceTensorflowFlowUnit() {
   }
 };
 
-modelbox::Status InferenceTensorflowFlowUnit::ReadBufferFromFile(const std::string file,
-                                                       TF_Buffer *buf) {
+modelbox::Status InferenceTensorflowFlowUnit::ReadBufferFromFile(
+    const std::string &file, TF_Buffer *buf) {
   int64_t model_len = 0;
   auto config = std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
                     this->GetFlowUnitDesc())
@@ -159,7 +130,8 @@ modelbox::Status InferenceTensorflowFlowUnit::ReadBufferFromFile(const std::stri
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::LoadGraph(const std::string &model_path) {
+modelbox::Status InferenceTensorflowFlowUnit::LoadGraph(
+    const std::string &model_path) {
   modelbox::Status status;
   MBLOG_INFO << "model path: " << model_path;
   if (model_path.empty()) {
@@ -177,42 +149,25 @@ modelbox::Status InferenceTensorflowFlowUnit::LoadGraph(const std::string &model
     return {status, "load model failed."};
   }
 
-  auto cache = GetTFGraphCache();
-  auto key = cache->GenerateKey(buffer->data, buffer->length);
-  if (key.length() == 0) {
-    return {modelbox::STATUS_FAULT, "Generate graph key failed."};
-  }
-
-  auto trans = cache->InsertAndGet(key);
-  if (trans == nullptr) {
-    return {modelbox::STATUS_BUSY, "insert graph to cache failed."};
-  }
-
-  auto graph_shared = trans->GetData();
-  if (graph_shared != nullptr) {
-    params_.graph_ = graph_shared;
-    return modelbox::STATUS_OK;
-  }
-
-  auto graph = TF_NewGraph();
-  if (nullptr == graph) {
+  params_.graph = TF_NewGraph();
+  if (nullptr == params_.graph) {
     return {modelbox::STATUS_FAULT, "TF_NewGraph() failed."};
   }
 
   auto opts = TF_NewImportGraphDefOptions();
   if (nullptr == opts) {
-    TF_DeleteGraph(graph);
-    return {modelbox::STATUS_FAULT, "TF_NewImportGraphDefOptions() failed."};
+    TF_DeleteGraph(params_.graph);
+    auto err_msg = "TF_NewImportGraphDefOptions() failed: " +
+                   std::string(TF_Message(params_.status));
+    MBLOG_ERROR << err_msg;
+    return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  TF_GraphImportGraphDef(graph, buffer, opts, params_.status);
+  TF_GraphImportGraphDef(params_.graph, buffer, opts, params_.status);
   if (TF_GetCode(params_.status) != TF_OK) {
-    TF_DeleteGraph(graph);
-    auto tf_status = TF_Message(params_.status);
-    if (tf_status == nullptr) {
-      tf_status = "null";
-    }
-    auto err_msg = "TF_GraphImportGraphDef failed: " + std::string(tf_status);
+    TF_DeleteGraph(params_.graph);
+    auto err_msg = "TF_GraphImportGraphDef failed: " +
+                   std::string(TF_Message(params_.status));
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -220,23 +175,36 @@ modelbox::Status InferenceTensorflowFlowUnit::LoadGraph(const std::string &model
   TF_DeleteImportGraphDefOptions(opts);
 
   if (TF_GetCode(params_.status) != TF_OK) {
-    TF_DeleteGraph(graph);
-    auto tf_status = TF_Message(params_.status);
-    if (tf_status == nullptr) {
-      tf_status = "null";
+    TF_DeleteGraph(params_.graph);
+    auto err_msg =
+        "loadGraph failed: " + std::string(TF_Message(params_.status));
+    MBLOG_ERROR << err_msg;
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status InferenceTensorflowFlowUnit::GetTFOperation(
+    const std::string &name, TF_Output &op) {
+  auto port_info = modelbox::StringSplit(name, ':');
+  int index = 0;
+  try {
+    if (port_info.size() == 2) {
+      index = std::stoi(port_info[1]);
     }
-    auto err_msg = "loadGraph failed: " + std::string(tf_status);
+  } catch (const std::exception &e) {
+    MBLOG_WARN << "Convert id " << port_info[1] << " failed, err " << e.what()
+               << "; use index 0 as default.";
+  }
+
+  op = TF_Output{TF_GraphOperationByName(params_.graph, port_info[0].c_str()),
+                 index};
+  if (nullptr == op.oper) {
+    auto err_msg = "can't init op " + name + ":" + std::to_string(index);
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  graph_shared = std::make_shared<TFGraph>(graph);
-  auto ret = trans->UpdateData(graph_shared);
-  if (ret == nullptr) {
-    auto err_msg = "update graph data  failed: ";
-    return {modelbox::STATUS_FAULT, err_msg};
-  }
-
-  params_.graph_ = ret;
   return modelbox::STATUS_OK;
 }
 
@@ -247,12 +215,12 @@ modelbox::Status InferenceTensorflowFlowUnit::FillInput(
     auto input_type = input_item.GetPortType();
     params_.input_name_list_.push_back(input_name);
     params_.input_type_list_.push_back(input_type);
-    auto input_op = TF_Output{
-        TF_GraphOperationByName(params_.graph_->Get(), input_name.c_str()), 0};
-    if (nullptr == input_op.oper) {
-      auto err_msg = "can't init input_op " + input_name;
-      return {modelbox::STATUS_FAULT, err_msg};
+    TF_Output input_op;
+    auto status = GetTFOperation(input_name, input_op);
+    if (status != modelbox::STATUS_OK) {
+      return status;
     }
+
     params_.input_op_list.push_back(input_op);
   }
 
@@ -266,11 +234,10 @@ modelbox::Status InferenceTensorflowFlowUnit::FillOutput(
     auto output_type = output_item.GetPortType();
     params_.output_name_list_.push_back(output_name);
     params_.output_type_list_.push_back(output_type);
-    auto output_op = TF_Output{
-        TF_GraphOperationByName(params_.graph_->Get(), output_name.c_str()), 0};
-    if (nullptr == output_op.oper) {
-      auto err_msg = "can't init output_op: " + output_name;
-      return {modelbox::STATUS_FAULT, err_msg};
+    TF_Output output_op;
+    auto status = GetTFOperation(output_name, output_op);
+    if (status != modelbox::STATUS_OK) {
+      return status;
     }
     params_.output_op_list.push_back(output_op);
   }
@@ -278,8 +245,8 @@ modelbox::Status InferenceTensorflowFlowUnit::FillOutput(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::NewSession(bool is_save_model,
-                                               const std::string &model_entry) {
+modelbox::Status InferenceTensorflowFlowUnit::NewSession(
+    bool is_save_model, const std::string &model_entry) {
   params_.status = TF_NewStatus();
   if (nullptr == params_.status) {
     return {modelbox::STATUS_FAULT, "TF_NewStatus failed."};
@@ -293,11 +260,8 @@ modelbox::Status InferenceTensorflowFlowUnit::NewSession(bool is_save_model,
   TF_SetConfig(params_.options, (void *)params_.config_proto_binary_.data(),
                params_.config_proto_binary_.size(), params_.status);
   if (TF_GetCode(params_.status) != TF_OK) {
-    auto tf_status = TF_Message(params_.status);
-    if (tf_status == nullptr) {
-      tf_status = "null";
-    }
-    auto err_msg = "TF_SetConfig failed: " + std::string(tf_status);
+    auto err_msg =
+        "TF_SetConfig failed: " + std::string(TF_Message(params_.status));
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
@@ -308,49 +272,41 @@ modelbox::Status InferenceTensorflowFlowUnit::NewSession(bool is_save_model,
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    TF_Graph *graph = TF_NewGraph();
-    if (graph == nullptr) {
+    params_.graph = TF_NewGraph();
+    if (params_.graph == nullptr) {
       auto err_msg = "TF_NewGraph graph failed.";
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
     params_.session = TF_LoadSessionFromSavedModel(
-        params_.options, nullptr, model_entry.c_str(), &TAGS, 1, graph,
+        params_.options, nullptr, model_entry.c_str(), &TAGS, 1, params_.graph,
         metagraph, params_.status);
     Defer { TF_DeleteBuffer(metagraph); };
 
     if (TF_GetCode(params_.status) != TF_OK) {
-      TF_DeleteGraph(graph);
-
-      auto tf_status = TF_Message(params_.status);
-      if (tf_status == nullptr) {
-        tf_status = "null";
-      }
-      auto err_msg =
-          "TF_LoadSessionFromSavedModel failed: " + std::string(tf_status);
+      TF_DeleteGraph(params_.graph);
+      auto err_msg = "TF_LoadSessionFromSavedModel failed: " +
+                     std::string(TF_Message(params_.status));
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    params_.graph_ = std::make_shared<TFGraph>(graph);
     return modelbox::STATUS_OK;
   }
 
   params_.session =
-      TF_NewSession(params_.graph_->Get(), params_.options, params_.status);
+      TF_NewSession(params_.graph, params_.options, params_.status);
 
   if (TF_GetCode(params_.status) != TF_OK) {
-    auto tf_status = TF_Message(params_.status);
-    if (tf_status == nullptr) {
-      tf_status = "null";
-    }
-    auto err_msg = "TF_NewSession failed: " + std::string(tf_status);
+    auto err_msg =
+        "TF_NewSession failed: " + std::string(TF_Message(params_.status));
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
   return modelbox::STATUS_OK;
 }
 
-bool InferenceTensorflowFlowUnit::IsSaveModelType(const std::string &model_path) {
+bool InferenceTensorflowFlowUnit::IsSaveModelType(
+    const std::string &model_path) {
   size_t found = model_path.find(".pb");
   if (found == std::string::npos) {
     return true;
@@ -376,10 +332,8 @@ modelbox::Status InferenceTensorflowFlowUnit::InitConfig(
   auto inference_desc_ =
       std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
           this->GetFlowUnitDesc());
-  const std::vector<modelbox::FlowUnitInput> &flowunit_input_list =
-      inference_desc_->GetFlowUnitInput();
-  const std::vector<modelbox::FlowUnitOutput> &flowunit_output_list =
-      inference_desc_->GetFlowUnitOutput();
+  auto flowunit_input_list = inference_desc_->GetFlowUnitInput();
+  auto flowunit_output_list = inference_desc_->GetFlowUnitOutput();
 
   std::string model_path = inference_desc_->GetModelEntry();
   params_.status = TF_NewStatus();
@@ -497,7 +451,6 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
     TF_DataType tf_type;
     status = ConvertType(type, tf_type);
     if (status != modelbox::STATUS_OK) {
-      MBLOG_ERROR << "input type convert failed. " << status.WrapErrormsgs();
       return {status, "input type convert failed."};
     }
 
@@ -522,8 +475,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
     std::vector<int64_t> tf_dims{static_cast<int64_t>(input_buf->Size())};
     copy(buffer_shape.begin(), buffer_shape.end(), back_inserter(tf_dims));
 
-    auto buf_list_ptr =
-        new std::shared_ptr<modelbox::BufferList>(input_buf);
+    auto buf_list_ptr = new std::shared_ptr<modelbox::BufferList>(input_buf);
     TF_Tensor *input_tensor = TF_NewTensor(
         tf_type, tf_dims.data(), tf_dims.size(),
         const_cast<void *>(input_buf->ConstData()), input_buf->GetBytes(),
@@ -718,14 +670,14 @@ modelbox::Status InferenceTensorflowFlowUnit::CreateOutputBufferList(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::ConvertType(const std::string &type,
-                                                TF_DataType &TFType) {
-  try {
-    TFType = type_map[type];
-    return modelbox::STATUS_OK;
-  } catch (std::exception &e) {
-    return {modelbox::STATUS_FAULT, e.what()};
+modelbox::Status InferenceTensorflowFlowUnit::ConvertType(
+    const std::string &type, TF_DataType &TFType) {
+  if (type_map.find(type) == type_map.end()) {
+    return {modelbox::STATUS_FAULT, "unsupported type " + type};
   }
+
+  TFType = type_map[type];
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::Inference(
@@ -737,20 +689,20 @@ modelbox::Status InferenceTensorflowFlowUnit::Inference(
                 params_.output_name_list_.size(), nullptr, 0, nullptr,
                 params_.status);
   if (TF_GetCode(params_.status) != TF_OK) {
-    auto tf_status = TF_Message(params_.status);
-    if (tf_status == nullptr) {
-      tf_status = "null";
-    }
-    auto err_msg = "doInference failed: " + std::string(tf_status);
+    auto err_msg =
+        "doInference failed: " + std::string(TF_Message(params_.status));
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status InferenceTensorflowFlowUnit::Close() { return params_.Clear(); }
+modelbox::Status InferenceTensorflowFlowUnit::Close() {
+  return params_.Clear();
+}
 
-void InferenceTensorflowFlowUnitDesc::SetModelEntry(const std::string model_entry) {
+void InferenceTensorflowFlowUnitDesc::SetModelEntry(
+    const std::string model_entry) {
   model_entry_ = model_entry;
 }
 
