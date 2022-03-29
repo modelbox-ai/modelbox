@@ -20,6 +20,7 @@
 
 #include "modelbox/server/http_helper.h"
 #include "modelbox/server/plugin.h"
+#include <nlohmann/json.hpp>
 
 class ModelboxEditorPlugin : public modelbox::Plugin {
  public:
@@ -42,11 +43,30 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   void HandlerFlowUnitInfoGet(const httplib::Request &request, httplib::Response &response);
   void HandlerFlowUnitInfo(const httplib::Request &request, httplib::Response &response,
                            std::shared_ptr<modelbox::Configuration> config);
+  void HandlerFlowUnitPut(const httplib::Request &request, httplib::Response &response);
+  void HandlerFlowUnitGet(const httplib::Request &request, httplib::Response &response);
+  void HandlerProjectPut(const httplib::Request &request, httplib::Response &response);
+  void HandlerProjectGet(const httplib::Request &request, httplib::Response &response);
+  void HandlerDirectoryGet(const httplib::Request &request, httplib::Response &response);
+  void HandlerProject(const httplib::Request &request, httplib::Response &response,
+                           std::shared_ptr<modelbox::Configuration> config);
+  void SaveAllProject(const httplib::Request &request, httplib::Response &response);
+  void SaveSolutionFlowunitToProject(const httplib::Request &request, httplib::Response &response);
+  
+  modelbox::Status SaveGraphFile(const std::string& job_id,
+                                 const std::string& toml_graph,
+                                 const std::string& path);
+  void ConfigJobid(std::string& job_id);
   bool GetHtmlFile(const std::string &in_file, std::string *out_file, std::string *redirect_file);
   modelbox::Status GraphFileToJson(const std::string &file,
                                  std::string &json_data);
   bool CheckBlackDir(std::string dir);
-
+  modelbox::Status CreateFlowunitByTool(const httplib::Request& request, httplib::Response& response);
+  void HandlerArgs(nlohmann::json &body, std::string &args, std::string key, std::string arg);
+  modelbox::Status execCommand(char * argv[]);
+  modelbox::Status mkdirProjectPath(std::string &path);
+  modelbox::Status CreateProjectWithoutModel(nlohmann::json& body, httplib::Response& response);
+  std::string GetFlwounitPathByGraphPath(std::string graph);
  private:
   std::shared_ptr<modelbox::HttpListener> listener_;
   std::string web_root_;

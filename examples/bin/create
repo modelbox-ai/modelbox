@@ -659,7 +659,6 @@ main() {
 			shift 2;;
 		--desc)
 			desc="$2"
-			let num=0
 			str=''
 			shift 2;;
 		--entry)
@@ -694,7 +693,7 @@ main() {
 function handle_python_out_array(){
 	if [[ ${#out_array[@]} -eq 0 ]]; then
 		# delete outport
-		sed -i '41,46d' $flowunit_python/$name.toml
+		sed -i '42,45d' $flowunit_python/$name.toml
 	fi
 	for(( i=0;i<${#out_array[@]};i++)) do
 		IFS=","

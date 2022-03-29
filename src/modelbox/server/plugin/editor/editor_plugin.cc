@@ -13,13 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "editor_plugin.h"
 
 #include <dirent.h>
+#include <modelbox/base/popen.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
+#include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
+#include <regex>
 #include <toml.hpp>
+#include <typeinfo>
+#include <vector>
 
 #include "config.h"
 #include "modelbox/base/log.h"
@@ -31,16 +39,27 @@ using namespace modelbox;
 
 const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
 const std::string DEFAULT_SOLUTION_GRAPHS_ROOT =
-    std::string(MODELBOX_SOLUTION_PATH) + "/graphs";
+    std::string(MODELBOX_SOLUTION_PATH) + "graphs";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
 const std::string solution_url = "/editor/solution";
+const std::string project_url = "/editor/project";
+const std::string save_project_url = "/editor/graph";
+const std::string flowunit_url = "/editor/flowunit";
+const std::string search_url = "/editor/search";
+// const std::string solution_project_url = "/editor/solutionToProject";
+// const std::string solution_project_url =
+// "/editor/solutionToProject";获取template列表
+
+const char* HTTP_GRAPH_FORMAT_JSON = "json";
+const char* HTTP_GRAPH_FORMAT_TOML = "toml";
 
 constexpr const char* HTTP_RESP_ERR_GETINFO_FAILED = "Get info failed";
 constexpr const char* HTTP_RESP_ERR_PATH_NOT_FOUND = "Path not found";
 constexpr const char* HTTP_RESP_ERR_PATH_NOT_FILE = "Path not a file";
 constexpr const char* HTTP_RESP_ERR_CANNOT_READ = "Can not read file";
+constexpr int MAX_FILES = 1 << 16;
 
 const std::string ModelboxGetMimeType(const std::string& file) {
   std::string ext = file.substr(file.find_last_of(".") + 1);
@@ -120,6 +139,22 @@ void ModelboxEditorPlugin::RegistHandlers() {
   listener_->Register(solution_url, HttpMethods::GET,
                       std::bind(&ModelboxEditorPlugin::HandlerSolutionGet, this,
                                 std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(project_url, HttpMethods::GET,
+                      std::bind(&ModelboxEditorPlugin::HandlerProjectGet, this,
+                                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(
+      search_url, HttpMethods::GET,
+      std::bind(&ModelboxEditorPlugin::HandlerDirectoryGet, this,
+                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(project_url, HttpMethods::PUT,
+                      std::bind(&ModelboxEditorPlugin::HandlerProjectPut, this,
+                                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(flowunit_url, HttpMethods::PUT,
+                      std::bind(&ModelboxEditorPlugin::HandlerFlowUnitPut, this,
+                                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(save_project_url, HttpMethods::PUT,
+                      std::bind(&ModelboxEditorPlugin::SaveAllProject, this,
+                                std::placeholders::_1, std::placeholders::_2));
 }
 
 bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
@@ -167,7 +202,6 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoGet(
 void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
     const httplib::Request& request, httplib::Response& response) {
   modelbox::ConfigurationBuilder config_builder;
-
   try {
     auto body = nlohmann::json::parse(request.body);
     if (body.find("skip-default") != body.end()) {
@@ -184,7 +218,6 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
           dirs.push_back(dir);
         }
       }
-
       config_builder.AddProperty("driver." + std::string(DRIVER_DIR), dirs);
     }
   } catch (const std::exception& e) {
@@ -197,6 +230,637 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
   }
 
   return HandlerFlowUnitInfo(request, response, config_builder.Build());
+}
+
+modelbox::Status ModelboxEditorPlugin::CreateFlowunitByTool(
+    const httplib::Request& request, httplib::Response& response) {
+  auto body = nlohmann::json::parse(request.body);
+  std::string cmd = "modelbox-tool create -t ";
+
+  std::string program_language;
+  if (body.find("program_language") != body.end()) {
+    program_language = body["program_language"].get<std::string>();
+  } else {
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content("flowunit type is required", TEXT_PLAIN);
+    return STATUS_FAULT;
+  }
+
+  std::string flowunit_name;
+  if (body.find("flowunit_name") != body.end()) {
+    flowunit_name = body["flowunit_name"].get<std::string>();
+  } else {
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content("flowunit name is required", TEXT_PLAIN);
+    return STATUS_FAULT;
+  }
+
+  std::string path;
+  if (body.find("path") != body.end()) {
+    path = body["path"].get<std::string>();
+  } else {
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content("project path is required", TEXT_PLAIN);
+    return STATUS_FAULT;
+  }
+  cmd += program_language + " -n " + flowunit_name + " -p " + path;
+
+  HandlerArgs(body, cmd, "flowunit_type", "--type");
+  HandlerArgs(body, cmd, "device_type", "--device");
+  HandlerArgs(body, cmd, "desc", "--desc");
+  HandlerArgs(body, cmd, "model_entry", "--entry");
+  HandlerArgs(body, cmd, "plugin", "--plugin");
+  HandlerArgs(body, cmd, "flowunit_virtual_type", "--virtual");
+
+  auto port = body["port_infos"].get<nlohmann::json>();
+  std::string p_type;
+  std::string dev_type;
+  std::string data_type;
+  std::string p_name;
+  std::string p_info;
+  for (auto& p : port.items()) {
+    if (p.key().empty()) {
+      response.status = HttpStatusCodes::INTERNAL_ERROR;
+      std::string errmsg = "port info has empty value";
+      response.set_content(errmsg, TEXT_PLAIN);
+      return modelbox::STATUS_FAULT;
+    }
+
+    if (p.value().find("port_name") != p.value().end()) {
+      p_name = p.value()["port_name"].get<std::string>();
+    }
+    if (p.value().find("port_type") != p.value().end()) {
+      p_type = p.value()["port_type"].get<std::string>();
+    }
+    if (p.value().find("data_type") != p.value().end()) {
+      data_type = p.value()["data_type"].get<std::string>();
+    }
+    if (p.value().find("device_type") != p.value().end()) {
+      dev_type = p.value()["device_type"].get<std::string>();
+    }
+
+    if (p_name.length() > 0) {
+      if (p_type.compare("input") == 0) {
+        cmd += " --in ";
+        p_info = "name=" + p_name;
+        if (data_type.length() > 0) {
+          p_info = p_info + ",type=" + data_type;
+        }
+        if (dev_type.length() > 0) {
+          p_info = p_info + ",device=" + dev_type;
+        }
+      } else if (p_type.compare("output") == 0) {
+        cmd += " --out ";
+        p_info = "name=" + p_name;
+        if (data_type.length() > 0) {
+          p_info = p_info + ",type=" + data_type;
+        }
+      }
+    }
+    cmd += p_info;
+  }
+  Popen p;
+  p.Open(cmd, 5000, "re");
+
+  std::string out;
+  std::string err;
+  auto ret = p.ReadAll(&out, &err);
+  if (ret != 0) {
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content(err, TEXT_PLAIN);
+    return STATUS_FAULT;
+  }
+
+  ret = p.Close();
+  if (ret != 256) {
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content("Errcode: " + ret, TEXT_PLAIN);
+    return modelbox::STATUS_FAULT;
+  }
+
+  return STATUS_FAULT;
+}
+
+void ModelboxEditorPlugin::HandlerArgs(nlohmann::json& body, std::string& args,
+                                       std::string key, std::string arg) {
+  if (body.find(key) != body.end() &&
+      body[key].get<std::string>().length() > 0) {
+    std::string value = body[key].get<std::string>();
+    if (key == "desc") {
+      value = "\"" + value + "\"";
+    }
+    args += " " + arg;
+    args += " " + value;
+  }
+}
+
+void ModelboxEditorPlugin::HandlerFlowUnitPut(const httplib::Request& request,
+                                              httplib::Response& response) {
+  try {
+    auto status = CreateFlowunitByTool(request, response);
+    if (status != modelbox::STATUS_SUCCESS) {
+      response.status = HttpStatusCodes::BAD_REQUEST;
+      response.set_content("Failed to create Flowunit", TEXT_PLAIN);
+      return;
+    }
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content(errmsg, TEXT_PLAIN);
+    AddSafeHeader(response);
+    return;
+  }
+
+  response.status = HttpStatusCodes::CREATED;
+  return;
+}
+
+modelbox::Status ModelboxEditorPlugin::execCommand(char* argv[]) {
+  auto ret = execvp(argv[0], argv);
+  if (ret < 0) {
+    return modelbox::STATUS_FAULT;
+  } else {
+    return modelbox::STATUS_SUCCESS;
+  }
+}
+
+void ModelboxEditorPlugin::SaveAllProject(const httplib::Request& request,
+                                          httplib::Response& response) {
+  try {
+    auto body = nlohmann::json::parse(request.body);
+    auto jobid = body["job_id"].get<std::string>();
+    auto graph_data = body["job_graph"].dump();
+    auto path = body["graphPath"].get<std::string>();
+    std::string toml_data;
+
+    MBLOG_INFO << "Save All Project Info: " << path;
+    AddSafeHeader(response);
+
+    if (modelbox::JsonToToml(graph_data, &toml_data) == false) {
+      std::string errmsg = "Graph data is invalid.";
+      response.status = HttpStatusCodes::INTERNAL_ERROR;
+      response.set_content(errmsg, TEXT_PLAIN);
+    }
+    ConfigJobid(jobid);
+    // save graph data
+    auto ret = SaveGraphFile(jobid, toml_data, path);
+    if (!ret) {
+      std::string errmsg = "Failed to save file.";
+      response.status = HttpStatusCodes::INTERNAL_ERROR;
+      response.set_content(errmsg, TEXT_PLAIN);
+      return;
+    }
+
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content(errmsg, TEXT_PLAIN);
+    return;
+  }
+
+  response.status = HttpStatusCodes::OK;
+}
+
+void ModelboxEditorPlugin::SaveSolutionFlowunitToProject(
+    const httplib::Request& request, httplib::Response& response) {
+  try {
+    auto body = nlohmann::json::parse(request.body);
+    auto dirs = body["dirs"];
+    std::string flowunitPath = body["flowunitPath"].get<std::string>();
+    MBLOG_INFO << "Save Solution Flowunit To Project: " << flowunitPath;
+    AddSafeHeader(response);
+    std::vector<std::string> args;
+    std::string ele;
+    for (auto& elem : dirs) {
+      pid_t pid = vfork();
+
+      if (pid < 0) {
+        MBLOG_INFO << "Fail to create subprocess";
+        return;
+      } else if (!pid) {
+        args = {"cp", "-r"};
+        ele = elem.get<std::string>();
+        args.push_back(ele);
+        args.push_back(flowunitPath);
+        char* argv[args.size() + 1];
+        for (size_t i = 0; i < args.size(); i++) {
+          argv[i] = (char*)args[i].c_str();
+        }
+        argv[args.size()] = 0;
+        auto ret = execvp(argv[0], argv);
+        if (ret < 0) {
+          exit(0);
+          return;
+        }
+      }
+    }
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    return;
+  }
+
+  response.status = HttpStatusCodes::OK;
+}
+
+void ModelboxEditorPlugin::ConfigJobid(std::string& job_id) {
+  auto type = ".toml";
+  if (job_id.rfind(type) == std::string::npos) {
+    job_id = job_id + type;
+  }
+}
+
+modelbox::Status ModelboxEditorPlugin::SaveGraphFile(
+    const std::string& job_id, const std::string& toml_graph,
+    const std::string& path) {
+  auto ret = modelbox::CreateDirectory(path);
+  if (!ret) {
+    return {modelbox::STATUS_FAULT,
+            std::string("create graph directory failed, ") +
+                modelbox::StrError(errno) + ", path: " + path};
+  }
+
+  std::vector<std::string> list_files;
+  ret = modelbox::ListSubDirectoryFiles(path, "*", &list_files);
+  if (!ret) {
+    return {modelbox::STATUS_FAULT,
+            std::string("list subdirectoryfiles failed, ") +
+                modelbox::StrError(errno) + ", path: " + path};
+  }
+
+  while (list_files.size() > MAX_FILES) {
+    size_t earliest_file_index = modelbox::FindTheEarliestFileIndex(list_files);
+    auto& earliest_file_path = list_files[earliest_file_index];
+    MBLOG_WARN << "the graph file nums is more than " << MAX_FILES
+               << ", remove the earliest access one, path: "
+               << earliest_file_path;
+    auto ret = remove(earliest_file_path.c_str());
+    if (ret) {
+      return {modelbox::STATUS_FAULT,
+              std::string("remove earlier access file failed, ") +
+                  modelbox::StrError(errno)};
+    }
+    list_files.erase(list_files.begin() + earliest_file_index);
+  }
+
+  std::string path_graph = path + "/" + job_id;
+  MBLOG_INFO << "path_graph: " << path_graph;
+  std::ofstream out(path_graph, std::ios::trunc);
+  if (out.fail()) {
+    return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
+                                        modelbox::StrError(errno) +
+                                        ", path: " + path};
+  }
+
+  chmod(path.c_str(), 0600);
+  Defer { out.close(); };
+
+  out << toml_graph;
+  if (out.fail()) {
+    return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
+                                        modelbox::StrError(errno) +
+                                        ", path: " + path};
+  }
+
+  return modelbox::STATUS_OK;
+}
+
+void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
+                                             httplib::Response& response) {
+  try {
+    std::string relative_path = request.path;
+    int pos_1 = relative_path.find("\"");
+    int pos_2 = relative_path.find_last_of("\"");
+    std::string project_path = "";
+    project_path = relative_path.substr(pos_1 + 1, pos_2 - pos_1 - 1);
+    MBLOG_INFO << "get project path: " << project_path;
+    AddSafeHeader(response);
+
+    auto temp = modelbox::StringSplit(project_path, '/');
+    auto project_name = temp[temp.size() - 1];
+    MBLOG_INFO << "loading project: " << project_name;
+    nlohmann::json json;
+    std::string result;
+    json["projectName"] = project_name;
+    json["path"] = project_path.substr(0, project_path.find_last_of("/\\"));
+    json["flowunits"] = nlohmann::json::array();
+    json["graphs"] = nlohmann::json::array();
+
+    MBLOG_INFO << "project path: " << json["path"];
+
+    std::string temp_type;
+    std::string in_path;
+    std::string toml = ".toml";
+    std::string s = "";
+    std::string title = "";
+    std::string current_property = "";
+    nlohmann::json flowunit;
+
+    std::regex txt_regex("\\[(.*?)]");
+    std::regex txt_regex1("[\\w-]+ = [\"?\\w./\"?]+");
+    std::smatch matched;
+
+    auto flowunit_path = project_path + "/src/flowunit";
+
+    std::vector<std::string> list_files;
+    auto ret = modelbox::ListSubDirectoryFiles(flowunit_path, "*", &list_files);
+    if (!ret) {
+      response.status = HttpStatusCodes::NOT_FOUND;
+      response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+      return;
+    }
+    /* print all the files and directories within directory */
+    for (auto i : list_files) {
+      auto temp = modelbox::StringSplit(i, '/');
+      auto flowunit_name = temp[temp.size() - 1];
+      auto flowunit_string = temp[temp.size() - 2];
+      if (flowunit_string == "flowunit" &&
+          flowunit_name.find(".") == std::string::npos &&
+          flowunit_name != "example") {
+        flowunit["name"] = flowunit_name;
+        in_path =
+            flowunit_path + "/" + flowunit_name + "/" + flowunit_name + toml;
+        flowunit["file"] = in_path;
+        std::ifstream ifs(in_path.c_str());
+        if (!ifs.is_open()) {
+          std::string errmsg =
+              "open flowunit " + flowunit_name + "file failed!";
+          response.status = HttpStatusCodes::INTERNAL_ERROR;
+          response.set_content(errmsg, TEXT_PLAIN);
+          continue;
+        }
+        auto index_port = 0;
+        flowunit["ports"] = nlohmann::json::array();
+        nlohmann::json port;
+        while (getline(ifs, s)) {
+          // save data
+          if (std::regex_search(s, matched, txt_regex1) == 1) {
+            s = matched[0];  // content
+            auto vec = modelbox::StringSplit(s, ' ');
+            if ((vec.size() > 3) || (vec.size() < 1) ||
+                std::find(vec.begin(), vec.end(), "=") == vec.end()) {
+              std::string errmsg = "base value is invalid.";
+              response.status = HttpStatusCodes::INTERNAL_ERROR;
+              response.set_content(errmsg, TEXT_PLAIN);
+              return;
+            }
+
+            if (current_property == "base") {
+              flowunit[vec[0]] = vec[2];
+            } else {
+              if (index_port % 3 == 0 && index_port != 0) {
+                flowunit["ports"].push_back(port);
+              }
+              port[vec[0]] = vec[2];
+              index_port += 1;
+            }
+
+          } else if (std::regex_search(s, matched, txt_regex) == 1) {
+            // title
+            if (matched[1] == "base") {
+              current_property = "base";
+            } else if (matched[1] == "input") {
+              current_property = "input";
+            } else if (matched[1] == "output") {
+              current_property = "output";
+            }
+          }
+        }
+        ifs.close();
+        json["flowunits"].push_back(flowunit);
+      }
+    }
+
+    //加载graph信息
+    auto graph_path = project_path + "/src/graph";
+    list_files.clear();
+    ret = modelbox::ListSubDirectoryFiles(graph_path, "*.toml", &list_files);
+    if (!ret) {
+      response.status = HttpStatusCodes::NOT_FOUND;
+      response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+      return;
+    }
+
+    /* print all the files and directories within directory */
+    nlohmann::json graph;
+    for (auto i : list_files) {
+      auto temp = modelbox::StringSplit(i, '/');
+      auto graph_name = temp[temp.size() - 1];
+      graph["name"] = graph_name;
+      in_path = graph_path + "/" + graph_name;
+
+      if (graph_name.rfind(toml) != std::string::npos &&
+          graph_name != "example.toml") {
+        graph["name"] = graph_name;
+        in_path = graph_path + "/" + graph_name;
+        std::ifstream ifs(in_path.c_str());
+        if (!ifs.is_open()) {
+          std::string errmsg = "open graph file failed!";
+          response.status = HttpStatusCodes::INTERNAL_ERROR;
+          response.set_content(errmsg, TEXT_PLAIN);
+          return;
+        }
+        std::string cont = "";
+        int flag = -1;
+        while (getline(ifs, s)) {
+          if (s.find("\"\"\"") != std::string::npos) {
+            flag *= -1;
+            if (s == "\"\"\"" && current_property == "graph") {
+              graph["dotSrc"] = cont;
+              cont = "";
+            } else if (s == "\"\"\"" && current_property == "driver") {
+              graph["dir"] = cont;
+            }
+            continue;
+          }
+          if (flag > 0) {
+            cont += s + "\n";
+          }
+          if (std::regex_search(s, matched, txt_regex1) == 1) {
+            s = matched[0];  // content
+            auto vec = modelbox::StringSplit(s, ' ');
+            if ((vec.size() > 3) || (vec.size() < 1) ||
+                std::find(vec.begin(), vec.end(), "=") == vec.end()) {
+              std::string errmsg = "base value is invalid.";
+              response.status = HttpStatusCodes::INTERNAL_ERROR;
+              response.set_content(errmsg, TEXT_PLAIN);
+              return;
+            }
+            graph[vec[0]] = vec[2];
+          } else if (std::regex_search(s, matched, txt_regex) == 1) {
+            // title
+            if (matched[1] == "profile") {
+              current_property = "profile";
+            } else if (matched[1] == "graph") {
+              current_property = "graph";
+            } else if (matched[1] == "driver") {
+              current_property = "driver";
+            } else if (matched[1] == "flow") {
+              current_property = "flow";
+            }
+          }
+        }
+        ifs.close();
+      }
+
+      json["graphs"].push_back(graph);
+    }
+    result = json.dump();
+    MBLOG_INFO << "infos: " << result;
+    response.set_content(result, JSON);
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content(errmsg, TEXT_PLAIN);
+    return;
+  }
+
+  response.status = HttpStatusCodes::OK;
+}
+
+modelbox::Status ModelboxEditorPlugin::CreateProjectWithoutModel(
+    nlohmann::json& body, httplib::Response& response) {
+  Popen p;
+  std::string cmd = "modelbox-tool create -t project -n ";
+  std::string project_name;
+  std::string project_path;
+  if (body.find("project_name") != body.end()) {
+    project_name = body["project_name"].get<std::string>();
+  } else {
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content("project name is required", TEXT_PLAIN);
+    return modelbox::STATUS_FAULT;
+  }
+
+  if (body.find("path") != body.end()) {
+    project_path = body["path"].get<std::string>();
+  } else {
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content("project path is required", TEXT_PLAIN);
+    return modelbox::STATUS_FAULT;
+  }
+  cmd += project_name + " -d " + project_path;
+  p.Open(cmd, 1000, "re");
+
+  std::string out;
+  std::string err;
+  auto ret = p.ReadAll(&out, &err);
+  ret = p.Close();
+  if (ret != 0) {
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content("Errcode: " + ret, TEXT_PLAIN);
+    return modelbox::STATUS_FAULT;
+  }
+
+  return modelbox::STATUS_OK;
+}
+
+std::string ModelboxEditorPlugin::GetFlwounitPathByGraphPath(
+    std::string graph) {
+  std::string relative_path = graph.substr(solution_url.size());
+  std::string pre_path;
+  std::string solution_name;
+
+  std::string flowunit_path;
+  std::string json_data;
+
+  SplitPath(relative_path, pre_path, solution_name);
+
+  std::vector<std::string> files;
+  auto pos = solution_path_.find_last_of("graph");
+  if (pos - 5 > 0) {
+    flowunit_path = solution_path_.substr(0, pos - 4);
+    flowunit_path += "flowunit/";
+  }
+  pos = solution_name.find(".toml");
+  if (pos >= 0) {
+    flowunit_path += solution_name.substr(0, pos);
+  } else {
+    flowunit_path += solution_name;
+  }
+  return flowunit_path;
+}
+
+void ModelboxEditorPlugin::HandlerProjectPut(const httplib::Request& request,
+                                             httplib::Response& response) {
+  try {
+    auto body = nlohmann::json::parse(request.body);
+    std::string path;
+    std::string model;
+    AddSafeHeader(response);
+    if (body.find("path") != body.end()) {
+      path = body["path"].get<std::string>();
+    } else {
+      response.status = HttpStatusCodes::BAD_REQUEST;
+      response.set_content("project path is required", TEXT_PLAIN);
+      return;
+    }
+
+    if (modelbox::CreateDirectory(path) != modelbox::STATUS_OK) {
+      response.status = HttpStatusCodes::BAD_REQUEST;
+      response.set_content("Fail to create project path.", TEXT_PLAIN);
+      return;
+    }
+
+    if (body.find("model") != body.end()) {
+      model = body["model"].get<std::string>();
+    }
+
+    if (CreateProjectWithoutModel(body, response) != STATUS_OK) {
+      return;
+    }
+    if (!model.empty()) {
+      std::string flowunit_path = GetFlwounitPathByGraphPath(model);
+      std::vector<std::string> files;
+      auto ret =
+          modelbox::ListSubDirectoryFiles(flowunit_path, "*.toml", &files);
+      if (!ret) {
+        response.status = HttpStatusCodes::NOT_FOUND;
+        response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+        return;
+      }
+      std::string json_data;
+
+      int retp;
+      for (const auto& file : files) {
+        Popen p;
+        std::string cmd = "cp -r " + flowunit_path;
+        auto ret = GraphFileToJson(file, json_data);
+        auto data = nlohmann::json::parse(json_data);
+        auto device = data["base"]["device"].get<std::string>();
+        std::string filename = modelbox::GetBaseName(file);
+        auto target_path = path + "/" +
+                           body["project_name"].get<std::string>() +
+                           "/src/flowunit/" + device;
+        cmd +=
+            "/" + filename.substr(0, filename.length() - 5) + " " + target_path;
+        p.Open(cmd, 1000, "re");
+
+        std::string out;
+        std::string err;
+        retp = p.ReadAll(&out, &err);
+        ret = p.Close();
+        if (retp != 0) {
+          response.status = HttpStatusCodes::BAD_REQUEST;
+          response.set_content(err, TEXT_PLAIN);
+          return;
+        }
+      }
+    }
+
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    response.status = HttpStatusCodes::BAD_REQUEST;
+    response.set_content(errmsg, TEXT_PLAIN);
+    return;
+  }
+
+  response.status = HttpStatusCodes::CREATED;
+  return;
 }
 
 void ModelboxEditorPlugin::HandlerFlowUnitInfo(
@@ -224,6 +888,42 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfo(
 
   response.status = HttpStatusCodes::OK;
   response.set_content(info, JSON);
+}
+
+void ModelboxEditorPlugin::HandlerDirectoryGet(const httplib::Request& request,
+                                               httplib::Response& response) {
+  AddSafeHeader(response);
+  nlohmann::json response_json;
+  response_json["folder_list"] = nlohmann::json::array();
+  try {
+    std::string path;
+
+    DIR* dir;
+    struct dirent* ent;
+
+    auto last_split_start_pos = request.path.find('"');
+    auto last_split_end_pos = request.path.rfind('"');
+    path = request.path.substr(last_split_start_pos + 1,
+                               last_split_end_pos - last_split_start_pos - 1);
+    MBLOG_INFO << "Search path: " << path;
+    if ((dir = opendir(path.c_str())) != NULL) {
+      /* print all the files and directories within directory */
+      while ((ent = readdir(dir)) != NULL) {
+        response_json["folder_list"].push_back(ent->d_name);
+      }
+      closedir(dir);
+      response.status = HttpStatusCodes::OK;
+    } else {
+      /* could not open directory */
+      MBLOG_ERROR << "Can't open " << path;
+      response.status = HttpStatusCodes::NOT_FOUND;
+    }
+  } catch (const std::exception& e) {
+    response.status = HttpStatusCodes::INTERNAL_ERROR;
+    return;
+  }
+  response.set_content(response_json.dump(), JSON);
+  return;
 }
 
 void ModelboxEditorPlugin::HandlerUIGet(const httplib::Request& request,
@@ -443,7 +1143,6 @@ void ModelboxEditorPlugin::HandlerSolutionGet(const httplib::Request& request,
     }
 
     std::string json_data;
-    MBLOG_INFO << "load solution file " << solution_file;
     auto ret = GraphFileToJson(solution_file, json_data);
     if (!ret) {
       std::string msg = "solution file is invalid.";
