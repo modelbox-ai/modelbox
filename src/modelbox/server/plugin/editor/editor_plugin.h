@@ -51,7 +51,6 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   void HandlerProject(const httplib::Request &request, httplib::Response &response,
                            std::shared_ptr<modelbox::Configuration> config);
   void SaveAllProject(const httplib::Request &request, httplib::Response &response);
-  void SaveSolutionFlowunitToProject(const httplib::Request &request, httplib::Response &response);
   
   modelbox::Status SaveGraphFile(const std::string& job_id,
                                  const std::string& toml_graph,

@@ -596,18 +596,9 @@ create_template()
 }
 
 
-main() {
-	i=0
-	CMD=""
-	while [ $i -lt $# ]
-	do 
-		i=$(($i+1))
-		eval ARG="\$$i"
-		CMD="$CMD \"$ARG\""
-	done
-	
+main() {	
 	OPTS=`getopt -o n:t:d:h:p: --long template:,name:,dir:,help:,desc:,device:,type:,in:,out:,entry:,virtual:,plugin:,path:,yolo_version,project_template: \
-		-n  "$0" -- "$CMD"`
+		-n  "" -- "$@"`
 
 	if [ $# -lt 2 ]; then showhelp; exit 1; fi
 	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -659,8 +650,21 @@ main() {
 			shift 2;;
 		--desc)
 			desc="$2"
+			let num=0
 			str=''
-			shift 2;;
+			for i in "$@"
+			do
+				if [ $i != "--desc" ]; then
+					if [ ${i: 0: 2} == "--" ]; then
+						break
+					else
+						str=$str" "$i 
+					fi
+				fi
+				let num=$num+1
+			done
+			desc=${str: 1}
+			shift $num;;
 		--entry)
 			entry="$2"
 			shift 2;;
