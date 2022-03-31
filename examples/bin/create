@@ -45,7 +45,7 @@ showhelp() {
 	echo ""
 	echo "example:"
 	echo " create project: $0 -project -name=\"project\""
-	echo " create flowunit: $0 -flowunit -name \"flowunit\" -lang python"
+	echo " create flowunit: $0 -flowunit -name \"flowunit\" -lang python -input name=in1,device=cuda -output -"
 	echo ""
 }
 
@@ -66,22 +66,30 @@ create_project_template()
 		return 1
 	fi
 
-	if [ ! -d "$MODELBOX_TEMPLATE_PATH/${tempalte}" ]; then
-		echoerr "Project tempalte $tempalte not exists, please input valid project template"
+	if [ ! -d "$MODELBOX_TEMPLATE_PATH/${template}" ]; then
+		echoerr "Project template $template not exists, please input valid project template"
 		return 1
 	fi
 
-	cp -r "$MODELBOX_TEMPLATE_PATH/${tempalte}"/* "${project_path}"
+	cp -r "$MODELBOX_TEMPLATE_PATH/${template}"/* "${project_path}"
 	if [ $? -ne 0 ]; then
 		echoerr "Copy project template failed."
 		return 1
 	fi
 
-	rm -r "${project_path}/src/flowunit/example"
-	rm "${project_path}/src/graph/example.toml"
-	rm "${project_path}/test/flowunit/resize_flowuint_test.cc"
+	if [ -e "${project_path}/src/flowunit/example" ]; then
+		rm -r "${project_path}/src/flowunit/example"
+	fi
 
-	sed "s/example/$project_name/g" -i "${project_path}/CMakeLists.txt"
+	if [ -e "${project_path}/src/graph/example.toml" ]; then
+		rm "${project_path}/src/graph/example.toml"
+	fi
+
+	if [ -e "${project_path}/test/flowunit/resize_flowuint_test.cc" ]; then
+		rm "${project_path}/test/flowunit/resize_flowuint_test.cc"
+	fi
+
+	sed -i "s/example/$project_name/g" "${project_path}/CMakeLists.txt"
 	if [ $? -ne 0 ]; then
 		echoerr "sed CMakeLists.txt failed."
 		return 1
@@ -96,7 +104,7 @@ create_project() {
 	project_name=""
 	project_path="$DEFAULT_PROJECT_PATH"
 	project_root_path=""
-	tempalte="project"
+	template="project"
 
 	while true; do
 		if [ $# -le 0 ]; then
@@ -109,7 +117,7 @@ create_project() {
 			project_name="$arg_value"
 			shift "$shift_count" ;;
 		--template)
-			tempalte="$arg_value"
+			template="$arg_value"
 			shift "$shift_count" ;;
 		--path)
 			project_path="$arg_value"
@@ -134,7 +142,7 @@ create_project() {
 		fi
 	fi
 
-	create_project_template "$project_name" "${project_path}" "$tempalte"
+	create_project_template "$project_name" "${project_path}" "$template"
 	ret=$?
 	if [ $ret -ne 0 ] && [ $ret -ne 2 ]; then
 		echoerr "Create project template failed."
@@ -183,6 +191,7 @@ toml_data_write_inputports() {
 			IFS="=" read -r -a values <<< "$option"
 			toml_data_append "${values[0]} = \"${values[1]}\""
 		done
+		toml_data_append ""
 	done
 }
 
@@ -199,6 +208,7 @@ toml_data_write_outputports() {
 			IFS="=" read -r -a values <<< "$option"
 			toml_data_append "${values[0]} = \"${values[1]}\""
 		done
+		toml_data_append ""
 	done
 }
 
@@ -243,7 +253,15 @@ prepare_flowunit_base() {
 setup_flowunit_python_source() {
 	SOURCE_FILE="${SOURCE_DIR}/${flowunit_name}.py"
 	classname=${flowunit_name^}
-	sed "s/ExampleFlowUnit/${classname}FlowUnit/g" -i "$SOURCE_FILE" 
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+
+	sed -i "s/ExampleFlowUnit/${classname}FlowUnit/g" "$SOURCE_FILE" 
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed -i "s/example/${flowunit_name}/g" "$CMAKE_FILE"
 	if [ $? -ne 0 ]; then
 		echoerr "Setup source file failed."
 		return 1
@@ -251,7 +269,7 @@ setup_flowunit_python_source() {
 
 	space=$(grep "in_data = data_context.input" "$SOURCE_FILE" | sed 's/\([ |\t]*\)in_data = data_context.input.*/\1/g')
 	input_flag="# input data"
-	sed "s/in_data = data_context.input.*/${input_flag}/" -i "$SOURCE_FILE"
+	sed -i "s/in_data = data_context.input.*/${input_flag}/" "$SOURCE_FILE"
 	i=0
 	for port in "${flowunit_input_names[@]}"; do
 		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
@@ -259,13 +277,13 @@ setup_flowunit_python_source() {
 		else
 			line="in_data_${i} = data_context.input(\"${port}\")"
 		fi
-		sed "/${input_flag}/a \\${space}${line}" -i "$SOURCE_FILE"
+		sed -i "/${input_flag}/a \\${space}${line}" "$SOURCE_FILE"
 		i=$((i+1))
 	done
 
 	
 	output_flag="# output data"
-	sed "s/out_data = data_context.output.*/${output_flag}/" -i "$SOURCE_FILE"
+	sed -i "s/out_data = data_context.output.*/${output_flag}/" "$SOURCE_FILE"
 	i=0
 	for port in "${flowunit_output_names[@]}"; do
 		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
@@ -273,7 +291,7 @@ setup_flowunit_python_source() {
 		else
 			line="out_data_${i} = data_context.output(\"${port}\")"
 		fi
-		sed "/${output_flag}/a \\${space}${line}" -i "$SOURCE_FILE"
+		sed -i "/${output_flag}/a \\${space}${line}" "$SOURCE_FILE"
 		i=$((i+1))
 	done
 	
@@ -330,43 +348,43 @@ setup_flowunit_cpp_source() {
 	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
 	HEAD_MACRO="${flowunit_name^^}_${flowunit_device^^}"
 	classname=${flowunit_name^}
-	sed "s/ExampleFlowUnit/${classname}FlowUnit/g" -i "$HEADER_FILE"
+	sed -i "s/ExampleFlowUnit/${classname}FlowUnit/g" "$HEADER_FILE"
 	if [ $? -ne 0 ]; then
 		echoerr "Setup source file failed."
 		return 1
 	fi
 
-	sed "s/ExampleFlowUnit/${classname}FlowUnit/g" -i "$SOURCE_FILE" 
+	sed -i "s/ExampleFlowUnit/${classname}FlowUnit/g" "$SOURCE_FILE" 
 	if [ $? -ne 0 ]; then
 		echoerr "Setup source file failed."
 		return 1
 	fi
 
-	sed "s/example.h/${flowunit_name}.h/g" -i "$SOURCE_FILE" 
+	sed -i "s/example.h/${flowunit_name}.h/g" "$SOURCE_FILE" 
 	if [ $? -ne 0 ]; then
 		echoerr "Setup source file failed."
 		return 1
 	fi
 
-	sed "s/cpu/${flowunit_device}/g" -i "$HEADER_FILE" "$CMAKE_FILE"
+	sed -i "s/cpu/${flowunit_device}/g" "$HEADER_FILE" "$CMAKE_FILE"
 	if [ $? -ne 0 ]; then
 		echoerr "Setup source file failed."
 		return 1
 	fi
 
-	sed "s/example/${flowunit_name}/g" -i "$HEADER_FILE" "$CMAKE_FILE"
+	sed -i "s/example/${flowunit_name}/g" "$HEADER_FILE" "$CMAKE_FILE"
 	if [ $? -ne 0 ]; then
 		echoerr "Setup source file failed."
 		return 1
 	fi
 
-	sed "s/EXAMPLE_CPU/${HEAD_MACRO}/g" -i "$HEADER_FILE"
+	sed -i "s/EXAMPLE_CPU/${HEAD_MACRO}/g" "$HEADER_FILE"
 	if [ $? -ne 0 ]; then
 		echoerr "Setup source file failed."
 		return 1
 	fi
 
-	sed "s/@Brief: A .*/@Brief: ${flowunit_desc}\";/g" -i "$HEADER_FILE"
+	sed -i "s/@Brief: A .*/@Brief: ${flowunit_desc}\";/g" "$HEADER_FILE"
 	if [ $? -ne 0 ]; then
 		echoerr "Setup source file failed."
 		return 1
@@ -377,8 +395,8 @@ setup_flowunit_cpp_source() {
 	space_desc=$(grep "desc.AddFlowUnitInput(modelbox::FlowUnitInput" "$SOURCE_FILE" | sed 's/\([ |\t]*\)desc.AddFlowUnitInput(modelbox::FlowUnitInput.*/\1/g')
 	input_flag="// input data"
 	input_port_flag="// input port"
-	sed "s#auto input_bufs = ctx->Input.*#${input_flag}#" -i "$SOURCE_FILE"
-	sed "s#desc.AddFlowUnitInput(modelbox::FlowUnitInput.*#${input_port_flag}#" -i "$SOURCE_FILE"
+	sed -i "s#auto input_bufs = ctx->Input.*#${input_flag}#" "$SOURCE_FILE"
+	sed -i "s#desc.AddFlowUnitInput(modelbox::FlowUnitInput.*#${input_port_flag}#" "$SOURCE_FILE"
 	i=0
 	for port in "${flowunit_input_names[@]}"; do
 		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
@@ -386,18 +404,18 @@ setup_flowunit_cpp_source() {
 		else
 			line="auto input_bufs_${i} = ctx->Input(\"${port}\");"
 		fi
-		sed "\#${input_flag}#a \\${space}${line}" -i "$SOURCE_FILE"
+		sed -i "\#${input_flag}#a \\${space}${line}" "$SOURCE_FILE"
 		i=$((i+1))
 
 		line="desc.AddFlowUnitInput(modelbox::FlowUnitInput(\"${port}\", FLOWUNIT_TYPE));"
-		sed "\#${input_port_flag}#a \\${space_desc}${line}" -i "$SOURCE_FILE"
+		sed -i "\#${input_port_flag}#a \\${space_desc}${line}" "$SOURCE_FILE"
 	done
 
 	# add output port information
 	output_flag="// output data"
 	output_port_flag="// output port"
-	sed "s#auto output_bufs = ctx->Output.*#${output_flag}#" -i "$SOURCE_FILE"
-	sed "s#desc.AddFlowUnitOutput(modelbox::FlowUnitOutput.*#${output_port_flag}#" -i "$SOURCE_FILE"
+	sed -i "s#auto output_bufs = ctx->Output.*#${output_flag}#" "$SOURCE_FILE"
+	sed -i "s#desc.AddFlowUnitOutput(modelbox::FlowUnitOutput.*#${output_port_flag}#" "$SOURCE_FILE"
 	i=0
 	for port in "${flowunit_output_names[@]}"; do
 		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
@@ -406,11 +424,11 @@ setup_flowunit_cpp_source() {
 			line="auto output_bufs_${i} = ctx->Output(\"${port}\");"
 		fi
 
-		sed "\#${output_flag}#a \\${space}${line}" -i "$SOURCE_FILE"
+		sed -i "\#${output_flag}#a \\${space}${line}" "$SOURCE_FILE"
 		i=$((i+1))
 
 		line="desc.AddFlowUnitOutput(modelbox::FlowUnitOutput(\"${port}\", FLOWUNIT_TYPE));"
-		sed "\#${output_port_flag}#a \\${space_desc}${line}" -i "$SOURCE_FILE"
+		sed -i "\#${output_port_flag}#a \\${space_desc}${line}" "$SOURCE_FILE"
 	done
 
 	return 0
@@ -460,6 +478,14 @@ create_flowunit_cpp() {
 }
 
 setup_flowunit_yolo_source() {
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+
+	sed -i "s/example/${flowunit_name}/g" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
 	return 0
 }
 
@@ -563,6 +589,14 @@ create_flowunit_yolo() {
 }
 
 setup_flowunit_infer_source() {
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+
+	sed -i "s/example/${flowunit_name}/g" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
 	return 0
 }
 

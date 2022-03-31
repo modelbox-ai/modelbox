@@ -30,8 +30,8 @@ class HelloWorld(modelbox.FlowUnit):
         return modelbox.Status.StatusCode.STATUS_SUCCESS
 
     def process(self, data_context):
-        in_data = data_context.input("In_1")
-        out_data = data_context.output("Out_1")
+        in_data = data_context.input("in_data")
+        out_data = data_context.output("out_data")
 
         for buffer in in_data:
             request_body = json.loads(buffer.as_object().strip(chr(0)))
