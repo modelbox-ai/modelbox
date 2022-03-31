@@ -16,6 +16,8 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+project(example)
+
 include(ExternalProject)
 
 set(THIRDPARTY_DOWNLOAD_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/download)
