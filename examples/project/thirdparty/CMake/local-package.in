@@ -17,6 +17,8 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+project(example)
+
 set(THIRDPARTY_DOWNLOAD_DIR @THIRDPARTY_DOWNLOAD_DIR@)
 
 include(ExternalProject)

@@ -34,6 +34,12 @@ modelbox::Status ExampleFlowUnit::DataPre(
 
 modelbox::Status ExampleFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> ctx) {
+  auto input_bufs = ctx->Input("in");
+  auto output_bufs = ctx->Output("out");
+
+  // Your code goes here
+  //
+
   return modelbox::STATUS_OK;
 }
 
@@ -56,15 +62,17 @@ MODELBOX_FLOWUNIT(ExampleFlowUnit, desc) {
   /*set flowunit attributes*/
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Undefined");
-  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in_1", FLOWUNIT_TYPE));
-  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out_1", FLOWUNIT_TYPE));
+  desc.AddFlowUnitInput(modelbox::FlowUnitInput("in", FLOWUNIT_TYPE));
+  desc.AddFlowUnitOutput(modelbox::FlowUnitOutput("out", FLOWUNIT_TYPE));
   desc.SetFlowType(modelbox::NORMAL);
   desc.SetDescription(FLOWUNIT_DESC);
-  /*set flowunit parameter */
+  /*set flowunit parameter
+  example code:
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "parameter0", "int", true, "640", "parameter0 describe detail"));
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "parameter1", "int", true, "480", "parameter1 describe detail"));
+  */
 }
 
 MODELBOX_DRIVER_FLOWUNIT(desc) {
@@ -72,5 +80,5 @@ MODELBOX_DRIVER_FLOWUNIT(desc) {
   desc.Desc.SetClass(modelbox::DRIVER_CLASS_FLOWUNIT);
   desc.Desc.SetType(FLOWUNIT_TYPE);
   desc.Desc.SetDescription(FLOWUNIT_DESC);
-  desc.Desc.SetVersion("1.0.0");
+  desc.Desc.SetVersion(FLOWUNIT_VERSION);
 }

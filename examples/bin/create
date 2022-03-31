@@ -14,1154 +14,1003 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-FLOWUNIT_TEMPLATE_PATH=/usr/local/share/modelbox/project-template
+MODELBOX_TEMPLATE_PATH=/usr/local/share/modelbox/project-template
+DEFAULT_PROJECT_PATH="$HOME/modelbox-project"
 
 showhelp() {
-	echo " -t, --template=[c++|python|infer|yolo|project|service-plugin]    create a c++, python, inference, yolo, project, service-plugin template"
-	echo " -d, --dir=[directory]                                            target output directory, default is './'"
-	echo " -n, --name=[target-name]                                         target name, default is 'example'"
-	echo " -p, --path=[project-path]                                        the path of the project contains target flowunit, default is './'"
-	echo " --project_template=[blank|mnist|car_detection...]                target project template"
-	echo " --device=[device]                                                target device, default is 'cpu'"
-	echo " --type=[type]                                                    target flowunit type, default is 'normal'"
-	echo " --desc=[desc]                                                    target flowunit description, default is 'description'"
-	echo " --out=[outport]                                                  target flowunit outport"
-	echo " --in=[inport]                                                    target flowunit inport"
-	echo " --entry=[entry]                                                  entry path of model if target flowunit type is inference"
-	echo " --virtual=[virtual-type]                                         target inference flowunit type"
-	echo " --plugin=[plugin]                                                engine plugin interface"
-	echo " --yolo_version=[yolo_version]                                    yolo version, default is 'v3'"
-	echo "Example:"
-	echo " Create Project template
-modelbox-tool create -t project -n pro1 -d /home/modelbox_projects
+	echo "usage create [OPTIONS]"
+	echo "create modelbox project or flowunit"
+	echo "-project                            create modelbox project."
+	echo "  -name [name]                        project name, default is example"
+	echo "  -path [path]                        project path, default is \$HOME/modelbox-project."
+	echo "  -rootpath [path]                    project root path."
+	echo "  -template [template name]           project template, default is empty project."
+	echo "-flowunit                           create modelbox flowunit."
+	echo "  -lang [python|c++|infer|yolo]     flowunit program language."
+	echo "  -type [type]                        flowunit type:"
+	echo "                                        normal|stream|condition|collapse|collapse_all|expand"
+	echo "  -group-type [group type]            flowunit group type, for UI display:"
+	echo "                                        generic|video|inference" 
+	echo "  -project-path [path-to-project]     create flowunit in specific project, default is \$HOME/modelbox-project."
+	echo "  -input [name=name,device=device|-]    flowunit input ports. '-' for default port name"
+	echo "  -output [name-name,device=device|-]   flowunit output ports. '-' for default port name"
+	echo "  -device [cpu|cuda|ascend]           flowunit device."	
 
- Create python template
-modelbox-tool create -t python -n pyflowunit -p /home/modelbox_projects/pro1 \
---device cuda --desc \"this is a python flowunit of modelbox\" --type condition \
---in name=p_n,device=cpu --out name=p_n2 --out name=p_n3 --out name=p_n4 --in name=p_n5,device=cpu
- 
- Create infer template
-modelbox-tool create -t infer -n inferflowunit -p /home/modelbox_projects/pro1 \
---device cuda --entry /opt/modelbox/solution/model/mnist_model.pb --virtual tensorrt \
---plugin plugin.so --in name=p_n,type=int,device=cuda \
---in name=p_n2,type=int,device=cpu, --out name=p_n3,type=float, --out name=p_n4,type=float
- 
- Create yolo template
-modelbox-tool create -t yolo -n yoloflowunit -p /home/modelbox_projects/pro1 \
---device cuda  --out name=p_n1,type=int --out name=p_n2,type=float --out name=p_n3,type=float \
---in name=p_n4,type=int --in name=p_n5,type=int --yolo_version v3
- 
- Create c++ template
-modelbox-tool create -t c++ -n cppflowunit -p /home/modelbox_projects/pro1 \
---device cpu --in name=p_n,device=cpu --out name=p_n2 --out name=p_n3 --out name=p_n4 \
---in name=p_n5,device=cpu
-	"
+	echo "  flowunit infer"
+	echo "    -virtual-type [type]                virtual flowunit type: 'tensorflow', 'tensorrt', 'torch', 'acl', 'mindspore'"
+	echo "    -model [path]                       model file path"
+	echo "    -copy-model                         copy model file to flowunit source dir"
+	echo "  flowunit yolo"
+	echo "    -virtual-type [type]                virtual flowunit type: 'yolov3_postprocess', 'yolov5_postprocess'"
+	echo ""
+	echo "example:"
+	echo " create project: $0 -project -name=\"project\""
+	echo " create flowunit: $0 -flowunit -name \"flowunit\" -lang python"
+	echo ""
 }
 
-create_python_template()
-{
-	# Nb.line of [output]
-	let base=43
-	base_path="./"
-	create_base_path
-
-	if [ $device = "cpu" ]; then
-		flowunit_python=$base_path/src/flowunit/cpu/$name
-	elif [ $device = "cuda" ]; then
-		flowunit_python=$base_path/src/flowunit/cuda/$name
-	fi
-
-	if [[ ${#in_array[@]}+${#out_array[@]} -eq 0 ]]; then
-		echoerr "At least one input or output"
-		return 0
-	fi
-
-	if [ -d $flowunit_python ]; then
-		echoerr "$flowunit_python is exsited"
-		return 1
-	fi
-	
-	cp_with_check $FLOWUNIT_TEMPLATE_PATH"/flowunit/python" $flowunit_python
-	if [ $? -ne 0 ]; then
-		echoerr "copy python template [$flowunit_python] failed"
-		return 1
-	fi
-
-	mv $flowunit_python/example.py $flowunit_python/$name.py
-	if [ $? -ne 0 ]; then
-		echoerr "copy python template [$name.py] failed"
-		return 1
-	fi
-
-	mv $flowunit_python/example.toml $flowunit_python/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy python template [$name.toml] failed"
-		return 1
-	fi
-
-	sed -i "s/ExampleFlowUnit/$flowunit/g" $flowunit_python/$name.py
-	if [ $? -ne 0 ]; then
-		echoerr "sed $name.py failed"
-		return 1
-	fi
-
-	sed -i "s/Example/$big_name/g" $flowunit_python/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "sed $name.toml failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $flowunit_python/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy $name.toml failed"
-		return 1
-	fi
-
-	sed -i "s/^device *= * \"cpu\"/device = \"$device\"/g" $flowunit_python/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add device $device failed"
-		return 1
-	fi
-
-	if [[ $type != "" ]]; then
-		sed -i "s/$type = false/$type = true/g" $flowunit_python/$name.toml
-		if [ $? -ne 0 ]; then
-			echoerr "add type $type failed"
-			return 1
-		fi
-	fi
-
-	sed -i "s/\"description\"/\"$desc\"/g" $flowunit_python/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add property description failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $flowunit_python/CMakeLists.txt
-	if [ $? -ne 0 ]; then
-		echoerr "sed CMakeLists.txt failed"
-		return 1
-	fi
-
-	handle_python_out_array
-	if [ $? -ne 0 ]; then
-		echoerr "create output failed"
-		return 1
-	fi
-
-	handle_python_in_array
-	if [ $? -ne 0 ]; then
-		echoerr "create input failed"
-		return 1
-	fi
-
+echoerr() {
+	echo "$@" 1>&2
 }
 
-create_cpp_template()
-{
-	# Nb.line of [output]
-	let base=43
-	base_path="./"
-	create_base_path
-
-	if [ $device = "cpu" ]; then
-		flowunit_cpp=$base_path/src/flowunit/cpu/$name
-	elif [ $device = "cuda" ]; then
-		flowunit_cpp=$base_path/src/flowunit/cuda/$name
-	fi
-
-	if [[ ${#in_array[@]}+${#out_array[@]} -eq 0 ]]; then
-		echoerr "At least one input or output"
-		return 0
-	fi
-
-	if [ -d $flowunit_cpp ]; then
-		echoerr "$flowunit_cpp is exsited"
-		return 1
-	fi
-
-	cp_with_check $FLOWUNIT_TEMPLATE_PATH"/flowunit/python" $flowunit_cpp
-	if [ $? -ne 0 ]; then
-		echoerr "copy c++ template failed"
-		return 1
-	fi
-
-	mv $flowunit_cpp/example.toml $flowunit_cpp/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy c++ template failed"
-		return 1
-	fi
-
-	rm $flowunit_cpp/example.py
-	if [ $? -ne 0 ]; then
-		echoerr "copy c++ template failed"
-		return 1
-	fi
-
-	sed -i "s/Example/$big_name/g" $flowunit_cpp/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "sed .toml failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $flowunit_cpp/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy templ.toml failed"
-		return 1
-	fi
-
-	sed -i "s/Python/C++/g" $flowunit_cpp/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "sed .toml failed"
-		return 1
-	fi
-
-	sed -i "s/python/c++/g" $flowunit_cpp/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy templ.toml failed"
-		return 1
-	fi
-
-	sed -i "s/^device *= * \"cpu\"/device = \"$device\"/g" $flowunit_cpp/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add device failed"
-		return 1
-	fi
-
-	if [[ $type != "" ]]; then
-		sed -i "s/$type = false/$type = true/g" $flowunit_cpp/$name.toml
-		if [ $? -ne 0 ]; then
-			echoerr "add type failed"
-			return 1
-		fi
-	fi
-
-	sed -i "s/\"description\"/\"$desc\"/g" $flowunit_cpp/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add property description failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $flowunit_cpp/CMakeLists.txt
-	if [ $? -ne 0 ]; then
-		echoerr "sed CMakeLists.txt failed"
-		return 1
-	fi
-
-	handle_cpp_out_array
-
-	if [ $? -ne 0 ]; then
-		echoerr "create output failed"
-		return 1
-	fi
-
-	handle_cpp_in_array
-
-	if [ $? -ne 0 ]; then
-		echoerr "create input failed"
-		return 1
-	fi
-
-}
-
-create_infer_template()
-{
-	# Nb.line of [output]
-	let base=37
-	base_path="./"
-	create_base_path
-
-	if [ $device = "cpu" ]; then
-		flowunit_infer=$base_path/src/flowunit/cpu/$name
-	elif [ $device = "cuda" ]; then
-		flowunit_infer=$base_path/src/flowunit/cuda/$name
-	fi
-
-	if [[ ${#in_array[@]}+${#out_array[@]} -eq 0 ]]; then
-		echoerr "At least one input or output"
-		return 0
-	fi
-
-	if [ -d $flowunit_infer ]; then
-		echoerr "$flowunit_infer is exsited"
-		return 1
-	fi
-
-	cp_with_check $FLOWUNIT_TEMPLATE_PATH"/flowunit/infer" $flowunit_infer
-	if [ $? -ne 0 ]; then
-		echoerr "copy python template failed"
-		return 1
-	fi
-
-	mv $flowunit_infer/example.toml $flowunit_infer/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy python template failed"
-		return 1
-	fi
-
-	sed -i "s/Example/$big_name/g" $flowunit_infer/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "sed .toml failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $flowunit_infer/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy templ.toml failed"
-		return 1
-	fi
-
-	sed -i "s/^device *= * \"cpu\"/device = \"$device\"/g" $flowunit_infer/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add device failed"
-		return 1
-	fi
-
-	if [[ $type != "" ]]; then
-		sed -i "s/$type = false/$type = true/g" $flowunit_infer/$name.toml
-		if [ $? -ne 0 ]; then
-			echoerr "add type failed"
-			return 1
-		fi
-	fi
-
-	sed -i "s/\"description\"/\"$desc\"/g" $flowunit_infer/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add property description failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $flowunit_infer/CMakeLists.txt
-	if [ $? -ne 0 ]; then
-		echoerr "sed CMakeLists.txt failed"
-		return 1
-	fi
-
-	if [ -f $entry ]; then
-		echoerr "$entry is found"
-		cp $entry $flowunit_infer
-	elif [ -f $flowunit_infer/$entry ]; then
-		echoerr "$entry is found"
-	else
-		echoerr "fail to find $entry"
-		return 0
-	fi
-
-	temp=(${entry//\// }) 
-	sed -i "s/.\/model.pb/.\/${temp[${#temp[@]}-1]}/g" $flowunit_infer/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add property description failed"
-		return 1
-	fi
-
-	sed -i "s/virtual_type = \"tensorflow\"/virtual_type = \"$virtual\"/g" $flowunit_infer/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add property description failed"
-		return 1
-	fi
-
-	sed -i "s/plugin = \"\"/plugin = \"$inf_plugin\"/g" $flowunit_infer/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add property description failed"
-		return 1
-	fi
-
-	handle_infer_out_array
-
-	if [ $? -ne 0 ]; then
-		echoerr "create output failed"
-		return 1
-	fi
-
-	handle_infer_in_array
-
-	if [ $? -ne 0 ]; then
-		echoerr "create input failed"
-		return 1
-	fi
-}
-
-create_yolo_template()
-{
-		# Nb.line of [output]
-	let base=41
-	base_path="./"
-	create_base_path
-	
-	if [ $device = "cpu" ]; then
-		flowunit_yolo=$base_path/src/flowunit/cpu/$name
-	elif [ $device = "cuda" ]; then
-		flowunit_yolo=$base_path/src/flowunit/cuda/$name
-	fi
-
-	if [[ ${#in_array[@]}+${#out_array[@]} -eq 0 ]]; then
-		echoerr "At least one input or output"
-		return 0
-	fi
-
-	if [ -d $flowunit_yolo ]; then
-		echoerr "$flowunit_yolo is exsited"
-		return 1
-	fi
-
-	cp_with_check $FLOWUNIT_TEMPLATE_PATH/flowunit/yolo $flowunit_yolo
-	if [ $? -ne 0 ]; then
-		echoerr "copy yolo template failed"
-		return 1
-	fi
-
-	mv $flowunit_yolo/example.toml $flowunit_yolo/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy yolo template failed"
-		return 1
-	fi
-
-	sed -i "s/Example/$big_name/g" $flowunit_yolo/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "sed .toml failed"
-		return 1
-	fi
-	
-	sed -i "s/example/$name/g" $flowunit_yolo/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "copy templ.toml failed"
-		return 1
-	fi
-
-	sed -i "s/^device *= * \"cpu\"/device = \"$device\"/g" $flowunit_yolo/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add device failed"
-		return 1
-	fi
-
-	if [[ $type != "" ]]; then
-		sed -i "s/type = \"yolo_postprocess\"/type = \"$type\"/g" $flowunit_yolo/$name.toml
-		if [ $? -ne 0 ]; then
-			echoerr "add type failed"
-			return 1
-		fi
-	fi
-
-	sed -i "s/\"description\"/\"$desc\"/g" $flowunit_yolo/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add property description failed"
-		return 1
-	fi
-
-	sed -i "s/virtual_type = \"yolov3_postprocess\"/virtual_type = \"$yolo_version\"/g" $flowunit_yolo/$name.toml
-	if [ $? -ne 0 ]; then
-		echoerr "add property description failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $flowunit_yolo/CMakeLists.txt
-	if [ $? -ne 0 ]; then
-		echoerr "sed CMakeLists.txt failed"
-		return 1
-	fi
-
-	handle_yolo_out_array
-
-	if [ $? -ne 0 ]; then
-		echoerr "create output failed"
-		return 1
-	fi
-
-	handle_yolo_in_array
-
-	if [ $? -ne 0 ]; then
-		echoerr "create input failed"
-		return 1
-	fi
-
-}
 create_project_template()
 {
-	if [ -d $directory/$name ]; then
-		echoerr "target directory is existed. Create project directory failed"
-		return 0
+	if [ -d "${project_path}" ]; then
+		echoerr "Project '${project_path}' already exists."
+		return 2
 	fi
 
-	mkdir -p $directory/$name
+	mkdir -p "${project_path}"
 	if [ $? -ne 0 ]; then
-		echoerr "create project directory failed"
-		return 0
-	fi
-
-	if [ ! -d $FLOWUNIT_TEMPLATE_PATH/project ]; then
-		echoerr "source directory is not existed. Create project template failed"
-		return 0
-	fi
-
-	cp -r $FLOWUNIT_TEMPLATE_PATH/project/* $directory/$name/
-	rm -r $directory/$name/src/flowunit/example
-	rm $directory/$name/src/graph/example.toml
-	rm $directory/$name/test/flowunit/resize_flowuint_test.cc
-	if [ $? -ne 0 ]; then
-		echoerr "copy project template failed"
+		echoerr "Create project directory ${project_path} failed."
 		return 1
 	fi
 
-	sed -i "s/my-project/$name/g" $directory/$name/CMakeLists.txt
-	if [ $? -ne 0 ]; then
-		echoerr "sed CMakeLists.txt failed"
+	if [ ! -d "$MODELBOX_TEMPLATE_PATH/${tempalte}" ]; then
+		echoerr "Project tempalte $tempalte not exists, please input valid project template"
 		return 1
 	fi
+
+	cp -r "$MODELBOX_TEMPLATE_PATH/${tempalte}"/* "${project_path}"
+	if [ $? -ne 0 ]; then
+		echoerr "Copy project template failed."
+		return 1
+	fi
+
+	rm -r "${project_path}/src/flowunit/example"
+	rm "${project_path}/src/graph/example.toml"
+	rm "${project_path}/test/flowunit/resize_flowuint_test.cc"
+
+	sed "s/example/$project_name/g" -i "${project_path}/CMakeLists.txt"
+	if [ $? -ne 0 ]; then
+		echoerr "sed CMakeLists.txt failed."
+		return 1
+	fi
+
+	echo "Create project at '${project_path}' success"
     
+	return 0
 }
 
-create_service_plugin_template()
-{
-	if [ -e $directory/$name/$name.cc ]; then 
-		return 0
-	fi
-
-	mv $directory/$name/example.cc $directory/$name/$name.cc
-	if [ $? -ne 0 ]; then
-		echoerr "copy example.cc failed"
-		return 1
-	fi
-
-	mv $directory/$name/example.h $directory/$name/$name.h
-	if [ $? -ne 0 ]; then
-		echoerr "copy example.h failed"
-		return 1
-	fi
-
-	sed -i "s/ExamplePlugin/$plugin/g" $directory/$name/$name.cc
-	if [ $? -ne 0 ]; then
-		echoerr "copy template failed"
-		return 1
-	fi
-
-	sed -i "s/ExamplePlugin/$plugin/g" $directory/$name/$name.h
-	if [ $? -ne 0 ]; then
-		echoerr "copy template failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $directory/$name/$name.cc
-	if [ $? -ne 0 ]; then
-		echoerr "copy template failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $directory/$name/$name.h
-	if [ $? -ne 0 ]; then
-		echoerr "copy template failed"
-		return 1
-	fi
-
-	sed -i "s/example/$name/g" $directory/$name/CMakeLists.txt
-	if [ $? -ne 0 ]; then
-		echoerr "copy template failed"
-		return 1
-	fi
-    
-}
-
-create_template()
-{
-	big_name=`echo ${name:0:1} | tr  '[a-z]' '[A-Z]'`${name:1}
-	flowunit="${big_name}FlowUnit"
-	plugin="${big_name}Plugin"
-
-	if [ "$template" == "python" ]; then
-		create_python_template
-	elif [ "$template" == "c++" ]; then
-		create_cpp_template
-	elif [ "$template" == "infer" ]; then
-		create_infer_template
-	elif [ "$template" == "yolo" ]; then
-		create_yolo_template
-	elif [ "$template" == "project" ]; then
-		create_project_template
-	elif [ "$template" == "service-plugin" ]; then
-		cp -r $FLOWUNIT_TEMPLATE_PATH/plugin $directory/$name
-		if [ $? -ne 0 ]; then
-			echoerr "copy service-plugin template failed"
-			return 1
-		fi
-		create_service_plugin_template
-	else
-		echoerr "unsurpport template"
-		return 1 
-	fi
-
-	if [ $? -ne 0 ]; then
-		echoerr "copy template failed"
-		return 1
-	fi
-}
-
-
-main() {
-	i=0
-	CMD=""
-	while [ $i -lt $# ]
-	do 
-		i=$(($i+1))
-		eval ARG="\$$i"
-		CMD="$CMD \"$ARG\""
-	done
-	
-	OPTS=`getopt -o n:t:d:h:p: --long template:,name:,dir:,help:,desc:,device:,type:,in:,out:,entry:,virtual:,plugin:,path:,yolo_version,project_template: \
-		-n  "$0" -- "$CMD"`
-
-	if [ $# -lt 2 ]; then showhelp; exit 1; fi
-	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
-
-	directory="./"
-	project_path="./"
-	name="example"
-	desc="description"
-	type=""
-	device="cpu"
-	outport=""
-	out_type=""
-	out_dev=""
-	inport=""
-	in_type=""
-	in_dev=""
-	in_array=()
-	out_array=()
-	entry="./model.pb"
-	virtual="tensorflow"
-	yolo_version="yolov3_postprocess"
-	inf_plugin=""
-	
+create_project() {
+	project_name=""
+	project_path="$DEFAULT_PROJECT_PATH"
+	project_root_path=""
+	tempalte="project"
 
 	while true; do
-		case "$1" in
-		-t | --template)
-			template="$2"
-			shift 2;;
-		-d | --dir)
-			directory="$2"
-			shift 2;;
-		-n | --name)
-			name="$2"
-			shift 2;;
-		-h | --help)
-			showhelp
-			shift ;;
-		-p | --path)
-			project_path="$2"
-			shift 2;;
-		--project_template)
-			shift 2;;
-		--device)
-			device="$2"
-			shift 2;;
-		--type)
-			type="$2"
-			shift 2;;
-		--desc)
-			desc="$2"
-			let num=0
-			str=''
-			shift 2;;
-		--entry)
-			entry="$2"
-			shift 2;;
-		--virtual)
-			virtual="$2"
-			shift 2;;
-		--yolo_version)
-			yolo_version="yolo""$2""_postprocess"
-			shift 2;;
-		--plugin)
-			inf_plugin="$2"
-			shift 2;;
-		--in)
-			temp=($2)
-			in_array+=(${temp[@]})
-			shift 2;;
-		--out)
-			temp=($2)
-			out_array+=(${temp[@]})
-			shift 2;;
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+		case "$arg_option" in
+		--name)
+			project_name="$arg_value"
+			shift "$shift_count" ;;
+		--template)
+			tempalte="$arg_value"
+			shift "$shift_count" ;;
+		--path)
+			project_path="$arg_value"
+			shift "$shift_count" ;;
+		--rootpath)
+			project_root_path="$arg_value"
+			shift "$shift_count" ;;
 		-- ) shift; break ;;
 		* ) break ;;
   		esac
 	done
-	create_template
+
+	if [ -z "${project_name}" ]; then
+		echoerr "Project name is not set"
+		return 1
+	fi
+
+	if [ "${project_path}" = "$DEFAULT_PROJECT_PATH" ] && [ -n "$project_root_path" ]; then
+		project_path="${project_root_path}/${project_name}"
+		if [ ! -d "" ]; then
+			mkdir -p "${project_root_path}"
+		fi
+	fi
+
+	create_project_template "$project_name" "${project_path}" "$tempalte"
+	ret=$?
+	if [ $ret -ne 0 ] && [ $ret -ne 2 ]; then
+		echoerr "Create project template failed."
+		if [ -n "${project_path}" ]; then
+			rm -fr "${project_path}"
+		fi
+		return 1
+	fi
+
+	return $ret
+}
+
+toml_data_init() {
+	TOML_DATA=""
+}
+
+toml_data_append() {
+	TOML_DATA="${TOML_DATA}$*\n"
+}
+
+toml_data_complete() {
+	echo -e "${TOML_DATA}" > "$1"
+}
+
+toml_data_write_base() {
+	toml_data_append "[base]"
+	toml_data_append "name = \"${flowunit_name}\" # The FlowUnit name "
+	toml_data_append "device = \"${flowunit_device}\" # The device the flowunit runs on,cpu,cuda,ascend"
+	toml_data_append "version = \"1.0.0\" # The version of the flowunit"
+	toml_data_append "description = \"${flowunit_desc}\" # The description of the flowunit"
+	toml_data_append "group_type = \"$group_type\" # flowunit group attribution "
+	if [ -n "$flowunit_type" ]; then
+		toml_data_append "${flowunit_type} = true # flowunit type"
+	fi
+}
+
+toml_data_write_inputports() {
+	toml_data_append "# Input ports description"
+	toml_data_append "[input]"
+	i=0
+	for input in "${flowunit_inputs[@]}"; do
+		toml_data_append "[input.input$i]"
+		i=$((i+1))
+		IFS=',' read -ra options <<< "$input"
+		for option in "${options[@]}"; do
+			IFS="=" read -r -a values <<< "$option"
+			toml_data_append "${values[0]} = \"${values[1]}\""
+		done
+	done
+}
+
+toml_data_write_outputports() {
+	toml_data_append ""
+	toml_data_append "# Output ports description"
+	toml_data_append "[output]"
+	i=0
+	for output in "${flowunit_outputs[@]}"; do
+		toml_data_append "[output.output$i]"
+		i=$((i+1))
+		IFS=',' read -ra options <<< "$output"
+		for option in "${options[@]}"; do
+			IFS="=" read -r -a values <<< "$option"
+			toml_data_append "${values[0]} = \"${values[1]}\""
+		done
+	done
+}
+
+prepare_flowunit_base() {
+	TEMPLATE_PATH="$MODELBOX_TEMPLATE_PATH/flowunit/$1"
+	SOURCE_DIR="${project_path}/src/flowunit/${flowunit_name}"
+
+	if [ ! -d "$TEMPLATE_PATH" ]; then
+		echoerr "Flowunit template not exist."
+		return 1
+	fi
+
+	if [ -d "$SOURCE_DIR" ]; then
+		echoerr "Flowunit source directory $SOURCE_DIR already exists."
+		return 2
+	fi
+
+	mkdir -p "$SOURCE_DIR"
+	if [ $? -ne 0 ]; then
+		echoerr "Create flowunit source directory $SOURCE_DIR failed."
+		return 1
+	fi
+
+	cp -a "$TEMPLATE_PATH"/* "$SOURCE_DIR"
+	if [ $? -ne 0 ]; then
+		echoerr "Copy template source $TEMPLATE_PATH failed."
+		return 1
+	fi
+
+	for example_name in "$SOURCE_DIR"/example*; do
+		newname=$(basename "$example_name" | sed "s/example/${flowunit_name}/g")
+		mv "$example_name" "$SOURCE_DIR/$newname"
+		if [ $? -ne 0 ]; then
+			echoerr "Rename template file failed."
+			return 1
+		fi
+	done
+
+	return 0
+}
+
+setup_flowunit_python_source() {
+	SOURCE_FILE="${SOURCE_DIR}/${flowunit_name}.py"
+	classname=${flowunit_name^}
+	sed "s/ExampleFlowUnit/${classname}FlowUnit/g" -i "$SOURCE_FILE" 
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	space=$(grep "in_data = data_context.input" "$SOURCE_FILE" | sed 's/\([ |\t]*\)in_data = data_context.input.*/\1/g')
+	input_flag="# input data"
+	sed "s/in_data = data_context.input.*/${input_flag}/" -i "$SOURCE_FILE"
+	i=0
+	for port in "${flowunit_input_names[@]}"; do
+		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
+			line="in_data = data_context.input(\"${port}\")"
+		else
+			line="in_data_${i} = data_context.input(\"${port}\")"
+		fi
+		sed "/${input_flag}/a \\${space}${line}" -i "$SOURCE_FILE"
+		i=$((i+1))
+	done
+
+	
+	output_flag="# output data"
+	sed "s/out_data = data_context.output.*/${output_flag}/" -i "$SOURCE_FILE"
+	i=0
+	for port in "${flowunit_output_names[@]}"; do
+		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
+			line="out_data = data_context.output(\"${port}\")"
+		else
+			line="out_data_${i} = data_context.output(\"${port}\")"
+		fi
+		sed "/${output_flag}/a \\${space}${line}" -i "$SOURCE_FILE"
+		i=$((i+1))
+	done
+	
+	return 0
+}
+
+setup_flowunit_python_toml() {
+	TOML_FILE="${SOURCE_DIR}/${flowunit_name}.toml"
+	classname="${flowunit_name^}FlowUnit"
+
+	toml_data_init
+	toml_data_write_base
+	toml_data_append "entry = \"${flowunit_name}@${classname}\" # Python flowunit entry function"
+	toml_data_append "type = \"python\" # Fixed value"
+	toml_data_append ""
+	toml_data_write_inputports
+	toml_data_write_outputports
+
+	toml_data_complete "$TOML_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Write toml file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+create_flowunit_python() {
+	prepare_flowunit_base "python"
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	setup_flowunit_python_source
+	if [ $? -ne 0 ]; then
+		echoerr "Setup python source file failed."
+		return 1
+	fi
+
+	setup_flowunit_python_toml
+	if [ $? -ne 0 ]; then
+		echoerr "Setup python toml file failed."
+		return 1
+	fi
+
+	echo "create python flowunit at $SOURCE_DIR success";
+	return 0
+}
+
+setup_flowunit_cpp_source() {
+	HEADER_FILE="${SOURCE_DIR}/${flowunit_name}.h"
+	SOURCE_FILE="${SOURCE_DIR}/${flowunit_name}.cc"
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+	HEAD_MACRO="${flowunit_name^^}_${flowunit_device^^}"
+	classname=${flowunit_name^}
+	sed "s/ExampleFlowUnit/${classname}FlowUnit/g" -i "$HEADER_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed "s/ExampleFlowUnit/${classname}FlowUnit/g" -i "$SOURCE_FILE" 
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed "s/example.h/${flowunit_name}.h/g" -i "$SOURCE_FILE" 
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed "s/cpu/${flowunit_device}/g" -i "$HEADER_FILE" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed "s/example/${flowunit_name}/g" -i "$HEADER_FILE" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed "s/EXAMPLE_CPU/${HEAD_MACRO}/g" -i "$HEADER_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed "s/@Brief: A .*/@Brief: ${flowunit_desc}\";/g" -i "$HEADER_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	# add input port information
+	space=$(grep "auto input_bufs = ctx->Input" "$SOURCE_FILE" | sed 's/\([ |\t]*\)auto input_bufs = ctx->Input.*/\1/g')
+	space_desc=$(grep "desc.AddFlowUnitInput(modelbox::FlowUnitInput" "$SOURCE_FILE" | sed 's/\([ |\t]*\)desc.AddFlowUnitInput(modelbox::FlowUnitInput.*/\1/g')
+	input_flag="// input data"
+	input_port_flag="// input port"
+	sed "s#auto input_bufs = ctx->Input.*#${input_flag}#" -i "$SOURCE_FILE"
+	sed "s#desc.AddFlowUnitInput(modelbox::FlowUnitInput.*#${input_port_flag}#" -i "$SOURCE_FILE"
+	i=0
+	for port in "${flowunit_input_names[@]}"; do
+		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
+			line="auto input_bufs = ctx->Input(\"${port}\");"
+		else
+			line="auto input_bufs_${i} = ctx->Input(\"${port}\");"
+		fi
+		sed "\#${input_flag}#a \\${space}${line}" -i "$SOURCE_FILE"
+		i=$((i+1))
+
+		line="desc.AddFlowUnitInput(modelbox::FlowUnitInput(\"${port}\", FLOWUNIT_TYPE));"
+		sed "\#${input_port_flag}#a \\${space_desc}${line}" -i "$SOURCE_FILE"
+	done
+
+	# add output port information
+	output_flag="// output data"
+	output_port_flag="// output port"
+	sed "s#auto output_bufs = ctx->Output.*#${output_flag}#" -i "$SOURCE_FILE"
+	sed "s#desc.AddFlowUnitOutput(modelbox::FlowUnitOutput.*#${output_port_flag}#" -i "$SOURCE_FILE"
+	i=0
+	for port in "${flowunit_output_names[@]}"; do
+		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
+			line="auto output_bufs = ctx->Output(\"${port}\");"
+		else
+			line="auto output_bufs_${i} = ctx->Output(\"${port}\");"
+		fi
+
+		sed "\#${output_flag}#a \\${space}${line}" -i "$SOURCE_FILE"
+		i=$((i+1))
+
+		line="desc.AddFlowUnitOutput(modelbox::FlowUnitOutput(\"${port}\", FLOWUNIT_TYPE));"
+		sed "\#${output_port_flag}#a \\${space_desc}${line}" -i "$SOURCE_FILE"
+	done
+
+	return 0
+}
+
+setup_flowunit_cpp_toml() {
+	TOML_FILE="${SOURCE_DIR}/${flowunit_name}.toml"
+	classname="${flowunit_name^}FlowUnit"
+
+	toml_data_init
+	toml_data_write_base
+	toml_data_append "type = \"c++\" # Fixed value"
+	toml_data_append ""
+	toml_data_write_inputports
+	toml_data_write_outputports
+
+	toml_data_complete "$TOML_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Write toml file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+create_flowunit_cpp() {
+	prepare_flowunit_base "c++"
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	setup_flowunit_cpp_source
+	if [ $? -ne 0 ]; then
+		echoerr "Setup cpp source file failed."
+		return 1
+	fi
+
+	setup_flowunit_cpp_toml
+	if [ $? -ne 0 ]; then
+		echoerr "Setup cpp toml file failed."
+		return 1
+	fi
+
+	echo "create c++ flowunit at $SOURCE_DIR success";
+	return 0;
+}
+
+setup_flowunit_yolo_source() {
+	return 0
+}
+
+setup_flowunit_yolo_toml() {
+	TOML_FILE="${SOURCE_DIR}/${flowunit_name}.toml"
+
+	toml_data_init
+	toml_data_write_base
+	toml_data_append "type = \"yolo_postprocess\" # Fixed value"
+	toml_data_append "virtual_type = \"$virtual_type\" # yolo type 'yolov3_postprocess', 'yolov5_postprocess' "
+	toml_data_append ""
+
+	toml_data_append "[config]"
+	toml_data_append "# input_width = 800"
+	toml_data_append "# input_height = 480"
+	toml_data_append "# class_num = 1"
+	toml_data_append "# score_threshold = [0.6,0.7]"
+	toml_data_append "# nms_threshold = [0.45,0.3]"
+	toml_data_append "# yolo_output_layer_num = 2"
+	toml_data_append "# yolo_output_layer_wh = [25,15,50,30]"
+	toml_data_append "# anchor_num = [4,4]"
+	toml_data_append "# anchor_biases = [100.0,72.0,173.12,55.04,165.12,132.0,280.0,252.0,10.0,8.0,20.0,16.0,30.0,24.0,67.0,56.0]"
+	toml_data_append ""
+
+	toml_data_write_inputports
+	toml_data_write_outputports
+
+	toml_data_complete "$TOML_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Write toml file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+flowunit_yolo_valid_virtual_type() {
+	case "$1" in
+	yolov3_postprocess | yolov5_postprocess)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0
+}
+
+create_flowunit_yolo() {
+	virtual_type=""
+	args=""
+
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+
+		case "$arg_option" in
+		--virtual-type)
+			virtual_type="$arg_value"
+			shift "$shift_count" ;;
+		* ) 
+			appendargs "$1"
+			shift ;;
+  		esac
+	done
+
+	if [ -z "$virtual_type" ]; then
+		echoerr "virtual type for yolo is not set"
+		return 1
+	fi
+
+	flowunit_yolo_valid_virtual_type "$virtual_type"
+	if [ $? -ne 0 ]; then
+		echoerr "Virtual type $virtual_type is invalid"
+		return 1
+	fi
+
+	prepare_flowunit_base "yolo"
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	setup_flowunit_yolo_source
+	if [ $? -ne 0 ]; then
+		echoerr "Setup yolo source file failed."
+		return 1
+	fi
+
+	setup_flowunit_yolo_toml
+	if [ $? -ne 0 ]; then
+		echoerr "Setup yolo toml file failed."
+		return 1
+	fi
+
+	echo "create yolo flowunit at $SOURCE_DIR success";
+	return 0;
+}
+
+setup_flowunit_infer_source() {
+	return 0
+}
+
+setup_flowunit_infer_toml() {
+	TOML_FILE="${SOURCE_DIR}/${flowunit_name}.toml"
+
+	toml_data_init
+	toml_data_write_base
+	toml_data_append "type = \"inference\" # Fixed value"
+	toml_data_append "entry = \"${modelfile}\" # model file path"
+	toml_data_append "virtual_type = \"$virtual_type\" # inference engine type: 'tensorflow', 'tensorrt', 'torch', 'acl', 'mindspore' "
+	toml_data_append ""
+
+	if [ -n "$plugin" ]; then
+		toml_data_append "[config]"
+		toml_data_append "plugin = \"$plugin\""
+		toml_data_append ""
+	fi
+
+	toml_data_write_inputports
+	toml_data_write_outputports
+
+	toml_data_complete "$TOML_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Write toml file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+flowunit_valid_device() {
+	case "$1" in
+	cpu | cuda | ascend)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0
+}
+
+flowunit_infer_valid_virtual_type() {
+	case "$1" in
+	tensorrt | tensorflow | torch | acl |mindspore)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0
+}
+
+flowunit_type_valid() {
+	if [ -z "$1" ]; then
+		return 0
+	fi
+
+	case "$1" in
+	stream | condition | collapse | expand | normal | collapse_all | loop)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0	
+}
+
+create_flowunit_infer() {
+	modelfile=""
+	virtual_type=""
+	args=""
+	plugin=""
+	do_copy=""
+
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+
+		case "$arg_option" in
+		--model)
+			modelfile="$arg_value"
+			shift "$shift_count" ;;
+		--copy-model)
+			do_copy="true"
+			shift 1;;
+		--virtual-type)
+			virtual_type="$arg_value"
+			shift "$shift_count" ;;
+		--plugin)
+			plugin="$arg_value"
+			shift "$shift_count" ;;
+		* ) 
+			appendargs "$1"
+			shift ;;
+  		esac
+	done
+
+	if [ -z "$modelfile" ]; then
+		echoerr "Model file path is not set"
+		return 1
+	fi
+
+	flowunit_infer_valid_virtual_type "$virtual_type"
+	if [ $? -ne 0 ]; then
+		echoerr "Virtual type $virtual_type is invalid"
+		return 1
+	fi
+
+	prepare_flowunit_base "infer"
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	if [ "$do_copy" = "true" ]; then
+		if [ ! -e "$modelfile" ]; then
+			echoerr "Model file $modelfile is not exists"
+			return 1
+		fi
+
+		modelfilename=$(basename "$modelfile")
+		cp "$modelfile" "${SOURCE_DIR}/${modelfilename}"
+		if [ $? -ne 0 ]; then
+			echoerr "Copy model file to $SOURCE_DIR failed"
+			return 1
+		fi
+
+		modelfile=${modelfilename}
+	fi
+
+	if [ -z "$group_type" ] || [ "$group_type" = "generic" ]; then
+		group_type="inference"
+	fi
+
+	setup_flowunit_infer_source
+	if [ $? -ne 0 ]; then
+		echoerr "Setup infer source file failed."
+		return 1
+	fi
+
+	setup_flowunit_infer_toml
+	if [ $? -ne 0 ]; then
+		echoerr "Setup infer toml file failed."
+		return 1
+	fi
+
+	echo "create infer flowunit at $SOURCE_DIR success";
+
+	return 0
+}
+
+flowunit_port_valid_check() {
+	case "$1" in
+	name)
+		return 0
+		;;
+	type)
+		return 0
+		;;
+	device)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0	
+}
+
+flowunit_parser_ports() {
+	for output in "${flowunit_inputs[@]}"; do
+		IFS=',' read -ra options <<< "$output"
+		for option in "${options[@]}"; do
+			IFS="=" read -r -a values <<< "$option"
+			flowunit_port_valid_check "${values[0]}" "${values[1]}"
+			if [ $? -ne 0 ]; then
+				echo "invalid input port option $option"
+				return 1
+			fi
+
+			case "${values[0]}" in
+			name)
+				flowunit_input_names+=("${values[1]}")
+				;;
+			*)
+				;;
+			esac
+		done
+	done
+
+	for output in "${flowunit_outputs[@]}"; do
+		IFS=',' read -ra options <<< "$output"
+		for option in "${options[@]}"; do
+			IFS="=" read -r -a values <<< "$option"
+			flowunit_port_valid_check "${values[0]}" "${values[1]}"
+			if [ $? -ne 0 ]; then
+				echo "invalid output port option $option"
+				return 1
+			fi
+			case "${values[0]}" in
+			name)
+				flowunit_output_names+=("${values[1]}")
+				;;
+			*)
+				;;
+			esac
+		done
+	done
+}
+
+is_project_path_valid() {
+	local project=$1
+	if [ ! -d "$project/src" ]; then
+		return 1
+	fi
+
+	if [ ! -e "$project/CMakeLists.txt" ]; then
+		return 1
+	fi
+
+	return 0
+}
+
+create_flowunit() {
+	args=""
+	flowunit_lang=""
+	flowunit_name=""
+	project_path="$DEFAULT_PROJECT_PATH"
+	flowunit_device="cpu"
+	flowunit_desc="A flowunit for modelbox"
+	flowunit_inputs=()
+	flowunit_outputs=()
+	flowunit_input_names=()
+	flowunit_output_names=()
+	flowunit_type=""
+	group_type="generic"	
+	SOURCE_DIR=""
+
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+
+		case "$arg_option" in
+		--lang)
+			flowunit_lang="$arg_value"
+			shift "$shift_count" ;;
+		--type)
+			flowunit_type="$arg_value"
+			shift "$shift_count" ;;
+		--group-type)
+			group_type="$arg_value"
+			shift "$shift_count" ;;
+		--name)
+			flowunit_name="$arg_value"
+			shift "$shift_count" ;;
+		--desc)
+			flowunit_desc="$arg_value"
+			shift "$shift_count" ;;
+		--device)
+			flowunit_device="$arg_value"
+			shift "$shift_count" ;;
+		--project-path)
+			project_path="$arg_value"
+			shift "$shift_count" ;;
+		--input)
+			if [ "$arg_value" = "-" ]; then
+				arg_value="name=in"
+			fi
+			flowunit_inputs+=("$arg_value")
+			shift "$shift_count" ;;
+		--output)
+			if [ "$arg_value" = "-" ]; then
+				arg_value="name=out"
+			fi
+			flowunit_outputs+=("$arg_value")
+			shift "$shift_count" ;;
+		* ) 
+			appendargs "$1"
+			shift ;;
+  		esac
+	done
+
+	if [ ${#flowunit_inputs[@]} -eq 0 ] && [ ${#flowunit_outputs[@]} -eq 0 ]; then
+		echoerr "Flowunit input or output port is not set."
+		return 1
+	fi
+
+	flowunit_parser_ports
+	if [ $? -ne 0 ]; then
+		echoerr "Read port name failed"
+		return 1
+	fi
+
+	flowunit_type_valid
+	if [ $? -ne 0 ]; then
+		echoerr "Flowunit type is invalid."
+		return 1
+	fi
+
+	is_project_path_valid "${project_path}"
+	if [ $? -ne 0 ]; then
+		echoerr "Project path ${project_path} is invalid."
+		return 1
+	fi
+
+	flowunit_valid_device "${flowunit_device}"
+	if [ $? -ne 0 ]; then
+		echoerr "Input device is invalid."
+		return 1
+	fi
+
+	if [ -z "$flowunit_name" ]; then
+		echoerr "Flowunit name is not set."
+		return 1
+	fi
+
+	if [ -z "$flowunit_lang" ]; then
+		echoerr "Flowunit program language is not set".
+		return 1
+	fi
+
+	if [ ! -d "${project_path}" ]; then 
+		echoerr "Project ${project_path} is not exist, please create project first, or set project path to create."
+		return 1
+	fi
+
+	appendargs "$@"
+	eval set -- "${args}"
+
+	case "$flowunit_lang" in 
+	python)
+		create_flowunit_python "$@"
+		;;
+	c++)
+		create_flowunit_cpp "$@"
+		;;
+	infer)
+		create_flowunit_infer "$@"
+		;;
+	yolo)
+		create_flowunit_yolo "$@"
+		;;
+	*)
+		echoerr "Program language '$flowunit_lang' is not supported."
+		return 1
+		;;
+	esac
+
+	ret=$?
+	if [ $ret -ne 0 ] && [ $ret -ne 2 ] && [ -n "$SOURCE_DIR" ]; then
+		rm -fr "$SOURCE_DIR"
+		return 1
+	fi
+
+	return $ret
+}
+
+appendargs() {
+	i=0
+	while [ $i -lt $# ]; do
+		i=$((i+1))
+		eval ARG="\${$i}"
+		pattern=" |'"
+		if [[ "$ARG" =~ $pattern ]]; then
+			args="$args \"$ARG\""
+		else
+			args="$args $ARG"
+		fi
+	done
+}
+
+parserarg() {
+	# Support -o=v, --o=v -o v, --o v parameter forms
+	IFS="=" read -r -a arr <<< "$1"
+
+	arg_option="$1"
+	arg_value="$2"
+	shift_count=2
+
+	if [ -z "$2" ]; then
+		shift_count=1
+	fi
+
+	if [ ${#arr[@]} -gt 1 ]; then
+		arg_option="${arr[0]}"
+		arg_value=${1#"$arg_option"=}
+		shift_count=1
+	fi
+
+	if [[ "$arg_option" = "--"* ]]; then
+		return
+	fi
+
+	if [[ "$arg_option" = "-"* ]]; then
+		arg_option="-${arg_option}"
+		return
+	fi
+
+	return
+}
+
+main() {
+	args=""
+
+	if [ $# -lt 1 ]; then showhelp; exit 1; fi
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+
+		case "$arg_option" in
+		--project)
+			shift
+			appendargs "$@"
+			eval set -- "${args}"
+			create_project "$@"
+			return $?
+			break;;
+		--flowunit)
+			shift
+			appendargs "$@"
+			eval set -- "${args}"
+			create_flowunit "$@"
+			return $?
+			break;;
+		-h | --help)
+			showhelp
+			shift
+			break;;
+		* ) 
+			appendargs "$1"
+			shift ;;
+  		esac
+	done
 
 	return $?
-}
-
-function handle_python_out_array(){
-	if [[ ${#out_array[@]} -eq 0 ]]; then
-		# delete outport
-		sed -i '41,46d' $flowunit_python/$name.toml
-	fi
-	for(( i=0;i<${#out_array[@]};i++)) do
-		IFS=","
-		temp=(${out_array[i]})
-		if [ $i -eq 0 ]; then			
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "s/out_1/${j#*=}/g" $flowunit_python/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			# each description contains 2 lines
-			sed -i "$(($base + 2)) a\ \n" $flowunit_python/$name.toml
-		else
-			let i_plus=$i+1
-			let num_line=$i*3+$base
-			sed -i "$num_line a\[output.output$i_plus]" $flowunit_python/$name.toml
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "$(($num_line + 1)) a\name = \"${j#*=}\"" $flowunit_python/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			sed -i "$(($num_line + 2)) a\ " $flowunit_python/$name.toml
-			if [ $? -ne 0 ]; then
-				echoerr "add output_$1 failed"
-				return 1
-			fi
-		fi
-	done
-}
-
-function handle_python_in_array(){
-	if [[ ${#in_array[@]} -eq 0 ]]; then
-		# delete inport
-		sed -i '35,40d' $flowunit_python/$name.toml
-	fi
-	
-	for(( i=0;i<${#in_array[@]};i++)) do
-		IFS=","
-		temp=(${in_array[i]})
-		if [ $i -eq 0 ]; then			
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "s/in_1/${j#*=}/g" $flowunit_python/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "device" ]; then
-					sed -i "s/device = \"*\" # Input port device/device = \"echo ${j#*=}\" # Input port device/g" $flowunit_python/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-
-		else
-			let i_plus=$i+1
-			let num_line=$i*4+$base-6
-			
-			sed -i "$num_line a\[input.input$i_plus]" $flowunit_python/$name.toml
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "$(($num_line + 1)) a\name = \"${j#*=}\"" $flowunit_python/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "device" ]; then
-					sed -i "$(($num_line + 2)) a\device = \"${j#*=}\"" $flowunit_python/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-
-			sed -i "$(($num_line + 3)) a\ " $flowunit_python/$name.toml
-			if [ $? -ne 0 ]; then
-				echoerr "add input_$1 failed"
-				return 1
-			fi
-		fi
-	done
-}
-
-function handle_cpp_out_array(){
-	if [[ ${#out_array[@]} -eq 0 ]]; then
-		# delete outport
-		sed -i '41,46d' $flowunit_cpp/$name.toml
-	fi
-	for(( i=0;i<${#out_array[@]};i++)) do
-		IFS=","
-		temp=(${out_array[i]})
-		if [ $i -eq 0 ]; then			
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "s/out_1/${j#*=}/g" $flowunit_cpp/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			# each description contains 2 lines
-			sed -i "$(($base + 2)) a\ \n" $flowunit_cpp/$name.toml
-		else
-			let i_plus=$i+1
-			let num_line=$i*3+$base
-			sed -i "$num_line a\[output.output$i_plus]" $flowunit_cpp/$name.toml
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "$(($num_line + 1)) a\name = \"${j#*=}\"" $flowunit_cpp/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			sed -i "$(($num_line + 2)) a\ " $flowunit_cpp/$name.toml
-			if [ $? -ne 0 ]; then
-				echoerr "add output_$1 failed"
-				return 1
-			fi
-		fi
-	done
-}
-
-function handle_cpp_in_array(){
-	if [[ ${#in_array[@]} -eq 0 ]]; then
-		# delete inport
-		sed -i '35,40d' $flowunit_cpp/$name.toml
-	fi
-	
-	for(( i=0;i<${#in_array[@]};i++)) do
-		IFS=","
-		temp=(${in_array[i]})
-		if [ $i -eq 0 ]; then		
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "s/in_1/${j#*=}/g" $flowunit_cpp/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-
-		else
-			let i_plus=$i+1
-			let num_line=$i*4+$base-6
-			
-			sed -i "$num_line a\[input.input$i_plus]" $flowunit_cpp/$name.toml
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "$(($num_line + 1)) a\name = \"${j#*=}\"" $flowunit_cpp/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "device" ]; then
-					sed -i "$(($num_line + 2)) a\device = \"${j#*=}\"" $flowunit_cpp/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			sed -i "$(($num_line + 3)) a\ " $flowunit_cpp/$name.toml
-			if [ $? -ne 0 ]; then
-				echoerr "add input_$1 failed"
-				return 1
-			fi
-		fi
-	done
-}
-
-function handle_infer_out_array(){
-	if [[ ${#out_array[@]} -eq 0 ]]; then
-		# delete outport
-		sed -i '35,41d' $flowunit_infer/$name.toml
-	fi
-	for(( i=0;i<${#out_array[@]};i++)) do
-		IFS=","
-		temp=(${out_array[i]})
-		if [ $i -eq 0 ]; then			
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "s/out_1/${j#*=}/g" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "type" ]; then
-					sed -i "s/type = \"float\" # output/type = \"${j#*=}\" # output/g" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			# each description contains 3 lines
-			sed -i "$(($base + 3)) a\ \n" $flowunit_infer/$name.toml
-		else
-			let i_plus=$i+1
-			let num_line=$i*4+$base
-			
-			sed -i "$num_line a\[output.output$i_plus]" $flowunit_infer/$name.toml
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "$(($num_line + 1)) a\name = \"${j#*=}\"" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "type" ]; then
-					sed -i "$(($num_line + 2)) a\type = \"${j#*=}\"" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			
-			sed -i "$(($num_line + 3)) a\ " $flowunit_infer/$name.toml
-			if [ $? -ne 0 ]; then
-				echoerr "add output_$1 failed"
-				return 1
-			fi
-		fi
-	done
-}
-
-function handle_infer_in_array(){
-	if [[ ${#in_array[@]} -eq 0 ]]; then
-		# delete inport
-		sed -i '28,34d' $flowunit_infer/$name.toml
-	fi
-	for(( i=0;i<${#in_array[@]};i++)) do
-		IFS=","
-		temp=(${in_array[i]})
-		if [ $i -eq 0 ]; then			
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "s/in_1/${j#*=}/g" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "device" ]; then
-					sed -i "s/device = \"*\" # Input port device/device = \"echo ${j#*=}\" # Input port device/g" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "type" ]; then
-					sed -i "s/type = \"float\" # input port data type/type = \"${j#*=}\" # input port data type/g" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-		else
-			let i_plus=$i+1
-			let num_line=$i*5+$base-7
-			
-			sed -i "$num_line a\[input.input$i_plus]" $flowunit_infer/$name.toml
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "$(($num_line + 1)) a\name = \"${j#*=}\"" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "type" ]; then
-					sed -i "$(($num_line + 2)) a\type = \"${j#*=}\"" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "device" ]; then
-					sed -i "$(($num_line + 3)) a\device = \"${j#*=}\"" $flowunit_infer/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			
-			sed -i "$(($num_line + 4)) a\ " $flowunit_infer/$name.toml
-			if [ $? -ne 0 ]; then
-				echoerr "add input_$1 failed"
-				return 1
-			fi
-		fi
-	done
-}
-
-function handle_yolo_out_array(){
-	if [[ ${#out_array[@]} -eq 0 ]]; then
-		# delete outport
-		sed -i '41,43d' $flowunit_yolo/$name.toml
-	fi
-	for(( i=0;i<${#out_array[@]};i++)) do
-		IFS=","
-		temp=(${out_array[i]})
-		if [ $i -eq 0 ]; then			
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "s/out_1/${j#*=}/g" $flowunit_yolo/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "type" ]; then
-					sed -i "s/type = \"int\" # output/type = \"${j#*=}\" # output/g" $flowunit_yolo/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			# each description contains 3 lines
-			sed -i "$(($base + 3)) a\ \n" $flowunit_yolo/$name.toml
-		else
-			let i_plus=$i+1
-			let num_line=$i*4+$base
-			
-			sed -i "$num_line a\[output.output$i_plus]" $flowunit_yolo/$name.toml
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "$(($num_line + 1)) a\name = \"${j#*=}\"" $flowunit_yolo/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "type" ]; then
-					sed -i "$(($num_line + 2)) a\type = \"${j#*=}\"" $flowunit_yolo/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			
-			sed -i "$(($num_line + 3)) a\ " $flowunit_yolo/$name.toml
-			if [ $? -ne 0 ]; then
-				echoerr "add output_$1 failed"
-				return 1
-			fi
-		fi
-	done
-}
-
-function handle_yolo_in_array(){
-	if [[ ${#in_array[@]} -eq 0 ]]; then
-		# delete inport
-		sed -i '36,40d' $flowunit_yolo/$name.toml
-	fi
-	for(( i=0;i<${#in_array[@]};i++)) do
-		IFS=","
-		temp=(${in_array[i]})
-		if [ $i -eq 0 ]; then			
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "s/in_1/${j#*=}/g" $flowunit_yolo/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "device" ]; then
-					sed -i "s/type = \"float\" # input port data type/type = \"${j#*=}\" # input port data type/g" $flowunit_yolo/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-		else
-			let i_plus=$i+1
-			let num_line=$i*4+$base-5
-			
-			sed -i "$num_line a\[input.input$i_plus]" $flowunit_yolo/$name.toml
-			for j in ${temp[@]}
-			do
-				if [ ${j%%=*} = "name" ]; then
-					sed -i "$(($num_line + 1)) a\name = \"${j#*=}\"" $flowunit_yolo/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add ${j#*=} failed"
-						return 1
-					fi
-				elif [ ${j%%=*} = "type" ]; then
-					sed -i "$(($num_line + 2)) a\type = \"${j#*=}\"" $flowunit_yolo/$name.toml
-					if [ $? -ne 0 ]; then
-						echoerr "add echo ${j#*=} failed"
-						return 1
-					fi
-				fi
-			done
-			sed -i "$(($num_line + 3)) a\ " $flowunit_yolo/$name.toml
-			if [ $? -ne 0 ]; then
-				echoerr "add input_$1 failed"
-				return 1
-			fi
-		fi
-	done
-}
-
-function create_base_path(){
-	if [ $directory != "./" ] && [ $project_path != "./" ]; then
-		echoerr "Don't assign -d and -p in the same time."
-		return 1
-	elif [ $directory != "./" ] && [ $project_path == "./" ]; then
-		base_path=$directory
-	elif [ $directory == "./" ] && [ $project_path != "./" ]; then
-		base_path=$project_path
-	fi
-}
-
-function index_of(){
-	t=$1
-	searchstring=$2
-
-	rest=${t#*$searchstring}
-	return $(( ${#t} - ${#rest} - ${#searchstring} ))
-}
-
-function echoerr() { 
-	printf "%s\n" "$*" >&2
-}
-
-function cp_with_check() {
-	if [ ! -d $1 ]; then
-		echoerr "source directory $1 is not existed."
-		return 0
-	fi
-
-	cp -r $1 $2
-
-	if [ $? -ne 0 ]; then
-		echoerr "copy [$2] failed"
-		return 0
-	fi
 }
 
 main "$@"

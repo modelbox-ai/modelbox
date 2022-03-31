@@ -15,15 +15,15 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(my-project)
+project(example)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "cannot build the project in the source directory! Out-of-source build is enforced!")
 endif()
 
-set(MODELBOX_PROJECT_VERSION_MAJOR 0)
+set(MODELBOX_PROJECT_VERSION_MAJOR 1)
 set(MODELBOX_PROJECT_VERSION_MINOR 0)
-set(MODELBOX_PROJECT_VERSION_PATCH 1)
+set(MODELBOX_PROJECT_VERSION_PATCH 0)
 
 set(CMAKE_PROJECT_VERSION ${MODELBOX_PROJECT_VERSION_MAJOR})
 set(CMAKE_PROJECT_VERSION_MAJOR ${MODELBOX_PROJECT_VERSION_MAJOR})
