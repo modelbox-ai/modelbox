@@ -105,7 +105,12 @@ modelbox::Status ImageDecoderFlowUnit::Process(
     auto output_buffer = output_bufs->Back();
     output_buffer->Set("width", (int32_t)img_bgr.cols);
     output_buffer->Set("height", (int32_t)img_bgr.rows);
-    output_buffer->Set("width_stride", (int32_t)img_bgr.cols);
+    auto width_stride = (int32_t)img_bgr.cols;
+    if (pixel_format_ == "rgb" || pixel_format_ == "bgr") {
+      width_stride *= 3;
+    }
+    
+    output_buffer->Set("width_stride", width_stride);
     output_buffer->Set("height_stride", (int32_t)img_bgr.rows);
     output_buffer->Set("channel", (int32_t)img_dest.channels());
     output_buffer->Set("pix_fmt", pixel_format_);

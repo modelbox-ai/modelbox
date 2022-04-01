@@ -164,7 +164,7 @@ modelbox::Status NppiResizeFlowUnit::ProcessOneImage(
   auto output_buffer = output_buffer_list->At(index);
   output_buffer->Set("width", dstResize.width);
   output_buffer->Set("height", dstResize.height);
-  output_buffer->Set("width_stride", dstResize.width);
+  output_buffer->Set("width_stride", dstResize.width * 3);
   output_buffer->Set("height_stride", dstResize.height);
   output_buffer->Set("channel", srcResize.channel);
   output_buffer->Set("pix_fmt", pix_fmt);

@@ -201,7 +201,6 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
     *frame_index = *frame_index + 1;
     frame_buffer->Set("width", frame->width);
     frame_buffer->Set("height", frame->height);
-    frame_buffer->Set("width_stride", frame->width);
     frame_buffer->Set("height_stride", frame->height);
     frame_buffer->Set("rate_num", rate_num);
     frame_buffer->Set("rate_den", rate_den);
@@ -209,7 +208,9 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
     frame_buffer->Set("duration", duration);
     frame_buffer->Set("eos", false);
     frame_buffer->Set("pix_fmt", out_pix_fmt_str_);
+    auto width_stride = frame->width;
     if (out_pix_fmt_str_ == "rgb" || out_pix_fmt_str_ == "bgr") {
+      width_stride *= 3;
       int32_t channel = 3;
       frame_buffer->Set("channel", channel);
       frame_buffer->Set("shape",
@@ -218,6 +219,7 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
                                              static_cast<size_t>(channel)}));
       frame_buffer->Set("layout", std::string("hwc"));
     }
+    frame_buffer->Set("width_stride", width_stride);
 
     frame_buffer->Set("type", modelbox::ModelBoxDataType::MODELBOX_UINT8);
     frame_buffer->Set("timestamp", (int64_t)(frame->timestamp * time_base));

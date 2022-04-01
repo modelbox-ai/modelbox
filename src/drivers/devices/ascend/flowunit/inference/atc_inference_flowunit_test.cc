@@ -197,7 +197,7 @@ TEST_F(InferenceAscendFlowUnitTest, RunUnit) {
                              R"([graph]
     graphconf = '''digraph demo {                                                                            
           prepare_infer_data[type=flowunit, flowunit=prepare_infer_data, device=cpu, deviceid=0, label="<out>"]             
-          atc_inference[type=flowunit, flowunit=atc_inference, device=ascend, deviceid=0, label="<input> | <output:0>", batch_size=1]
+          atc_inference[type=flowunit, flowunit=acl_inference, device=ascend, deviceid=0, label="<input> | <output:0>", batch_size=1]
           check_infer_result[type=flowunit, flowunit=check_infer_result, device=cpu, deviceid=0, label="<in>", batch_size=1]  
                                   
           prepare_infer_data:out -> atc_inference:input

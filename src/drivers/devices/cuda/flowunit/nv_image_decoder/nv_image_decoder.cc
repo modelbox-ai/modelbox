@@ -234,7 +234,7 @@ bool NvImageDecoderFlowUnit::DecodeOthers(
   output_buffer->Set("height", (int32_t)img_dest.rows);
   output_buffer->Set("width", (int32_t)img_dest.cols);
   output_buffer->Set("height_stride", (int32_t)img_dest.rows);
-  output_buffer->Set("width_stride", (int32_t)img_dest.cols);
+  output_buffer->Set("width_stride", (int32_t)img_dest.cols * 3);
   output_buffer->Set("channel", (int32_t)img_dest.channels());
   output_buffer->Set("pix_fmt", pixel_format_);
   output_buffer->Set("type", modelbox::ModelBoxDataType::MODELBOX_UINT8);

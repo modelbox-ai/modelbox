@@ -82,7 +82,7 @@ modelbox::Status GetWidthStride(const std::string &pix_fmt, int32_t width,
 
 static size_t RGBBytesCalcByStride(int32_t width_stride,
                                    int32_t height_stride) {
-  return (size_t)width_stride * height_stride * 3;
+  return (size_t)width_stride * height_stride;
 }
 
 static size_t NVBytesCalcByStride(int32_t width_stride, int32_t height_stride) {
