@@ -99,7 +99,7 @@ class Popen {
    * @return 0: success
    *         -1: fail.
    */
-  int ReadOutLine(std::string &Line);
+  int ReadOutLine(std::string &line);
 
   /**
    * @brief Read all outputs at once

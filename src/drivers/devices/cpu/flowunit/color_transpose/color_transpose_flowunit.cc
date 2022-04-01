@@ -106,7 +106,7 @@ modelbox::Status ColorTransposeFlowUnit::Process(
     buffer->CopyMeta(input_buf->At(i));
     buffer->Set("width", width);
     buffer->Set("height", height);
-    buffer->Set("width_stride", width);
+    buffer->Set("width_stride", width * 3);
     buffer->Set("height_stride", height);
     buffer->Set("channel", channel);
     buffer->Set("pix_fmt", pix_fmt);

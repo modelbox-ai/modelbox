@@ -149,7 +149,7 @@ modelbox::Status CVResizeFlowUnit::Process(
              img_dest.total() * img_dest.elemSize());
     output_bufs->At(i)->Set("width", (int32_t)dest_width_);
     output_bufs->At(i)->Set("height", (int32_t)dest_height_);
-    output_bufs->At(i)->Set("width_stride", (int32_t)dest_width_);
+    output_bufs->At(i)->Set("width_stride", (int32_t)dest_width_ * 3);
     output_bufs->At(i)->Set("height_stride", (int32_t)dest_height_);
     output_bufs->At(i)->Set("channel", channel);
     output_bufs->At(i)->Set("pix_fmt", pix_fmt);
