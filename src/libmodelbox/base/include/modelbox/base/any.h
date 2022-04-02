@@ -188,6 +188,15 @@ class Collection {
       return false;
     }
 
+    #ifdef ANDROID
+    /* When they come from different so files, they may have different hash
+     * codes even if they have the same names. */
+    if (strcmp(typeid(T).name(), entrys_[key].type().name()) == 0)  {
+      value = any_cast<T>(entrys_[key]);
+      return true;
+    }
+    #endif
+
     if (!CanConvert(typeid(T).hash_code(), entrys_[key].type().hash_code())) {
       // always a bad condition
       MBLOG_ERROR << "Get value for " << key

@@ -104,7 +104,7 @@ add_custom_command(TARGET modelbox-python
     WORKING_DIRECTORY ${MODELBOX_PYTHON_TARGET_DIR}
     POST_BUILD 
     COMMENT "Building python wheel package.."
-    COMMAND strip -s ${MODELBOX_PYTHON_TARGET_DIR}/modelbox/*.so
+    COMMAND ${CMAKE_STRIP} -s ${MODELBOX_PYTHON_TARGET_DIR}/modelbox/*.so
     COMMAND umask 0022 && chmod -R a+rX . && ${PYTHON_EXECUTABLE} setup.py -q sdist -d ${MODELBOX_PYTHON_RELEASE_DIR} bdist_wheel -d ${MODELBOX_PYTHON_RELEASE_DIR})
 
 install(CODE 

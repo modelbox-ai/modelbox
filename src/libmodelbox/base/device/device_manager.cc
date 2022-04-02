@@ -24,6 +24,7 @@
 #include "modelbox/base/driver.h"
 #include "modelbox/base/log.h"
 #include "modelbox/base/status.h"
+#include "modelbox/base/memory_stub.h"
 
 namespace modelbox {
 DeviceManager::DeviceManager() {}
@@ -87,7 +88,7 @@ Status DeviceManager::InitDeviceFactory(std::shared_ptr<Drivers> driver) {
     }
     desc = device_driver->GetDriverDesc();
     std::shared_ptr<DeviceFactory> device_factory =
-        std::dynamic_pointer_cast<DeviceFactory>(temp_factory);
+        modelbox_dynamic_pointer_cast<DeviceFactory>(temp_factory);
 
     device_factory_.insert(std::make_pair(desc->GetType(), device_factory));
   }

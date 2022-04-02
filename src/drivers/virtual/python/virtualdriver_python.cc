@@ -15,7 +15,7 @@
  */
 
 #include "virtualdriver_python.h"
-
+#include "modelbox/base/memory_stub.h"
 #include <libgen.h>
 
 using namespace modelbox;
@@ -386,7 +386,7 @@ void VirtualPythonFlowUnitFactory::SetFlowUnitFactory(
         bind_flowunit_factory_list) {
   for (auto &bind_flowunit_factory : bind_flowunit_factory_list) {
     bind_flowunit_factory_list_.push_back(
-        std::dynamic_pointer_cast<FlowUnitFactory>(bind_flowunit_factory));
+        modelbox_dynamic_pointer_cast<FlowUnitFactory>(bind_flowunit_factory));
   }
 }
 
@@ -394,11 +394,11 @@ std::shared_ptr<modelbox::FlowUnit>
 VirtualPythonFlowUnitFactory::CreateFlowUnit(const std::string &unit_name,
                                              const std::string &unit_type) {
   for (auto &flowunit_factory : bind_flowunit_factory_list_) {
-    if (std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
+    if (modelbox_dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
             ->GetFlowUnitFactoryType() != unit_type) {
       continue;
     }
-    return std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
+    return modelbox_dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
         ->CreateFlowUnit(unit_name, unit_type);
   }
   return nullptr;

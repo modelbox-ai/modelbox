@@ -16,6 +16,7 @@
 
 #include "python_flowunit.h"
 
+#include "modelbox/base/memory_stub.h"
 #include "modelbox/device/cpu/device_cpu.h"
 
 using namespace pybind11::literals;
@@ -44,7 +45,7 @@ void PythonFlowUnit::EnablePythonDebug() {
 
 modelbox::Status PythonFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration>& opts) {
-  python_desc_ = std::dynamic_pointer_cast<VirtualPythonFlowUnitDesc>(
+  python_desc_ = modelbox_dynamic_pointer_cast<VirtualPythonFlowUnitDesc>(
       this->GetFlowUnitDesc());
 
   auto python_entry = python_desc_->GetPythonEntry();
@@ -249,7 +250,7 @@ modelbox::Status PythonFlowUnit::Close() {
 
 void PythonFlowUnit::SetFlowUnitDesc(
     std::shared_ptr<modelbox::FlowUnitDesc> desc) {
-  python_desc_ = std::dynamic_pointer_cast<VirtualPythonFlowUnitDesc>(desc);
+  python_desc_ = modelbox_dynamic_pointer_cast<VirtualPythonFlowUnitDesc>(desc);
 }
 
 std::shared_ptr<modelbox::FlowUnitDesc> PythonFlowUnit::GetFlowUnitDesc() {

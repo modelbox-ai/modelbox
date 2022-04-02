@@ -31,7 +31,11 @@ namespace modelbox {
 constexpr const char *DRIVER_CLASS_VIRTUAL = "DRIVER-VIRTUAL";
 constexpr const char *DRIVER_CLASS_INFERENCE = "DRIVER-INFERENCE";
 constexpr const char *DRIVER_TYPE_VIRTUAL = "virtual";
+#ifdef ANDROID
+constexpr const char *DEFAULT_SCAN_INFO = "./tmp/modelbox-driver-info";
+#else
 constexpr const char *DEFAULT_SCAN_INFO = "/tmp/modelbox-driver-info";
+#endif
 constexpr const char *DEFAULT_LD_CACHE = "/etc/ld.so.cache";
 
 class Driver;

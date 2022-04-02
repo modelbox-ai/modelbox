@@ -16,6 +16,7 @@
 
 #include "virtualdriver_inference.h"
 #include "modelbox/base/driver.h"
+#include "modelbox/base/memory_stub.h"
 
 using namespace modelbox;
 
@@ -363,7 +364,7 @@ void VirtualInferenceFlowUnitFactory::SetFlowUnitFactory(
         bind_flowunit_factory_list) {
   for (auto &bind_flowunit_factory : bind_flowunit_factory_list) {
     bind_flowunit_factory_list_.push_back(
-        std::dynamic_pointer_cast<FlowUnitFactory>(bind_flowunit_factory));
+        modelbox_dynamic_pointer_cast<FlowUnitFactory>(bind_flowunit_factory));
   }
 }
 
@@ -372,17 +373,17 @@ VirtualInferenceFlowUnitFactory::VirtualCreateFlowUnit(
     const std::string &unit_name, const std::string &unit_type,
     const std::string &virtual_type) {
   for (auto &flowunit_factory : bind_flowunit_factory_list_) {
-    if (std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
+    if (modelbox_dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
             ->GetFlowUnitFactoryType() != unit_type) {
       continue;
     }
 
-    if (std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
+    if (modelbox_dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
             ->GetVirtualType() != virtual_type) {
       continue;
     }
 
-    return std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
+    return modelbox_dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
         ->CreateFlowUnit(unit_name, unit_type);
   }
   StatusError = {STATUS_NOTFOUND, "Cannot found virtual flowunit " +
