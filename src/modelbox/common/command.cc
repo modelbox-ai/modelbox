@@ -53,6 +53,10 @@ void ToolCommandList::RmvCommand(const std::string &name) {
   }
 }
 
+void ToolCommandList::Reset() {
+  commands_.clear();
+}
+
 std::shared_ptr<ToolCommand> ToolCommandList::GetCommand(
     const std::string &name) {
   auto itr = commands_.find(name);

@@ -34,18 +34,19 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-strict-aliasing -std=c++11")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fno-strict-aliasing")
  
-file(GLOB_RECURSE UNIT_SOURCE *.cpp *.cc *.c)
+file(GLOB UNIT_SOURCE *.cpp *.cc *.c)
+file(GLOB_RECURSE SRC_UNIT_SOURCE src/*.cpp src/*.cc src/*.c)
+list(APPEND UNIT_SOURCE ${SRC_UNIT_SOURCE})
  
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
 set(UNIT_SHARED ${CMAKE_PROJECT_NAME}-${PLUGIN_NAME}-plugin)
 add_library(${UNIT_SHARED} SHARED ${UNIT_SOURCE})
- 
-set_target_properties(
-  ${UNIT_SHARED} PROPERTIES
-  SOVERSION ${MODELBOX_PROJECT_VERSION_MAJOR}
-  VERSION ${MODELBOX_PROJECT_VERSION_MAJOR}.${MODELBOX_PROJECT_VERSION_MINOR}.${MODELBOX_PROJECT_VERSION_PATCH}
-)
+
+set_target_properties(${UNIT_SHARED} PROPERTIES 
+    OUTPUT_NAME "${PLUGIN_NAME}"
+    PREFIX ""
+    SUFFIX ".so")
 
 target_link_libraries(${UNIT_SHARED} pthread)
 target_link_libraries(${UNIT_SHARED} rt)

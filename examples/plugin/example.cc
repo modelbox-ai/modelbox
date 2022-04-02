@@ -15,23 +15,44 @@
  */
 
 #include "example.h"
+#include <modelbox/common/command.h>
+
+class ToolCommandExample : public modelbox::ToolCommand {
+ public:
+  ToolCommandExample() {};
+  virtual ~ToolCommandExample() {};
+
+  int Run(int argc, char *argv[]) {
+    TOOL_COUT << "Example command output message." << std::endl;
+    TOOL_CERR << "Example command stderror message." << std::endl;
+    return 0;
+  }
+  std::string GetHelp() {
+    return "Example Help.";
+  }
+
+  std::string GetCommandName() { return "example"; };
+  std::string GetCommandDesc() { return "control server log"; };
+};
+
+REG_MODELBOX_TOOL_COMMAND(ToolCommandExample)
 
 std::shared_ptr<modelbox::Plugin> CreatePlugin() {
-  MBLOG_INFO << "IvaPlugin create success.";
+  MBLOG_INFO << "Example create success.";
   return std::make_shared<ExamplePlugin>();
 }
 
 bool ExamplePlugin::Init(std::shared_ptr<modelbox::Configuration> config) {
-  MBLOG_INFO << "IvaPlugin Init . ";
+  MBLOG_INFO << "Example plugin Init.";
   return true;
 }
 
 bool ExamplePlugin::Start() {
-  MBLOG_INFO << "IvaPlugin Start . ";
+  MBLOG_INFO << "Example plugin Start.";
   return true;
 }
 
 bool ExamplePlugin::Stop() {
-  MBLOG_INFO << "IvaPlugin Stop .";
+  MBLOG_INFO << "Example plugin Stop.";
   return true;
 }
