@@ -54,77 +54,45 @@ void Popen::SetupMode(const char *mode) {
 }
 
 int Popen::ParserArg(const std::string &cmd, std::vector<std::string> &args) {
-  int quotation = 0;
-  int is_in_args = 0;
-  char end_char = ' ';
-  int escape = 0;
+  std::string arg;
+  char quoteChar = 0;
 
-  std::vector<char> data;
-  data.reserve(cmd.length() + 1);
-  data.assign(cmd.begin(), cmd.end());
-  data.push_back('\0');
-  char *cmdline_ptr = data.data();
-  std::vector<char *> cmd_arg_ptr;
-
-  do {
-    if (escape) {
-      escape = 0;
-      cmdline_ptr++;
+  for (std::string::const_iterator it = cmd.begin(), it_end = cmd.end();
+       it != it_end; ++it) {
+    char ch = *it;
+    if (quoteChar == '\\') {
+      arg.push_back(ch);
+      quoteChar = 0;
       continue;
     }
 
-    if (*cmdline_ptr == '\\') {
-      if (escape == 0) {
-        escape = 1;
-
-        char *tmp = cmdline_ptr + 1;
-        for (; *tmp; tmp++) {
-          *(tmp - 1) = *tmp;
-        }
-        *(tmp - 1) = 0;
-        continue;
-      }
-    }
-
-    if (*cmdline_ptr == '"' || *cmdline_ptr == '\'') {
-      if (quotation == 0) {
-        quotation = 1;
-        end_char = *cmdline_ptr;
-        cmdline_ptr++;
-        continue;
-      }
-    }
-
-    if (*cmdline_ptr == end_char) {
-      if (is_in_args == 0) {
-        if (quotation == 0) {
-          cmdline_ptr++;
-          continue;
-        }
-
-        cmd_arg_ptr.push_back(cmdline_ptr);
-      }
-
-      *cmdline_ptr = '\0';
-      end_char = ' ';
-      is_in_args = 0;
-      quotation = 0;
-      cmdline_ptr++;
+    if (quoteChar && ch != quoteChar) {
+      arg.push_back(ch);
       continue;
     }
 
-    if (is_in_args == 0) {
-      cmd_arg_ptr.push_back(cmdline_ptr);
-      is_in_args = 1;
+    switch (ch) {
+      case '\'':
+      case '\"':
+      case '\\':
+        quoteChar = quoteChar ? 0 : ch;
+        break;
+      case ' ':
+      case '\t':
+      case '\n':
+        if (!arg.empty()) {
+          args.push_back(arg);
+          arg.clear();
+        }
+        break;
+      default:
+        arg.push_back(ch);
+        break;
     }
+  }
 
-    cmdline_ptr++;
-  } while (*cmdline_ptr != '\0');
-
-  for (auto const &ptr : cmd_arg_ptr) {
-    std::string cmdline;
-    cmdline = ptr;
-    args.push_back(cmdline);
+  if (!arg.empty()) {
+    args.push_back(arg);
   }
 
   return 0;
