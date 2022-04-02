@@ -21,7 +21,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
-
+#include <iomanip>
 #include <functional>
 
 #include "config.h"
@@ -101,8 +101,9 @@ int Control::ProcessHelp(std::shared_ptr<ControlMsgHelp> msg,
 
   *out_msg->Stream() << "Server command lists:\n";
   for (auto &cmd : cmds) {
-    *out_msg->Stream() << "  " << cmd->GetCommandName() << "\t\t\t"
-                       << cmd->GetCommandDesc() << "\n";
+    *out_msg->Stream() << "  " << std::left << std::setw(23)
+                       << cmd->GetCommandName() << cmd->GetCommandDesc()
+                       << "\n";
   }
 
   return 0;
