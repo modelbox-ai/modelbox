@@ -26,8 +26,8 @@ class MnistResponseFlowUnit(modelbox.FlowUnit):
         return modelbox.Status.StatusCode.STATUS_SUCCESS
 
     def process(self, data_context):
-        in_data = data_context.input("In_1")
-        out_data = data_context.output("Out_1")
+        in_data = data_context.input("in_data")
+        out_data = data_context.output("out_data")
 
         if data_context.has_error():
             exception = data_context.get_error()
