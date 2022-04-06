@@ -80,13 +80,13 @@ Status ListFiles(const std::string &path, const std::string &filter,
                  enum LIST_FILE_TYPE type) {
   struct stat buffer;
   if (stat(path.c_str(), &buffer) == -1) {
-    MBLOG_ERROR << path << " does not exist.";
-    return {STATUS_NOTFOUND, StrError(errno)};
+    std::string msg = path  + " does not exist, ";
+    return {STATUS_NOTFOUND, msg + StrError(errno)};
   }
 
   if (S_ISDIR(buffer.st_mode) == 0) {
-    MBLOG_ERROR << path << " is not a directory.";
-    return {STATUS_INVALID, "not a directory"};
+    std::string msg = path  + " is not a directory, ";
+    return {STATUS_INVALID, msg};
   }
 
   glob_t glob_result;
