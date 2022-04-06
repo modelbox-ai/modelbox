@@ -368,6 +368,7 @@ int main(int argc, char *argv[])
 
   MBLOG_INFO << "modelbox config path : " << kConfigPath;
   auto server = std::make_shared<Server>(kConfig);
+  kServerTimer->Start();
 
   if (modelbox_run(server, keep_name, keep_time) != 0) {
     return 1;

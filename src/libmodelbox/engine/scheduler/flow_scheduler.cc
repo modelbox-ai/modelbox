@@ -371,6 +371,8 @@ Status FlowScheduler::RunImpl() {
     }
   }
 
+  is_stop_ = true;
+
   if (!status) {
     MBLOG_ERROR << "the scheduler caught an error : " << status;
   }

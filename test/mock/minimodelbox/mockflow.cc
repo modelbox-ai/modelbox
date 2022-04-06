@@ -635,6 +635,19 @@ void MockFlow::Register_Test_2_0_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
 }
 
+void MockFlow::Register_Test_OK_2_0_Flowunit() {
+  auto mock_desc = GenerateFlowunitDesc("test_ok_2_0", {"In_1", "In_2"}, {});
+  mock_desc->SetFlowType(STREAM);
+  auto data_post_func =
+      [=](std::shared_ptr<DataContext> ctx,
+          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    return modelbox::STATUS_OK;
+  };
+  auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+  mock_funcitons->RegisterDataPostFunc(data_post_func);
+  AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+}
+
 void MockFlow::Register_Test_Orgin_0_2_Flowunit() {
   auto mock_desc =
       GenerateFlowunitDesc("test_orgin_0_2", {}, {"Out_1", "Out_2"});

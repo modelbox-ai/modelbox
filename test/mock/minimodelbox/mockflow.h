@@ -65,6 +65,7 @@ class MockFlow {
   void Register_Test_1_0_Batch_Thread_Flowunit();
   void Register_Test_0_2_Flowunit();
   void Register_Test_2_0_Flowunit();
+  void Register_Test_OK_2_0_Flowunit();
   void Register_Test_Orgin_0_2_Flowunit();
   void Register_Listen_Flowunit();
   void Register_ExternData_Flowunit();

@@ -50,7 +50,7 @@ class ModelboxServerTest : public testing::Test {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init(false);
     flow_->Register_Test_0_2_Flowunit();
-    flow_->Register_Test_2_0_Flowunit();
+    flow_->Register_Test_OK_2_0_Flowunit();
   };
   virtual void TearDown() { flow_->Destroy(); };
 
@@ -80,7 +80,7 @@ nlohmann::json GetCreateJobMsg(const std::string &name) {
   auto graph = R"(
       digraph demo {
       IN[flowunit=test_0_2]
-      OUT[flowunit=test_2_0]
+      OUT[flowunit=test_ok_2_0]
       IN:Out_1->OUT:In_1
       IN:Out_2->OUT:In_2
   })";

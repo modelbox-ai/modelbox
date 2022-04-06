@@ -38,10 +38,13 @@ Graph::Graph()
       src_to_dst_(),
       dst_to_src_(),
       topo_order_(),
-      scheduler_(nullptr) {}
+      scheduler_(nullptr),
+      is_stop_(false) {}
 
 Graph::~Graph() {
-  CloseNodes();
+  if (!is_stop_) {
+    Shutdown();
+  }
   src_to_dst_.clear();
   dst_to_src_.clear();
   topo_order_.clear();
@@ -1184,6 +1187,10 @@ Status Graph::Shutdown() {
   if (profiler_ != nullptr) {
     profiler_->Stop();
   }
+
+  CloseNodes();
+
+  is_stop_ = true;
 
   return STATUS_OK;
 }

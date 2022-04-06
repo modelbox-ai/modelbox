@@ -222,6 +222,8 @@ class Graph {
   std::vector<std::vector<std::string>> loop_structures_;
 
   std::map<std::string, std::string> loop_links_;
+
+  bool is_stop_;
 };
 
 class DynamicGraph : public Graph {
