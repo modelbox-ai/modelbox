@@ -26,11 +26,12 @@ ServerTimer *ServerTimer::GetInstance() {
 
 ServerTimer *kServerTimer = ServerTimer::GetInstance();
 
-void ServerTimer::Run() {
-  Timer::SetName("");
+void ServerTimer::Start() {
+  Timer::SetName("Server-Timer");
   Timer::StartAsync();
-  Timer::Run();
 }
+
+void ServerTimer::Run() { Timer::Run(); }
 
 void ServerTimer::Stop() { Timer::StopAsync(); }
 
