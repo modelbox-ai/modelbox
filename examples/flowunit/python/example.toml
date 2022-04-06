@@ -24,7 +24,7 @@ type = "python" # Fixed value
 
 # Flowunit Type
 stream = false # Whether the flowunit is a stream flowunit
-condition  = false # Whether the flowunit is a condition flowunit
+condition = false # Whether the flowunit is a condition flowunit
 collapse = false # Whether the flowunit is a collapse flowunit
 collapse_all = false # Whether the flowunit will collapse all the data
 expand = false #  Whether the flowunit is a expand flowunit

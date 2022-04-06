@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_MODELBOX_EDITOR_PLUGIN_H_
 #define MODELBOX_MODELBOX_EDITOR_PLUGIN_H_
+
+#include <nlohmann/json.hpp>
 
 #include "modelbox/server/http_helper.h"
 #include "modelbox/server/plugin.h"
@@ -34,20 +35,55 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   bool ParseConfig(std::shared_ptr<modelbox::Configuration> config);
 
  private:
-  void HandlerDemoGet(const httplib::Request &request, httplib::Response &response);
-  void HandlerDemoGetList(const httplib::Request &request, httplib::Response &response);
-  void HandlerUIGet(const httplib::Request &request, httplib::Response &response);
+  void HandlerPassEncode(const httplib::Request &request,
+                         httplib::Response &response);
+  void HandlerDemoGet(const httplib::Request &request,
+                      httplib::Response &response);
+  void HandlerDemoGetList(const httplib::Request &request,
+                          httplib::Response &response);
+  void HandlerUIGet(const httplib::Request &request,
+                    httplib::Response &response);
   void SendFile(const std::string &file_name, httplib::Response &response);
-  void HandlerFlowUnitInfoPut(const httplib::Request &request, httplib::Response &response);
-  void HandlerFlowUnitInfoGet(const httplib::Request &request, httplib::Response &response);
-  void HandlerFlowUnitInfo(const httplib::Request &request, httplib::Response &response,
+  void HandlerFlowUnitInfoPut(const httplib::Request &request,
+                              httplib::Response &response);
+  void HandlerFlowUnitInfoGet(const httplib::Request &request,
+                              httplib::Response &response);
+  void HandlerFlowUnitInfo(const httplib::Request &request,
+                           httplib::Response &response,
                            std::shared_ptr<modelbox::Configuration> config);
-  bool GetHtmlFile(const std::string &in_file, std::string *out_file, std::string *redirect_file);
+  void HandlerFlowUnitCreate(const httplib::Request &request,
+                             httplib::Response &response);
+  void HandlerFlowUnitGet(const httplib::Request &request,
+                          httplib::Response &response);
+  void HandlerProjectCreate(const httplib::Request &request,
+                            httplib::Response &response);
+  void HandlerProjectGet(const httplib::Request &request,
+                         httplib::Response &response);
+  void HandlerProjectListGet(const httplib::Request &request,
+                             httplib::Response &response);
+  void HandlerSaveGraph(const httplib::Request &request,
+                        httplib::Response &response);
+  bool GetHtmlFile(const std::string &in_file, std::string *out_file,
+                   std::string *redirect_file);
   modelbox::Status GraphFileToJson(const std::string &file,
-                                 std::string &json_data);
+                                   std::string &json_data);
   bool CheckBlackDir(std::string dir);
 
  private:
+  std::string ResultMsg(const std::string &code, const std::string &msg);
+  std::string ResultMsg(modelbox::Status &status);
+  void SetUpResponse(httplib::Response &response, modelbox::Status &status);
+  modelbox::Status GenerateCommandFromJson(const nlohmann::json &body,
+                                           std::string &cmd);
+  modelbox::Status RunCommand(const std::string &cmd,
+                              const std::string *in = nullptr,
+                              std::string *out = nullptr);
+  modelbox::Status RunTemplateCommand(const httplib::Request &request,
+                                      httplib::Response &response,
+                                      const std::string &cmd);
+  modelbox::Status SaveGraph(const httplib::Request &request);
+  modelbox::Status ReadProjectName(const std::string &path, std::string &name);
+  bool IsModelboxProjectDir(std::string &path);
   std::shared_ptr<modelbox::HttpListener> listener_;
   std::string web_root_;
   std::string demo_path_;
