@@ -25,10 +25,10 @@ virtual_type = "tensorflow"
 [input]
 [input.input1] 
 device = "cpu"
-name = "input" 
+name = "Input" 
 type = "float" 
 
 [output]
 [output.output1] 
-name = "output" 
+name = "Output" 
 type = "float" 
