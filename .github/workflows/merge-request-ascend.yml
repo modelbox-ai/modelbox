@@ -15,18 +15,27 @@ jobs:
       image: modelbox/modelbox-develop-mindspore_1.3.0-cann_5.0.2-ubuntu-x86_64
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Configure CMake
       run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
+        ldconfig
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on -DWITH_DEMO=on
     - name: Build
       working-directory: build
       run: |
         make package -j8
-
+        rm -f release/*.rpm
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.deb" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "ascend"| wc -l)
+        if [ ${filecount} -ge 14 ] && [ ${dpkgcount} -ge 12 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
     - name: Test
       working-directory: build
       run: | 

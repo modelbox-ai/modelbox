@@ -1,0 +1,5 @@
+[cuda]
+name=cuda
+baseurl=https://developer.download.nvidia.com/compute/cuda/repos/rhel7/$basearch/
+enabled=1
+gpgcheck=0

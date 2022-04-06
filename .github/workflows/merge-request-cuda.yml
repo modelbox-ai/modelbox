@@ -15,17 +15,40 @@ jobs:
       image: modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Configure CMake
       run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        curl -LJO https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.zip
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+              Video_Codec_SDK_9.1.23/include/cuviddec.h \
+              Video_Codec_SDK_9.1.23/include/nvcuvid.h \
+              Video_Codec_SDK_9.1.23/include/nvEncodeAPI.h \
+              -d /usr/local/include
+        unzip -j Video_Codec_SDK_9.1.23.zip \
+              Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvcuvid.so \
+              Video_Codec_SDK_9.1.23/Lib/linux/stubs/x86_64/libnvidia-encode.so \
+              -d /usr/local/lib
+        ln -s libnvcuvid.so /usr/local/lib/libnvcuvid.so.1
+        cp -af /usr/local/cuda/compat/* /usr/local/lib/
+        ldconfig
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEB_UI=on -DWITH_DEMO=on
 
     - name: Build
       working-directory: build
       run: |
         make package -j8
+        rm -f release/*.rpm
+        ls -lh release
+        filecount=$(ls release | wc -l)
+        dpkgcount=$(ls release | egrep "*.deb" | wc -l)
+        artifacts_file=$(ls ${artifacts_path} | grep "cuda"| wc -l)
+        if [ ${filecount} -ge 14 ] && [ ${dpkgcount} -ge 12 ] && [ ${artifacts_file} -eq 2 ]; then
+            echo "compile success"
+        else
+            echo "compile failed"
+            exit 1
+        fi
 
     - name: Test
       working-directory: build
