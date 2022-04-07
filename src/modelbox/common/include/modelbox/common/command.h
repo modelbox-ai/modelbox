@@ -55,7 +55,7 @@ extern std::recursive_mutex ToolCommandGetOptLock;
     ::modelbox::ToolCommandList::Instance()->AddCommand(new_func);           \
     return 0;                                                                \
   }();                                                                       \
-  Defer {                                                                    \
+  DeferExt() {                                                                    \
     /* Remove command from command list.*/                                   \
     if (cmd_name_##class.length() > 0) {                                     \
       ::modelbox::ToolCommandList::Instance()->RmvCommand(cmd_name_##class); \
