@@ -219,6 +219,23 @@ TEST_F(PopenTest, OpenCmdLine) {
   EXPECT_EQ(WEXITSTATUS(ret), 0);
 }
 
+TEST_F(PopenTest, OpenEnvCheck) {
+  Popen p;
+  // std::string env;
+  PopenEnv env ="TEST_ENV_1=a TEST_ENV_2=b";
+  env.Rmv("USER");
+  p.Open("/bin/bash -c \"echo $USER && echo $TEST_ENV_1; echo $TEST_ENV_2\"", 100, "r", env);
+  std::string line;
+  p.ReadOutLine(line);
+  EXPECT_EQ(line, "\n");
+  p.ReadOutLine(line);
+  EXPECT_EQ(line, "a\n");
+  p.ReadOutLine(line);
+  EXPECT_EQ(line, "b\n");
+  auto ret = p.Close();
+  EXPECT_EQ(WEXITSTATUS(ret), 0);
+}
+
 TEST_F(PopenTest, OpenReadAll) {
   Popen p;
   std::string cmd =

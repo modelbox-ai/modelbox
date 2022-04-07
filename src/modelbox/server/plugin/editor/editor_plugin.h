@@ -89,6 +89,9 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   std::string demo_path_;
   std::string server_ip_;
   std::string server_port_;
+  // for test setting
+  std::string template_cmd_;
+  std::string template_cmd_env_;
   std::vector<std::string> acl_white_list_;
   bool enable_{false};
   std::string url_;

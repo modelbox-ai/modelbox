@@ -626,7 +626,7 @@ std::unordered_map<std::string,
 Status SendHttpRequest(HttpRequest &request) {
   auto url = request.GetURL();
   std::smatch url_match_result;
-  std::regex url_pattern("(https?://[\\w\\-\\.]+(:[0-9]+)?)(/[\\w\\-\\./]*)?");
+  std::regex url_pattern("(https?://[\\w\\-\\.]+(:[0-9]+)?)(/.*)?");
   auto ret = std::regex_match(url, url_match_result, url_pattern);
   if (!ret) {
     return {STATUS_BADCONF, "url " + url + " is wrong format"};
