@@ -17,6 +17,8 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+project(modelbox-localpackage)
+
 # 替换的环境变量
 set(THIRDPARTY_DOWNLOAD_DIR @THIRDPARTY_DOWNLOAD_DIR@)
 set(WITH_DEMO @WITH_DEMO@)
@@ -28,7 +30,7 @@ find_package(Git)
 # 下载googletest
 ExternalProject_Add(
   GoogleTest
-  URL               @LOCAL_PACKAGE_PATH@/googletest-release-1.10.0.tar.gz
+  URL               @LOCAL_PACKAGE_PATH@/googletest-release-1.11.0.tar.gz
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/googletest
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -39,7 +41,7 @@ ExternalProject_Add(
 # 下载安全C库
 ExternalProject_Add(
   Huawei_Secure_C_download
-  URL               @LOCAL_PACKAGE_PATH@/HuaweiSecureCV100R001C01SPC006B002.zip
+  URL               @LOCAL_PACKAGE_PATH@/libboundscheck-v1.1.11.zip
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/Huawei_Secure_C
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -50,7 +52,7 @@ ExternalProject_Add(
 # 下载安全tinylog
 ExternalProject_Add(
   tinylog
-  URL               @LOCAL_PACKAGE_PATH@/tinylog-1.5.zip
+  URL               @LOCAL_PACKAGE_PATH@/tinylog-1.6.zip
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/tinylog
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -61,7 +63,7 @@ ExternalProject_Add(
 # pybind11
 ExternalProject_Add(
   pybind11
-  URL               @LOCAL_PACKAGE_PATH@/pybind11-2.5.0.zip
+  URL               @LOCAL_PACKAGE_PATH@/pybind11-2.9.1.zip
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/pybind11
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -72,7 +74,7 @@ ExternalProject_Add(
 # toml11
 ExternalProject_Add(
   toml11
-  URL               @LOCAL_PACKAGE_PATH@/toml11-3.5.0.zip
+  URL               @LOCAL_PACKAGE_PATH@/toml11-3.7.1.zip
   SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/toml11
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -83,7 +85,7 @@ ExternalProject_Add(
 # nlohmann json
 ExternalProject_Add(
   nlohmann
-  URL               @LOCAL_PACKAGE_PATH@/v3.7.3.tar.gz
+  URL               @LOCAL_PACKAGE_PATH@/v3.10.5.tar.gz
   SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/nlohmann
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -94,7 +96,7 @@ ExternalProject_Add(
 # cpp-httplib
 ExternalProject_Add(
   cpp-httplib
-  URL               @LOCAL_PACKAGE_PATH@/cpp-httplib-0.9.9.tar.gz
+  URL               @LOCAL_PACKAGE_PATH@/cpp-httplib-0.10.4.tar.gz
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib
   CONFIGURE_COMMAND ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib/split.py -o ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib/build
   BUILD_COMMAND     ""
