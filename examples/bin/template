@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MODELBOX_TEMPLATE_PATH=/usr/local/share/modelbox/project-template
+MODELBOX_TEMPLATE_PATH="${MODELBOX_TEMPLATE_PATH:-/usr/local/share/modelbox/project-template}"
 DEFAULT_PROJECT_PATH="$HOME/modelbox-project"
 
 showhelp() {
@@ -185,7 +185,7 @@ create_project() {
 	return $ret
 }
 
-create_project_template() {
+create_service_plugin_template() {
 	TEMPLATE_PATH="$MODELBOX_TEMPLATE_PATH/plugin"
 	SOURCE_DIR="${project_path}/src/service-plugin/${plugin_name}"
 	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
@@ -275,7 +275,7 @@ create_service_plugin() {
 		return 1
 	fi
 
-	create_project_template "${plugin_name}" "${project_path}"
+	create_service_plugin_template "${plugin_name}" "${project_path}"
 	ret=$?
 	if [ $ret -ne 0 ] && [ $ret -ne 2 ]; then
 		echoerr "Create plugin template failed."

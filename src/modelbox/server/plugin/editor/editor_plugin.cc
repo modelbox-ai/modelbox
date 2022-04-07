@@ -37,6 +37,7 @@ using namespace modelbox;
 const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
 const std::string DEFAULT_DEMO_GRAPHS_ROOT =
     std::string(MODELBOX_DEMO_PATH) + "/graphs";
+constexpr const char *DEFAULT_MODELBOX_TEMPLATE_CMD = "modelbox-tool template";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
@@ -278,12 +279,12 @@ modelbox::Status ModelboxEditorPlugin::RunTemplateCommand(
   modelbox::Status ret = modelbox::STATUS_FAULT;
 
   try {
-    std::string templatecmd;
-    templatecmd = "modelbox-tool template " + cmd;
+    std::string runcmd;
+    runcmd = template_cmd_ + " " + cmd;
     auto body = nlohmann::json::parse(request.body);
-    ret = GenerateCommandFromJson(body, templatecmd);
+    ret = GenerateCommandFromJson(body, runcmd);
     if (ret == modelbox::STATUS_OK) {
-      ret = RunCommand(templatecmd);
+      ret = RunCommand(runcmd);
     }
   } catch (const std::exception& e) {
     modelbox::Status errret(
@@ -369,7 +370,7 @@ modelbox::Status ModelboxEditorPlugin::SaveGraph(
 modelbox::Status ModelboxEditorPlugin::ReadProjectName(const std::string& path,
                                                        std::string& name) {
   auto ret =
-      RunCommand("modelbox-tool template -project -getname \"" + path + "\"",
+      RunCommand(template_cmd_ + " -project -getname \"" + path + "\"",
                  nullptr, &name);
   if (!ret) {
     return ret;
@@ -510,7 +511,7 @@ modelbox::Status ModelboxEditorPlugin::RunCommand(const std::string& cmd,
     mode = "re";
   }
 
-  auto retstatus = p.Open(cmd, 2000, mode.c_str());
+  auto retstatus = p.Open(cmd, 3000, mode.c_str(), template_cmd_env_);
   if (!retstatus) {
     return retstatus;
   }
@@ -1033,6 +1034,10 @@ bool ModelboxEditorPlugin::ParseConfig(
   demo_path_ =
       config->GetString("editor.demo_graphs", DEFAULT_DEMO_GRAPHS_ROOT);
 
+  template_cmd_ = 
+      config->GetString("editor.test.template_cmd", DEFAULT_MODELBOX_TEMPLATE_CMD);
+  template_cmd_env_ = 
+      config->GetString("editor.test.template_cmd_env", "");
   acl_white_list_ = config->GetStrings("acl.allow");
   return true;
 }

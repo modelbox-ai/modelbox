@@ -19,6 +19,8 @@
 #include "src/modelbox/server/server.h"
 
 #include <dlfcn.h>
+#include <ftw.h>
+#include <modelbox/base/popen.h>
 #include <stdio.h>
 
 #include <fstream>
@@ -34,6 +36,8 @@
 #include "src/modelbox/server/config.h"
 #include "test_config.h"
 #include "thread"
+
+extern char **environ;
 
 namespace modelbox {
 
@@ -59,6 +63,16 @@ TEST_F(ModelboxServerTest, Post) {
   auto job = job_manager->CreateJob("test", "");
 
   EXPECT_EQ(job->GetJobName(), "test");
+}
+
+int rmfiles(const char *pathname, const struct stat *sbuf, int type,
+            struct FTW *ftwb) {
+  remove(pathname);
+  return 0;
+}
+
+void removedir(const std::string &path) {
+  nftw(path.c_str(), rmfiles, 10, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }
 
 nlohmann::json GetCreateJobMsg(const std::string &name) {
@@ -149,8 +163,64 @@ httplib::Response GetFlowInfoSpecificDir(
   return server.DoRequest(request);
 }
 
-httplib::Response GetDemo(MockServer &server,
-                          const std::string &demo = "") {
+httplib::Response EditorCreateProject(MockServer &server,
+                                      const std::string &projectname,
+                                      const std::string &path) {
+  HttpRequest request(HttpMethods::PUT,
+                      server.GetServerURL() + "/editor/project/create");
+  nlohmann::json create_body;
+  create_body["name"] = projectname;
+  create_body["path"] = path;
+  request.SetBody(create_body.dump());
+  return server.DoRequest(request);
+}
+
+httplib::Response EditorQueryProject(MockServer &server,
+                                     const std::string &path) {
+  HttpRequest request(HttpMethods::GET,
+                      server.GetServerURL() + "/editor/project?path=" + path);
+  return server.DoRequest(request);
+}
+
+httplib::Response EditorCreateFlowunit(
+    MockServer &server, const std::map<std::string, std::string> &value,
+    const std::vector<std::string> &in = {},
+    const std::vector<std::string> &out = {}) {
+  HttpRequest request(HttpMethods::PUT,
+                      server.GetServerURL() + "/editor/flowunit/create");
+  nlohmann::json create_body;
+  size_t i = 0;
+
+  for (const auto &kv : value) {
+    create_body[kv.first] = kv.second;
+  }
+
+  nlohmann::json injson;
+  for (i = 0; i < in.size(); i++) {
+    injson["name"] = in[i];
+  }
+
+  if (in.size() == 0) {
+    create_body["input"] = "-";
+  } else {
+    create_body["input"] = injson;
+  }
+
+  nlohmann::json outjson;
+  for (i = 0; i < out.size(); i++) {
+    outjson["name"] = out[i];
+  }
+
+  if (out.size() == 0) {
+    create_body["output"] = "-";
+  } else {
+    create_body["output"] = outjson;
+  }
+  request.SetBody(create_body.dump());
+  return server.DoRequest(request);
+}
+
+httplib::Response GetDemo(MockServer &server, const std::string &demo = "") {
   auto url = server.GetServerURL() + "/editor/demo";
   if (!demo.empty()) {
     url = url + "/" + demo;
@@ -324,6 +394,64 @@ TEST_F(ModelboxServerTest, FlowInfoSpecificPath) {
   dir_list.push_back(VIRTUAL_PYTHON_PATH);
   auto response = GetFlowInfoSpecificDir(server, dir_list);
   EXPECT_EQ(response.status, HttpStatusCodes::OK);
+}
+
+TEST_F(ModelboxServerTest, TemplateCommandTest) {
+  MockServer server;
+  auto conf = std::make_shared<Configuration>();
+  std::string template_env = "MODELBOX_TEMPLATE_PATH";
+  std::string project_name = "test";
+  template_env += "=" + std::string(MODELBOX_TEMPLATE_BIN_DIR);
+
+  std::string tmp_path = TEST_WORKING_DIR + std::string("/tmp/project");
+  removedir(tmp_path.c_str());
+  Defer { removedir(tmp_path.c_str()); };
+
+  conf->SetProperty("editor.test.template_cmd_env", template_env);
+  conf->SetProperty("editor.test.template_cmd", MODELBOX_TEMPLATE_CMD_PATH);
+  auto ret = server.Init(conf);
+  if (ret == STATUS_NOTSUPPORT) {
+    GTEST_SKIP();
+  }
+  server.Start();
+  sleep(1);
+  auto response = EditorCreateProject(server, project_name, tmp_path);
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::CREATED);
+
+  response = EditorCreateFlowunit(
+      server, {{"name", "cpp"}, {"lang", "c++"}, {"project-path", tmp_path}});
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::CREATED);
+
+  response = EditorCreateFlowunit(
+      server,
+      {{"name", "python"}, {"lang", "python"}, {"project-path", tmp_path}});
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::CREATED);
+
+  response = EditorCreateFlowunit(server, {{"name", "infer"},
+                                           {"lang", "infer"},
+                                           {"project-path", tmp_path},
+                                           {"virtual-type", "tensorrt"},
+                                           {"model", "modelfile"}});
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::CREATED);
+
+  response =
+      EditorCreateFlowunit(server, {{"name", "yolo"},
+                                    {"lang", "yolo"},
+                                    {"project-path", tmp_path},
+                                    {"virtual-type", "yolov3_postprocess"}});
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::CREATED);
+
+  response = EditorQueryProject(server, tmp_path);
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::OK);
+  auto result = nlohmann::json::parse(response.body);
+  EXPECT_EQ(result["project_name"], project_name);
+  EXPECT_EQ(result["flowunits"].size(), 4);
 }
 
 TEST_F(ModelboxServerTest, ServerLoadConfig) {
