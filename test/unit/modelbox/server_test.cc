@@ -106,6 +106,37 @@ nlohmann::json GetCreateJobMsg(const std::string &name) {
   return create_body;
 }
 
+nlohmann::json GetCreateJobFail(const std::string &name) {
+  const std::string test_lib_dir = TEST_LIB_DIR;
+  auto graph = R"(
+      digraph demo {
+      IN[flowunit=not_exist_in]
+      OUT[flowunit=not_exist_out]
+      IN:Out_1->OUT:In_1
+      IN:Out_2->OUT:In_2
+  })";
+
+  auto create_body = nlohmann::json::parse(R"(
+      {
+        "job_id" : "",
+        "job_graph_format" : "json",
+        "job_graph": {
+          "driver": {
+            "skip-default": true
+          },
+          "graph": {
+            "graphconf" : "",
+            "format":"graphviz"
+          }
+        }
+      }
+    )");
+  create_body["job_id"] = name;
+  create_body["job_graph"]["driver"]["dir"] = test_lib_dir;
+  create_body["job_graph"]["graph"]["graphconf"] = graph;
+  return create_body;
+}
+
 nlohmann::json GetFlowInfoMsg(const std::vector<std::string> &dir_list) {
   const std::string test_lib_dir = TEST_DRIVER_DIR;
   auto body = nlohmann::json::parse(R"(
@@ -241,6 +272,21 @@ TEST_F(ModelboxServerTest, CreateJob) {
   auto response = CreateJob(server, body);
   MBLOG_INFO << response.body;
   EXPECT_EQ(response.status, HttpStatusCodes::CREATED);
+}
+
+TEST_F(ModelboxServerTest, CreateJobFail) {
+  MockServer server;
+  auto ret = server.Init(nullptr);
+  if (ret == STATUS_NOTSUPPORT) {
+    GTEST_SKIP();
+  }
+  server.Start();
+  sleep(1);
+  auto body = GetCreateJobFail("example");
+  auto response = CreateJob(server, body);
+  MBLOG_INFO << response.body;
+  EXPECT_EQ(response.status, HttpStatusCodes::BAD_REQUEST);
+  EXPECT_NE(response.body.find_first_of("not_exist_in"), std::string::npos);
 }
 
 TEST_F(ModelboxServerTest, ListAllJobs) {

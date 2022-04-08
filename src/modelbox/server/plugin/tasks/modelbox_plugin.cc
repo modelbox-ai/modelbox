@@ -40,7 +40,8 @@ std::map<std::string, std::string> ERROR_INFO = {
     {"MODELBOX_007",
      "job id contain invalid characters or contains more than 64 "
      "characters, please rename job with valid "
-     "charaters."}};
+     "charaters."},
+    {"MODELBOX_008", "request invalid, job config is invalid"}};
 
 const std::string ERROR_CODE = "error_code";
 const std::string ERROR_MSG = "error_msg";
@@ -233,13 +234,13 @@ modelbox::Status ModelboxPlugin::SaveGraphFile(const std::string& job_id,
 modelbox::Status ModelboxPlugin::StartJob(std::shared_ptr<modelbox::Job> job) {
   auto ret = job->Init();
   if (!ret) {
-    MBLOG_ERROR << "start job init failed:" << ret;
+    MBLOG_ERROR << "start job init failed:" << ret.WrapErrormsgs();
     return ret;
   }
 
   ret = job->Build();
   if (!ret) {
-    MBLOG_ERROR << "start job build failed:" << ret;
+    MBLOG_ERROR << "start job build failed: " << ret.WrapErrormsgs();
     return ret;
   }
 
@@ -392,7 +393,7 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
 
     auto status = CreateJobByString(jobid, graph_data, graph_format);
     if (!status) {
-      error_code = "MODELBOX_001";
+      error_code = "MODELBOX_008";
       error_msg = status.WrapErrormsgs();
       return;
     }

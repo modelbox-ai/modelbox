@@ -493,7 +493,7 @@ TEST_F(GraphTest, OrphanCheck) {
   auto config = configbuilder.Build();
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_FAULT);
+  EXPECT_EQ(BuildGraph(config), STATUS_BADCONF);
 }
 
 TEST_F(GraphTest, SkipOrphan) {
