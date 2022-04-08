@@ -244,6 +244,8 @@ std::shared_ptr<OutPort> Graph::GetOutPort(const std::string &nodeName,
                                            const std::string &portName) const {
   auto ite = nodes_.find(nodeName);
   if (ite == nodes_.end()) {
+    auto msg = "node is not found, name: " + nodeName;
+    StatusError = {STATUS_BADCONF, msg};
     return nullptr;
   }
 
@@ -292,14 +294,14 @@ Status Graph::AddLink(const std::string &srcNodeName,
   if (srcPort == nullptr) {
     auto msg =
         "src port is not exist. node: " + srcNodeName + " port: " + srcPortName;
-    return {STATUS_INVALID, msg};
+    return {STATUS_BADCONF, msg};
   }
 
   auto dstPort = GetInPort(dstNodeName, dstPortName);
   if (dstPort == nullptr) {
     auto msg =
         "dst port is not exist. node: " + dstNodeName + " port: " + dstPortName;
-    return {STATUS_INVALID, msg};
+    return {STATUS_BADCONF, msg};
   }
 
   return AddLink(srcPort, dstPort);
@@ -624,7 +626,7 @@ Status Graph::BuildNodes(std::shared_ptr<GCGraph> g) {
     if (!status) {
       MBLOG_ERROR << status;
       auto msg = "build node failed. name: '" + name + "'";
-      return {STATUS_FAULT, msg};
+      return {status, msg};
     }
     MBLOG_INFO << "build node " << name << " success";
   }
