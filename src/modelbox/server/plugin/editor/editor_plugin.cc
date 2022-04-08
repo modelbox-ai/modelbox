@@ -35,9 +35,8 @@
 using namespace modelbox;
 
 const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
-const std::string DEFAULT_DEMO_GRAPHS_ROOT =
-    std::string(MODELBOX_DEMO_PATH) + "/graphs";
-constexpr const char *DEFAULT_MODELBOX_TEMPLATE_CMD = "modelbox-tool template";
+const std::string DEFAULT_DEMO_ROOT_DIR = MODELBOX_DEMO_PATH;
+constexpr const char* DEFAULT_MODELBOX_TEMPLATE_CMD = "modelbox-tool template";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
@@ -370,9 +369,8 @@ modelbox::Status ModelboxEditorPlugin::SaveGraph(
 
 modelbox::Status ModelboxEditorPlugin::ReadProjectName(const std::string& path,
                                                        std::string& name) {
-  auto ret =
-      RunCommand(template_cmd_ + " -project -getname \"" + path + "\"",
-                 nullptr, &name);
+  auto ret = RunCommand(template_cmd_ + " -project -getname \"" + path + "\"",
+                        nullptr, &name);
   if (!ret) {
     return ret;
   }
@@ -793,7 +791,8 @@ modelbox::Status ModelboxEditorPlugin::GraphFileToJson(const std::string& file,
 
 void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
                                               httplib::Response& response) {
-  std::vector<std::string> files;
+  std::vector<std::string> dirs;
+  std::map<std::string, std::vector<std::string>> graphs;
   modelbox::Status rspret;
 
   Defer {
@@ -802,41 +801,62 @@ void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
     }
   };
 
-  auto ret = modelbox::ListSubDirectoryFiles(demo_path_, "*.toml", &files);
+  auto ret =
+      modelbox::ListFiles(demo_path_, "*", &dirs, modelbox::LIST_FILES_DIR);
   if (!ret) {
     rspret = {ret, HTTP_RESP_ERR_CANNOT_READ};
     return;
   }
 
-  ret = modelbox::ListSubDirectoryFiles(demo_path_, "*.json", &files);
-  if (!ret) {
-    rspret = {ret, HTTP_RESP_ERR_CANNOT_READ};
-    return;
+  for (auto const& dir : dirs) {
+    std::vector<std::string> files;
+    std::string graphdir = dir + "/graph";
+
+    auto ret = modelbox::ListSubDirectoryFiles(graphdir, "*.toml", &files);
+    if (!ret) {
+      MBLOG_INFO << "list directory " << demo_path_ << "failed.";
+    }
+
+    ret = modelbox::ListSubDirectoryFiles(graphdir, "*.json", &files);
+    if (!ret) {
+      MBLOG_INFO << "list directory " << demo_path_ << "failed.";
+    }
+
+    if (files.size() == 0) {
+      continue;
+    }
+
+    graphs[dir] = files;
   }
 
   nlohmann::json response_json;
   response_json["demo_list"] = nlohmann::json::array();
-  for (const auto& file : files) {
-    nlohmann::json demo;
-    std::string filename = modelbox::GetBaseName(file);
-    std::string name = filename;
+  for (auto it : graphs) {
+    std::string demoname = modelbox::GetBaseName(it.first);
+    for (const auto& file : it.second) {
+      nlohmann::json demo;
+      std::string filename = modelbox::GetBaseName(file);
+      std::string name = filename;
 
-    std::string json_data;
-    std::string desc;
-    auto ret = GraphFileToJson(file, json_data);
-    if (ret) {
-      try {
-        auto response = nlohmann::json::parse(json_data);
-        desc = response["flow"]["desc"].get<std::string>();
-      } catch (const std::exception& e) {
-        MBLOG_WARN << "parser json failed, " << e.what();
+      std::string json_data;
+      std::string desc;
+      auto ret = GraphFileToJson(file, json_data);
+      if (ret) {
+        try {
+          auto response = nlohmann::json::parse(json_data);
+          desc = response["flow"]["desc"].get<std::string>();
+          name = response["flow"]["name"].get<std::string>();
+        } catch (const std::exception& e) {
+          MBLOG_WARN << "parser json " << file << " failed, " << e.what();
+        }
       }
-    }
 
-    demo["desc"] = desc;
-    demo["name"] = name;
-    demo["file"] = file;
-    response_json["demo_list"].push_back(demo);
+      demo["demo"] = demoname;
+      demo["name"] = name;
+      demo["desc"] = desc;
+      demo["graphfile"] = filename;
+      response_json["demo_list"].push_back(demo);
+    }
   }
 
   AddSafeHeader(response);
@@ -857,39 +877,22 @@ void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
 
   try {
     std::string relative_path = request.path.substr(demo_url.size());
-    std::string pre_path;
+    std::string graph_file;
     std::string demo_file;
     std::string demo_name;
-    SplitPath(relative_path, pre_path, demo_name);
-    if (demo_name.length() == 0) {
+    SplitPath(relative_path, demo_name, graph_file);
+    if (demo_name.length() == 0 && graph_file.length() == 0) {
       HandlerDemoGetList(request, response);
       return;
     }
 
-    std::vector<std::string> files;
-    modelbox::ListSubDirectoryFiles(demo_path_, "*.toml", &files);
-    modelbox::ListSubDirectoryFiles(demo_path_, "*.json", &files);
-    for (const auto& file : files) {
-      std::string filename = modelbox::GetBaseName(file);
-      if (filename == demo_name) {
-        demo_file = file;
-        break;
-      }
+    if (graph_file.length() == 0 || demo_name.length() == 0) {
+      rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
+      return;
     }
 
+    demo_file = PathCanonicalize(demo_name + "/graph/" + graph_file, demo_path_);
     if (demo_file.length() == 0) {
-      rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
-      return;
-    }
-
-    auto resolve_path = modelbox::PathCanonicalize(demo_file);
-    if (resolve_path.length() == 0) {
-      rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
-      return;
-    }
-
-    demo_file = resolve_path;
-    if (demo_file.find(demo_path_) != 0) {
       rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
       return;
     }
@@ -1032,13 +1035,11 @@ bool ModelboxEditorPlugin::ParseConfig(
                                  config->GetString("server.ip", "127.0.0.1"));
   server_port_ = config->GetString("editor.port",
                                    config->GetString("server.port", "1104"));
-  demo_path_ =
-      config->GetString("editor.demo_graphs", DEFAULT_DEMO_GRAPHS_ROOT);
+  demo_path_ = config->GetString("editor.demo_root", DEFAULT_DEMO_ROOT_DIR);
 
-  template_cmd_ = 
-      config->GetString("editor.test.template_cmd", DEFAULT_MODELBOX_TEMPLATE_CMD);
-  template_cmd_env_ = 
-      config->GetString("editor.test.template_cmd_env", "");
+  template_cmd_ = config->GetString("editor.test.template_cmd",
+                                    DEFAULT_MODELBOX_TEMPLATE_CMD);
+  template_cmd_env_ = config->GetString("editor.test.template_cmd_env", "");
   acl_white_list_ = config->GetStrings("acl.allow");
   return true;
 }

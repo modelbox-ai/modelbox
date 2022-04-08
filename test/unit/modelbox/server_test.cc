@@ -65,16 +65,6 @@ TEST_F(ModelboxServerTest, Post) {
   EXPECT_EQ(job->GetJobName(), "test");
 }
 
-int rmfiles(const char *pathname, const struct stat *sbuf, int type,
-            struct FTW *ftwb) {
-  remove(pathname);
-  return 0;
-}
-
-void removedir(const std::string &path) {
-  nftw(path.c_str(), rmfiles, 10, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
-}
-
 nlohmann::json GetCreateJobMsg(const std::string &name) {
   const std::string test_lib_dir = TEST_LIB_DIR;
   auto graph = R"(
@@ -366,15 +356,21 @@ TEST_F(ModelboxServerTest, DeleteJob) {
 
 TEST_F(ModelboxServerTest, QueryDemo) {
   MockServer server;
-  std::string demo_dir = std::string(TEST_DATA_DIR) + "/demo";
-  CreateDirectory(demo_dir);
-  Defer { remove(demo_dir.c_str()); };
+  std::string demo_root_dir = std::string(TEST_DATA_DIR) + "/demo";
+  RemoveDirectory(demo_root_dir);
+  CreateDirectory(demo_root_dir);
+  Defer { RemoveDirectory(demo_root_dir); };
 
   auto conf = std::make_shared<Configuration>();
-  conf->SetProperty("editor.demo_graphs", demo_dir);
+  conf->SetProperty("editor.demo_root", demo_root_dir);
 
-  auto create_file = [](const std::string &file, const std::string &content) {
-    std::ofstream out(file, std::ios::trunc);
+  auto create_demo_file = [&](const std::string &name,
+                              const std::string &graphfilename,
+                              const std::string &content) {
+    auto demo_path = demo_root_dir + "/" + name;
+    CreateDirectory(demo_path + "/flowunit");
+    CreateDirectory(demo_path + "/graph");
+    std::ofstream out(demo_path + "/graph/" + graphfilename, std::ios::trunc);
     if (out.fail()) {
       return false;
     }
@@ -387,8 +383,21 @@ TEST_F(ModelboxServerTest, QueryDemo) {
     return true;
   };
 
-  create_file(demo_dir + "/flow1.json", "{\"key\":\"value\"}");
-  create_file(demo_dir + "/flow2.toml", "key = \"value\"");
+  std::string data = R"(
+      {
+        "flow" : {
+          "name": "demo1",
+          "desc": "demo1 desc"
+        }
+      })";
+  create_demo_file("demo1", "flow1.json", data);
+
+  data = R"(
+[flow]
+name = "demo2"
+desc = "demo2 desc"
+  )";
+  create_demo_file("demo2", "flow2.toml", data);
 
   auto ret = server.Init(conf);
   if (ret == STATUS_NOTSUPPORT) {
@@ -401,16 +410,22 @@ TEST_F(ModelboxServerTest, QueryDemo) {
   auto result = nlohmann::json::parse(response.body);
   MBLOG_INFO << response.body;
   auto demo_list = result["demo_list"];
-  EXPECT_EQ(demo_list[0]["name"], "flow2.toml");
-  EXPECT_EQ(demo_list[1]["name"], "flow1.json");
+  EXPECT_EQ(demo_list[0]["demo"], "demo1");
+  EXPECT_EQ(demo_list[0]["name"], "demo1");
+  EXPECT_EQ(demo_list[0]["graphfile"], "flow1.json");
+  EXPECT_EQ(demo_list[0]["desc"], "demo1 desc");
+  EXPECT_EQ(demo_list[1]["demo"], "demo2");
+  EXPECT_EQ(demo_list[1]["name"], "demo2");
+  EXPECT_EQ(demo_list[1]["graphfile"], "flow2.toml");
+  EXPECT_EQ(demo_list[1]["desc"], "demo2 desc");
 
-  response = GetDemo(server, "flow1.json");
+  response = GetDemo(server, "demo1/flow1.json");
   EXPECT_EQ(response.status, HttpStatusCodes::OK);
   result = nlohmann::json::parse(response.body);
   MBLOG_INFO << response.body;
-  EXPECT_EQ(result["key"], "value");
+  EXPECT_EQ(result["flow"]["name"], "demo1");
 
-  response = GetDemo(server, "flow2.toml");
+  response = GetDemo(server, "../../demo2/flow2.toml");
   EXPECT_EQ(response.status, HttpStatusCodes::OK);
   MBLOG_INFO << response.body;
 }
@@ -450,8 +465,8 @@ TEST_F(ModelboxServerTest, TemplateCommandTest) {
   template_env += "=" + std::string(MODELBOX_TEMPLATE_BIN_DIR);
 
   std::string tmp_path = TEST_WORKING_DIR + std::string("/tmp/project");
-  removedir(tmp_path.c_str());
-  Defer { removedir(tmp_path.c_str()); };
+  RemoveDirectory(tmp_path);
+  Defer { RemoveDirectory(tmp_path); };
 
   conf->SetProperty("editor.test.template_cmd_env", template_env);
   conf->SetProperty("editor.test.template_cmd", MODELBOX_TEMPLATE_CMD_PATH);

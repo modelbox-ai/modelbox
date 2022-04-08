@@ -47,6 +47,7 @@ showhelp() {
 	echo "-service-plugin                        create modelbox service plugin"
 	echo "  -project-path [path-to-project]       create flowunit in specific project, default is \$HOME/modelbox-project."
 	echo "  -name [name]                          plugin name"
+	echo "-help                                  show this help message."
 	echo ""
 	echo "example:"
 	echo " create project:"
@@ -1174,17 +1175,17 @@ main() {
 			create_service_plugin "$@"
 			return $?
 			break;;
-		-h | --help)
+		--help)
 			showhelp
-			shift
-			break;;
+			return 0
+			;;
 		* ) 
 			appendargs "$1"
 			shift ;;
   		esac
 	done
 
-	echoerr "unknown argument"
+	echoerr "unknown command, please try $0 --help for more information."
 
 	return 1
 }
