@@ -20,7 +20,14 @@
 #include <dirent.h>
 #include <dlfcn.h>
 #include <errno.h>
+#ifndef ANDROID
 #include <execinfo.h>
+#else
+extern "C" {
+    extern int backtrace(void **buffer, int size);
+    extern char **backtrace_symbols(void *const *buffer, int size);
+}
+#endif
 #include <glob.h>
 #include <libgen.h>
 #include <modelbox/base/log.h>

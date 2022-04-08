@@ -18,6 +18,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(cpp-httplib)
 
+include_directories(${OPENSSL_INCLUDE_DIR})
+
 file(GLOB CPP_HTTPLIB_SOURCE *.c *.cpp *.cc)
 add_library(cpp-httplib SHARED EXCLUDE_FROM_ALL ${CPP_HTTPLIB_SOURCE})
 add_library(cpp-httplib-static STATIC EXCLUDE_FROM_ALL ${CPP_HTTPLIB_SOURCE})

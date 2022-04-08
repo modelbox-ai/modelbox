@@ -22,6 +22,14 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
 endif()
 
+if (DEFINED ENV{USER_ROOT} AND ANDROID_ABI)
+    include_directories($ENV{USER_ROOT}/${ANDROID_ABI}/usr/include)
+    link_directories($ENV{USER_ROOT}/${ANDROID_ABI}/usr/lib)
+
+    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_SHARED_LINKER_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_SHARED_LINKER_FLAGS}")
+endif()
+
 add_subdirectory(libmodelbox)
 add_subdirectory(drivers)
 add_subdirectory(develop)

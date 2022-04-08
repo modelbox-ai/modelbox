@@ -357,8 +357,13 @@ int manager_init(char *conf_file, char *name) {
   tlog_setlogscreen(g_is_verbose);
   tlog_setlevel(conf_log_level);
 
+  #ifndef ANDROID
   manager_log(MANAGER_LOG_INFO, "%s starting... (Build : %s %s)",
               program_invocation_short_name, __DATE__, __TIME__);
+  #else
+  manager_log(MANAGER_LOG_INFO, "%s starting... (Build : %s %s)",
+              getprogname(), __DATE__, __TIME__);
+  #endif
 
   if (manager_init_server() != 0) {
     manager_log(MANAGER_LOG_ERR, "init master server failed.");

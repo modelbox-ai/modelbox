@@ -58,7 +58,16 @@ Status FfmpegVideoMuxer::Mux(const AVRational &time_base,
   av_packet_rescale_ts(av_packet.get(), time_base, stream_->time_base);
   av_packet->stream_index = stream_->index;
   if (!is_header_wrote_) {
+    #ifndef ANDROID
     auto ret = avformat_write_header(format_ctx_.get(), nullptr);
+    #else
+    AVDictionary *options = nullptr;
+    av_dict_set(&options, "rtsp_transport", "tcp", 0);
+    av_dict_set(&options, "recv_buffer_size", "10240000", 0);
+    av_dict_set(&options, "stimeout", "2000000", 0);
+    auto ret = avformat_write_header(format_ctx_.get(), &options);
+    #endif
+
     if (ret < 0) {
       GET_FFMPEG_ERR(ret, ffmpeg_err);
       MBLOG_ERROR << "avformat_write_header failed, ret " << ffmpeg_err;

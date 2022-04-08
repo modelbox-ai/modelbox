@@ -33,7 +33,7 @@ class OutPort;
 
 struct CmpByInputKey {
   bool operator()(const std::shared_ptr<BufferGroup>& k1,
-                  const std::shared_ptr<BufferGroup>& k2) {
+                  const std::shared_ptr<BufferGroup>& k2) const {
     if (k1->GetOrder() == k2->GetOrder()) {
       return k1.get() < k2.get();
     }

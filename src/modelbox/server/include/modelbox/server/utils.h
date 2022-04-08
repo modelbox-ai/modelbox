@@ -17,6 +17,8 @@
 #ifndef MODELBOX_SERVER_UTILS_H_
 #define MODELBOX_SERVER_UTILS_H_
 
+#include <arpa/inet.h>
+#include <linux/in.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>

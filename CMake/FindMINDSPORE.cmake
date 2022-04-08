@@ -4,7 +4,7 @@ mark_as_advanced(MINDSPORE_INCLUDE)
 
 # Look for the library (sorted from most current/relevant entry to least).
 find_library(MINDSPORE_LIBRARY NAMES
-    mindspore
+    NAMES mindspore mindspore-lite
     HINTS ${CMAKE_INSTALL_FULL_LIBDIR} ${HITS_MINDSPORE_PATH}/lib
 )
 mark_as_advanced(MINDSPORE_LIBRARY)

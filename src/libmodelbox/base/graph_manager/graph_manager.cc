@@ -15,6 +15,7 @@
  */
 
 #include <modelbox/base/graph_manager.h>
+#include <modelbox/base/memory_stub.h>
 
 namespace modelbox {
 
@@ -397,7 +398,7 @@ Status GraphConfigManager::InitGraphConfigFactory(
     }
 
     std::shared_ptr<GraphConfigFactory> graph_conf_factory =
-        std::dynamic_pointer_cast<GraphConfigFactory>(temp_factory);
+        modelbox_dynamic_pointer_cast<GraphConfigFactory>(temp_factory);
 
     graph_conf_factories_.insert(std::make_pair(
         graph_conf_factory->GetGraphConfFactoryType(), graph_conf_factory));

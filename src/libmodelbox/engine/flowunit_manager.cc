@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "modelbox/base/log.h"
+#include "modelbox/base/memory_stub.h"
 #include "modelbox/flowunit.h"
 
 namespace modelbox {
@@ -91,7 +92,7 @@ Status FlowUnitManager::InitFlowUnitFactory(std::shared_ptr<Drivers> driver) {
     }
     desc = flowunit_driver->GetDriverDesc();
     std::shared_ptr<FlowUnitFactory> flowunit_factory =
-        std::dynamic_pointer_cast<FlowUnitFactory>(temp_factory);
+        modelbox_dynamic_pointer_cast<FlowUnitFactory>(temp_factory);
 
     flowunit_factory->SetDriver(flowunit_driver);
 

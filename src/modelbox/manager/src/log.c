@@ -16,8 +16,11 @@
 
 
 #include "log.h"
-
+#ifndef ANDROID
 #include <execinfo.h>
+#else
+#include "../../../libmodelbox/base/utils/backtrace.cc"
+#endif
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>

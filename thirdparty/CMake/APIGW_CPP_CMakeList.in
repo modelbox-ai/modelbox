@@ -20,6 +20,8 @@ project(APIGW_CPP)
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${OPENSSL_INCLUDE_DIR})
+link_directories(${OPENSSL_SSL_LIBRARY})
 aux_source_directory(. DIR_SRCS)
 
 FILE(GLOB SRC_LIST_CPP 
