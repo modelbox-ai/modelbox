@@ -21,6 +21,7 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <execinfo.h>
+#include <ftw.h>
 #include <glob.h>
 #include <libgen.h>
 #include <modelbox/base/log.h>
@@ -80,12 +81,12 @@ Status ListFiles(const std::string &path, const std::string &filter,
                  enum LIST_FILE_TYPE type) {
   struct stat buffer;
   if (stat(path.c_str(), &buffer) == -1) {
-    std::string msg = path  + " does not exist, ";
+    std::string msg = path + " does not exist, ";
     return {STATUS_NOTFOUND, msg + StrError(errno)};
   }
 
   if (S_ISDIR(buffer.st_mode) == 0) {
-    std::string msg = path  + " is not a directory, ";
+    std::string msg = path + " is not a directory, ";
     return {STATUS_INVALID, msg};
   }
 
@@ -207,6 +208,16 @@ Status CreateDirectory(const std::string &directory_path) {
   }
 
   return STATUS_OK;
+}
+
+static int rmfiles(const char *pathname, const struct stat *sbuf, int type,
+                   struct FTW *ftwb) {
+  remove(pathname);
+  return 0;
+}
+
+void RemoveDirectory(const std::string &path) {
+  nftw(path.c_str(), rmfiles, 10, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }
 
 Status CopyFile(std::string src, std::string dest, int mode, bool overwrite) {

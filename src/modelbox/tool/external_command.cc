@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-
 #include "external_command.h"
 
-#include <modelbox/base/crypto.h>
-#include <modelbox/base/log.h>
-#include <modelbox/base/utils.h>
 #include <errno.h>
 #include <getopt.h>
+#include <modelbox/base/crypto.h>
+#include <modelbox/base/log.h>
+#include <modelbox/base/popen.h>
+#include <modelbox/base/utils.h>
 #include <openssl/evp.h>
 #include <stdio.h>
 #include <string.h>
@@ -54,21 +54,25 @@ void ExternalCommandKey::SetHelpCmd(const std::string &help_cmd) {
   help_cmd_ = help_cmd;
 }
 
+void ExternalCommandKey::SetTimeout(int timeout) { timeout_ = timeout; }
+
 int ExternalCommandKey::Run(int argc, char *argv[]) {
-  std::string cmd = cmd_;
+  std::vector<std::string> cmd;
+
+  cmd.push_back(cmd_);
   for (int i = 1; i < argc; i++) {
-    cmd += " ";
-    cmd += argv[i];
+    cmd.push_back(argv[i]);
   }
 
-  MBLOG_DEBUG << "run cmd: " << cmd;
-  int ret = system(cmd.c_str());
+  modelbox::Popen p;
+  p.Open(cmd, timeout_, "");
+  int ret = p.Close();
   return WEXITSTATUS(ret);
 }
 
 std::string ExternalCommandKey::GetHelp() {
-  auto ret = system(help_cmd_.c_str());
-  UNUSED_VAR(ret);
+  modelbox::Popen p;
+  p.Open(help_cmd_, -1, "");
   return "";
 }
 
@@ -81,8 +85,8 @@ std::string ExternalCommandKey::GetCommandDesc() { return desc_; }
 Status ExternalCommandLoader::LoadCmds(const std::string &cmd_json_file) {
   std::ifstream infile(cmd_json_file);
   if (infile.fail()) {
-    std::cerr << "read file " << cmd_json_file << " failed, " << modelbox::StrError(errno)
-              << std::endl;
+    std::cerr << "read file " << cmd_json_file << " failed, "
+              << modelbox::StrError(errno) << std::endl;
     return {STATUS_BADCONF, modelbox::StrError(errno)};
   }
 
@@ -97,6 +101,10 @@ Status ExternalCommandLoader::LoadCmds(const std::string &cmd_json_file) {
       auto name = cmd["name"].get<std::string>();
       auto exec = cmd["exec"].get<std::string>();
       auto desc = cmd["desc"].get<std::string>();
+      auto timeout = -1;
+      if (cmd.contains("timeout")) {
+        timeout = cmd["timeout"].get<int>();
+      }
       auto help_cmd = cmd["help-cmd"].get<std::string>();
 
       auto ext_cmd = std::make_shared<ExternalCommandKey>();
@@ -104,6 +112,7 @@ Status ExternalCommandLoader::LoadCmds(const std::string &cmd_json_file) {
       ext_cmd->SetCommandName(name);
       ext_cmd->SetCommandDesc(desc);
       ext_cmd->SetHelpCmd(help_cmd);
+      ext_cmd->SetTimeout(timeout);
       auto new_func = [ext_cmd]() -> std::shared_ptr<ExternalCommandKey> {
         auto new_cmd = std::make_shared<ExternalCommandKey>();
         *new_cmd = *ext_cmd;

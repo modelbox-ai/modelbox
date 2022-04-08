@@ -170,6 +170,14 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
 Status CreateDirectory(const std::string &path);
 
 /**
+ * @brief Revmoe directory recursively
+ * 
+ * @param path path to directory
+ * @return Status remove result
+ */
+void RemoveDirectory(const std::string &path);
+
+/**
  * @brief Copy from from src to dest
  * @param src copy file from
  * @param dest copy file to
