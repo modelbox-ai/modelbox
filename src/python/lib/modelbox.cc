@@ -135,20 +135,22 @@ void SetUpFlow(pybind11::module &m) {
 
   c.def(py::init<>())
       .def("init",
-           py::overload_cast<const std::string &, modelbox::Flow::Format>(
+           static_cast<modelbox::Status (modelbox::Flow::*)(
+               const std::string &, modelbox::Flow::Format)>(
                &modelbox::Flow::Init),
            py::arg("conf_file"),
            py::arg("format") = modelbox::Flow::Format::FORMAT_AUTO,
            py::call_guard<py::gil_scoped_release>())
       .def("init",
-           py::overload_cast<const std::string &, const std::string &,
-                             modelbox::Flow::Format>(&modelbox::Flow::Init),
+           static_cast<modelbox::Status (modelbox::Flow::*)(
+               const std::string &, const std::string &,
+               modelbox::Flow::Format)>(&modelbox::Flow::Init),
            py::arg("name"), py::arg("graph"),
            py::arg("format") = modelbox::Flow::Format::FORMAT_AUTO,
            py::call_guard<py::gil_scoped_release>())
       .def("init",
-           py::overload_cast<std::shared_ptr<Configuration>>(
-               &modelbox::Flow::Init),
+           static_cast<modelbox::Status (modelbox::Flow::*)(
+               std::shared_ptr<Configuration>)>(&modelbox::Flow::Init),
            py::call_guard<py::gil_scoped_release>())
       .def("build", &modelbox::Flow::Build,
            py::call_guard<py::gil_scoped_release>())
