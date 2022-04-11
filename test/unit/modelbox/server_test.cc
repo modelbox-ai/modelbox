@@ -431,7 +431,7 @@ desc = "demo2 desc"
 }
 
 // Python library conflict problem, disable test cases.
-TEST_F(ModelboxServerTest, DISABLED_FlowInfo) {
+TEST_F(ModelboxServerTest, FlowInfo) {
   MockServer server;
   auto ret = server.Init(nullptr);
   if (ret == STATUS_NOTSUPPORT) {
@@ -440,6 +440,7 @@ TEST_F(ModelboxServerTest, DISABLED_FlowInfo) {
   server.Start();
   sleep(1);
   auto response = GetFlowInfo(server);
+  MBLOG_INFO << response.body;
   EXPECT_EQ(response.status, HttpStatusCodes::OK);
 }
 
