@@ -45,9 +45,6 @@ if(${UNIT_DEVICE} STREQUAL "ascend" )
     endif()
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-strict-aliasing -std=c++11")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fno-strict-aliasing")
-
 file(GLOB_RECURSE UNIT_SOURCE *.cpp *.cc *.c)
  
 include_directories(${CMAKE_CURRENT_LIST_DIR})

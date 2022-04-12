@@ -186,13 +186,23 @@ httplib::Response GetFlowInfoSpecificDir(
 
 httplib::Response EditorCreateProject(MockServer &server,
                                       const std::string &projectname,
-                                      const std::string &path) {
+                                      const std::string &path,
+                                      const std::string &temp = "") {
   HttpRequest request(HttpMethods::PUT,
                       server.GetServerURL() + "/editor/project/create");
   nlohmann::json create_body;
   create_body["name"] = projectname;
   create_body["path"] = path;
+  if (temp.length() > 0) {
+    create_body["template"] = temp;
+  }
   request.SetBody(create_body.dump());
+  return server.DoRequest(request);
+}
+
+httplib::Response EditorTemplateListGet(MockServer &server) {
+  HttpRequest request(HttpMethods::GET,
+                      server.GetServerURL() + "/editor/project/template");
   return server.DoRequest(request);
 }
 
@@ -431,7 +441,7 @@ desc = "demo2 desc"
 }
 
 // Python library conflict problem, disable test cases.
-TEST_F(ModelboxServerTest, FlowInfo) {
+TEST_F(ModelboxServerTest, DISABLED_FlowInfo) {
   MockServer server;
   auto ret = server.Init(nullptr);
   if (ret == STATUS_NOTSUPPORT) {
@@ -514,6 +524,57 @@ TEST_F(ModelboxServerTest, TemplateCommandTest) {
   auto result = nlohmann::json::parse(response.body);
   EXPECT_EQ(result["project_name"], project_name);
   EXPECT_EQ(result["flowunits"].size(), 4);
+}
+
+TEST_F(ModelboxServerTest, TemplateResizeProject) {
+  MockServer server;
+  auto conf = std::make_shared<Configuration>();
+  std::string template_env = "MODELBOX_TEMPLATE_PATH";
+  std::string project_name = "test";
+  template_env += "=" + std::string(MODELBOX_TEMPLATE_BIN_DIR);
+
+  std::string tmp_path = TEST_WORKING_DIR + std::string("/tmp/project");
+  RemoveDirectory(tmp_path);
+  Defer { RemoveDirectory(tmp_path); };
+
+  conf->SetProperty("editor.test.template_cmd_env", template_env);
+  conf->SetProperty("editor.test.template_cmd", MODELBOX_TEMPLATE_CMD_PATH);
+  auto ret = server.Init(conf);
+  if (ret == STATUS_NOTSUPPORT) {
+    GTEST_SKIP();
+  }
+  server.Start();
+  sleep(1);
+  auto response = EditorCreateProject(server, project_name, tmp_path, "resize");
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::CREATED);
+}
+
+TEST_F(ModelboxServerTest, TemplateListGet) {
+  MockServer server;
+  auto conf = std::make_shared<Configuration>();
+  std::string template_env = "MODELBOX_TEMPLATE_PATH";
+  std::string project_name = "test";
+  template_env += "=" + std::string(MODELBOX_TEMPLATE_BIN_DIR);
+
+  conf->SetProperty("editor.test.template_cmd_env", template_env);
+  conf->SetProperty("editor.template_dir", MODELBOX_TEMPLATE_BIN_DIR);
+  conf->SetProperty("editor.test.template_cmd", MODELBOX_TEMPLATE_CMD_PATH);
+  auto ret = server.Init(conf);
+  if (ret == STATUS_NOTSUPPORT) {
+    GTEST_SKIP();
+  }
+  server.Start();
+  sleep(1);
+  auto response = EditorTemplateListGet(server);
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::OK);
+
+  std::vector<std::string> files;
+  modelbox::ListSubDirectoryFiles(
+      MODELBOX_TEMPLATE_BIN_DIR + std::string("/project"), "desc.toml", &files);
+  auto result = nlohmann::json::parse(response.body);
+  EXPECT_EQ(files.size(), result["project_template_list"].size());
 }
 
 TEST_F(ModelboxServerTest, ServerLoadConfig) {
