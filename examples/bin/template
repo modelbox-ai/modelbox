@@ -316,7 +316,7 @@ toml_data_write_base() {
 toml_data_write_inputports() {
 	toml_data_append "# Input ports description"
 	toml_data_append "[input]"
-	i=0
+	i=1
 	for input in "${flowunit_inputs[@]}"; do
 		toml_data_append "[input.input$i]"
 		i=$((i+1))
@@ -333,7 +333,7 @@ toml_data_write_outputports() {
 	toml_data_append ""
 	toml_data_append "# Output ports description"
 	toml_data_append "[output]"
-	i=0
+	i=1
 	for output in "${flowunit_outputs[@]}"; do
 		toml_data_append "[output.output$i]"
 		i=$((i+1))
@@ -404,7 +404,7 @@ setup_flowunit_python_source() {
 	space=$(grep "in_data = data_context.input" "$SOURCE_FILE" | sed 's/\([ |\t]*\)in_data = data_context.input.*/\1/g')
 	input_flag="# input data"
 	sed -i "s/in_data = data_context.input.*/${input_flag}/" "$SOURCE_FILE"
-	i=0
+	i=1
 	for port in "${flowunit_input_names[@]}"; do
 		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
 			line="in_data = data_context.input(\"${port}\")"
@@ -418,7 +418,7 @@ setup_flowunit_python_source() {
 	
 	output_flag="# output data"
 	sed -i "s/out_data = data_context.output.*/${output_flag}/" "$SOURCE_FILE"
-	i=0
+	i=1
 	for port in "${flowunit_output_names[@]}"; do
 		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
 			line="out_data = data_context.output(\"${port}\")"
@@ -531,7 +531,7 @@ setup_flowunit_cpp_source() {
 	input_port_flag="// input port"
 	sed -i "s#auto input_bufs = ctx->Input.*#${input_flag}#" "$SOURCE_FILE"
 	sed -i "s#desc.AddFlowUnitInput(modelbox::FlowUnitInput.*#${input_port_flag}#" "$SOURCE_FILE"
-	i=0
+	i=1
 	for port in "${flowunit_input_names[@]}"; do
 		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
 			line="auto input_bufs = ctx->Input(\"${port}\");"
@@ -550,7 +550,7 @@ setup_flowunit_cpp_source() {
 	output_port_flag="// output port"
 	sed -i "s#auto output_bufs = ctx->Output.*#${output_flag}#" "$SOURCE_FILE"
 	sed -i "s#desc.AddFlowUnitOutput(modelbox::FlowUnitOutput.*#${output_port_flag}#" "$SOURCE_FILE"
-	i=0
+	i=1
 	for port in "${flowunit_output_names[@]}"; do
 		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
 			line="auto output_bufs = ctx->Output(\"${port}\");"
