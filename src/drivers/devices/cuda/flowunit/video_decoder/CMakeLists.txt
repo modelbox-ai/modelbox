@@ -64,7 +64,6 @@ target_link_libraries(${MODELBOX_UNIT_SHARED} rt)
 target_link_libraries(${MODELBOX_UNIT_SHARED} dl)
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${FFMPEG_LIBRARIES})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${NVCUVID_LIBRARIES})
-target_link_libraries(${MODELBOX_UNIT_SHARED} cuda)
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${CUDA_nppicc_LIBRARY})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_COMMON_VIDEO_DECODE_LIBRARY})
 
