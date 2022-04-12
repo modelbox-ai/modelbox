@@ -57,6 +57,8 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
                           httplib::Response &response);
   void HandlerProjectCreate(const httplib::Request &request,
                             httplib::Response &response);
+  void HandlerProjectTemplateListGet(const httplib::Request &request,
+                            httplib::Response &response);
   void HandlerProjectGet(const httplib::Request &request,
                          httplib::Response &response);
   void HandlerProjectListGet(const httplib::Request &request,
@@ -92,6 +94,7 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   // for test setting
   std::string template_cmd_;
   std::string template_cmd_env_;
+  std::string template_dir_;
   std::vector<std::string> acl_white_list_;
   bool enable_{false};
   std::string url_;

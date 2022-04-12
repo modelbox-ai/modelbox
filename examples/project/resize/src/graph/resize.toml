@@ -15,7 +15,7 @@
 
 [driver]
 skip-default = false
-dir=["/opt/modelbox/project/my-project/lib","/opt/modelbox/project/my-project/python","/opt/modelbox/project/my-project/model"]   # path for user c++ flowuint, python flowuint, infer flowunit
+dir=["@PROJECT_INSTALL_PATH@/lib","@PROJECT_INSTALL_PATH@/python","@PROJECT_INSTALL_PATH@/model"]
 [profile]
 profile=false
 trace=false
