@@ -219,6 +219,7 @@ errout:
 
 int _app_start(struct app_monitor *app) {
   int pid = -1;
+  int unused __attribute__((unused));
 
   if (app->pid > 0) {
     return 0;
@@ -235,7 +236,7 @@ int _app_start(struct app_monitor *app) {
     close_all_fd();
     app_test(app);
     snprintf(killcmd, 128, "kill -9 %d", getpid());
-    system(killcmd);
+    unused = system(killcmd);
     _exit(1);
   }
 #else
@@ -777,7 +778,7 @@ void app_test(struct app_monitor *app) {
     pidfile = create_pid(app->pid_file);
   }
 
-  if (app_monitor_init(app->name) != 0) {
+  if (app_monitor_init(app->name, NULL) != 0) {
     goto out;
   }
 

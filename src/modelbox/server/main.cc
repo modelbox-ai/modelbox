@@ -81,6 +81,7 @@ static void showhelp(void) {
         "  -v            show server version.\n"
         "  -n            service name for manager.\n"
         "  -k            keep alive time for manager.\n"
+        "  -K            keep alive key file.\n"
         "  -h            show this help message.\n"
         "\n";
 
@@ -178,7 +179,7 @@ int modelbox_init(void) {
 }
 
 int modelbox_run(std::shared_ptr<Server> server, const std::string &keep_name,
-                 int keep_time) {
+                 int keep_time, const char *keyfile) {
   auto ret = server->Init();
   if (!ret) {
     MBLOG_ERROR << "server init failed !";
@@ -194,16 +195,16 @@ int modelbox_run(std::shared_ptr<Server> server, const std::string &keep_name,
   std::shared_ptr<TimerTask> heart_beattask = std::make_shared<TimerTask>();
   heart_beattask->Callback([&]() { app_monitor_heartbeat(); });
 
-  auto future =
-      std::async(std::launch::async, [heart_beattask, keep_name, keep_time]() {
+  auto future = std::async(
+      std::launch::async, [heart_beattask, keep_name, keep_time, keyfile]() {
         if (keep_time > 0 && keep_name.length() > 0) {
-          if (app_monitor_init(keep_name.c_str()) != 0) {
+          if (app_monitor_init(keep_name.c_str(), keyfile) != 0) {
             MBLOG_ERROR << "init app monitor failed.";
             return;
           }
 
           sleep(1);
-          kServerTimer->Schedule(heart_beattask, 0, 1000 * keep_time);
+          kServerTimer->Schedule(heart_beattask, 0, 1000 * keep_time, true);
         }
       });
 
@@ -290,11 +291,12 @@ int main(int argc, char *argv[])
 {
   std::string pidfile = MODELBOX_SERVER_PID_FILE;
   std::string keep_name = "";
-  int keep_time = 30;
+  int keep_time = 5;
   int cmdtype = 0;
+  std::string key_file;
   std::string get_conf_key;
 
-  MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "hc:Vvfp:n:k", options)
+  MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "hc:Vvfp:n:k:K", options)
   switch (cmdtype) {
     case 0: {
       switch (option_flag) {
@@ -328,6 +330,9 @@ int main(int argc, char *argv[])
         break;
       case 'k':
         keep_time = atoi(optarg);
+        break;
+      case 'K':
+        key_file = optarg;
         break;
       case 'v':
         printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
@@ -370,7 +375,7 @@ int main(int argc, char *argv[])
   auto server = std::make_shared<Server>(kConfig);
   kServerTimer->Start();
 
-  if (modelbox_run(server, keep_name, keep_time) != 0) {
+  if (modelbox_run(server, keep_name, keep_time, key_file.c_str()) != 0) {
     return 1;
   }
 
