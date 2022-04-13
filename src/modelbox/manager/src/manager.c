@@ -21,9 +21,9 @@
 #include "common.h"
 #include "manager_conf.h"
 #include "manager_monitor.h"
+#include "securec.h"
 #include "tlog.h"
 #include "util.h"
-#include "securec.h"
 
 static int g_reload_config;
 static int pid_fd;
@@ -135,7 +135,8 @@ void manager_reload_apps(struct conf_app oldapps[CONF_MAX_APPS]) {
         manager_log(MANAGER_LOG_ERR, "stop app %s failed.", oldapps[i].name);
       }
 
-      memset_s(&oldapps[i], sizeof(struct conf_app), 0, sizeof(struct conf_app));
+      memset_s(&oldapps[i], sizeof(struct conf_app), 0,
+               sizeof(struct conf_app));
     }
   }
 
@@ -330,12 +331,8 @@ int manager_init(char *conf_file, char *name) {
   }
 
   /* generate log */
-  if (name) {
-    snprintf(log_file, sizeof(log_file), "%s/%s.log", MANAGER_LOG_PATH, name);
-  } else {
-    snprintf(log_file, sizeof(log_file), "%s/%s.log", MANAGER_LOG_PATH,
-             MANAGER_NAME);
-  }
+  snprintf(conf_log_file, sizeof(log_file), "%s/%s.log", MANAGER_LOG_PATH,
+           MANAGER_NAME);
 
   if (conf_file == NULL) {
     _manager_default_conf_file(default_conf_file, PATH_MAX);
@@ -349,7 +346,7 @@ int manager_init(char *conf_file, char *name) {
     return -1;
   }
 
-  if (tlog_init(log_file, conf_log_size, conf_log_num, 0, 0) != 0) {
+  if (tlog_init(conf_log_file, conf_log_size, conf_log_num, 0, 0) != 0) {
     fprintf(stderr, "init master log failed.\n");
     return -1;
   }
@@ -379,7 +376,7 @@ int main(int argc, char *argv[])
   char *conf_file = NULL;
   char *name = NULL;
 
-  while ((opt = getopt(argc, argv, "fvhc:n:p:")) != -1) {
+  while ((opt = getopt(argc, argv, "fvhc:n:p:k:")) != -1) {
     switch (opt) {
       case 'c':
         conf_file = optarg;

@@ -23,14 +23,22 @@ MODELBOX_DEFAULT_PORT="1104"
 
 setup_env() {
     MODELBOX_FLOW_DIR="$MODELBOX_USER_HOME/graph"
-    MODELBOX_USER_OPT="$MODELBOX_USER_HOME/modelbox-opt"
-    MODELBOX_USER_CONF_FILE="$MODELBOX_USER_HOME/modelbox.conf"
+    MODELBOX_CONF_DIR="$MODELBOX_USER_HOME/conf"
+    MODELBOX_USER_OPT="$MODELBOX_CONF_DIR/modelbox-opt"
+    MODELBOX_USER_CONF_FILE="$MODELBOX_CONF_DIR/modelbox.conf"
     MODELBOX_LOG_DIR="$MODELBOX_USER_HOME/log"
     MODELBOX_LOG_FILE="$MODELBOX_LOG_DIR/modelbox.log"
     MODELBOX_PID_DIR="$MODELBOX_USER_HOME/run"
     MODELBOX_PID_FILE="$MODELBOX_PID_DIR/modelbox.pid"
     MODELBOX_SOCK_FILE="$MODELBOX_PID_DIR/modelbox.sock"
     MODELBOX_RUN_SCRIPT="$MODELBOX_USER_HOME/modelbox"
+
+    MODELBOX_MANAGER_USER_OPT="$MODELBOX_CONF_DIR/manager-opt"
+    MODELBOX_MANAGER_PID_FILE="$MODELBOX_PID_DIR/manager.pid"
+    MODELBOX_MANAGER_KEY_FILE="$MODELBOX_PID_DIR/manager.key"
+    MODELBOX_MANAGER_LOG_FILE="$MODELBOX_LOG_DIR/manager.log"
+    MODELBOX_MANAGER_USER_CONF_FILE="$MODELBOX_CONF_DIR/manager.conf"
+    MODELBOX_MANAGER_RUN_SCRIPT="$MODELBOX_USER_HOME/modelbox-manager"
 
     MODELBOX_USER_SERVER_IP="0.0.0.0"
     MODELBOX_USER_SERVER_PORT="$MODELBOX_DEFAULT_PORT"
@@ -42,6 +50,7 @@ debug_mode_info() {
     echo "  Config:          $MODELBOX_USER_CONF_FILE"
     echo "  Log:             $MODELBOX_LOG_DIR"
     echo "  Service command: $MODELBOX_RUN_SCRIPT {start|stop|restart|status}"
+    echo "  Manager command: $MODELBOX_MANAGER_RUN_SCRIPT {start|stop|restart|status}"
     echo "  Tool Command:    modelbox-tool server -conf $MODELBOX_USER_CONF_FILE" 
     echo "  UI URL:          http://$MODELBOX_USER_SERVER_IP:${MODELBOX_USER_SERVER_PORT}/editor/"  
     return 0;
@@ -71,6 +80,17 @@ setup_init_script() {
         return 1
     fi
 
+    cp /etc/init.d/modelbox-manager $MODELBOX_MANAGER_RUN_SCRIPT
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    sed -i "s@CUSTOM_ENV_FILE=\"\"@CUSTOM_ENV_FILE=\"$MODELBOX_MANAGER_USER_OPT\"@" $MODELBOX_MANAGER_RUN_SCRIPT
+    if [ $? -ne 0 ]; then
+        echo "Modify script failed, please check permission"
+        return 1
+    fi
+
     return 0;
 }
 
@@ -79,6 +99,10 @@ setup_debug_env() {
     echo "PIDFILE=$MODELBOX_PID_FILE" >> $MODELBOX_USER_OPT
     echo "MODELBOX_OPTS=\"-c $MODELBOX_USER_CONF_FILE\"" >> $MODELBOX_USER_OPT
 
+    echo "PIDDIR=$MODELBOX_PID_DIR" >> $MODELBOX_MANAGER_USER_OPT
+    echo "PIDFILE=$MODELBOX_MANAGER_PID_FILE" >> $MODELBOX_MANAGER_USER_OPT
+    echo "KEYFILE=$MODELBOX_MANAGER_KEY_FILE" >> $MODELBOX_MANAGER_USER_OPT
+    echo "MODELBOX_MANAGER_OPTS=\"-c $MODELBOX_MANAGER_USER_CONF_FILE\"" >> $MODELBOX_MANAGER_USER_OPT
     return 0
 }
 
@@ -136,6 +160,15 @@ setup_config_file() {
 For more details on security, please refer to the manual.
 "
 
+    echo "logfile $MODELBOX_MANAGER_LOG_FILE" > ${MODELBOX_MANAGER_USER_CONF_FILE}
+    echo "loglevel INFO" >> ${MODELBOX_MANAGER_USER_CONF_FILE}
+    appcmd="app -name \"modelbox\""
+    appcmd="$appcmd -check-alive -pidfile ${MODELBOX_PID_FILE}"
+    appcmd="$appcmd --"
+    appcmd="$appcmd modelbox -c ${MODELBOX_USER_CONF_FILE} -p ${MODELBOX_PID_FILE} -n modelbox"
+    echo "$appcmd" >> ${MODELBOX_MANAGER_USER_CONF_FILE}
+
+
     debug_mode_info
     echo ""
     echo "Starting modelbox at $MODELBOX_USER_HOME for `id -un`:" 
@@ -164,6 +197,7 @@ init_debug_home() {
     mkdir -p $MODELBOX_USER_HOME
     mkdir -p $MODELBOX_FLOW_DIR
     mkdir -p $MODELBOX_LOG_DIR
+    mkdir -p $MODELBOX_CONF_DIR
 
     setup_init_script
     if [ $? -ne 0 ]; then
@@ -226,7 +260,9 @@ develop_status() {
 
     debug_mode_info
     MSG=`$MODELBOX_RUN_SCRIPT status 2>/dev/null`
-    echo "  Server Status:   $MSG"
+    echo "  Service Status:  $MSG"
+    MSG=`$MODELBOX_MANAGER_RUN_SCRIPT status 2>/dev/null`
+    echo "  Manager Status:  $MSG"
 
     return 0
 }
@@ -240,6 +276,8 @@ setup_develop_mode() {
     restart_modelbox
 
     $MODELBOX_RUN_SCRIPT status
+    $MODELBOX_MANAGER_RUN_SCRIPT restart  2>&1 > /dev/null
+    $MODELBOX_MANAGER_RUN_SCRIPT status
 }
 
 install_modelbox_server() {

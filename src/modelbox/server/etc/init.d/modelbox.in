@@ -20,7 +20,7 @@
 # Required-Stop:   $network 
 # Default-Start:   2 3 4 5
 # Default-Stop:
-# Short-Description: Start modelbox server
+# Short-Description: Start modelbox service
 ### END INIT INFO
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
@@ -55,7 +55,7 @@ case $1 in
 			LOOP=$((LOOP+1))
 
 			if [ $LOOP -gt 10 ]; then
-				echo "start modelbox server failed."
+				echo "start modelbox service failed."
 				"$0" stop
 				exit 1
 			fi
@@ -64,29 +64,29 @@ case $1 in
 
 		PID="$(cat $PIDFILE 2>/dev/null)"
 		if [ -z "$PID" ]; then
-			echo "start modelbox server failed."
+			echo "start modelbox service failed."
 			exit 1
 		fi
 		if [ ! -e "/proc/$PID" ]; then
-			echo "start modelbox server failed."
+			echo "start modelbox service failed."
 			exit 1
 		fi
-		echo "start modelbox server success."
+		echo "start modelbox service success."
 		;;
 	stop)
 		if [ ! -f "$PIDFILE" ]; then
-			echo "modelbox server is stopped."
+			echo "modelbox service is stopped."
 			exit 0
 		fi
 		PID="$(cat $PIDFILE 2>/dev/null)"
 		if [ ! -e "/proc/$PID" ] || [ -z "$PID" ]; then
-			echo "modelbox server is stopped"
+			echo "modelbox service is stopped"
 			exit 0
 		fi
 
 		kill -TERM "$PID"
 		if [ $? -ne 0 ]; then
-			echo "Stop modelbox server failed."
+			echo "Stop modelbox service failed."
 			exit 1;
 		fi
 
@@ -103,8 +103,7 @@ case $1 in
 			LOOP=$((LOOP+1))
 			sleep .5
 		done
-		rm -f "$PIDFILE"
-		echo "Stop modelbox server success."
+		echo "Stop modelbox service success."
 		;;
 	restart)
 		"$0" stop && sleep 1 && "$0" start
@@ -112,10 +111,10 @@ case $1 in
 	status)
 		PID="$(cat "$PIDFILE" 2>/dev/null)"
 		if [ ! -e "/proc/$PID" ] || [ -z "$PID" ]; then
-			echo "modelbox server is not running."
+			echo "modelbox service is not running."
 			exit 1
 		fi
-		echo "modelbox server is running. pid $PID"
+		echo "modelbox service is running. pid $PID"
 		status=$?
 		;;
 	*)

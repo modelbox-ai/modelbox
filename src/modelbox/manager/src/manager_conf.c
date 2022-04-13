@@ -48,14 +48,15 @@ int _manager_is_app_exists(char *name) {
 }
 
 int manager_load_app(void *item, int argc, char *argv[]) {
-  static struct option options[] = {{"cmd", 1, 0, 'c'},
-                                    {"name", 1, 0, 'n'},
+  static struct option options[] = {{"name", 1, 0, 'n'},
                                     {"pidfile", 1, 0, 'p'},
                                     {"check-alive", 0, 0, 'k'},
                                     {0, 0, 0, 0}};
 
   int cmdtype;
   struct conf_app *conf_app;
+  int end_opt = 0;
+  int i = 0;
 
   if (conf_apps_num >= CONF_MAX_APPS) {
     manager_log(MANAGER_LOG_ERR, "apps configuration is full.");
@@ -65,21 +66,17 @@ int manager_load_app(void *item, int argc, char *argv[]) {
   conf_app = conf_apps + conf_apps_num;
   memset(conf_app, 0, sizeof(*conf_app));
 
-  while ((cmdtype = getopt_long_only(argc, argv, "", options, NULL)) != -1) {
+  while ((cmdtype = getopt_long_only(argc, argv, "", options, NULL)) != -1 && end_opt == 0) {
     switch (cmdtype) {
       case 'n':
         if (_manager_is_app_exists(optarg) == 0) {
           manager_log(MANAGER_LOG_ERR, "app %s exists.", optarg);
           return -1;
         }
-
         strncpy(conf_app->name, optarg, APP_NAME_LEN);
         break;
       case 'k':
         conf_app->check_alive = 1;
-        break;
-      case 'c':
-        strncpy(conf_app->cmd, optarg, PATH_MAX);
         break;
       case 'p':
         strncpy(conf_app->pidfile, optarg, PATH_MAX);
@@ -87,6 +84,11 @@ int manager_load_app(void *item, int argc, char *argv[]) {
       default:
         break;
     }
+  }
+
+  for (i = optind; i < argc; i++) {
+    strncat(conf_app->cmd, " ", PATH_MAX);
+    strncat(conf_app->cmd, argv[i], PATH_MAX);
   }
 
   if (strlen(conf_app->name) <= 0 || strlen(conf_app->cmd) <= 0) {
