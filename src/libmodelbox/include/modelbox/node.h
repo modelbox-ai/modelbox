@@ -344,8 +344,8 @@ class Node : public DataMatcherNode {
    * @return Status {status} if success return STATUS_SUCCESS
    */
   virtual Status Init(const std::set<std::string>& input_port_names,
-              const std::set<std::string>& output_port_names,
-              std::shared_ptr<Configuration> config) override;
+                      const std::set<std::string>& output_port_names,
+                      std::shared_ptr<Configuration> config) override;
 
   Status RecvData(
       std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list);
@@ -441,6 +441,20 @@ class Node : public DataMatcherNode {
 
   std::shared_ptr<Profiler> GetProfiler() { return profiler_; };
 
+  std::unordered_map<std::string, std::shared_ptr<Node>> GetMatchNodes() {
+    return match_node_;
+  }
+  
+  void SetMatchNode(const std::string& name, std::shared_ptr<Node> match_node) {
+    match_node_[name] = match_node;
+  }
+
+  std::shared_ptr<Node> GetMatchNode() { return match_node_["match_node"]; }
+
+  std::shared_ptr<Node> GetMatchNode(const std::string& port_name) {
+    return match_node_[port_name];
+  }
+
  private:
   friend class InPort;
   friend class SingleNode;
@@ -486,6 +500,8 @@ class Node : public DataMatcherNode {
   bool is_stream_same_count_;
 
   bool is_input_contiguous_{true};
+
+  std::unordered_map<std::string, std::shared_ptr<Node>> match_node_;
 
   int GetRecvLimit();
 
