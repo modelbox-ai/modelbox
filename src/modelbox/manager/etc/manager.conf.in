@@ -1,6 +1,13 @@
+# log level
+loglevel INFO
+
+# log file path
+logfile /var/log/modelbox/manager.log
+
 #
-# app --name "appname" --cmd "/path/to/command"  --pidfile "/run/app.pid" --keep-check
+# app -name "appname" -pidfile "/run/app.pid" -keep-check -- run command list here
 #
-# app --name "modelbox" --cmd "/usr/local/bin/modelbox -c /usr/local/etc/modelbox/modelbox.conf -p /var/run/modelbox/modelbox.pid -n modelbox" --check-alive --pidfile "/var/run/modelbox/modelbox.pid"
+app -name "modelbox" -check-alive -pidfile "/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid" -- @CMAKE_INSTALL_FULL_BINDIR@/modelbox -c @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox.conf -p /@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid -n modelbox
+
 #
 #

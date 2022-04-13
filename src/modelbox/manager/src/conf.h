@@ -31,6 +31,7 @@ extern "C" {
 #define CONF_LOG_LEVEL "loglevel"
 #define CONF_LOG_NUM "lognum"
 #define CONF_LOG_SIZE "logsize"
+#define CONF_LOG_FILE "logfile"
 
 struct CONF_PARSE_INT {
   int *value;
@@ -55,6 +56,7 @@ extern int conf_parse_size(void *item, int argc, char *argv[]);
 extern MANAGER_LOG_LEVEL conf_log_level;
 extern int conf_log_num;
 extern size_t conf_log_size;
+extern char conf_log_file[PATH_MAX];
 
 typedef int (*parse_func)(void *item, int argc, char *argv[]);
 struct config_map {
