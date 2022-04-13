@@ -18,6 +18,7 @@
 
 #include "modelbox/base/log.h"
 #include "modelbox/base/uuid.h"
+#include "modelbox/graph_checker.h"
 #include "modelbox/profiler.h"
 #include "scheduler/flow_scheduler.h"
 
@@ -113,16 +114,33 @@ Status Graph::CheckLoopStructureNode() {
   return status;
 }
 
-Status Graph::Build(std::shared_ptr<GCGraph> g) {
-  if (g == nullptr) {
-    return STATUS_INVALID;
-  }
-
+void Graph::ShowGraphInfo(std::shared_ptr<GCGraph> g) {
   name_ = g->GetGraphName();
   MBLOG_INFO << "Build graph name:" << name_ << ", id:" << id_;
   g->ShowAllSubGraph();
   g->ShowAllNode();
   g->ShowAllEdge();
+}
+
+Status Graph::CheckGraph() {
+  auto start_nodes = GetStartNodes();
+  auto graph_checker = std::make_shared<GraphChecker>(topo_order_, start_nodes,
+                                                      loop_links_, loop_structures_, src_to_dst_);
+  Status res = graph_checker->Check();
+  if (!res) {
+    return res;
+  }
+
+  graph_checker->SetMatchNodes();
+  graph_checker->ShowMatchNodes();
+
+  return res;
+}
+
+Status Graph::Build(std::shared_ptr<GCGraph> g) {
+  if (g == nullptr) {
+    return STATUS_INVALID;
+  }
 
   if (flowunit_mgr_ == nullptr || device_mgr_ == nullptr ||
       config_ == nullptr) {
@@ -130,6 +148,8 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
     auto ret = Status(STATUS_INVALID, msg);
     return ret;
   }
+
+  ShowGraphInfo(g);
 
   // build node and add link
   Status status = BuildGraph(g);
@@ -148,9 +168,9 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
 
   status = FindLoopStructure();
   if (!status) {
-    auto msg = "there is no loop structure in the graph";
-    MBLOG_DEBUG << msg;
-    return status;
+    auto msg = "loop node is illegal.";
+    auto ret = Status(status, msg);
+    return ret;
   }
 
   status = GenerateTopology();
@@ -174,16 +194,16 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
     return ret;
   }
 
-  status = CheckStreamMatcher();
+  status = CheckLoopStructureNode();
   if (!status) {
-    auto msg = "check stream fail, msg: " + status.WrapErrormsgs();
+    auto msg = "check loop node fail.";
     auto ret = Status(status, msg);
     return ret;
   }
 
-  status = CheckLoopStructureNode();
+  status = CheckGraph();
   if (!status) {
-    auto msg = "check loop node fail.";
+    auto msg = "check graph failed.";
     auto ret = Status(status, msg);
     return ret;
   }
@@ -609,11 +629,6 @@ Status Graph::BuildNode(std::shared_ptr<GCGraph> g,
 }
 
 Status Graph::BuildNodes(std::shared_ptr<GCGraph> g) {
-  if (g == nullptr) {
-    auto msg = "g is null pointer.";
-    return {STATUS_INVALID, msg};
-  }
-
   auto strict = config_->GetBool("graph.strict", true);
 
   auto nodes = g->GetAllNodes();
@@ -911,15 +926,6 @@ Status Graph::Topology(
   return STATUS_OK;
 }
 
-Status Graph::CheckStreamMatcher() {
-  auto checkingNodes = GetStartNodes();
-  auto allNodes = GetAllNodes();
-  allNodes.erase(output_node_);
-  auto stream_matcher =
-      std::make_shared<StreamMatcher>(checkingNodes, allNodes);
-  return stream_matcher->StartCheck();
-}
-
 void Graph::FindLoopSeq(std::shared_ptr<NodeBase> &root_node,
                         std::vector<std::string> &vis) {
   auto dstNodes = GetDstNodesByNode(root_node->GetName());
@@ -1014,7 +1020,7 @@ Status Graph::FindLoopStructure() {
       MBLOG_INFO << "item: " << item;
     }
   }
-  
+
   FillLoopLink();
   for (auto &loop : loop_links_) {
     MBLOG_INFO << loop.first << ", " << loop.second;
