@@ -937,6 +937,7 @@ void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
     std::string demo_file;
     std::string demo_name;
     SplitPath(relative_path, demo_name, graph_file);
+    demo_name = graph_file.substr(0, graph_file.find(".toml"));
     if (demo_name.length() == 0 && graph_file.length() == 0) {
       HandlerDemoGetList(request, response);
       return;
