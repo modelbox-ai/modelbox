@@ -16,6 +16,7 @@
 
 MODELBOX_TEMPLATE_PATH="${MODELBOX_TEMPLATE_PATH:-/usr/local/share/modelbox/project-template}"
 DEFAULT_PROJECT_PATH="$HOME/modelbox-project"
+PROJECT_INSTALL_PATH="/opt/modelbox/project"
 
 showhelp() {
 	echo "usage $(basename $0) [OPTIONS]"
@@ -76,27 +77,15 @@ create_project_template()
 		return 1
 	fi
 
-	if [ ! -d "$MODELBOX_TEMPLATE_PATH/${template}" ]; then
-		echoerr "Project template $template not exists, please input valid project template"
+	if [ ! -d "$MODELBOX_TEMPLATE_PATH/project/${template}" ]; then
+		echoerr "Project template $MODELBOX_TEMPLATE_PATH/project/${template} not exists, please input valid project template"
 		return 1
 	fi
 
-	cp -r "$MODELBOX_TEMPLATE_PATH/${template}"/* "${project_path}"
+	cp -r "$MODELBOX_TEMPLATE_PATH/project/${template}"/* "${project_path}"
 	if [ $? -ne 0 ]; then
 		echoerr "Copy project template failed."
 		return 1
-	fi
-
-	if [ -e "${project_path}/src/flowunit/example" ]; then
-		rm -r "${project_path}/src/flowunit/example"
-	fi
-
-	if [ -e "${project_path}/src/graph/example.toml" ]; then
-		rm "${project_path}/src/graph/example.toml"
-	fi
-
-	if [ -e "${project_path}/test/flowunit/resize_flowuint_test.cc" ]; then
-		rm "${project_path}/test/flowunit/resize_flowuint_test.cc"
 	fi
 
 	sed -i "s/example/$project_name/g" "${project_path}/CMakeLists.txt"
@@ -105,7 +94,14 @@ create_project_template()
 		return 1
 	fi
 
+	project_dir_name=$(basename ${project_path})
+	driver_dir="${PROJECT_INSTALL_PATH}/${project_dir_name}"
+	sed -i "s#@PROJECT_INSTALL_PATH@#${driver_dir}#g" ${project_path}/src/graph/*.toml
+	sed -i "s#@PROJECT_INSTALL_PATH@#${driver_dir}#g" ${project_path}/src/graph/*.json
+	
 	echo "Create project at '${project_path}' success"
+
+	rm -f ${project_path}/desc.toml
     
 	return 0
 }
@@ -130,7 +126,7 @@ create_project() {
 	project_name=""
 	project_path="$DEFAULT_PROJECT_PATH"
 	project_root_path=""
-	template="project"
+	template="empty"
 
 	while true; do
 		if [ $# -le 0 ]; then

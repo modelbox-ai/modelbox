@@ -35,6 +35,8 @@
 using namespace modelbox;
 
 const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
+const std::string DEFAULT_PROJECT_TEMPLATE_DIR =
+    "/usr/local/share/modelbox/project-template";
 const std::string DEFAULT_DEMO_ROOT_DIR = MODELBOX_DEMO_PATH;
 constexpr const char* DEFAULT_MODELBOX_TEMPLATE_CMD = "modelbox-tool template";
 
@@ -44,6 +46,7 @@ const std::string demo_url = "/editor/demo";
 const std::string save_graph_url = "/editor/graph";
 const std::string flowunit_create_url = "/editor/flowunit/create";
 const std::string project_url = "/editor/project";
+const std::string project_template_url = "/editor/project/template";
 const std::string project_list_url = "/editor/project/list";
 const std::string project_create_url = "/editor/project/create";
 const std::string pass_encode_url = "/editor/password/encode";
@@ -138,6 +141,10 @@ void ModelboxEditorPlugin::RegistHandlers() {
   listener_->Register(project_url, HttpMethods::GET,
                       std::bind(&ModelboxEditorPlugin::HandlerProjectGet, this,
                                 std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(
+      project_template_url, HttpMethods::GET,
+      std::bind(&ModelboxEditorPlugin::HandlerProjectTemplateListGet, this,
+                std::placeholders::_1, std::placeholders::_2));
   listener_->Register(
       project_list_url, HttpMethods::GET,
       std::bind(&ModelboxEditorPlugin::HandlerProjectListGet, this,
@@ -576,6 +583,55 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfo(
   response.set_content(info, JSON);
 }
 
+void ModelboxEditorPlugin::HandlerProjectTemplateListGet(
+    const httplib::Request& request, httplib::Response& response) {
+  std::vector<std::string> dirs;
+  std::map<std::string, std::vector<std::string>> graphs;
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
+  std::vector<std::string> files;
+  std::string template_dir = template_dir_ + "/project";
+  MBLOG_INFO << "template_dir:" << template_dir;
+  auto ret = modelbox::ListSubDirectoryFiles(template_dir, "desc.toml", &files);
+  if (!ret) {
+    rspret = {ret, HTTP_RESP_ERR_CANNOT_READ};
+    MBLOG_INFO << "read template dir " << template_dir << " failed, " << ret;
+    return;
+  }
+
+  nlohmann::json response_json;
+  response_json["project_template_list"] = nlohmann::json::array();
+
+  for (const auto& file : files) {
+    std::string dirname = modelbox::GetBaseName(modelbox::GetDirName(file));
+    std::string name = dirname;
+
+    std::string json_data;
+    std::string desc;
+    auto ret = GraphFileToJson(file, json_data);
+    if (ret) {
+      try {
+        auto desc_json = nlohmann::json::parse(json_data);
+        desc_json["dirname"] = dirname;
+        response_json["project_template_list"].push_back(desc_json);
+      } catch (const std::exception& e) {
+        MBLOG_WARN << "parser json " << file << " failed, " << e.what();
+      }
+    }
+  }
+
+  AddSafeHeader(response);
+  response.status = HttpStatusCodes::OK;
+  response.set_content(response_json.dump(), JSON);
+  return;
+}
+
 void ModelboxEditorPlugin::HandlerProjectListGet(
     const httplib::Request& request, httplib::Response& response) {
   nlohmann::json response_json;
@@ -887,7 +943,13 @@ void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
       return;
     }
 
-    demo_file = PathCanonicalize(demo_name + "/graph/" + graph_file, demo_path_);
+    if (graph_file.length() == 0 || demo_name.length() == 0) {
+      rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
+      return;
+    }
+
+    demo_file =
+        PathCanonicalize(demo_name + "/graph/" + graph_file, demo_path_);
     if (demo_file.length() == 0) {
       rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
       return;
@@ -1036,6 +1098,7 @@ bool ModelboxEditorPlugin::ParseConfig(
   template_cmd_ = config->GetString("editor.test.template_cmd",
                                     DEFAULT_MODELBOX_TEMPLATE_CMD);
   template_cmd_env_ = config->GetString("editor.test.template_cmd_env", "");
+  template_dir_ = config->GetString("editor.template_dir", DEFAULT_PROJECT_TEMPLATE_DIR);
   acl_white_list_ = config->GetStrings("acl.allow");
   return true;
 }

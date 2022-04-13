@@ -1,11 +1,11 @@
-find_path(NVCUVID_INCLUDE NAMES nvcuvid.h HINTS ${CMAKE_INSTALL_FULL_INCLUDEDIR})
+set(HITS_NVCUVID_PATH /usr/local/Video_Codec_SDK)
+find_path(NVCUVID_INCLUDE NAMES nvcuvid.h HINTS ${CMAKE_INSTALL_FULL_INCLUDEDIR} ${HITS_NVCUVID_PATH}/include)
 mark_as_advanced(NVCUVID_INCLUDE)
 
 # Look for the library (sorted from most current/relevant entry to least).
-list(APPEND CMAKE_FIND_LIBRARY_SUFFIXES .so.1)
 find_library(NVCUVID_LIBRARY NAMES
     nvcuvid
-    HINTS ${CMAKE_INSTALL_FULL_LIBDIR}
+    HINTS ${CMAKE_INSTALL_FULL_LIBDIR} ${HITS_NVCUVID_PATH}/lib
 )
 mark_as_advanced(NVCUVID_LIBRARY)
 

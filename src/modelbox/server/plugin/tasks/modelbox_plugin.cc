@@ -71,7 +71,7 @@ std::shared_ptr<Plugin> CreatePlugin() {
 }
 
 void ModelboxPlugin::RegistHandlers() {
-  MBLOG_INFO << "modelbox plugin regist handlers";
+  MBLOG_INFO << "modelbox plugin register handlers";
   MBLOG_INFO << "regist url : " << SERVER_PATH;
 
   listener_->Register(SERVER_PATH, HttpMethods::PUT,
@@ -134,13 +134,8 @@ bool ModelboxPlugin::ParseConfig(
   }
 
   default_flow_path_ = config->GetString("server.flow_path");
-  if (default_flow_path_.length() <= 0) {
-    MBLOG_ERROR << "can not find flow from config file";
-    return false;
-  }
-
   acl_white_list_ = config->GetStrings("acl.allow");
-
+  default_project_path_ = config->GetString("server.project_path");
   oneshot_flow_path_ = default_flow_path_ + "/oneshot";
 
   return true;
@@ -149,10 +144,29 @@ bool ModelboxPlugin::ParseConfig(
 modelbox::Status ModelboxPlugin::CreateLocalJobs() {
   MBLOG_INFO << "create local job";
   std::vector<std::string> files;
+  if (default_flow_path_.length() > 0) {
   auto ret = modelbox::ListFiles(default_flow_path_, "*", &files,
                                  modelbox::LIST_FILES_FILE);
-  if (!ret) {
-    return ret;
+    if (!ret) {
+      MBLOG_WARN << "Load flow path failed. " << ret;
+    }
+  }
+
+  if (default_project_path_.length() > 0) {
+    std::vector<std::string> project_dirs;
+    auto ret = modelbox::ListFiles(default_project_path_, "*", &project_dirs,
+                        modelbox::LIST_FILES_DIR);
+    if (!ret) {
+      MBLOG_WARN << "Load project path failed. " << ret;
+    }
+
+    for (const auto& dir : project_dirs) {
+      std::string graph_dir = dir + "/etc/graph";
+      modelbox::ListFiles(graph_dir, "*.toml", &files,
+                          modelbox::LIST_FILES_FILE);
+      modelbox::ListFiles(graph_dir, "*.json", &files,
+                          modelbox::LIST_FILES_FILE);
+    }
   }
 
   for (auto& file : files) {
@@ -169,7 +183,7 @@ modelbox::Status ModelboxPlugin::CreateLocalJobs() {
     }
 
     MBLOG_INFO << "Create local job " << file;
-    ret = CreateJobByFile(job_id, file);
+    auto ret = CreateJobByFile(job_id, file);
     if (!ret) {
       MBLOG_WARN << "create job " << file << " failed, " << ret;
     }

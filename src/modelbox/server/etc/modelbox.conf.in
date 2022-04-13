@@ -2,6 +2,7 @@
 ip = "127.0.0.1"
 port = "1104"
 flow_path = "@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/graph"
+project_path = "/opt/modelbox/project"
 
 # [acl]
 # allow = [
