@@ -335,7 +335,7 @@ modelbox::Status ModelboxEditorPlugin::SaveGraph(
     std::string toml_data;
 
     auto graph_data = body["graph"].dump();
-    auto graph_name = body["graph_name"].get<std::string>();
+    auto graph_name = body["job_id"].get<std::string>();
     auto path = body["graph_path"].get<std::string>();
     MBLOG_INFO << "Save graph to : " << path;
 
@@ -434,8 +434,8 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
     nlohmann::json graph;
     for (auto g : graphs) {
       ret = GraphFileToJson(g, json_data);
-      graph["name"] = modelbox::GetBaseName(g);
       graph = nlohmann::json::parse(json_data);
+      graph["name"] = modelbox::GetBaseName(g);
       json["graphs"].push_back(graph);
     }
 
@@ -937,6 +937,7 @@ void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
     std::string demo_file;
     std::string demo_name;
     SplitPath(relative_path, demo_name, graph_file);
+    demo_name = graph_file.substr(0, graph_file.find(".toml"));
     if (demo_name.length() == 0 && graph_file.length() == 0) {
       HandlerDemoGetList(request, response);
       return;

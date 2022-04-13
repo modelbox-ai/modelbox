@@ -371,7 +371,7 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
     }
 
     auto jobid = body["job_id"].get<std::string>();
-    if (body.find("job_graph") == body.end()) {
+    if (body.find("graph") == body.end()) {
       error_code = "MODELBOX_004";
       error_msg = ERROR_INFO[error_code];
       return;
@@ -389,9 +389,9 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
 
     std::string graph_data;
     if (graph_format == HTTP_GRAPH_FORMAT_JSON) {
-      graph_data = body["job_graph"].dump();
+      graph_data = body["graph"].dump();
     } else if (graph_format == HTTP_GRAPH_FORMAT_TOML) {
-      graph_data = body["job_graph"].get<std::string>();
+      graph_data = body["graph"].get<std::string>();
     } else {
       error_msg = "Unsupport graph format: " + graph_format;
       error_code = "MODELBOX_006";
