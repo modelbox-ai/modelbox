@@ -163,7 +163,7 @@ For more details on security, please refer to the manual.
     echo "logfile $MODELBOX_MANAGER_LOG_FILE" > ${MODELBOX_MANAGER_USER_CONF_FILE}
     echo "loglevel INFO" >> ${MODELBOX_MANAGER_USER_CONF_FILE}
     appcmd="app -name \"modelbox\""
-    appcmd="$appcmd -check-alive -pidfile ${MODELBOX_PID_FILE}"
+    appcmd="$appcmd -pidfile ${MODELBOX_PID_FILE}"
     appcmd="$appcmd --"
     appcmd="$appcmd modelbox -c ${MODELBOX_USER_CONF_FILE} -p ${MODELBOX_PID_FILE} -n modelbox"
     echo "$appcmd" >> ${MODELBOX_MANAGER_USER_CONF_FILE}

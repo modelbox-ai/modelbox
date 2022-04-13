@@ -60,6 +60,7 @@ class ManagerTestServer {
   }
 
   void Stop() {
+    int unused __attribute__((unused));
     if (running_ == false) {
       return;
     }
@@ -72,7 +73,7 @@ class ManagerTestServer {
     }
     memset(&test_app, 0, sizeof(test_app));
     std::string delpid = "rm -f /tmp/modelbox_app_*";
-    system(delpid.c_str());
+    unused = system(delpid.c_str());
   }
 
   static int Run() { return manager_run(); }
