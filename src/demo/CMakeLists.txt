@@ -23,6 +23,8 @@ else()
     list(APPEND SUBDIRS "mnist")
 endif()
 
+set(DEMO_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}" CACHE INTERNAL "")
+
 include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})
 include_directories(${LIBMODELBOX_DEVICE_CPU_INCLUDE})

@@ -528,11 +528,12 @@ int Popen::WaitChildTimeOut() {
   }
 
   int ret = WaitForFds(fds, -1, [&buff](struct stdfd *stdfd, int revent) {
+    int unused __attribute__((unused));
     if (!(revent & POLLIN)) {
       return 0;
     }
 
-    read(stdfd->fd_, buff, sizeof(buff));
+    unused = read(stdfd->fd_, buff, sizeof(buff));
 
     return 0;
   });

@@ -25,6 +25,7 @@ showhelp() {
 	echo "  -name [name]                          project name, default is example"
 	echo "  -path [path]                          project path, default is \$HOME/modelbox-project."
 	echo "  -getname [path]                       get project name."
+	echo "  -list-template                        list suppored template."
 	echo "  -rootpath [path]                      project root path."
 	echo "  -template [template name]             project template, default is empty project."
 	echo "-flowunit                             create modelbox flowunit."
@@ -128,6 +129,23 @@ get_project_name() {
 	return $?
 }
 
+list_project_template () {
+	for tempdir in $MODELBOX_TEMPLATE_PATH/project/*; do
+		if [ ! -d "$tempdir" ]; then
+			continue
+		fi
+
+		if [ ! -f "${tempdir}/desc.toml" ]; then
+			continue
+		fi
+
+		name=$(basename ${tempdir})
+		desc=$(cat ${tempdir}/desc.toml | grep -E "^desc *=" | sed "s/desc *= *\"\(.*\)\"/\1/g")
+		printf "%-20.20s %s\n" "$name" "$desc"
+	done
+	return 0
+}
+
 create_project() {
 	project_name=""
 	project_path="$DEFAULT_PROJECT_PATH"
@@ -150,6 +168,10 @@ create_project() {
 		--getname)
 			project_path="$arg_value"
 			get_project_name "$project_path"
+			return $?
+			shift "$shift_count" ;;
+		--list-template)
+			list_project_template
 			return $?
 			shift "$shift_count" ;;
 		--path)

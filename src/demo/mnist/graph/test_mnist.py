@@ -17,6 +17,10 @@
 import base64
 import http.client
 import json
+from pathlib import Path
+
+source_path = Path(__file__).resolve()
+source_dir = source_path.parent
 
 class HttpConfig:
     def __init__(self, img_base64_str):
@@ -36,7 +40,7 @@ class HttpConfig:
 
         self.body = json.dumps(self.test_data)
 
-img_path = "@DEMO_IMAGE_DIR@/mnist_0.png"
+img_path = str(source_dir) + "/mnist_0.png"
 
 with open(img_path, 'rb') as fp:
     base64_data = base64.b64encode(fp.read())
