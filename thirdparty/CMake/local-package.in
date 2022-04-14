@@ -21,7 +21,7 @@ project(modelbox-localpackage)
 
 # 替换的环境变量
 set(THIRDPARTY_DOWNLOAD_DIR @THIRDPARTY_DOWNLOAD_DIR@)
-set(WITH_DEMO @WITH_DEMO@)
+set(WITH_ALL_DEMO @WITH_ALL_DEMO@)
 
 # 预先下载代码库列表，此处仅包含需要使用ADD_SUBDIRECTORY添加的外部项目。
 include(ExternalProject)
@@ -116,7 +116,7 @@ ExternalProject_Add(
 )
 
 # demo files
-if (${WITH_DEMO})
+if (${WITH_ALL_DEMO})
   ExternalProject_Add(
     emotion_demo_files
     URL                @LOCAL_PACKAGE_PATH@/emotion_demo_files.zip

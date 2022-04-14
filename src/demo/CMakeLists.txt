@@ -16,8 +16,12 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-
-subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
+if (WITH_ALL_DEMO)
+    subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
+else()
+    list(APPEND SUBDIRS "hello_world")
+    list(APPEND SUBDIRS "mnist")
+endif()
 
 include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})

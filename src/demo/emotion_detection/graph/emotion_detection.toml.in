@@ -6,8 +6,6 @@ dir = [
 ]
 [flow]
 desc = "face emotion detection for video"
-[log]
-level="INFO"
 [graph]
 format = "graphviz"
 graphconf = """digraph emotion_detection {

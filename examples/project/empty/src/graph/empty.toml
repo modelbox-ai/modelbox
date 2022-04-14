@@ -18,20 +18,12 @@ skip-default = false
 dir=[
   "@APPLICATION_PATH@/flowunit"
 ]
-[flow]
-desc = "A resize modelbox project"
 [profile]
 profile=false
 trace=false
-dir=""  
+dir=""
 [graph]
 format = "graphviz"
-graphconf = '''digraph graph_resize {
-  video_input[type=flowunit, flowunit=video_input, device=cpu, deviceid=0, label="<out_video_url>", repeat=20, source_url="/xxx/xxx.mp4"]
-  videodemuxer[type=flowunit, flowunit=video_demuxer, device=cpu, deviceid=0, queue_size_event=1000, label="<in_video_url> | <out_video_packet>"] 
-  videodecoder[type=flowunit, flowunit=video_decoder, device=cuda, deviceid=0, label="<in_video_packet> | <out_video_frame>", pix_fmt="nv12"]
-  output1[type=output]  
-  video_input:out_video_url -> videodemuxer:in_video_url
-  videodemuxer:out_video_packet -> videodecoder:in_video_packet
-  videodecoder:out_video_frame -> output1
+graphconf = '''digraph graph_empty {
+
 }'''

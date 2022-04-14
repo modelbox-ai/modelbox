@@ -420,7 +420,7 @@ Status HttpServer::Start() {
 
   auto ret = server_impl_->bind_to_port(ip_.c_str(), port_);
   if (!ret) {
-    status_ = {STATUS_FAULT, "bind to " + ip_ + ":" + std::to_string(port_) +
+    status_ = {STATUS_ALREADY, "bind to " + ip_ + ":" + std::to_string(port_) +
                                  " failed, might be conflict, error " +
                                  StrError(errno)};
     return status_;

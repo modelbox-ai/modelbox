@@ -4,8 +4,6 @@ dir = [
 ]
 [flow]
 desc = "car detection for video streams"
-[log]
-level="INFO"
 [graph]
 format = "graphviz"
 graphconf = """digraph car_detection {

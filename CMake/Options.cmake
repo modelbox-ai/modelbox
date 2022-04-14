@@ -22,7 +22,7 @@ check_function_exists(nanosleep HAVE_NANOSLEEP)
 
 option(PYTHONE_DISABLED "Disable build python" OFF)
 option(WITH_SECURE_C "include libsecurec.so" ON)
-option(WITH_DEMO "build demo" OFF)
+option(WITH_ALL_DEMO "build with all demo with large model file" OFF)
 option(TEST_COVERAGE "build with coverage" OFF)
 option(WITH_JAVA "build java support" OFF)
 option(USE_CN_MIRROR "download from cn mirror" OFF)
