@@ -4,9 +4,8 @@ dir = ["@DEMO_MNIST_FLOWUNIT_DIR@"]
 profile=false
 trace=false
 dir=""
-[log]
-level="INFO"
 [flow]
+name = "MNIST"
 desc = "MNIST detection for image"
 [graph]
 format = "graphviz"

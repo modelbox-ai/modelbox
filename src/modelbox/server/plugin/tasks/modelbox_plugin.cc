@@ -135,7 +135,7 @@ bool ModelboxPlugin::ParseConfig(
 
   default_flow_path_ = config->GetString("server.flow_path");
   acl_white_list_ = config->GetStrings("acl.allow");
-  default_project_path_ = config->GetString("server.project_path");
+  default_application_path_ = config->GetString("server.application_root");
   oneshot_flow_path_ = default_flow_path_ + "/oneshot";
 
   return true;
@@ -152,16 +152,16 @@ modelbox::Status ModelboxPlugin::CreateLocalJobs() {
     }
   }
 
-  if (default_project_path_.length() > 0) {
+  if (default_application_path_.length() > 0) {
     std::vector<std::string> project_dirs;
-    auto ret = modelbox::ListFiles(default_project_path_, "*", &project_dirs,
+    auto ret = modelbox::ListFiles(default_application_path_, "*", &project_dirs,
                         modelbox::LIST_FILES_DIR);
     if (!ret) {
       MBLOG_WARN << "Load project path failed. " << ret;
     }
 
     for (const auto& dir : project_dirs) {
-      std::string graph_dir = dir + "/etc/graph";
+      std::string graph_dir = dir + "/graph";
       modelbox::ListFiles(graph_dir, "*.toml", &files,
                           modelbox::LIST_FILES_FILE);
       modelbox::ListFiles(graph_dir, "*.json", &files,
@@ -185,7 +185,7 @@ modelbox::Status ModelboxPlugin::CreateLocalJobs() {
     MBLOG_INFO << "Create local job " << file;
     auto ret = CreateJobByFile(job_id, file);
     if (!ret) {
-      MBLOG_WARN << "create job " << file << " failed, " << ret;
+      MBLOG_WARN << "create job " << file << " failed, " << ret.WrapErrormsgs();
     }
   }
 
@@ -248,13 +248,13 @@ modelbox::Status ModelboxPlugin::SaveGraphFile(const std::string& job_id,
 modelbox::Status ModelboxPlugin::StartJob(std::shared_ptr<modelbox::Job> job) {
   auto ret = job->Init();
   if (!ret) {
-    MBLOG_ERROR << "start job init failed:" << ret.WrapErrormsgs();
+    MBLOG_ERROR << "start job init failed:" << ret;
     return ret;
   }
 
   ret = job->Build();
   if (!ret) {
-    MBLOG_ERROR << "start job build failed: " << ret.WrapErrormsgs();
+    MBLOG_ERROR << "start job build failed: " << ret;
     return ret;
   }
 

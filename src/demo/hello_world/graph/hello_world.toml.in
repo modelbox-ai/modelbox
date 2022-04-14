@@ -2,10 +2,9 @@
 dir = [
     "@DEMO_HELLO_WORLD_FLOWUNIT_DIR@"
     ]
-[log]
-level="INFO"
 [flow]
-desc = "HELLO_WORLD"
+name = "HelloWorld"
+desc = "A hello world REST API service demo."
 [graph]
 format = "graphviz"
 graphconf = '''digraph hello_world_diagraph {

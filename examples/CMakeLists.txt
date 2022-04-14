@@ -44,6 +44,7 @@ configure_file(${MODELBOX_TOP_DIR}/CMake/FindDSMI.cmake   ${PROJECT_BASE_BINARY_
 configure_file(${MODELBOX_TOP_DIR}/CMake/Function.cmake   ${PROJECT_BASE_BINARY_DIR}/CMake/Function.cmake  @ONLY)
 configure_file(${MODELBOX_TOP_DIR}/CMake/Options.cmake   ${PROJECT_BASE_BINARY_DIR}/CMake/Options.cmake  @ONLY)
 configure_file(${MODELBOX_TOP_DIR}/test/test_main.cc   ${PROJECT_BASE_BINARY_DIR}/test/test_main.cc  @ONLY)
+file(COPY ${MODELBOX_TOP_DIR}/.gitignore DESTINATION ${PROJECT_BASE_BINARY_DIR})
 
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/service-plugin DESTINATION ${PROJECT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/flowunit DESTINATION ${PROJECT_BINARY_DIR})
