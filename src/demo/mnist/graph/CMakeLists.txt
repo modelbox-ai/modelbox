@@ -20,10 +20,9 @@ subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
 
 set(DEMO_GRAPH ${CMAKE_CURRENT_BINARY_DIR}/mnist.toml)
 set(TEST_IMAGE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/mnist_0.png)
-set(TEST_MNIST_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/test_mnist.py)
+set(TEST_MNIST_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/test_mnist.py)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mnist.toml.in ${DEMO_GRAPH} @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_mnist.py.in ${TEST_MNIST_SCRIPT} @ONLY)
 
 install(FILES 
     ${TEST_IMAGE_FILE} 
