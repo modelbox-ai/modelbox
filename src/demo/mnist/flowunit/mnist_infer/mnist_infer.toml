@@ -15,7 +15,7 @@
 
 [base]
 name = "mnist_infer" 
-device = "cuda" 
+device = "cpu" 
 version = "1.0.0" 
 description = "Recognition handwritten digits recognition."
 entry = "./mnist_model.pb" 
@@ -24,7 +24,6 @@ virtual_type = "tensorflow"
 
 [input]
 [input.input1] 
-device = "cpu"
 name = "Input" 
 type = "float" 
 
