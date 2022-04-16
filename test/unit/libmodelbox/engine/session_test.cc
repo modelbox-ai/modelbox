@@ -46,15 +46,15 @@ TEST_F(SessionTest, SessionManage) {
 class TestSessionIO : public SessionIO {
  public:
  public:
-  virtual Status SetOutputMeta(std::string port_name,
+  virtual Status SetOutputMeta(const std::string &port_name,
                                std::shared_ptr<DataMeta> meta) {
     return STATUS_OK;
   }
-  virtual Status Send(std::string port_name,
+  virtual Status Send(const std::string &port_name,
                       std::shared_ptr<BufferList> buffer_list) {
     return STATUS_OK;
   }
-  virtual Status Recv(OutputBufferList& map_buffer_list, int timeout = 0) {
+  virtual Status Recv(OutputBufferList &map_buffer_list, int timeout = 0) {
     return STATUS_OK;
   }
   virtual Status Close() { return STATUS_OK; }

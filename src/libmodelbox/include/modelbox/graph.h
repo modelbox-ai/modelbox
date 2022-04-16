@@ -19,6 +19,7 @@
 
 #include <modelbox/flowunit.h>
 #include <modelbox/scheduler.h>
+#include <modelbox/session.h>
 
 #include <memory>
 #include <vector>
@@ -175,6 +176,8 @@ class Graph {
                           std::shared_ptr<Configuration> &config);
 
  private:
+  SessionManager session_manager_;
+
   std::map<std::string, std::shared_ptr<NodeBase>> nodes_;
 
   std::map<std::shared_ptr<OutPort>, std::set<std::shared_ptr<InPort>>>
@@ -205,7 +208,7 @@ class Graph {
   std::unordered_map<std::string, std::shared_ptr<Configuration>>
       input_node_config_map_;
 
-  std::shared_ptr<NodeBase> input_node_;
+  std::shared_ptr<Node> input_node_;
 
   std::string output_node_name_;
 

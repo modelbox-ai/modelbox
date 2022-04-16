@@ -16,6 +16,7 @@
  */
 
 #include "modelbox_api.h"
+
 #include <modelbox/base/config.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
@@ -24,7 +25,9 @@
 #include <securec.h>
 
 #include <string>
+
 #include "modelbox/data_context.h"
+#include "modelbox/error.h"
 #include "modelbox/flow.h"
 #include "modelbox/modelbox_engine.h"
 #include "modelbox/type.h"

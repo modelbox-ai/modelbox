@@ -30,56 +30,24 @@ using ::testing::_;
 
 namespace modelbox {
 
-void BuildBufferList(OriginDataMap& out_data, size_t size, int& begin_data,
-                     std::shared_ptr<Device> device) {
-  for (size_t i = 0; i < size; ++i) {
-    auto buf = std::make_shared<Buffer>(device);
-    buf->Build(1 * sizeof(int));
-    auto data = (int*)buf->MutableData();
-    *data = begin_data++;
-    for (auto iter_data : out_data) {
-      auto key = iter_data.first;
-      out_data[key]->PushBack(buf);
-    }
-  }
-}
-
-void BuildInputData(OriginDataMap& input_data, Node* node,
-                    std::shared_ptr<InputData> in_data) {
-  auto out_put_rings = std::make_shared<OutputRings>(input_data);
-  auto status = out_put_rings->IsValid();
-  if (status != STATUS_SUCCESS) {
-    in_data = nullptr;
-  }
-  auto virtual_stream = std::make_shared<VirtualStream>(nullptr, 0);
-  auto first_buffer_list = out_put_rings->GetOneBufferList();
-  virtual_stream->LabelIndexBuffer(first_buffer_list);
-  out_put_rings->BroadcastMetaToAll();
-  const auto& input_ports = node->GetInputPorts();
-  for (const auto& in_port : input_ports) {
-    const auto& name = in_port->GetName();
-    auto index_buffer_list = out_put_rings->GetBufferList(name);
-    in_data->emplace(name, index_buffer_list);
-  }
-  virtual_stream->Close();
-}
-
 std::shared_ptr<FlowUnitDataContext> BuildFlowUnitDataContext(
     size_t size, int& begin_data, Node* node, std::shared_ptr<Device> device) {
-  int data = begin_data;
-  std::shared_ptr<InputData> in_data = std::make_shared<InputData>();
-  OriginDataMap input_data;
+  auto stream_data_map = std::make_shared<PortDataMap>();
   const auto& input_ports = node->GetInputPorts();
   for (const auto& in_port : input_ports) {
-    const auto& name = in_port->GetName();
-    input_data[name] = std::make_shared<BufferList>();
+    auto& data_list = (*stream_data_map)[in_port->GetName()];
+    for (size_t i = 0; i < size; ++i) {
+      auto buffer = std::make_shared<Buffer>(device);
+      buffer->Build(sizeof(int32_t));
+      auto ptr = (int32_t*)buffer->MutableData();
+      *ptr = begin_data + i;
+      data_list.push_back(buffer);
+    }
   }
-  BuildBufferList(input_data, size, data, device);
-  BuildInputData(input_data, node, in_data);
-  auto bg = in_data->begin()->second->GetStreamBufferGroup();
   begin_data += size;
-  auto data_ctx = std::make_shared<NormalFlowUnitDataContext>(bg, node);
-  data_ctx->SetInputData(in_data);
+  auto data_ctx =
+      std::make_shared<NormalFlowUnitDataContext>(node, nullptr, nullptr);
+  data_ctx->WriteInputData(stream_data_map);
   return data_ctx;
 }
 
@@ -126,9 +94,8 @@ TEST_F(FlowUnitGroupTest, Run2_In_1) {
   configbuilder.AddProperty("batch_size", "3");
   auto config = configbuilder.Build();
   auto flowunit_mgr_ = FlowUnitManager::GetInstance();
-  auto node_ =
-      std::make_shared<Node>("iflow_add_1", "cpu", "0", flowunit_mgr_, nullptr);
-
+  auto node_ = std::make_shared<Node>();
+  node_->SetFlowUnitInfo("iflow_add_1", "cpu", "0", flowunit_mgr_);
   EXPECT_EQ(node_->Init({"In_1"}, {"Out_1"}, config), STATUS_OK);
 
   size_t fug_size = 10;
@@ -162,9 +129,8 @@ TEST_F(FlowUnitGroupTest, Run2_In_2) {
   configbuilder.AddProperty("batch_size", "3");
   auto config = configbuilder.Build();
   auto flowunit_mgr_ = FlowUnitManager::GetInstance();
-  auto node_ =
-      std::make_shared<Node>("add", "cpu", "0", flowunit_mgr_, nullptr);
-
+  auto node_ = std::make_shared<Node>();
+  node_->SetFlowUnitInfo("add", "cpu", "0", flowunit_mgr_);
   EXPECT_EQ(node_->Init({"In_1", "In_2"}, {"Out_1"}, config), STATUS_OK);
 
   size_t fug_size = 10;
@@ -200,9 +166,8 @@ TEST_F(FlowUnitGroupTest, Run2_Status_Error) {
   configbuilder.AddProperty("batch_size", "3");
   auto config = configbuilder.Build();
   auto flowunit_mgr_ = FlowUnitManager::GetInstance();
-  auto node_ = std::make_shared<Node>("add_1_and_error", "cpu", "0",
-                                      flowunit_mgr_, nullptr);
-
+  auto node_ = std::make_shared<Node>();
+  node_->SetFlowUnitInfo("add_1_and_error", "cpu", "0", flowunit_mgr_);
   EXPECT_EQ(node_->Init({"In_1"}, {"Out_1"}, config), STATUS_OK);
 
   size_t fug_size = 10;
@@ -239,12 +204,8 @@ TEST_F(FlowUnitGroupTest, Run2_Status_Error) {
       for (auto& data : *buffer_list) {
         if (data->HasError()) {
           EXPECT_EQ(data->ConstData(), nullptr);
+          ++check_data;
           continue;
-        }
-
-        if (idx == 3) {
-          check_data += ++idx;
-          check_data += ++idx;
         }
 
         EXPECT_TRUE(func(*(int*)data->ConstData()));
@@ -262,8 +223,8 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
   configbuilder.AddProperty("batch_size", "1");
   auto config = configbuilder.Build();
   auto flowunit_mgr_ = FlowUnitManager::GetInstance();
-  auto node_ = std::make_shared<Node>("test_condition", "cpu", "0",
-                                      flowunit_mgr_, nullptr);
+  auto node_ = std::make_shared<Node>();
+  node_->SetFlowUnitInfo("test_condition", "cpu", "0", flowunit_mgr_);
 
   EXPECT_EQ(node_->Init({"In_1"}, {"Out_1", "Out_2"}, config), STATUS_OK);
 
@@ -288,10 +249,6 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
   int idx = 0;
 
   for (const auto& ctx : data_ctx_list) {
-    if (idx == 4) {
-      check_data += ++idx;
-    }
-
     EXPECT_FALSE(ctx->HasError());
     const auto& outputs = ctx->GetOutputs();
     const auto& output_1 = outputs.at("Out_1");
@@ -302,6 +259,7 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
       if ((idx * (idx + 1) / 2 + i) % 2 == 0) {
         if (output_1->At(i)->HasError()) {
           EXPECT_EQ(output_1->ConstBufferData(i), nullptr);
+          ++check_data;
           continue;
         }
         EXPECT_NE(output_1->At(i), nullptr);
@@ -309,6 +267,7 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
         EXPECT_EQ(*data, check_data++);
       } else {
         if (output_2->At(i) == nullptr) {
+          ++check_data;
           continue;
         }
         EXPECT_NE(output_2->At(i), nullptr);

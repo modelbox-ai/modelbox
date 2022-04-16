@@ -23,14 +23,9 @@
 
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_data_executor.h"
-#include "modelbox/output_buffer.h"
 #include "modelbox/profiler.h"
 
 namespace modelbox {
-
-using InputIndexBuffer =
-    std::unordered_map<std::string,
-                       std::vector<std::shared_ptr<IndexBufferList>>>;
 
 using OutputBuffer =
     std::unordered_map<std::string, std::vector<std::shared_ptr<BufferList>>>;
@@ -99,10 +94,7 @@ class FlowUnitGroup {
 
   Status Process(FUExecContextList &exec_ctx_list);
 
-  Status PostProcessData(FUExecContextList &exec_ctx_list,
-                         FUExecContextList &err_exec_ctx_list);
-
-  Status PostProcessError(FUExecContextList &err_exec_ctx_list);
+  Status PostProcess(FUExecContextList &exec_ctx_list);
 
   void PostProcessEvent(FUExecContextList &exec_ctx_list);
 

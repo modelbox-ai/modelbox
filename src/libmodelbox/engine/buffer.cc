@@ -16,6 +16,8 @@
 
 #include "modelbox/buffer.h"
 
+#include "modelbox/buffer_index_info.h"
+
 namespace modelbox {
 
 BufferMeta::BufferMeta() : error_(nullptr) {}
@@ -58,7 +60,10 @@ BufferMeta& BufferMeta::DeepCopy(const BufferMeta& other) {
   return *this;
 }
 
-Buffer::Buffer() : dev_mem_(nullptr), delayed_copy_dest_device_(nullptr) {
+Buffer::Buffer()
+    : dev_mem_(nullptr),
+      delayed_copy_dest_device_(nullptr),
+      index_info_(std::make_shared<BufferIndexInfo>()) {
   meta_ = std::make_shared<BufferMeta>();
 }
 

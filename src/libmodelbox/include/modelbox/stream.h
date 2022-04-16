@@ -49,13 +49,13 @@ class DataMeta {
 /**
  * @brief record stream order for each expand level
  **/
-class StreamOrder2 {
+class StreamOrder {
  public:
-  StreamOrder2();
+  StreamOrder();
 
-  bool operator<(const StreamOrder2 &other_stream_order);
+  bool operator<(const StreamOrder &other_stream_order);
 
-  std::shared_ptr<StreamOrder2> Copy();
+  std::shared_ptr<StreamOrder> Copy();
 
   void Expand(size_t index_in_this_level);
 
@@ -85,9 +85,9 @@ class Stream {
 
   std::shared_ptr<DataMeta> GetStreamMeta();
 
-  std::shared_ptr<StreamOrder2> GetStreamOrder();
+  std::shared_ptr<StreamOrder> GetStreamOrder();
 
-  void SetStreamOrder(std::shared_ptr<StreamOrder2> stream_order);
+  void SetStreamOrder(std::shared_ptr<StreamOrder> stream_order);
 
  private:
   std::shared_ptr<Session> session_;
@@ -95,8 +95,7 @@ class Stream {
   size_t max_buffer_count_{0};
   std::shared_ptr<DataMeta> data_meta_;
 
-  std::shared_ptr<StreamOrder2> stream_order_ =
-      std::make_shared<StreamOrder2>();
+  std::shared_ptr<StreamOrder> stream_order_ = std::make_shared<StreamOrder>();
 };
 
 class StreamPtrOrderCmp {

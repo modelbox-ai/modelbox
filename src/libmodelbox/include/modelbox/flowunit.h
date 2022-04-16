@@ -662,6 +662,7 @@ class IFlowUnit {
   virtual Status DataPost(std::shared_ptr<DataContext> data_ctx);
 
   /**
+   * @deprecated
    * @brief Flowunit data group pre.
    * @param data_ctx data context.
    * @return data group result
@@ -669,6 +670,7 @@ class IFlowUnit {
   virtual Status DataGroupPre(std::shared_ptr<DataContext> data_ctx);
 
   /**
+   * @deprecated
    * @brief Flowunit data group post.
    * @param data_ctx data context.
    * @return data group post result

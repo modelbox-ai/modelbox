@@ -99,7 +99,7 @@ TEST_F(BufferIndexInfoTest, BufferManageViewTest) {
   BufferManageView::SetPriority(buffer, 1);
   EXPECT_EQ(BufferManageView::GetPriority(buffer), 1);
 
-  EXPECT_EQ(BufferManageView::GetIndexInfo(buffer), nullptr);
+  EXPECT_NE(BufferManageView::GetIndexInfo(buffer), nullptr);
   EXPECT_EQ(BufferManageView::GetFirstParentBuffer(buffer), nullptr);
 
   auto index_info = std::make_shared<BufferIndexInfo>();

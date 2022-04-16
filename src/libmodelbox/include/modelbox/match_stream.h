@@ -27,7 +27,7 @@
 
 namespace modelbox {
 
-class InPort2;
+class InPort;
 
 using PortDataMap =
     std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>;
@@ -175,7 +175,7 @@ class InputMatchStreamManager {
       std::unordered_map<std::__cxx11::string, size_t>&&
           stream_count_each_port);
 
-  Status LoadData(std::vector<std::shared_ptr<InPort2>>& data_ports);
+  Status LoadData(std::vector<std::shared_ptr<InPort>>& data_ports);
 
   Status GenMatchStreamData(
       std::list<std::shared_ptr<MatchStreamData>>& match_stream_list);
@@ -197,7 +197,7 @@ class InputMatchStreamManager {
                                    size_t backward_level);
 
   bool InitInheritBackwardLevel(
-      std::vector<std::shared_ptr<InPort2>>& data_ports);
+      std::vector<std::shared_ptr<InPort>>& data_ports);
 
   std::string node_name_;
   size_t queue_size_{0};

@@ -136,7 +136,6 @@ TEST_F(TaskManagerTest, StopTask) {
   task_1->RegisterStatusCallback(TaskStopped);
   task_1->Start();
   task_1->Stop();
-  sleep(1);
   EXPECT_EQ(STOPPED, task_1->GetTaskStatus());
 
   auto task_2 =

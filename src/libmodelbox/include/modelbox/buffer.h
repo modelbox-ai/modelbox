@@ -361,10 +361,10 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
  private:
   friend class BufferList;
+  friend class ExternalDataMapImpl;
   template <typename QueueType, typename Compare>
   friend class NotifyPort;
   friend class BufferManageView;
-  friend class CustomCompare2;
 
   void SetPriority(int priority);
 

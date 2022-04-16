@@ -25,16 +25,19 @@ SingleNode::SingleNode(const std::string& unit_name,
                        std::shared_ptr<Configuration> config,
                        std::shared_ptr<Profiler> profiler,
                        std::shared_ptr<StatisticsItem> graph_stats)
-    : Node(unit_name, unit_type, unit_device_id, flowunit_mgr, profiler,
-           graph_stats),
-      config_(config) {}
+    : config_(config) {
+  SetFlowUnitInfo(unit_name, unit_type, unit_device_id, flowunit_mgr);
+  SetProfiler(profiler);
+  SetStats(graph_stats);
+}
 
 Status SingleNode::Init() {
   flowunit_group_ = std::make_shared<FlowUnitGroup>(
-      unit_name_, unit_type_, unit_device_id_, config_, profiler_);
+      flowunit_name_, flowunit_type_, flowunit_device_id_, config_, profiler_);
   std::set<std::string> input_port_names;
-  auto input_ports = flowunit_mgr_->GetFlowUnitDesc(unit_type_, unit_name_)
-                         ->GetFlowUnitInput();
+  auto input_ports =
+      flowunit_manager_->GetFlowUnitDesc(flowunit_type_, flowunit_name_)
+          ->GetFlowUnitInput();
 
   for (auto& input_port : input_ports) {
     auto input_port_name = input_port.GetPortName();
@@ -55,8 +58,9 @@ Status SingleNode::Init() {
         in_queue_size));
   }
 
-  auto out_ports = flowunit_mgr_->GetFlowUnitDesc(unit_type_, unit_name_)
-                       ->GetFlowUnitOutput();
+  auto out_ports =
+      flowunit_manager_->GetFlowUnitDesc(flowunit_type_, flowunit_name_)
+          ->GetFlowUnitOutput();
 
   for (auto& output_port : out_ports) {
     auto output_port_name = output_port.GetPortName();
@@ -65,22 +69,22 @@ Status SingleNode::Init() {
   }
   std::set<std::string> input_ports_name, output_ports_name;
   auto status = flowunit_group_->Init(input_ports_name, output_ports_name,
-                                      flowunit_mgr_, false);
+                                      flowunit_manager_, false);
   if (status != STATUS_OK) {
     MBLOG_ERROR << "failed init flowunit group";
     return status;
   }
 
   flowunit_group_->SetNode(std::dynamic_pointer_cast<Node>(shared_from_this()));
-
   return STATUS_OK;
 }
 
 std::shared_ptr<FlowUnitDataContext> SingleNode::CreateDataContext() {
   auto flowunit_desc =
-      flowunit_mgr_->GetFlowUnitDesc(flowunit_type_, flowunit_name_);
+      flowunit_manager_->GetFlowUnitDesc(flowunit_type_, flowunit_name_);
   if (flowunit_desc->GetFlowType() == NORMAL) {
-    data_context_ = std::make_shared<NormalFlowUnitDataContext>(nullptr, this);
+    data_context_ =
+        std::make_shared<NormalFlowUnitDataContext>(this, nullptr, nullptr);
   } else {
     MBLOG_ERROR << "flowunit type is stream, return null";
   }
@@ -89,6 +93,7 @@ std::shared_ptr<FlowUnitDataContext> SingleNode::CreateDataContext() {
 
 Status SingleNode::RecvData(const std::shared_ptr<DataHandler>& data) {
   auto input_ports = GetInputPorts();
+  auto data_map = std::make_shared<PortDataMap>();
 
   for (auto& iter : input_ports) {
     auto name = iter->GetName();
@@ -102,29 +107,17 @@ Status SingleNode::RecvData(const std::shared_ptr<DataHandler>& data) {
       return STATUS_INVALID;
     }
 
-    auto index_buffer_list = std::make_shared<IndexBufferList>();
-
-    for (auto &buffer : *bufferlist) {
-      auto index_buffer = std::make_shared<IndexBuffer>(buffer);
-      index_buffer_list->PushBack(index_buffer);
-    }
-    bufferlist->Reset();
-
-    auto index_buffer_list_map = std::make_shared<InputData>();
-    name = iter->GetName();
-    auto pair = std::make_pair(name, index_buffer_list);
-    index_buffer_list_map->insert(pair);
-
-    if (data_context_ == nullptr) {
-      std::shared_ptr<BufferGroup> stream_bg = std::make_shared<BufferGroup>();
-      data_context_ =
-          std::make_shared<NormalFlowUnitDataContext>(stream_bg, this);
-    }
-
-    auto data_ctx =
-        std::static_pointer_cast<NormalFlowUnitDataContext>(data_context_);
-    data_ctx->SetInputData(index_buffer_list_map);
+    bufferlist->Swap(data_map->at(name));
   }
+
+  if (data_context_ == nullptr) {
+    data_context_ =
+        std::make_shared<NormalFlowUnitDataContext>(this, nullptr, nullptr);
+  }
+
+  auto data_ctx =
+      std::static_pointer_cast<NormalFlowUnitDataContext>(data_context_);
+  data_ctx->WriteInputData(data_map);
   return STATUS_OK;
 }
 
@@ -147,22 +140,20 @@ Status SingleNode::PushDataToDataHandler(
   if (data_context_ == nullptr || data_handler == nullptr) {
     return STATUS_INVALID;
   }
-  auto output_index_buffer = CreateOutputBuffer();
-  data_context_->AppendOutputMap(&output_index_buffer);
-  if (output_index_buffer.size() == 0) {
+  PortDataMap port_data_map;
+  data_context_->PopOutputData(port_data_map);
+  if (port_data_map.size() == 0) {
     return STATUS_NODATA;
   }
-  for (auto& iter : output_index_buffer) {
+  for (auto& iter : port_data_map) {
     std::string port_name = iter.first;
 
-    for (auto temp_iter : iter.second) {
-      auto buffer = temp_iter->GetBufferPtr();
+    for (auto buffer : iter.second) {
       data_handler->PushData(buffer, port_name);
     }
   }
-  std::list<std::shared_ptr<FlowUnitDataContext>> data_ctx_list;
-  data_ctx_list.push_back(data_context_);
-  ClearDataContext(data_ctx_list);
+
+  data_context_->ClearData();
   return STATUS_OK;
 }
 

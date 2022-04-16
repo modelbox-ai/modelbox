@@ -31,8 +31,8 @@ namespace modelbox {
 class MatchStreamTest : public testing::Test {
  protected:
   void SetUp() override {
-    in_port1_ = std::make_shared<InPort2>("a", nullptr);
-    in_port2_ = std::make_shared<InPort2>("b", nullptr);
+    in_port1_ = std::make_shared<InPort>("a", nullptr);
+    in_port2_ = std::make_shared<InPort>("b", nullptr);
     data_ports_.push_back(in_port1_);
     data_ports_.push_back(in_port2_);
 
@@ -69,9 +69,9 @@ class MatchStreamTest : public testing::Test {
 
   std::shared_ptr<Buffer> buffer1_;
   std::shared_ptr<Buffer> buffer2_;
-  std::shared_ptr<InPort2> in_port1_;
-  std::shared_ptr<InPort2> in_port2_;
-  std::vector<std::shared_ptr<InPort2>> data_ports_;
+  std::shared_ptr<InPort> in_port1_;
+  std::shared_ptr<InPort> in_port2_;
+  std::vector<std::shared_ptr<InPort>> data_ports_;
 };
 
 TEST_F(MatchStreamTest, InputMatchStreamManagerTest) {

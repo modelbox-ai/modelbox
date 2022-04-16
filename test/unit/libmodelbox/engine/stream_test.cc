@@ -47,7 +47,7 @@ TEST_F(StreamTest, DataMetaTest) {
 }
 
 TEST_F(StreamTest, StreamOrderTest) {
-  auto order = std::make_shared<StreamOrder2>();
+  auto order = std::make_shared<StreamOrder>();
   auto order2 = order->Copy();
   order2->Expand(0);
   auto order3 = order2->Copy();
