@@ -325,4 +325,8 @@ Status Buffer::MoveToTargetDevice() {
   return STATUS_SUCCESS;
 }
 
+void Buffer::SetPriority(int priority) { priority_ = priority; }
+
+int Buffer::GetPriority() { return priority_; }
+
 }  // namespace modelbox
