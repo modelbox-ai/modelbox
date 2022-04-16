@@ -132,7 +132,7 @@ class BufferIndexInfo {
 
  private:
   std::shared_ptr<Stream> stream_belong_to_;
-  size_t index_in_current_stream_;
+  size_t index_in_current_stream_{0};
   std::shared_ptr<BufferInheritInfo> inherit_info_;
   std::shared_ptr<BufferProcessInfo>
       process_info_;  // record how to generate this buffer
