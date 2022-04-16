@@ -27,7 +27,7 @@ ServerTimer *ServerTimer::GetInstance() {
 ServerTimer *kServerTimer = ServerTimer::GetInstance();
 
 void ServerTimer::Start() {
-  Timer::SetName("Server-Timer");
+  Timer::SetName("");
   Timer::StartAsync();
 }
 
