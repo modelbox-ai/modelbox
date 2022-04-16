@@ -38,6 +38,10 @@ Log klogger;
 std::shared_ptr<LoggerCallback> kloggercallback =
     std::make_shared<LoggerCallback>();
 
+Log &GetLogger() {
+  return klogger;
+}
+
 const char *kLogLevelString[] = {
     "DEBUG", "INFO", "NOTICE", "WARN", "ERROR", "FATAL", "OFF",
 };

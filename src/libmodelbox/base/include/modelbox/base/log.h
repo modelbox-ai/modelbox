@@ -300,7 +300,12 @@ class LogMessage {
 /**
  * @brief Global logger
  */
-extern Log klogger;
+extern Log klogger __attribute__((weak));
+
+/**
+ * @brief Global logger
+ */
+extern Log &GetLogger();
 
 /**
  * @brief Log level to string
@@ -324,7 +329,19 @@ extern LogLevel LogLevelStrToLevel(const std::string &level);
                                     : __FILE__)
 #endif
 
+/* 
+  Log may crash when the shared library loaded by deepbind and call this log API. 
+  The reason is symbol copy-relocation, About copy-relocation, read here:
+  https://stackoverflow.com/questions/37296995/dynamic-loading-of-shared-library-with-rtld-deepbind
+  Setting the symbol to weak allows the deepbind library to use the first symbol without error. 
+  If there is still a problem, you can use macros MBLOG_LIBRARY_DEEPBIND.
+  but this will cause a little slower when calling log API.
+*/
+#ifdef MBLOG_LIBRARY_DEEPBIND
+#define ModelBoxLogger modelbox::GetLogger()
+#else
 #define ModelBoxLogger modelbox::klogger
+#endif
 
 #define MODELBOX_PRINT(level, ...) \
   ModelBoxLogger.Print(level, BASE_FILE_NAME, __LINE__, __func__, __VA_ARGS__)
