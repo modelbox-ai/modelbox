@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/inner_event.h"
 
 namespace modelbox {
@@ -41,14 +40,11 @@ std::shared_ptr<void> FlowUnitEvent::GetPrivate(const std::string &key) {
 
 int FlowUnitInnerEvent::GetPriority() { return priority_; }
 
-void FlowUnitInnerEvent::SetBufferGroup(
-    std::shared_ptr<BufferGroup> buffer_group) {
-  buffer_group_ = buffer_group;
+void FlowUnitInnerEvent::SetDataCtxMatchKey(MatchKey *match_key) {
+  match_key_ = match_key;
 }
 
-std::shared_ptr<BufferGroup> FlowUnitInnerEvent::GetBufferGroup() {
-  return buffer_group_;
-}
+MatchKey *FlowUnitInnerEvent::GetDataCtxMatchKey() { return match_key_; }
 
 FlowUnitInnerEvent::EventCode FlowUnitInnerEvent::GetEventCode() {
   return code_;

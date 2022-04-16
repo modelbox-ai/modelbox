@@ -40,9 +40,9 @@ std::unordered_map<std::string, std::shared_ptr<void>> DataMeta::GetMetas() {
   return private_map_;
 }
 
-StreamOrder2::StreamOrder2() { index_at_each_expand_level_.push_back(0); }
+StreamOrder::StreamOrder() { index_at_each_expand_level_.push_back(0); }
 
-bool StreamOrder2::operator<(const StreamOrder2 &other_stream_order) {
+bool StreamOrder::operator<(const StreamOrder &other_stream_order) {
   auto this_index = index_at_each_expand_level_.begin();
   auto other_index = other_stream_order.index_at_each_expand_level_.begin();
   while (true) {
@@ -70,17 +70,17 @@ bool StreamOrder2::operator<(const StreamOrder2 &other_stream_order) {
   }
 }
 
-std::shared_ptr<StreamOrder2> StreamOrder2::Copy() {
-  auto stream_order = std::make_shared<StreamOrder2>();
+std::shared_ptr<StreamOrder> StreamOrder::Copy() {
+  auto stream_order = std::make_shared<StreamOrder>();
   stream_order->index_at_each_expand_level_ = index_at_each_expand_level_;
   return stream_order;
 }
 
-void StreamOrder2::Expand(size_t index_in_this_level) {
+void StreamOrder::Expand(size_t index_in_this_level) {
   index_at_each_expand_level_.push_back(index_in_this_level);
 }
 
-void StreamOrder2::Collapse() { index_at_each_expand_level_.pop_back(); }
+void StreamOrder::Collapse() { index_at_each_expand_level_.pop_back(); }
 
 Stream::Stream(std::shared_ptr<Session> session) : session_(session) {}
 
@@ -108,9 +108,9 @@ void Stream::SetStreamMeta(std::shared_ptr<DataMeta> data_meta) {
 
 std::shared_ptr<DataMeta> Stream::GetStreamMeta() { return data_meta_; }
 
-std::shared_ptr<StreamOrder2> Stream::GetStreamOrder() { return stream_order_; }
+std::shared_ptr<StreamOrder> Stream::GetStreamOrder() { return stream_order_; }
 
-void Stream::SetStreamOrder(std::shared_ptr<StreamOrder2> stream_order) {
+void Stream::SetStreamOrder(std::shared_ptr<StreamOrder> stream_order) {
   stream_order_ = stream_order;
 }
 

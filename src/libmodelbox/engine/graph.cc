@@ -19,6 +19,7 @@
 #include "modelbox/base/log.h"
 #include "modelbox/base/uuid.h"
 #include "modelbox/graph_checker.h"
+#include "modelbox/external_data_map.h"
 #include "modelbox/profiler.h"
 #include "scheduler/flow_scheduler.h"
 
@@ -495,10 +496,12 @@ std::shared_ptr<ExternalDataMap> Graph::CreateExternalDataMap() {
     MBLOG_ERROR << "virtual input_node is nullptr";
     return nullptr;
   }
-  auto extrern_data = std::make_shared<ExternalDataMapImpl>(
-      input_node_, output_node_, graph_stats_);
-  extrern_data->Init();
-  return extrern_data;
+  auto session = session_manager_.CreateSession(graph_stats_);
+  auto init_stream = std::make_shared<Stream>(session);
+  auto extern_data =
+      std::make_shared<ExternalDataMapImpl>(input_node_, init_stream);
+  session->SetSessionIO(extern_data);
+  return extern_data;
 }
 
 Status Graph::UpdateGraphConfigToNode(std::shared_ptr<GCGraph> g,
@@ -557,15 +560,17 @@ Status Graph::BuildFlowunitNode(std::shared_ptr<GCGraph> g,
     return {STATUS_BADCONF, msg};
   }
 
-  auto node = std::make_shared<Node>(flowunit, device, deviceid, flowunit_mgr_,
-                                     profiler_, graph_stats_);
-
+  auto node = std::make_shared<Node>();
+  node->SetFlowUnitInfo(flowunit, device, deviceid, flowunit_mgr_);
+  node->SetProfiler(profiler_);
+  node->SetStats(graph_stats_);
+  node->SetSessionManager(&session_manager_);
+  node->SetName(name);
   auto status = InitNode(node, *inports, *outports, node_config);
   if (!status) {
     return status;
   }
 
-  node->SetName(name);
   status = AddNode(node);
   if (!status) {
     auto msg = "add node failed. name: '" + name + "'";
@@ -1103,7 +1108,7 @@ Status Graph::InitPort() {
                  outport->GetName() + " -> " + inport->GetNode()->GetName() +
                  ":" + inport->GetName();
       MBLOG_INFO << msg;
-      outport->AddPort(inport);
+      outport->ConnectPort(inport);
     }
   }
 

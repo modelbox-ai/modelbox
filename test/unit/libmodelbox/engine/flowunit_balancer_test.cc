@@ -16,6 +16,7 @@
 
 #include <modelbox/flowunit_balancer.h>
 #include <modelbox/node.h>
+#include <modelbox/session.h>
 
 #include <chrono>
 #include <vector>
@@ -55,24 +56,12 @@ class FlowUnitBalancerTest : public testing::Test {
  public:
   std::shared_ptr<FlowUnitDataContext> BuildFlowUnitDataContext(
       Node *node, std::shared_ptr<DeviceMemory> mem) {
-    OriginDataMap input_data;
-    auto port_buffer_list = std::make_shared<BufferList>();
-    port_buffer_list->PushBack(std::make_shared<Buffer>(mem));
-    const std::string port_name = "test";
-    input_data[port_name] = port_buffer_list;
-
-    auto output_rings = std::make_shared<OutputRings>(input_data);
-    auto virtual_stream = std::make_shared<VirtualStream>(nullptr, 0);
-    auto first_buffer_list = output_rings->GetOneBufferList();
-    virtual_stream->LabelIndexBuffer(first_buffer_list);
-    output_rings->BroadcastMetaToAll();
-    auto in_data = std::make_shared<InputData>();
-    auto index_buffer = output_rings->GetBufferList(port_name);
-    in_data->emplace(port_name, index_buffer);
-    virtual_stream->Close();
-    auto bg = index_buffer->GetStreamBufferGroup();
-    auto data_ctx = std::make_shared<NormalFlowUnitDataContext>(bg, node);
-    data_ctx->SetInputData(in_data);
+    auto data_ctx =
+        std::make_shared<NormalFlowUnitDataContext>(node, nullptr, nullptr);
+    auto stream_data_map = std::make_shared<PortDataMap>();
+    auto &buffer_list = (*stream_data_map)["test_port"];
+    buffer_list.push_back(std::make_shared<Buffer>(mem));
+    data_ctx->WriteInputData(stream_data_map);
     return data_ctx;
   }
 
@@ -173,7 +162,7 @@ TEST_F(FlowUnitBalancerTest, RoundRobinTest) {
   auto flowunits = CreateFlowUnits(2, devices);
   balancer->Init(flowunits);
   auto mems = CreateMems(3, devices);
-  auto node = std::make_shared<Node>("test_node", "", "", nullptr, nullptr);
+  auto node = std::make_shared<Node>();
   {
     auto ctx1 = BuildFlowUnitDataContext(node.get(), mems[1]);
     auto ctx2 = BuildFlowUnitDataContext(node.get(), mems[0]);
@@ -225,7 +214,7 @@ TEST_F(FlowUnitBalancerTest, RoundRobinPerfTest) {
   auto flowunits = CreateFlowUnits(100, devices);
   auto mems = CreateMems(200, devices);
   std::vector<std::shared_ptr<FlowUnitDataContext>> ctx_list;
-  auto node = std::make_shared<Node>("test_node", "", "", nullptr, nullptr);
+  auto node = std::make_shared<Node>();
   for (size_t i = 0; i < 200; ++i) {
     ctx_list.push_back(BuildFlowUnitDataContext(node.get(), mems[i]));
   }

@@ -309,7 +309,7 @@ void InputMatchStreamManager::UpdateStreamCountEachPort(
 }
 
 Status InputMatchStreamManager::LoadData(
-    std::vector<std::shared_ptr<InPort2>>& data_ports) {
+    std::vector<std::shared_ptr<InPort>>& data_ports) {
   if (port_inherit_backward_level_.empty() &&
       !InitInheritBackwardLevel(data_ports)) {
     // can not process data
@@ -448,7 +448,7 @@ MatchKey* InputMatchStreamManager::GetInputStreamMatchKey(
 }
 
 bool InputMatchStreamManager::InitInheritBackwardLevel(
-    std::vector<std::shared_ptr<InPort2>>& data_ports) {
+    std::vector<std::shared_ptr<InPort>>& data_ports) {
   size_t min_deepth = SIZE_MAX;
   std::unordered_map<std::string, size_t> port_inherit_deepth_map;
   for (auto& port : data_ports) {
@@ -711,7 +711,7 @@ void OutputMatchStreamManager::GenerateOutputStream(
   }
   auto out_buffer_index =
       BufferManageView::GetIndexInfo(not_null_output_buffer);
-  std::shared_ptr<StreamOrder2> stream_order;
+  std::shared_ptr<StreamOrder> stream_order;
   size_t input_buffer_index;
   auto inherit_stream_meta = std::make_shared<DataMeta>();
   auto& input_stream_data_map =

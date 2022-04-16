@@ -20,7 +20,7 @@
 #include "modelbox/base/blocking_queue.h"
 #include "modelbox/base/status.h"
 #include "modelbox/inner_event.h"
-#include "modelbox/match_buffer.h"
+#include "modelbox/match_stream.h"
 #include "modelbox/node.h"
 
 namespace modelbox {
@@ -29,16 +29,9 @@ class NodeBase;
 class SingleMatchCache;
 
 struct CustomCompare {
-  auto operator()(std::shared_ptr<IndexBuffer> const& a,
-                  std::shared_ptr<IndexBuffer> const& b) const -> bool {
-    return a->GetPriority() < b->GetPriority();
-  }
-};
-
-struct CustomCompare2 {
   auto operator()(std::shared_ptr<Buffer> const& a,
                   std::shared_ptr<Buffer> const& b) const -> bool {
-    return a->GetPriority() < b->GetPriority();
+    return BufferManageView::GetPriority(a) < BufferManageView::GetPriority(b);
   }
 };
 
@@ -49,7 +42,7 @@ struct EventCompare {
   }
 };
 
-typedef PriorityBlockingQueue<std::shared_ptr<IndexBuffer>, CustomCompare>
+typedef PriorityBlockingQueue<std::shared_ptr<Buffer>, CustomCompare>
     BufferQueue;
 
 using EventQueue =
@@ -283,82 +276,23 @@ class EventPort : public NotifyPort<FlowUnitInnerEvent, EventCompare> {
 };
 
 class OutPort;
-class InPort : public NotifyPort<IndexBuffer, CustomCompare> {
+class InPort : public NotifyPort<Buffer, CustomCompare> {
   friend class OutPort;
 
  public:
-  /**
-   * @brief Construct a new InPort object
-   *
-   * @param name the port name
-   * @param node the parent node contains the port
-   * @param priority priority
-   * @param event_capacity event queue size
-   */
   InPort(const std::string& name, std::shared_ptr<NodeBase> node,
          uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
       : NotifyPort(name, node, priority, event_capacity) {}
 
   virtual ~InPort() override = default;
 
-  /**
-   * @brief Init the InPort generate the queue
-   *
-   * @return Status {status} if success return STATUS_SUCCESS else return
-   * STATUS_INVALID
-   */
-  Status Init() override;
-
-  void Recv(std::vector<std::shared_ptr<IndexBuffer>>& buffer_vector,
-            uint32_t left_buffer_num);
-
-  /**
-   * @brief Get the All Out Port object
-   *
-   * @return std::vector<std::weak_ptr<OutPort>>
-   */
-  std::vector<std::weak_ptr<OutPort>> GetAllOutPort();
-
- private:
-  bool SetOutputPort(std::shared_ptr<OutPort> output_port);
-
-  std::vector<std::weak_ptr<OutPort>> output_ports;
-};
-
-class InPort2 : public NotifyPort<Buffer, CustomCompare2> {
-  friend class OutPort;
-
- public:
-  /**
-   * @brief Construct a new InPort object
-   *
-   * @param name the port name
-   * @param node the parent node contains the port
-   * @param priority priority
-   * @param event_capacity event queue size
-   */
-  InPort2(const std::string& name, std::shared_ptr<NodeBase> node,
-          uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
-      : NotifyPort(name, node, priority, event_capacity) {}
-
-  virtual ~InPort2() override = default;
-
-  /**
-   * @brief Init the InPort generate the queue
-   *
-   * @return Status {status} if success return STATUS_SUCCESS else return
-   * STATUS_INVALID
-   */
   Status Init() override;
 
   void Recv(std::vector<std::shared_ptr<Buffer>>& buffer_vector,
             uint32_t left_buffer_num);
 
-  /**
-   * @brief Get the All Out Port object
-   *
-   * @return std::vector<std::weak_ptr<OutPort>>
-   */
+  size_t GetConnectedPortNumber();
+
   std::vector<std::weak_ptr<OutPort>> GetAllOutPort();
 
  private:
@@ -370,15 +304,21 @@ class InPort2 : public NotifyPort<Buffer, CustomCompare2> {
 class OutPort : public Port, public std::enable_shared_from_this<OutPort> {
  public:
   OutPort(const std::string& name, std::shared_ptr<NodeBase> node);
+
   virtual ~OutPort();
+
   Status Init();
-  Status Send(std::vector<std::shared_ptr<IndexBuffer>>& buffer);
+
+  Status Send(std::vector<std::shared_ptr<Buffer>>& buffers);
+
   std::set<std::shared_ptr<InPort>> GetConnectInPort();
-  bool AddPort(std::shared_ptr<InPort>);
+
+  bool ConnectPort(std::shared_ptr<InPort>);
+
   void Shutdown();
 
  private:
-  std::set<std::shared_ptr<InPort>> input_ports_;
+  std::set<std::shared_ptr<InPort>> connected_input_ports_;
 };
 
 }  // namespace modelbox

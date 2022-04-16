@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_SESSION_CONTEXT_H_
 #define MODELBOX_SESSION_CONTEXT_H_
 
@@ -89,20 +88,9 @@ class SessionContext {
       SessionContexStatsType type = SessionContexStatsType::SESSION);
 
  private:
-  friend class ExternalDataMapImpl;
-  friend class OutputVirtualNode;
-  friend class OutputUnmatchVirtualNode;
-  friend class ExternalDataImpl;
-  friend class Node;
-
-  void UnBindExtenalData();
-  void SetExternalData(std::shared_ptr<ExternalDataMapImpl> node);
-  std::shared_ptr<ExternalDataMapImpl> GetExternalData();
-  void SetOutputBuffer(OutputBufferList &output);
-
+  std::mutex private_map_lock_;
   std::unordered_map<std::string, std::shared_ptr<void>> private_map_;
   std::string session_id_;
-  std::weak_ptr<ExternalDataMapImpl> external_data_;
   std::shared_ptr<Configuration> config_;
   std::shared_ptr<FlowUnitError> error_;
   std::shared_ptr<StatisticsItem> graph_stats_;

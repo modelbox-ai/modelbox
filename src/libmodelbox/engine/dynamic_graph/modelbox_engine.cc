@@ -572,7 +572,7 @@ Status ModelBoxEngine::FeedData(std::shared_ptr<DynamicGraph> &dynamic_graph,
   input_data->context_->GetGraphState()->external_data_ = extern_data;
   input_data->context_->GetGraphState()->graph_ = dynamic_graph;
   if (input_data->closed_) {
-    extern_data->Shutdown();
+    extern_data->Close();
   }
   return STATUS_OK;
 }

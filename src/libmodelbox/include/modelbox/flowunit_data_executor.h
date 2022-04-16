@@ -24,6 +24,7 @@
 #include "flowunit.h"
 #include "modelbox/base/status.h"
 #include "modelbox/buffer.h"
+#include "modelbox/data_context.h"
 
 namespace modelbox {
 
@@ -86,6 +87,8 @@ class FlowUnitExecData {
 
   size_t GetInBufferNum();
 
+  size_t GetExtBufferNum();
+
   size_t GetOutBufferNum(bool accumulate_all_port = false);
 
   void SetStatus(const Status &status);
@@ -100,7 +103,15 @@ class FlowUnitExecData {
 
   void FreezeData();
 
+  Status SaveProcessInfo(bool one_to_one, bool data_in_one_port);
+
  private:
+  Status SaveProcessOneToOne(
+      std::shared_ptr<modelbox::BufferListMap> parent_data, size_t data_count,
+      bool data_in_one_port);
+
+  Status SaveProcessNToM(std::shared_ptr<modelbox::BufferListMap> parent_data);
+
   std::shared_ptr<FlowUnit> fu_;
   std::shared_ptr<BufferListMap> in_data_;
   std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
@@ -138,6 +149,8 @@ class FlowUnitExecDataMapper {
   BatchedFUExecDataCtxList GetBatchedExecDataCtxList();
 
   Status CheckOutputDataNumber(bool data_in_one_port);
+
+  Status SaveProcessInfo(bool one_to_one, bool data_in_one_port);
 
   Status SaveDataToExecCtx();
 
@@ -210,6 +223,8 @@ class FlowUnitExecDataView {
   const BatchedFUExecDataCtxList &GetFlowUnitProcessData(FlowUnit *flowunit);
 
   Status CheckOutputDataNumber(bool data_in_one_port);
+
+  Status SaveProcessInfo(bool one_to_one, bool data_in_one_port);
 
   Status SaveOutputToExecCtx();
 

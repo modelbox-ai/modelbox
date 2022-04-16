@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_INNER_EVENT_H_
 #define MODELBOX_INNER_EVENT_H_
 #include <memory>
-
-#include "modelbox/index_buffer.h"
+#include <unordered_map>
 
 namespace modelbox {
+
+class MatchKey;
 
 class FlowUnitEvent {
  public:
@@ -44,10 +44,10 @@ class FlowUnitInnerEvent {
     COLLAPSE_NEXT_STREAM
   };
   FlowUnitInnerEvent(EventCode code)
-      : priority_(0), code_(code), buffer_group_(nullptr){};
+      : priority_(0), code_(code), match_key_(nullptr){};
   virtual ~FlowUnitInnerEvent() = default;
-  void SetBufferGroup(std::shared_ptr<BufferGroup> buffer_group);
-  std::shared_ptr<BufferGroup> GetBufferGroup();
+  void SetDataCtxMatchKey(MatchKey *match_key);
+  MatchKey *GetDataCtxMatchKey();
   std::shared_ptr<FlowUnitEvent> GetUserEvent();
   void SetUserEvent(std::shared_ptr<FlowUnitEvent> event);
   int GetPriority();
@@ -56,8 +56,8 @@ class FlowUnitInnerEvent {
  private:
   int priority_ = 0;
   EventCode code_ = EXPAND_UNFINISH_DATA;
-  std::shared_ptr<BufferGroup> buffer_group_;
   std::shared_ptr<FlowUnitEvent> user_event_;
+  MatchKey *match_key_;
 };
 }  // namespace modelbox
 

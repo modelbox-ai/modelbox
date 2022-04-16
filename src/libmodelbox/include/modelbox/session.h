@@ -31,9 +31,9 @@ using SessionId = std::string;
 
 class SessionIO {
  public:
-  virtual Status SetOutputMeta(std::string port_name,
+  virtual Status SetOutputMeta(const std::string& port_name,
                                std::shared_ptr<DataMeta> meta) = 0;
-  virtual Status Send(std::string port_name,
+  virtual Status Send(const std::string& port_name,
                       std::shared_ptr<BufferList> buffer_list) = 0;
   virtual Status Recv(OutputBufferList& map_buffer_list, int timeout = 0) = 0;
   virtual Status Close() = 0;

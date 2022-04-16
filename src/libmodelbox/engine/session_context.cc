@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/session_context.h"
 
 #include "modelbox/base/uuid.h"
@@ -35,6 +34,7 @@ SessionContext::SessionContext(std::shared_ptr<StatisticsItem> graph_stats) {
     graph_stats_ = graph_stats;
     graph_session_stats_ = graph_stats_->AddItem(session_id_);
   }
+  MBLOG_INFO << "session context start se id:" << GetSessionId();
 };
 
 SessionContext::~SessionContext() {
@@ -42,23 +42,12 @@ SessionContext::~SessionContext() {
   if (graph_stats_ != nullptr) {
     graph_stats_->DelItem(session_id_);
   }
-
-  auto external_data = external_data_.lock();
-  if (external_data == nullptr) {
-    return;
-  }
-  external_data->SetEndError(error_);
 };
 
 void SessionContext::SetPrivate(const std::string &key,
                                 std::shared_ptr<void> private_content) {
-  auto iter = private_map_.find(key);
-
-  if (iter == private_map_.end()) {
-    private_map_.emplace(key, private_content);
-  } else {
-    private_map_[key] = private_content;
-  }
+  std::lock_guard<std::mutex> lock(private_map_lock_);
+  private_map_[key] = private_content;
 };
 
 void SessionContext::SetSessionId(const std::string &session_id) {
@@ -73,9 +62,7 @@ void SessionContext::SetError(std::shared_ptr<FlowUnitError> error) {
   error_ = error;
 }
 
-std::shared_ptr<FlowUnitError>  SessionContext::GetError() {
-  return error_;
-}
+std::shared_ptr<FlowUnitError> SessionContext::GetError() { return error_; }
 
 std::shared_ptr<StatisticsItem> SessionContext::GetStatistics(
     SessionContexStatsType type) {
@@ -92,37 +79,13 @@ std::shared_ptr<StatisticsItem> SessionContext::GetStatistics(
 }
 
 std::shared_ptr<void> SessionContext::GetPrivate(const std::string &key) {
+  std::lock_guard<std::mutex> lock(private_map_lock_);
   auto iter = private_map_.find(key);
   if (iter == private_map_.end()) {
     return nullptr;
   }
+
   return private_map_[key];
 };
-
-void SessionContext::SetExternalData(
-    std::shared_ptr<ExternalDataMapImpl> external_data) {
-  external_data_ = std::weak_ptr<ExternalDataMapImpl>(external_data);
-}
-
-std::shared_ptr<ExternalDataMapImpl> SessionContext::GetExternalData() {
-  auto external_data = external_data_.lock();
-  return external_data;
-}
-
-void SessionContext::SetOutputBuffer(OutputBufferList &output) {
-  auto external_data = external_data_.lock();
-  if (external_data == nullptr) {
-    return;
-  }
-  external_data->SetOutputBuffer(output);
-}
-
-void SessionContext::UnBindExtenalData() {
-  auto external_data = external_data_.lock();
-  if (external_data == nullptr) {
-    return;
-  }
-  external_data->UnbindSession();
-}
 
 }  // namespace modelbox
