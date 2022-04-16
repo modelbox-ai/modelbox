@@ -35,6 +35,13 @@ struct CustomCompare {
   }
 };
 
+struct CustomCompare2 {
+  auto operator()(std::shared_ptr<Buffer> const& a,
+                  std::shared_ptr<Buffer> const& b) const -> bool {
+    return a->GetPriority() < b->GetPriority();
+  }
+};
+
 struct EventCompare {
   auto operator()(std::shared_ptr<FlowUnitInnerEvent> const& a,
                   std::shared_ptr<FlowUnitInnerEvent> const& b) const -> bool {
@@ -303,6 +310,48 @@ class InPort : public NotifyPort<IndexBuffer, CustomCompare> {
   Status Init() override;
 
   void Recv(std::vector<std::shared_ptr<IndexBuffer>>& buffer_vector,
+            uint32_t left_buffer_num);
+
+  /**
+   * @brief Get the All Out Port object
+   *
+   * @return std::vector<std::weak_ptr<OutPort>>
+   */
+  std::vector<std::weak_ptr<OutPort>> GetAllOutPort();
+
+ private:
+  bool SetOutputPort(std::shared_ptr<OutPort> output_port);
+
+  std::vector<std::weak_ptr<OutPort>> output_ports;
+};
+
+class InPort2 : public NotifyPort<Buffer, CustomCompare2> {
+  friend class OutPort;
+
+ public:
+  /**
+   * @brief Construct a new InPort object
+   *
+   * @param name the port name
+   * @param node the parent node contains the port
+   * @param priority priority
+   * @param event_capacity event queue size
+   */
+  InPort2(const std::string& name, std::shared_ptr<NodeBase> node,
+          uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
+      : NotifyPort(name, node, priority, event_capacity) {}
+
+  virtual ~InPort2() override = default;
+
+  /**
+   * @brief Init the InPort generate the queue
+   *
+   * @return Status {status} if success return STATUS_SUCCESS else return
+   * STATUS_INVALID
+   */
+  Status Init() override;
+
+  void Recv(std::vector<std::shared_ptr<Buffer>>& buffer_vector,
             uint32_t left_buffer_num);
 
   /**

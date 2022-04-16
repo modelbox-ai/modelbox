@@ -69,6 +69,44 @@ std::vector<std::weak_ptr<OutPort>> InPort::GetAllOutPort() {
   return output_ports;
 }
 
+Status InPort2::Init() {
+  auto node = node_.lock();
+  if (node == nullptr) {
+    return STATUS_INVALID;
+  }
+
+  return STATUS_SUCCESS;
+}
+
+void InPort2::Recv(std::vector<std::shared_ptr<Buffer>>& buffer_vector,
+                   uint32_t left_buffer_num) {
+  if (left_buffer_num == 0) {
+    if (queue_->RemainCapacity() == 0) {
+      SetActiveState(false);
+    }
+    return;
+  }
+  queue_->PopBatch(&buffer_vector, -1, left_buffer_num);
+
+  if (!buffer_vector.empty()) {
+    NotifyPopEvent();
+  }
+}
+
+bool InPort2::SetOutputPort(std::shared_ptr<OutPort> output_port) {
+  for (auto output_exist_port : output_ports) {
+    if (output_port == output_exist_port.lock()) {
+      return false;
+    }
+  }
+  output_ports.push_back(output_port);
+  return true;
+}
+
+std::vector<std::weak_ptr<OutPort>> InPort2::GetAllOutPort() {
+  return output_ports;
+}
+
 OutPort::OutPort(const std::string& name, std::shared_ptr<NodeBase> node)
     : Port(name, node) {}
 
@@ -103,12 +141,12 @@ Status OutPort::Send(std::vector<std::shared_ptr<IndexBuffer>>& buffer_vector) {
         buffer->SetPriority(buffer->GetPriority() + 1);
         continue;
       }
-      
+
       if (buffer->GetPriority() < priority) {
         buffer->SetPriority(priority);
         continue;
       }
-      
+
       // during loop
       loop = true;
     }

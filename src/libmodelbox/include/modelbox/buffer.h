@@ -22,6 +22,7 @@
 #include <modelbox/base/log.h>
 #include <modelbox/base/utils.h>
 #include <modelbox/buffer_type.h>
+#include <modelbox/error.h>
 #include <modelbox/stream.h>
 
 #include <algorithm>
@@ -32,6 +33,7 @@ namespace modelbox {
 class SessionContext;
 class Buffer;
 class BufferList;
+class BufferIndexInfo;
 
 /**
  * @brief Meta of buffer
@@ -359,6 +361,15 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
  private:
   friend class BufferList;
+  template <typename QueueType, typename Compare>
+  friend class NotifyPort;
+  friend class BufferManageView;
+  friend class CustomCompare2;
+
+  void SetPriority(int priority);
+
+  int GetPriority();
+
   /// @brief Buffer meta
   std::shared_ptr<BufferMeta> meta_;
 
@@ -375,6 +386,11 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
   /// @brief Buffer type
   BufferEnumType type_{BufferEnumType::RAW};
+
+  /// @brief Buffer index info in stream
+  std::shared_ptr<BufferIndexInfo> index_info_;
+
+  int priority_{0};
 };
 
 }  // namespace modelbox

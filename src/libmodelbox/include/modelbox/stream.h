@@ -14,38 +14,97 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_STREAM_H_
 #define MODELBOX_STREAM_H_
 
+#include <atomic>
 #include <memory>
 #include <unordered_map>
 
 #include "modelbox/base/status.h"
+#include "modelbox/buffer_index_info.h"
 
 namespace modelbox {
+
+class Session;
 
 class DataMeta {
  public:
   DataMeta();
+
+  DataMeta(const DataMeta &other);
+
   virtual ~DataMeta();
+
   void SetMeta(const std::string &key, std::shared_ptr<void> meta);
+
   std::shared_ptr<void> GetMeta(const std::string &key);
+
+  std::unordered_map<std::string, std::shared_ptr<void>> GetMetas();
 
  private:
   std::unordered_map<std::string, std::shared_ptr<void>> private_map_;
 };
 
-class FlowUnitError {
+/**
+ * @brief record stream order for each expand level
+ **/
+class StreamOrder2 {
  public:
-  FlowUnitError(std::string desc);
-  FlowUnitError(std::string node, std::string error_pos, Status error_status);
-  virtual ~FlowUnitError();
-  std::string GetDesc();
+  StreamOrder2();
+
+  bool operator<(const StreamOrder2 &other_stream_order);
+
+  std::shared_ptr<StreamOrder2> Copy();
+
+  void Expand(size_t index_in_this_level);
+
+  void Collapse();
 
  private:
-  std::string desc_;
-  Status error_status_;
+  std::list<size_t> index_at_each_expand_level_;
+};
+
+class Stream {
+ public:
+  Stream(std::shared_ptr<Session> session);
+
+  ~Stream() = default;
+
+  std::shared_ptr<Session> GetSession();
+
+  void SetMaxBufferCount(size_t max_buffer_count);
+
+  bool ReachEnd();
+
+  size_t GetBufferCount();
+
+  void IncreaseBufferCount();
+
+  void SetStreamMeta(std::shared_ptr<DataMeta> data_meta);
+
+  std::shared_ptr<DataMeta> GetStreamMeta();
+
+  std::shared_ptr<StreamOrder2> GetStreamOrder();
+
+  void SetStreamOrder(std::shared_ptr<StreamOrder2> stream_order);
+
+ private:
+  std::shared_ptr<Session> session_;
+  std::atomic_size_t cur_buffer_count_{0};
+  size_t max_buffer_count_{0};
+  std::shared_ptr<DataMeta> data_meta_;
+
+  std::shared_ptr<StreamOrder2> stream_order_ =
+      std::make_shared<StreamOrder2>();
+};
+
+class StreamPtrOrderCmp {
+ public:
+  bool operator()(const std::shared_ptr<Stream> &s1,
+                  const std::shared_ptr<Stream> &s2) const {
+    return *(s1->GetStreamOrder()) < *(s2->GetStreamOrder());
+  }
 };
 
 }  // namespace modelbox
