@@ -228,6 +228,7 @@ std::shared_ptr<BufferListMap> FlowUnitDataContext::Output() {
 std::shared_ptr<BufferList> FlowUnitDataContext::External() { return nullptr; }
 
 void FlowUnitDataContext::SetEvent(std::shared_ptr<FlowUnitEvent> event) {
+  wait_user_events_.erase(event);
   user_event_ = event;
 }
 
@@ -263,7 +264,7 @@ void FlowUnitDataContext::SendEvent(std::shared_ptr<FlowUnitEvent> event) {
     return;
   }
 
-  has_user_event_ = true;
+  wait_user_events_.insert(event);
   auto inner_event = std::make_shared<FlowUnitInnerEvent>(
       FlowUnitInnerEvent::EXPAND_UNFINISH_DATA);
   inner_event->SetUserEvent(event);
@@ -405,16 +406,11 @@ void FlowUnitDataContext::ClearData() {
 
   user_event_ = nullptr;
   error_ = nullptr;
-  if (!IsContinueProcess()) {
-    // no event driven
-    cur_event_input_data_.clear();
-  }
 
   input_has_stream_start_ = false;
   input_has_stream_end_ = false;
 
   is_empty_stream = false;
-  has_user_event_ = false;
   is_skippable_ = false;
 }
 
@@ -610,7 +606,7 @@ bool FlowUnitDataContext::HasValidOutput() {
 }
 
 bool FlowUnitDataContext::IsContinueProcess() {
-  return process_status_ == STATUS_CONTINUE && has_user_event_;
+  return process_status_ == STATUS_CONTINUE && !wait_user_events_.empty();
 }
 
 size_t FlowUnitDataContext::GetOutputBufferNum() {
@@ -1081,6 +1077,17 @@ void StreamExpandFlowUnitDataContext::ExpandNextBuffer() {
     (*cur_input_data)[port_name].push_back(
         data_list[cur_data_pose_in_first_cache_]);
   }
+
+  // test cur input is next buffer to process
+  auto &first_input = cur_input_data->begin()->second.front();
+  auto first_input_index = BufferManageView::GetIndexInfo(first_input);
+  if (first_input_index->GetIndex() != cur_expand_buffer_index_) {
+    // not the index to process next
+    SetSkippable(true);
+    return;
+  }
+
+  cur_expand_buffer_index_received_ = true;
   ++cur_data_pose_in_first_cache_;
   SetCurrentInputData(cur_input_data);
 }
@@ -1101,6 +1108,12 @@ StreamExpandFlowUnitDataContext::GenerateSendEvent() {
   }
 
   if (end_flag_received_) {
+    // all data processed
+    return nullptr;
+  }
+
+  if (stream_data_cache_.empty()) {
+    // no cache data
     return nullptr;
   }
 
@@ -1115,6 +1128,10 @@ void StreamExpandFlowUnitDataContext::DealWithDataPreError(
 
 void StreamExpandFlowUnitDataContext::UpdateProcessState() {
   is_finished_ = end_flag_received_ && !IsContinueProcess();
+  if (!IsContinueProcess() && cur_expand_buffer_index_received_) {
+    ++cur_expand_buffer_index_;
+    cur_expand_buffer_index_received_ = false;
+  }
 }
 
 bool StreamExpandFlowUnitDataContext::NeedStreamEndFlag() {
@@ -1218,16 +1235,17 @@ StreamCollapseFlowUnitDataContext::StreamCollapseFlowUnitDataContext(
 
 void StreamCollapseFlowUnitDataContext::WriteInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {
+  AppendToCache(stream_data_map);
+  CollapseNextStream();
+}
+
+void StreamCollapseFlowUnitDataContext::AppendToCache(
+    std::shared_ptr<PortDataMap> stream_data_map) {
   auto first_buffer = stream_data_map->begin()->second.front();
   auto buffer_index = BufferManageView::GetIndexInfo(first_buffer);
   auto expand_from = buffer_index->GetInheritInfo()->GetInheritFrom();
   auto index_before_expand = expand_from->GetIndex();
-  if (index_before_expand == current_collapse_order_) {
-    SetCurrentInputData(stream_data_map);
-    return;
-  }
-
-  // append to cache
+  // find cache
   auto cache_item = stream_data_cache_.find(index_before_expand);
   if (cache_item == stream_data_cache_.end()) {
     stream_data_cache_[index_before_expand] = stream_data_map;
@@ -1257,8 +1275,10 @@ void StreamCollapseFlowUnitDataContext::UpdateInputInfo() {
 void StreamCollapseFlowUnitDataContext::CollapseNextStream() {
   auto next_stream_item = stream_data_cache_.find(current_collapse_order_);
   if (next_stream_item == stream_data_cache_.end()) {
-    // no data to collapse
-    SetSkippable(true);
+    // in single node run, multi stream data expand from same one will cache at
+    // same data context
+    // this stream data not the next, but cur_input_ might be ready
+    SetSkippable(cur_input_ == nullptr);
     return;
   }
 

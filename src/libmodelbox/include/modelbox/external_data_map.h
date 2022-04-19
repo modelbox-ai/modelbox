@@ -142,13 +142,17 @@ class ExternalDataSelect
       std::chrono::duration<long, std::milli> timeout =
           std::chrono::milliseconds(-1));
 
+  bool IsExternalDataReady();
+
  private:
   friend class ExternalDataMapImpl;
   void NotifySelect();
-  bool IsExtenalDataReady();
+
+  std::mutex external_list_lock_;
   std::list<std::shared_ptr<ExternalDataMapImpl>> external_list_;
-  std::mutex mtx_;
-  std::condition_variable cv_;
+
+  std::mutex data_ready_mtx_;
+  std::condition_variable data_ready_cv_;
 };
 }  // namespace modelbox
 

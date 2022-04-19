@@ -18,6 +18,7 @@
 #ifndef MODELBOX_INNER_EVENT_H_
 #define MODELBOX_INNER_EVENT_H_
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 namespace modelbox {
