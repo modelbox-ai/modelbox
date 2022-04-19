@@ -115,7 +115,7 @@ class MatchStreamCache {
  public:
   MatchStreamCache(
       const std::string& node_name, size_t port_count,
-      std::unordered_map<std::__cxx11::string, size_t>* stream_count_each_port);
+      std::unordered_map<std::string, size_t>* stream_count_each_port);
 
   ~MatchStreamCache() = default;
 
@@ -145,7 +145,7 @@ class MatchStreamCache {
                              // received
 
   size_t port_count_;
-  std::unordered_map<std::__cxx11::string, size_t>* stream_count_each_port_;
+  std::unordered_map<std::string, size_t>* stream_count_each_port_;
 
   std::unordered_map<std::string, std::shared_ptr<InPortStreamInfo>>
       in_port_stream_info_map_;
@@ -172,7 +172,7 @@ class InputMatchStreamManager {
   void SetInputStreamGatherAll(bool need_gather_all);
 
   void UpdateStreamCountEachPort(
-      std::unordered_map<std::__cxx11::string, size_t>&&
+      std::unordered_map<std::string, size_t>&&
           stream_count_each_port);
 
   Status LoadData(std::vector<std::shared_ptr<InPort>>& data_ports);
@@ -202,7 +202,7 @@ class InputMatchStreamManager {
   std::string node_name_;
   size_t queue_size_{0};
   size_t port_count_{0};
-  std::unordered_map<std::__cxx11::string, size_t> stream_count_each_port_;
+  std::unordered_map<std::string, size_t> stream_count_each_port_;
 
   bool need_gather_all_{false};
   bool is_input_in_order_{false};

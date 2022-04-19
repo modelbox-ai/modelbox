@@ -157,7 +157,7 @@ bool InPortStreamInfo::ReachEnd() { return false; }
 
 MatchStreamCache::MatchStreamCache(
     const std::string& node_name, size_t port_count,
-    std::unordered_map<std::__cxx11::string, size_t>* stream_count_each_port)
+    std::unordered_map<std::string, size_t>* stream_count_each_port)
     : node_name_(node_name),
       port_count_(port_count),
       stream_count_each_port_(stream_count_each_port) {}
@@ -304,7 +304,7 @@ void InputMatchStreamManager::SetInputStreamGatherAll(bool need_gather_all) {
 }
 
 void InputMatchStreamManager::UpdateStreamCountEachPort(
-    std::unordered_map<std::__cxx11::string, size_t>&& stream_count_each_port) {
+    std::unordered_map<std::string, size_t>&& stream_count_each_port) {
   stream_count_each_port_ = stream_count_each_port;
 }
 
@@ -712,7 +712,7 @@ void OutputMatchStreamManager::GenerateOutputStream(
   auto out_buffer_index =
       BufferManageView::GetIndexInfo(not_null_output_buffer);
   std::shared_ptr<StreamOrder> stream_order;
-  size_t input_buffer_index;
+  size_t input_buffer_index = 0;
   auto inherit_stream_meta = std::make_shared<DataMeta>();
   auto& input_stream_data_map =
       out_buffer_index->GetProcessInfo()->GetParentBuffers();
