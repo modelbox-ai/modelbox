@@ -555,6 +555,79 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop_2) {
   flow->Wait(5 * 1000);
 }
 
+TEST_F(VirtualNodeTest, VirtualNode_Stop_3) {
+  std::string toml_content = R"(
+    [driver]
+    skip-default=true
+    dir=[")" + std::string(TEST_LIB_DIR) +
+                             "\"]\n    " +
+                             R"(
+    [graph]
+    graphconf = '''digraph demo {
+          input1[type=input, device=cpu,deviceid=0] 
+          output1[type=output, device=cpu, deviceid=0]
+          stream_start[type=flowunit, flowunit=virtual_stream_start, device=cpu, deviceid=0, label="<In_1> | <Out_1>"]
+          stream_mid[type=flowunit, flowunit=virtual_stream_mid, device=cpu, deviceid=0, label="<In_1> | <Out_1>", batch_size=5]
+          
+          input1 ->stream_start:In_1
+          stream_start:Out_1 ->stream_mid:In_1
+          stream_mid:Out_1->output1
+
+        }'''
+    format = "graphviz"
+  )";
+  auto ret = mock_flow_->BuildAndRun("VirtualNode_Select", toml_content, -1);
+  auto flow = mock_flow_->GetFlow();
+
+  {
+    auto ext_data_1 = flow->CreateExternalDataMap();
+
+    auto output_buf_1 = ext_data_1->CreateBufferList();
+    output_buf_1->Build({3 * sizeof(int)});
+    auto data_1 = (int*)output_buf_1->MutableData();
+    data_1[0] = 0;
+    data_1[1] = 25000;
+    data_1[2] = 3;
+
+    auto status = ext_data_1->Send("input1", output_buf_1);
+    EXPECT_EQ(status, STATUS_SUCCESS);
+
+    auto selector = std::make_shared<ExternalDataSelect>();
+    selector->RegisterExternalData(ext_data_1);
+
+    int recv_count = 0;
+    while (true) {
+      std::list<std::shared_ptr<ExternalDataMap>> external_list;
+      auto select_status = selector->SelectExternalData(
+          external_list, std::chrono::milliseconds(3000));
+      if (select_status == STATUS_TIMEDOUT) {
+        break;
+      }
+
+      for (auto external : external_list) {
+        OutputBufferList map_buffer_list;
+        external->Recv(map_buffer_list);
+
+        if (external == ext_data_1) {
+          recv_count++;
+          if (recv_count >= 50) {
+            ext_data_1->Close();
+          }
+          if (recv_count >= 100) {
+            ext_data_1->Shutdown();
+          }
+        }
+      }
+    }
+
+    OutputBufferList map_buffer_list;
+    auto last_status_1 = ext_data_1->Recv(map_buffer_list);
+    EXPECT_EQ(last_status_1, STATUS_INVALID);
+  }
+
+  flow->Wait(5 * 1000);
+}
+
 TEST_F(VirtualNodeTest, VirtualNode_Select) {
   std::string toml_content = R"(
     [driver]

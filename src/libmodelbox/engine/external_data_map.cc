@@ -16,6 +16,8 @@
 
 #include "modelbox/external_data_map.h"
 
+#include <functional>
+
 #include "modelbox/node.h"
 #include "modelbox/session.h"
 #include "modelbox/session_context.h"
@@ -332,14 +334,13 @@ void ExternalDataMapImpl::SessionEnd(std::shared_ptr<FlowUnitError> error) {
 
     session_end_flag_ = true;
     last_error_ = error;
+    graph_output_cache_->Shutdown();
   }
 
   auto selector = selector_.lock();
   if (selector != nullptr) {
     selector->NotifySelect();
   }
-
-  graph_output_cache_->Shutdown();
 }
 
 ExternalDataSelect::ExternalDataSelect() {}
@@ -348,6 +349,7 @@ ExternalDataSelect::~ExternalDataSelect() {}
 
 void ExternalDataSelect::RegisterExternalData(
     std::shared_ptr<ExternalDataMap> externl) {
+  std::lock_guard<std::mutex> lock(external_list_lock_);
   std::shared_ptr<ExternalDataMapImpl> externl_data =
       std::dynamic_pointer_cast<ExternalDataMapImpl>(externl);
   external_list_.push_back(externl_data);
@@ -356,6 +358,7 @@ void ExternalDataSelect::RegisterExternalData(
 
 void ExternalDataSelect::RemoveExternalData(
     const std::shared_ptr<ExternalDataMap>& externl_data) {
+  std::lock_guard<std::mutex> lock(external_list_lock_);
   auto iter = external_list_.begin();
   while (iter != external_list_.end()) {
     if (*iter == std::dynamic_pointer_cast<ExternalDataMapImpl>(externl_data)) {
@@ -367,57 +370,53 @@ void ExternalDataSelect::RemoveExternalData(
   }
 }
 
-bool ExternalDataSelect::IsExtenalDataReady() {
-  bool ready_flag = false;
+bool ExternalDataSelect::IsExternalDataReady() {
+  std::lock_guard<std::mutex> lock(external_list_lock_);
+  if (external_list_.empty()) {
+    // wait for external_data_map insert
+    return false;
+  }
+
   for (auto external_data : external_list_) {
     if (external_data->GetReadyFlag()) {
-      ready_flag = true;
-      break;
+      return true;
     }
   }
-  return ready_flag;
+
+  return false;
 }
 
 Status ExternalDataSelect::SelectExternalData(
     std::list<std::shared_ptr<ExternalDataMap>>& external_list,
     std::chrono::duration<long, std::milli> waittime) {
   MBLOG_DEBUG << "SelectExternalData";
-  std::unique_lock<std::mutex> lck(mtx_);
-  if (external_list_.empty()) {
-    if (waittime < std::chrono::milliseconds(0)) {
-      cv_.wait(lck);
-    } else {
-      if (cv_.wait_for(lck, waittime) == std::cv_status::timeout) {
-        return STATUS_TIMEDOUT;
-      }
-    }
-  }
-
-  bool ready_flag = IsExtenalDataReady();
-
-  while (!ready_flag) {
+  // wait for data ready
+  {
+    std::unique_lock<std::mutex> lck(data_ready_mtx_);
+    auto data_ready_func = [this]() { return IsExternalDataReady(); };
     if (waittime <= std::chrono::milliseconds(0)) {
-      cv_.wait(lck);
+      data_ready_cv_.wait(lck, data_ready_func);
     } else {
-      if (cv_.wait_for(lck, waittime) == std::cv_status::timeout) {
+      if (!data_ready_cv_.wait_for(lck, waittime, data_ready_func)) {
         return STATUS_TIMEDOUT;
       }
     }
-
-    ready_flag = IsExtenalDataReady();
   }
 
+  // get ready external data
+  std::lock_guard<std::mutex> lock(external_list_lock_);
   for (auto external_data : external_list_) {
     if (external_data->GetReadyFlag()) {
       external_list.push_back(external_data);
     }
   }
+
   return STATUS_SUCCESS;
 }
 
 void ExternalDataSelect::NotifySelect() {
-  std::unique_lock<std::mutex> lck(mtx_);
-  cv_.notify_one();
+  std::unique_lock<std::mutex> lck(data_ready_mtx_);
+  data_ready_cv_.notify_one();
   MBLOG_DEBUG << "NotifySelect";
 }
 

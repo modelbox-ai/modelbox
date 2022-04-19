@@ -26,6 +26,8 @@
 #include <modelbox/statistics.h>
 #include <modelbox/stream.h>
 
+#include <unordered_set>
+
 #define CONFIG_NODES "nodes"
 #define CONFIG_NODE "node."
 #define CONFIG_FLOWUNIT "flowunit."
@@ -318,8 +320,9 @@ class FlowUnitDataContext : public DataContext {
   size_t input_stream_cur_buffer_count_{0};
 
   // state for single run
-  bool is_skippable_{false};    // no data
-  bool has_user_event_{false};  // user send event
+  bool is_skippable_{false};  // no data
+  std::unordered_set<std::shared_ptr<FlowUnitEvent>>
+      wait_user_events_;  // user send event, wait to process
 
   bool input_has_stream_start_{false};
   bool input_has_stream_end_{false};
@@ -459,6 +462,8 @@ class StreamExpandFlowUnitDataContext : public FlowUnitDataContext {
   // only read one buffer each process
   std::list<std::shared_ptr<PortDataMap>> stream_data_cache_;
   size_t cur_data_pose_in_first_cache_{0};
+  size_t cur_expand_buffer_index_{0};
+  bool cur_expand_buffer_index_received_{false};
 };
 
 class NormalCollapseFlowUnitDataContext : public FlowUnitDataContext {
@@ -534,6 +539,8 @@ class StreamCollapseFlowUnitDataContext : public FlowUnitDataContext {
   void UpdateBufferIndexInfo(
       std::shared_ptr<BufferIndexInfo> cur_buffer,
       std::shared_ptr<BufferIndexInfo> parent_buffer) override;
+
+  void AppendToCache(std::shared_ptr<PortDataMap> stream_data_map);
 
  private:
   std::unordered_map<size_t, std::shared_ptr<PortDataMap>> stream_data_cache_;
