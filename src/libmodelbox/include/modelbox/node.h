@@ -287,7 +287,7 @@ class Node : public NodeBase {
 
   bool NeedNewIndex();
 
-  std::unordered_map<std::__cxx11::string, size_t> GetStreamCountEachPort();
+  std::unordered_map<std::string, size_t> GetStreamCountEachPort();
 
   std::shared_ptr<FlowUnitManager> flowunit_manager_;
   std::shared_ptr<FlowUnitGroup> flowunit_group_;
