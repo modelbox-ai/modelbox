@@ -89,7 +89,7 @@ void Job::Run() {
   flow_->RunAsync();
   status_ = JOB_STATUS_RUNNING;
 
-  auto heart_beat_task = std::make_shared<modelbox::TimerTask>([this]() {
+  heart_beat_task_ = std::make_shared<modelbox::TimerTask>([this]() {
     auto job_status = this->GetJobStatus();
 
     if (job_status != JOB_STATUS_RUNNING) {
@@ -98,7 +98,7 @@ void Job::Run() {
     }
   });
 
-  kServerTimer->Schedule(heart_beat_task, 0, HEART_BEAT_PERIOD_MS, true);
+  kServerTimer->Schedule(heart_beat_task_, 0, HEART_BEAT_PERIOD_MS, false);
 }
 
 void Job::Stop() {
