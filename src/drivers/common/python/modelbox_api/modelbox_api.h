@@ -53,6 +53,12 @@ void ModelboxPyApiSetUpEngine(pybind11::module &m);
 
 void ModelboxPyApiSetUpDataHandler(pybind11::module &m);
 
+void  ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m);
+
+void ModelboxPyApiSetUpNodeDesc(pybind11::module &m);
+
+void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m);
+
 }  // namespace modelbox
 
 #endif  // MODELBOX_PYTHON_MODELBOX_API_H_

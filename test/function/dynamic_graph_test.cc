@@ -72,7 +72,7 @@ TEST_F(DynamicGraphTest, StreamTest) {
 
   auto video_demuxer_output =
       modelbox_engine->Execute("video_demuxer", demuxer_config, input_stream);
-  auto buffer = video_demuxer_output->Next();
+  auto buffer = video_demuxer_output->GetData();
   video_demuxer_output->Close();
   modelbox_engine->ShutDown();
   EXPECT_NE(buffer, nullptr);
@@ -130,7 +130,7 @@ TEST_F(DynamicGraphTest, VideoReEncodeTest) {
   modelbox_engine->Execute("video_encoder", encoder_config, encoder_input_stream);
   std::shared_ptr<DataHandler> buffer = nullptr;
   int frame_num = 0;
-  while ((buffer = video_decoder_output->Next()) != nullptr) {
+  while ((buffer = video_decoder_output->GetData()) != nullptr) {
     encoder_input_stream->PushData(buffer, "input2");
     frame_num++;
   }

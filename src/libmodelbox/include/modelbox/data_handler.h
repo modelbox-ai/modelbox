@@ -85,7 +85,7 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
    * @brief get data on outports one by one
    * @return data hadnler store output data
    */
-  std::shared_ptr<DataHandler> Next();
+  std::shared_ptr<DataHandler> GetData();
 
   std::string GetMeta(std::string &key);
   /**

@@ -48,6 +48,7 @@ class TestDynamicGraph(unittest.TestCase):
             frame_num = frame_num + 1
         
         engine.shutdown()
+        # engine.close()
 
 if __name__ == '__main__':
     unittest.main()
