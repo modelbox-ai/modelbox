@@ -348,21 +348,22 @@ modelbox::Status ModelboxEditorPlugin::SaveGraph(
       return {ret, "convert json failed"};
     }
 
-    std::ofstream out(path + "/src/graph/" + graph_name, std::ios::trunc);
+    std::string graphfile = path + "/src/graph/" + graph_name;
+    std::ofstream out(graphfile, std::ios::trunc);
     if (out.fail()) {
       return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
                                           modelbox::StrError(errno) +
-                                          ", path: " + path};
+                                          ", path: " + graphfile};
     }
 
-    chmod(path.c_str(), 0600);
+    chmod(graphfile.c_str(), 0600);
     Defer { out.close(); };
 
     out << toml_data;
     if (out.fail()) {
       return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
                                           modelbox::StrError(errno) +
-                                          ", path: " + path};
+                                          ", path: " + graphfile};
     }
 
   } catch (const std::exception& e) {
