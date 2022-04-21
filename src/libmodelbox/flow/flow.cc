@@ -83,6 +83,35 @@ Status Flow::Init(const Solution& solution) {
   return Init(graph_path);
 }
 
+Status Flow::Init(const std::shared_ptr<FlowGraphDesc>& graph_desc) {
+  auto gcgraph = graph_desc->GetGCGraph();
+  if (nullptr == gcgraph) {
+    MBLOG_ERROR << "there is no valid graph in desc";
+    return STATUS_FAULT;
+  }
+
+  graph_ = std::make_shared<Graph>();
+  config_ = graph_desc->GetConfig();
+  profiler_ = std::make_shared<Profiler>(device_mgr_, config_);
+
+  device_mgr_ = graph_desc->GetDeviceManager();
+  flowunit_mgr_ = graph_desc->GetFlowUnitManager();
+  gcgraph_ = graph_desc->GetGCGraph();
+
+  auto ret = profiler_->Init();
+  if (!ret) {
+    MBLOG_ERROR << "Initial profiler failed, " << ret.WrapErrormsgs();
+    return {ret, "Initial profiler failed."};
+  }
+
+  ret = graph_->Initialize(flowunit_mgr_, device_mgr_, profiler_, config_);
+  if (!ret) {
+    MBLOG_ERROR << "Initial graph failed, " << ret.WrapErrormsgs();
+    return {ret, "Initial graph failed."};
+  }
+  return STATUS_OK;
+}
+
 Status Flow::Init(std::shared_ptr<Configuration> config) {
   config_ = config;
   drivers_ = std::make_shared<Drivers>();
@@ -388,18 +417,20 @@ Status Flow::Init(std::istream& is, const std::string& fname) {
 }
 
 Status Flow::Build() {
-  if (graphconfig_ == nullptr || graph_ == nullptr) {
+  if (graph_ == nullptr || (graphconfig_ == nullptr && gcgraph_ == nullptr)) {
     return {STATUS_FAULT, "Flow not initialized."};
   }
 
-  auto gcgraph = graphconfig_->Resolve();
-  if (gcgraph == nullptr) {
-    MBLOG_ERROR << "graph config resolve failed, "
-                << StatusError.WrapErrormsgs();
-    return STATUS_FAULT;
+  if (graphconfig_ != nullptr) {
+    gcgraph_ = graphconfig_->Resolve();
+    if (gcgraph_ == nullptr) {
+      MBLOG_ERROR << "graph config resolve failed, "
+                  << StatusError.WrapErrormsgs();
+      return STATUS_FAULT;
+    }
   }
 
-  auto ret = graph_->Build(gcgraph);
+  auto ret = graph_->Build(gcgraph_);
   if (ret != STATUS_OK) {
     MBLOG_ERROR << "build graph failed, " << ret.WrapErrormsgs();
     return STATUS_FAULT;

@@ -32,7 +32,7 @@ add_executable(function EXCLUDE_FROM_ALL
 	${FUNCTION_TEST_SOURCE}
 	${TEST_MAIN_SOURCE}
 )
-
+set(MODELBOX_UNIT_LINK_LIBRARY ${OpenCV_LIBS})
 add_dependencies(function ${MODELBOX_DRIVERS_TEST_TARGET})
 target_link_libraries(function pthread)
 target_link_libraries(function rt)
@@ -41,7 +41,7 @@ target_link_libraries(function gmock_main)
 target_link_libraries(function ${LIBMODELBOX_SHARED})
 target_link_libraries(function ${MOCK_DRIVER_CTRL_LIB})
 target_link_libraries(function ${HUAWEI_SECURE_C_LIBRARIES})
-
+target_link_libraries(function ${MODELBOX_UNIT_LINK_LIBRARY})
 
 add_custom_target(functiontest
 	COMMAND ${TEST_RUNNER_LIST} ${CMAKE_CURRENT_BINARY_DIR}/function

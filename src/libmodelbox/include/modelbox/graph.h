@@ -122,6 +122,9 @@ class Graph {
   Status BuildNode(std::shared_ptr<GCGraph> g, std::shared_ptr<GCNode> gcnode,
                    bool strict);
 
+  Status BuildCommonRegisterNode(std::shared_ptr<GCGraph> g,
+                                 std::shared_ptr<GCNode> gcnode);
+
   Status BuildNodes(std::shared_ptr<GCGraph> g);
 
   Status BuildVirtualNodes(std::shared_ptr<GCGraph> g);

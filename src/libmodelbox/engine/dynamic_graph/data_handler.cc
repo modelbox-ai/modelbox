@@ -271,7 +271,8 @@ Status DataHandler::InsertOutputNode(std::shared_ptr<HandlerContext> &context) {
   }
   return STATUS_OK;
 }
-std::shared_ptr<DataHandler> DataHandler::Next() {
+
+std::shared_ptr<DataHandler> DataHandler::GetData() {
   if (context_ == nullptr || GetBindNodeType() != STREAM_NODE) {
     return nullptr;
   }

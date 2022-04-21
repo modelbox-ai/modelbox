@@ -41,7 +41,6 @@ std::shared_ptr<ModelBoxEngine> Createmodelbox_engine() {
   return modelbox_engine;
 }
 
-
 TEST_F(DynamicGraphTest, DataHandlerTest) {
   auto data_handler0 = std::make_shared<DataHandler>(BUFFERLIST_NODE);
   auto data_handler = std::make_shared<DataHandler>(BUFFERLIST_NODE);
@@ -49,7 +48,6 @@ TEST_F(DynamicGraphTest, DataHandlerTest) {
   auto status = data_handler->SetDataHandler(data);
   EXPECT_TRUE(status == STATUS_FAULT);
 }
-
 
 TEST_F(DynamicGraphTest, StreamTest) {
   modelbox_engine = std::make_shared<ModelBoxEngine>();
@@ -72,7 +70,7 @@ TEST_F(DynamicGraphTest, StreamTest) {
 
   auto video_demuxer_output =
       modelbox_engine->Execute("video_demuxer", demuxer_config, input_stream);
-  auto buffer = video_demuxer_output->Next();
+  auto buffer = video_demuxer_output->GetData();
   video_demuxer_output->Close();
   modelbox_engine->ShutDown();
   EXPECT_NE(buffer, nullptr);
@@ -124,18 +122,19 @@ TEST_F(DynamicGraphTest, VideoReEncodeTest) {
 
   auto video_demuxer_output =
       modelbox_engine->Execute("video_demuxer", demuxer_config, stream);
-  auto video_decoder_output =
-      modelbox_engine->Execute("video_decoder", decoder_config, video_demuxer_output);
+  auto video_decoder_output = modelbox_engine->Execute(
+      "video_decoder", decoder_config, video_demuxer_output);
 
-  modelbox_engine->Execute("video_encoder", encoder_config, encoder_input_stream);
+  modelbox_engine->Execute("video_encoder", encoder_config,
+                           encoder_input_stream);
   std::shared_ptr<DataHandler> buffer = nullptr;
   int frame_num = 0;
-  while ((buffer = video_decoder_output->Next()) != nullptr) {
+  while ((buffer = video_decoder_output->GetData()) != nullptr) {
     encoder_input_stream->PushData(buffer, "input2");
     frame_num++;
   }
   EXPECT_TRUE(frame_num > 1);
-  encoder_input_stream->Close();  
+  encoder_input_stream->Close();
   EXPECT_EQ(status, STATUS_SUCCESS);
 }
 

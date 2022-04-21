@@ -21,10 +21,14 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/complex.h>
+#include <pybind11/functional.h>
+#include <pybind11/chrono.h>
 #include <securec.h>
 
 #include <string>
 #include "modelbox/data_context.h"
+#include "modelbox/external_data_simple.h"
 #include "modelbox/flow.h"
 #include "modelbox/modelbox_engine.h"
 #include "modelbox/type.h"
@@ -1029,18 +1033,80 @@ void ModelboxPyApiSetUpEngine(pybind11::module &m) {
            py::keep_alive<0, 1>());
 }
 
+void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
+  py::class_<modelbox::FlowGraphDesc, std::shared_ptr<modelbox::FlowGraphDesc>>(
+      m, "FlowGraphDesc")
+      .def(py::init<>())
+      .def("init",
+           [](FlowGraphDesc &env,
+              std::shared_ptr<modelbox::Configuration> &config) {
+             return env.Init(config);
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("init",
+           [](FlowGraphDesc &env,
+              std::unordered_map<std::string, std::string> &config) {
+             auto configuration = std::make_shared<modelbox::Configuration>();
+             for (auto &iter : config) {
+               configuration->SetProperty(iter.first, iter.second);
+             }
+             return env.Init(configuration);
+           },
+           py::call_guard<py::gil_scoped_release>())
+
+      .def("bindinput", &modelbox::FlowGraphDesc::BindInput,
+           py::call_guard<py::gil_scoped_release>())
+      .def("bindoutput", &modelbox::FlowGraphDesc::BindOutput,
+           py::call_guard<py::gil_scoped_release>())
+      .def("addnode",
+           [](FlowGraphDesc &env, const std::string &name,
+              std::map<std::string, std::string> &config,
+              std::map<std::string, std::shared_ptr<NodeDesc>> &data) {
+             py::gil_scoped_release release;
+             return env.AddNode(name, config, data);
+           },
+           py::keep_alive<0, 1>())
+      .def("addnode",
+           [](FlowGraphDesc &env, const std::string &name,
+              std::map<std::string, std::string> &config,
+              std::shared_ptr<NodeDesc> &data) {
+             py::gil_scoped_release release;
+             return env.AddNode(name, config, data);
+           },
+           py::keep_alive<0, 1>())
+      .def("addnode",
+           [](FlowGraphDesc &env,
+              std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
+              std::vector<std::string> inputs, std::vector<std::string> outputs,
+              std::shared_ptr<NodeDesc> datahandler) {
+             py::gil_scoped_release release;
+             return env.AddNode(callback, inputs, outputs, datahandler);
+           },
+           py::keep_alive<0, 1>())
+      .def("addnode",
+           [](FlowGraphDesc &env,
+              std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
+              std::vector<std::string> inputs, std::vector<std::string> outputs,
+              std::map<std::string, std::shared_ptr<NodeDesc>> &data) {
+             py::gil_scoped_release release;
+
+             return env.AddNode(callback, inputs, outputs, data);
+           },
+           py::keep_alive<0, 1>());
+}
+
 void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
   py::class_<modelbox::DataHandler, std::shared_ptr<modelbox::DataHandler>>(
       m, "DataHandler")
       .def(py::init<>())
       .def("close", &modelbox::DataHandler::Close,
            py::call_guard<py::gil_scoped_release>())
-      .def("__iter__", [](DataHandler &data) ->DataHandler&  { return data; },
+      .def("__iter__", [](DataHandler &data) -> DataHandler & { return data; },
            py::call_guard<py::gil_scoped_release>())
       .def("__next__",
            [](DataHandler &data) {
              py::gil_scoped_release release;
-             auto buffer = data.Next();
+             auto buffer = data.GetData();
              if (buffer == nullptr) {
                throw pybind11::stop_iteration();
              }
@@ -1073,6 +1139,42 @@ void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def("set_datahandler", &modelbox::DataHandler::SetDataHandler,
            py::call_guard<py::gil_scoped_release>());
+}
+
+void ModelboxPyApiSetUpNodeDesc(pybind11::module &m) {
+  py::class_<modelbox::NodeDesc, std::shared_ptr<modelbox::NodeDesc>>(
+      m, "NodeDesc")
+      .def(py::init<>())
+      .def("get_nodedesc", &modelbox::NodeDesc::GetNodeDesc,
+           py::call_guard<py::gil_scoped_release>())
+      .def("set_nodedesc", &modelbox::NodeDesc::SetNodeDesc,
+           py::call_guard<py::gil_scoped_release>());
+}
+
+void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m) {
+  py::class_<modelbox::ExternalDataSimple,
+             std::shared_ptr<modelbox::ExternalDataSimple>>(
+      m, "ExternalDataSimple")
+      .def(py::init<std::shared_ptr<ExternalDataMap> &>())
+      .def("pushdata",
+           [](ExternalDataSimple &extern_data_simple,
+              const std::string &port_name,
+              std::shared_ptr<BufferList> &bufferlist) {
+             py::gil_scoped_release release;
+             return extern_data_simple.PushData(port_name, bufferlist);
+           })
+      .def("getresult",
+           [](ExternalDataSimple &extern_data_simple,
+              const std::string &port_name,
+              int timeout = 0) -> std::shared_ptr<Buffer> {
+             py::gil_scoped_release release;
+             std::shared_ptr<Buffer> buffer;
+             if (STATUS_OK ==
+                 extern_data_simple.GetResult(port_name, buffer, timeout)) {
+               return buffer;
+             }
+             return nullptr;
+           });
 }
 
 }  // namespace modelbox

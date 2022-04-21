@@ -815,6 +815,10 @@ class FlowUnitManager {
   std::map<std::string, std::map<std::string, std::shared_ptr<FlowUnitDesc>>>
   GetFlowUnitDescList();
 
+  void InsertFlowUnitFactory(
+      const std::string &name, const std::string &type,
+      const std::shared_ptr<FlowUnitFactory> &flowunit_factory);
+      
   std::vector<std::shared_ptr<FlowUnitDesc>> GetAllFlowUnitDesc();
 
   std::shared_ptr<FlowUnitDesc> GetFlowUnitDesc(

@@ -20,24 +20,12 @@
 #include "data_handler.h"
 #include "node.h"
 #include "scheduler.h"
+#include "modelbox/base/error_info.h"
 
 namespace modelbox {
 using ConfigNodeMap =
     std::map<std::map<std::string, std::string>, std::shared_ptr<NodeBase>>;
 
-/**
- * @brief Job error info
- */
-struct ErrorInfo {
-  /**
-   * @brief Job error code
-   */
-  std::string error_code_;
-  /**
-   *  @brief Job error message
-   */
-  std::string error_msg_;
-};
 
 /**
  * @brief dynamic graph manager,graph start ,run and stop

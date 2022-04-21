@@ -26,7 +26,7 @@ namespace modelbox {
 
 constexpr const char *GRAPH_VIRTUAL_NODE = "inner_virtual_node_";
 
-std::shared_ptr<DataHandler> err_msg(const Status &status) {
+static std::shared_ptr<DataHandler> err_msg(const Status &status) {
   auto data_handler = std::make_shared<DataHandler>();
   data_handler->SetError(status);
   MBLOG_ERROR << status.Errormsg();
@@ -636,7 +636,7 @@ bool ModelBoxEngine::CheckisStream(
   return false;
 }
 
-void SetDefaultConfigValue(const std::string &name,
+static void SetDefaultConfigValue(const std::string &name,
                            std::map<std::string, std::string> &config_map) {
   if (config_map.find("type") == config_map.end()) {
     config_map["type"] = "flowunit";

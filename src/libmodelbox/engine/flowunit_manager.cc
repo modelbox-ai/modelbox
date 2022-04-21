@@ -439,6 +439,13 @@ FlowUnitManager::GetFlowUnitDescList() {
   return flowunit_desc_list_;
 }
 
+void FlowUnitManager::InsertFlowUnitFactory(
+    const std::string &name, const std::string &type,
+    const std::shared_ptr<FlowUnitFactory> &flowunit_factory) {
+  flowunit_factory_.insert(
+      std::make_pair(std::make_pair(type, name), flowunit_factory));
+}
+
 Status FlowUnitManager::SetUpFlowUnitDesc() {
   for (auto &iter_device : flowunit_desc_list_) {
     for (auto &iter_name : flowunit_desc_list_[iter_device.first]) {
