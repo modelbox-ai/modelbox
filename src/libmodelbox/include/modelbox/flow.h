@@ -20,6 +20,7 @@
 #include <modelbox/base/graph_manager.h>
 #include <modelbox/base/log.h>
 #include <modelbox/base/status.h>
+#include <modelbox/flow_graph_desc.h>
 #include <modelbox/flowunit.h>
 #include <modelbox/graph.h>
 #include <modelbox/profiler.h>
@@ -89,6 +90,13 @@ class Flow {
   Status Init(const Solution& solution);
 
   /**
+   * @brief  init flow from FlowGraphDesc
+   * @param flow_graph_desc  graph desc
+   * @return init result.
+   */
+  Status Init(const std::shared_ptr<FlowGraphDesc>& flow_graph_desc);
+
+  /**
    * @brief Build graph
    * @return build result.
    */
@@ -153,8 +161,8 @@ class Flow {
                               Format format);
 
   Status GetGraphFilePathByName(const std::string& flow_name,
-                                  const std::string& graph_dir,
-                                  std::string& graph_path);
+                                const std::string& graph_dir,
+                                std::string& graph_path);
 
   Status GuessConfFormat(const std::string& configfile, const std::string& data,
                          enum Format* format);
@@ -165,6 +173,7 @@ class Flow {
   std::shared_ptr<GraphConfigManager> graphconf_mgr_;
   std::shared_ptr<Configuration> config_;
   std::shared_ptr<GraphConfig> graphconfig_;
+  std::shared_ptr<GCGraph> gcgraph_;
   std::shared_ptr<Graph> graph_;
   std::shared_ptr<Profiler> profiler_;
   bool timer_run_ = false;

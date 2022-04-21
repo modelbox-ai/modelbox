@@ -15,6 +15,9 @@
  */
 
 #include <modelbox/flow.h>
+#include <modelbox/flow_graph_desc.h>
+#include <pybind11/complex.h>
+#include <pybind11/functional.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -152,6 +155,10 @@ void SetUpFlow(pybind11::module &m) {
            static_cast<modelbox::Status (modelbox::Flow::*)(
                std::shared_ptr<Configuration>)>(&modelbox::Flow::Init),
            py::call_guard<py::gil_scoped_release>())
+      .def("init",
+           static_cast<modelbox::Status (modelbox::Flow::*)(
+               const std::shared_ptr<FlowGraphDesc> &)>(&modelbox::Flow::Init),
+           py::keep_alive<1, 2>(), py::call_guard<py::gil_scoped_release>())
       .def("build", &modelbox::Flow::Build,
            py::call_guard<py::gil_scoped_release>())
       .def("run", &modelbox::Flow::Run,
@@ -181,6 +188,8 @@ PYBIND11_MODULE(_modelbox, m) {
   ModelboxPyApiSetUpGeneric(m);
   ModelboxPyApiSetUpEngine(m);
   ModelboxPyApiSetUpDataHandler(m);
+  ModelboxPyApiSetUpNodeDesc(m);
+  ModelboxPyApiSetUpFlowGraphDesc(m);
 
 #ifdef VERSION_INFO
   m.attr("__version__") = VERSION_INFO;

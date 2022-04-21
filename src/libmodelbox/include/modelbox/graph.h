@@ -123,6 +123,9 @@ class Graph {
 
   Status BuildOutputNode(std::shared_ptr<GCNode> gcnode);
 
+  Status BuildCommonRegisterNode(std::shared_ptr<GCGraph> g,
+                                 std::shared_ptr<GCNode> gcnode);
+
   Status BuildNode(std::shared_ptr<GCGraph> g, std::shared_ptr<GCNode> gcnode,
                    bool strict);
 
