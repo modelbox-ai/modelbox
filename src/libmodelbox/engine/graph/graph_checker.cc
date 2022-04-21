@@ -289,6 +289,19 @@ bool OverHierarchyCheck::CheckEndIfPort(
   return true;
 }
 
+Status OverHierarchyCheck::CheckInputPortsColorReady(
+    std::shared_ptr<IndexPort> &index_port,
+    const std::vector<std::shared_ptr<InPort>> &input_ports) {
+  for (auto &input_port : input_ports) {
+    index_port->port_name = input_port->GetName();
+    if (color_map_.find(index_port->ToString()) == color_map_.end()) {
+      return STATUS_NODATA;
+    }
+  }
+
+  return STATUS_SUCCESS;
+}
+
 Status OverHierarchyCheck::CheckInputPorts(
     std::shared_ptr<Node> node,
     const std::unordered_map<std::string,
@@ -299,22 +312,24 @@ Status OverHierarchyCheck::CheckInputPorts(
   std::vector<int> color;
   std::shared_ptr<IndexPort> index_port = std::make_shared<IndexPort>();
   index_port->node_name = node->GetName();
+  status = CheckInputPortsColorReady(index_port, input_ports);
+  if (status != STATUS_SUCCESS) {
+    return status;
+  }
+
   for (auto &input_port : input_ports) {
     index_port->port_name = input_port->GetName();
-    if (color_map_.find(index_port->ToString()) == color_map_.end()) {
-      return STATUS_NODATA;
-    }
-
+    std::vector<int> tmp_color(color_map_[index_port->ToString()]);
     if (CheckEndIfPort(input_port, index_port, graph_single_port_match_map)) {
-      color_map_[index_port->ToString()].pop_back();
+      tmp_color.pop_back();
     }
 
     if (color.size() == 0) {
-      color = color_map_[index_port->ToString()];
+      color = tmp_color;
       continue;
     }
 
-    if (color != color_map_[index_port->ToString()]) {
+    if (color != tmp_color) {
       status = {STATUS_BADCONF,
                 "node:" + node->GetName() +
                     " has different level links, pls check the input links."};
@@ -539,7 +554,8 @@ Status OverHierarchyCheck::Check(
             continue;
           }
 
-          if (CheckEndIfPort(input_port, index_input_port, graph_single_port_match_map)) {
+          if (CheckEndIfPort(input_port, index_input_port,
+                             graph_single_port_match_map)) {
             auto color_level = color_map_[index_output_port->ToString()];
             if (color_level == color_map_[index_input_port->ToString()]) {
               continue;
@@ -833,7 +849,7 @@ Status GraphChecker::CheckNodeMatch(
 
   std::vector<IndexPort> single_match_result;
   std::unordered_map<std::string, std::string> single_port_match_map_;
-  for (auto &iter: node_stream_map) {
+  for (auto &iter : node_stream_map) {
     auto values = iter.second;
 
     // in: {d.output}
