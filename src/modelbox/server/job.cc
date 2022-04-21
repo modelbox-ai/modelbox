@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-
 #include <modelbox/base/log.h>
 #include <modelbox/flow.h>
 #include <modelbox/server/job.h>
+#include <modelbox/server/timer.h>
+
+constexpr uint64_t HEART_BEAT_PERIOD_MS = 60 * 1000;
 
 namespace modelbox {
 
@@ -51,7 +53,8 @@ Status Job::Init() {
   status_ = JOB_STATUS_CREATING;
   if (graph_path_.length() > 0) {
     status = flow_->Init(graph_path_);
-  } if (graph_.length() > 0) {
+  }
+  if (graph_.length() > 0) {
     status = flow_->Init(graph_name_, graph_);
   }
 
@@ -85,6 +88,17 @@ void Job::Run() {
 
   flow_->RunAsync();
   status_ = JOB_STATUS_RUNNING;
+
+  heart_beat_task_ = std::make_shared<modelbox::TimerTask>([this]() {
+    auto job_status = this->GetJobStatus();
+
+    if (job_status != JOB_STATUS_RUNNING) {
+      MBLOG_ERROR << "get job[" << this->GetJobName()
+                  << "] status:" << this->JobStatusToString(job_status);
+    }
+  });
+
+  kServerTimer->Schedule(heart_beat_task_, 0, HEART_BEAT_PERIOD_MS, false);
 }
 
 void Job::Stop() {
@@ -104,7 +118,6 @@ void Job::Join() {
 }
 
 JobStatus Job::GetJobStatus() {
-
   modelbox::Status retval;
   if (status_ != JOB_STATUS_RUNNING) {
     return status_;
@@ -128,6 +141,8 @@ JobStatus Job::GetJobStatus() {
       break;
     default:
       SetError(status);
+      flow_->Stop();
+      return JOB_STATUS_FAILED;
       break;
   }
 

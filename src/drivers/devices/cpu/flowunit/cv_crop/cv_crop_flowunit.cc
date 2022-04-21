@@ -119,7 +119,7 @@ modelbox::Status CVCropFlowUnit::Process(
     height_dest = img_dest->rows;
     output_buffer->Set("width", width_dest);
     output_buffer->Set("height", height_dest);
-    output_buffer->Set("width_stride", width_dest);
+    output_buffer->Set("width_stride", width_dest * 3);
     output_buffer->Set("height_stride", height_dest);
     output_buffer->Set("channel", channel);
     output_buffer->Set("pix_fmt", pix_fmt);

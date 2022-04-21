@@ -420,7 +420,7 @@ Status HttpServer::Start() {
 
   auto ret = server_impl_->bind_to_port(ip_.c_str(), port_);
   if (!ret) {
-    status_ = {STATUS_FAULT, "bind to " + ip_ + ":" + std::to_string(port_) +
+    status_ = {STATUS_ALREADY, "bind to " + ip_ + ":" + std::to_string(port_) +
                                  " failed, might be conflict, error " +
                                  StrError(errno)};
     return status_;
@@ -626,7 +626,7 @@ std::unordered_map<std::string,
 Status SendHttpRequest(HttpRequest &request) {
   auto url = request.GetURL();
   std::smatch url_match_result;
-  std::regex url_pattern("(https?://[\\w\\-\\.]+(:[0-9]+)?)(/[\\w\\-\\./]*)?");
+  std::regex url_pattern("(https?://[\\w\\-\\.]+(:[0-9]+)?)(/.*)?");
   auto ret = std::regex_match(url, url_match_result, url_pattern);
   if (!ret) {
     return {STATUS_BADCONF, "url " + url + " is wrong format"};

@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "editor_plugin.h"
 
-#include <dirent.h>
+#include <modelbox/base/popen.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
+#include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <toml.hpp>
+#include <typeinfo>
+#include <vector>
 
 #include "config.h"
 #include "modelbox/base/log.h"
@@ -30,17 +35,30 @@
 using namespace modelbox;
 
 const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
-const std::string DEFAULT_SOLUTION_GRAPHS_ROOT =
-    std::string(MODELBOX_SOLUTION_PATH) + "/graphs";
+const std::string DEFAULT_PROJECT_TEMPLATE_DIR =
+    "/usr/local/share/modelbox/project-template";
+const std::string DEFAULT_DEMO_ROOT_DIR = MODELBOX_DEMO_PATH;
+constexpr const char* DEFAULT_MODELBOX_TEMPLATE_CMD = "modelbox-tool template";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
-const std::string solution_url = "/editor/solution";
+const std::string demo_url = "/editor/demo";
+const std::string save_graph_url = "/editor/graph";
+const std::string flowunit_create_url = "/editor/flowunit/create";
+const std::string project_url = "/editor/project";
+const std::string project_template_url = "/editor/project/template";
+const std::string project_list_url = "/editor/project/list";
+const std::string project_create_url = "/editor/project/create";
+const std::string pass_encode_url = "/editor/password/encode";
+
+const char* HTTP_GRAPH_FORMAT_JSON = "json";
+const char* HTTP_GRAPH_FORMAT_TOML = "toml";
 
 constexpr const char* HTTP_RESP_ERR_GETINFO_FAILED = "Get info failed";
 constexpr const char* HTTP_RESP_ERR_PATH_NOT_FOUND = "Path not found";
 constexpr const char* HTTP_RESP_ERR_PATH_NOT_FILE = "Path not a file";
 constexpr const char* HTTP_RESP_ERR_CANNOT_READ = "Can not read file";
+constexpr int MAX_FILES = 1 << 16;
 
 const std::string ModelboxGetMimeType(const std::string& file) {
   std::string ext = file.substr(file.find_last_of(".") + 1);
@@ -117,9 +135,72 @@ void ModelboxEditorPlugin::RegistHandlers() {
       flowunit_info_url, HttpMethods::GET,
       std::bind(&ModelboxEditorPlugin::HandlerFlowUnitInfoGet, this,
                 std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(solution_url, HttpMethods::GET,
-                      std::bind(&ModelboxEditorPlugin::HandlerSolutionGet, this,
+  listener_->Register(demo_url, HttpMethods::GET,
+                      std::bind(&ModelboxEditorPlugin::HandlerDemoGet, this,
                                 std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(project_url, HttpMethods::GET,
+                      std::bind(&ModelboxEditorPlugin::HandlerProjectGet, this,
+                                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(
+      project_template_url, HttpMethods::GET,
+      std::bind(&ModelboxEditorPlugin::HandlerProjectTemplateListGet, this,
+                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(
+      project_list_url, HttpMethods::GET,
+      std::bind(&ModelboxEditorPlugin::HandlerProjectListGet, this,
+                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(
+      project_create_url, HttpMethods::PUT,
+      std::bind(&ModelboxEditorPlugin::HandlerProjectCreate, this,
+                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(
+      flowunit_create_url, HttpMethods::PUT,
+      std::bind(&ModelboxEditorPlugin::HandlerFlowUnitCreate, this,
+                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(save_graph_url, HttpMethods::PUT,
+                      std::bind(&ModelboxEditorPlugin::HandlerSaveGraph, this,
+                                std::placeholders::_1, std::placeholders::_2));
+  listener_->Register(pass_encode_url, HttpMethods::PUT,
+                      std::bind(&ModelboxEditorPlugin::HandlerPassEncode, this,
+                                std::placeholders::_1, std::placeholders::_2));
+}
+
+std::string ModelboxEditorPlugin::ResultMsg(const std::string& code,
+                                            const std::string& msg) {
+  nlohmann::json result_json;
+  result_json["code"] = code;
+  result_json["msg"] = msg;
+
+  return result_json.dump();
+}
+
+std::string ModelboxEditorPlugin::ResultMsg(modelbox::Status& status) {
+  return ResultMsg(status.StrCode(), status.WrapErrormsgs());
+}
+
+void ModelboxEditorPlugin::SetUpResponse(httplib::Response& response,
+                                         modelbox::Status& status) {
+  switch (status.Code()) {
+    case modelbox::STATUS_SUCCESS:
+      response.status = HttpStatusCodes::OK;
+      break;
+    case modelbox::STATUS_NOTFOUND:
+      response.status = HttpStatusCodes::NOT_FOUND;
+      break;
+    case modelbox::STATUS_INVALID:
+    case modelbox::STATUS_BADCONF:
+      response.status = HttpStatusCodes::BAD_REQUEST;
+      break;
+    default:
+      response.status = HttpStatusCodes::INTERNAL_ERROR;
+      break;
+  }
+
+  AddSafeHeader(response);
+  response.status = HttpStatusCodes::BAD_REQUEST;
+  response.set_content(ResultMsg(status), JSON);
+
+  return;
 }
 
 bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
@@ -138,6 +219,7 @@ bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
       *redirect_file = in_file + "/";
       return false;
     }
+
     auto default_file_name = file_name + "/index.htm";
     if (access(default_file_name.c_str(), R_OK) != 0) {
       default_file_name = file_name + "/index.html";
@@ -148,6 +230,7 @@ bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
       file_name = default_file_name;
     }
   }
+
   if (file_name.length() == 0) {
     return false;
   }
@@ -167,7 +250,6 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoGet(
 void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
     const httplib::Request& request, httplib::Response& response) {
   modelbox::ConfigurationBuilder config_builder;
-
   try {
     auto body = nlohmann::json::parse(request.body);
     if (body.find("skip-default") != body.end()) {
@@ -184,19 +266,290 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfoPut(
           dirs.push_back(dir);
         }
       }
-
       config_builder.AddProperty("driver." + std::string(DRIVER_DIR), dirs);
     }
   } catch (const std::exception& e) {
     std::string errmsg = "Get info failed: ";
     errmsg += e.what();
-    response.status = HttpStatusCodes::BAD_REQUEST;
-    response.set_content(errmsg, TEXT_PLAIN);
-    AddSafeHeader(response);
+    modelbox::Status ret = {modelbox::STATUS_INVALID, errmsg};
+    SetUpResponse(response, ret);
     return;
   }
 
   return HandlerFlowUnitInfo(request, response, config_builder.Build());
+}
+
+modelbox::Status ModelboxEditorPlugin::RunTemplateCommand(
+    const httplib::Request& request, httplib::Response& response,
+    const std::string& cmd) {
+  modelbox::Status ret = modelbox::STATUS_FAULT;
+
+  try {
+    std::string runcmd;
+    runcmd = template_cmd_ + " " + cmd;
+    auto body = nlohmann::json::parse(request.body);
+    ret = GenerateCommandFromJson(body, runcmd);
+    if (ret == modelbox::STATUS_OK) {
+      ret = RunCommand(runcmd);
+    }
+  } catch (const std::exception& e) {
+    modelbox::Status errret(
+        ret, std::string("run modelbox-tool failed, ") + e.what());
+    ret = errret;
+  }
+
+  SetUpResponse(response, ret);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_WARN << ret.WrapErrormsgs();
+    return ret;
+  }
+
+  return ret;
+}
+
+void ModelboxEditorPlugin::HandlerFlowUnitCreate(
+    const httplib::Request& request, httplib::Response& response) {
+  auto ret = RunTemplateCommand(request, response, "--flowunit");
+  if (ret == modelbox::STATUS_OK) {
+    response.status = HttpStatusCodes::CREATED;
+  }
+
+  return;
+}
+
+void ModelboxEditorPlugin::HandlerSaveGraph(const httplib::Request& request,
+                                            httplib::Response& response) {
+  auto ret = SaveGraph(request);
+  SetUpResponse(response, ret);
+  if (ret == modelbox::STATUS_OK) {
+    response.status = HttpStatusCodes::CREATED;
+  }
+
+  return;
+}
+
+modelbox::Status ModelboxEditorPlugin::SaveGraph(
+    const httplib::Request& request) {
+  try {
+    auto body = nlohmann::json::parse(request.body);
+    std::string toml_data;
+
+    auto graph_data = body["graph"].dump();
+    auto graph_name = body["graph_name"].get<std::string>();
+    auto path = body["graph_path"].get<std::string>();
+    MBLOG_INFO << "Save graph to : " << path;
+
+    if (IsModelboxProjectDir(path) == false) {
+      return {modelbox::STATUS_INVALID, "path is not a modelbox project"};
+    }
+
+    auto ret = modelbox::JsonToToml(graph_data, &toml_data);
+    if (!ret) {
+      return {ret, "convert json failed"};
+    }
+
+    std::ofstream out(path + "/src/graph/" + graph_name, std::ios::trunc);
+    if (out.fail()) {
+      return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
+                                          modelbox::StrError(errno) +
+                                          ", path: " + path};
+    }
+
+    chmod(path.c_str(), 0600);
+    Defer { out.close(); };
+
+    out << toml_data;
+    if (out.fail()) {
+      return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
+                                          modelbox::StrError(errno) +
+                                          ", path: " + path};
+    }
+
+  } catch (const std::exception& e) {
+    std::string errmsg = "save graph info failed: ";
+    errmsg += e.what();
+    return {STATUS_INVALID, errmsg};
+  }
+
+  return STATUS_OK;
+}
+
+modelbox::Status ModelboxEditorPlugin::ReadProjectName(const std::string& path,
+                                                       std::string& name) {
+  auto ret = RunCommand(template_cmd_ + " -project -getname \"" + path + "\"",
+                        nullptr, &name);
+  if (!ret) {
+    return ret;
+  }
+
+  name.erase(std::remove(name.begin(), name.end(), '\n'), name.end());
+  name.erase(std::remove(name.begin(), name.end(), '\r'), name.end());
+
+  return STATUS_OK;
+}
+
+void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
+                                             httplib::Response& response) {
+  std::string project_name;
+
+  try {
+    if (request.has_param("path") == false) {
+      modelbox::Status ret = {modelbox::STATUS_INVALID,
+                              "argument path is not set."};
+      SetUpResponse(response, ret);
+      return;
+    }
+
+    std::string project_path = "";
+    project_path = request.params.find("path")->second;
+    MBLOG_INFO << "loading project: " << project_path;
+
+    auto ret = ReadProjectName(project_path, project_name);
+    if (!ret) {
+      modelbox::Status rspret = {ret, "Get project name failed."};
+      SetUpResponse(response, rspret);
+      return;
+    }
+
+    nlohmann::json json;
+    std::string result;
+    std::vector<std::string> graphs;
+    auto flowunit_path = project_path + "/src/flowunit";
+    auto graph_path = project_path + "/src/graph";
+
+    json["project_name"] = project_name;
+    json["project_path"] = project_path;
+    json["flowunits"] = nlohmann::json::array();
+    json["graphs"] = nlohmann::json::array();
+
+    ret = modelbox::ListSubDirectoryFiles(graph_path, "*.toml", &graphs);
+    if (!ret) {
+      modelbox::Status ret = {modelbox::STATUS_NOTFOUND,
+                              HTTP_RESP_ERR_CANNOT_READ};
+      SetUpResponse(response, ret);
+      return;
+    }
+
+    std::string json_data;
+    nlohmann::json graph;
+    for (auto g : graphs) {
+      ret = GraphFileToJson(g, json_data);
+      graph["name"] = modelbox::GetBaseName(g);
+      graph = nlohmann::json::parse(json_data);
+      json["graphs"].push_back(graph);
+    }
+
+    std::vector<std::string> flowunits;
+    ret = modelbox::ListSubDirectoryFiles(flowunit_path, "*.toml", &flowunits);
+    for (auto f : flowunits) {
+      ret = GraphFileToJson(f, json_data);
+      if (!ret) {
+        modelbox::Status rspret = {ret, "toml"};
+        SetUpResponse(response, rspret);
+        return;
+      }
+      json["flowunits"].push_back(nlohmann::json::parse(json_data));
+    }
+    result = json.dump();
+    MBLOG_DEBUG << "infos: " << result;
+    response.set_content(result, JSON);
+  } catch (const std::exception& e) {
+    std::string errmsg = "Get info failed: ";
+    errmsg += e.what();
+    MBLOG_ERROR << errmsg;
+    modelbox::Status ret = {STATUS_INVALID, errmsg};
+    SetUpResponse(response, ret);
+    return;
+  }
+
+  response.status = HttpStatusCodes::OK;
+}
+
+modelbox::Status ModelboxEditorPlugin::GenerateCommandFromJson(
+    const nlohmann::json& body, std::string& cmd) {
+  nlohmann::json error_json;
+  for (auto& element : body.items()) {
+    cmd += " -" + element.key();
+    if (element.value().is_null()) {
+      continue;
+    }
+
+    if (element.value().type() != nlohmann::json::value_t::array) {
+      cmd += "=" + element.value().dump();
+      continue;
+    }
+
+    int num = 0;
+    for (auto port : element.value()) {
+      if (num > 0) {
+        cmd += " -" + element.key() + "=";
+      } else {
+        cmd += " ";
+      }
+
+      for (auto& i : port.items()) {
+        cmd += i.key() + "=" + i.value().dump();
+        if (i != port.items().end()) {
+          cmd += ",";
+        }
+      }
+      cmd = cmd.substr(0, cmd.length() - 1);
+      num += 1;
+    }
+  }
+
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status ModelboxEditorPlugin::RunCommand(const std::string& cmd,
+                                                  const std::string* in,
+                                                  std::string* out) {
+  Popen p;
+  std::string outmsg;
+  std::string err;
+  std::string mode;
+
+  MBLOG_INFO << "exec: " << cmd;
+
+  if (in) {
+    mode = "wre";
+  } else {
+    mode = "re";
+  }
+
+  auto retstatus = p.Open(cmd, 3000, mode.c_str(), template_cmd_env_);
+  if (!retstatus) {
+    return retstatus;
+  }
+
+  if (in) {
+    p.WriteString(*in);
+  }
+
+  auto ret = p.ReadAll(&outmsg, &err);
+  ret = p.Close();
+  if (ret == 0) {
+    retstatus = modelbox::STATUS_OK;
+  } else {
+    std::string errmsg = "Execute command failed, ret: ";
+    errmsg += std::to_string(ret);
+    errmsg += " error: " + err;
+    retstatus = {modelbox::STATUS_FAULT, errmsg};
+  }
+
+  if (out) {
+    *out = outmsg;
+  }
+
+  return retstatus;
+}
+
+void ModelboxEditorPlugin::HandlerProjectCreate(const httplib::Request& request,
+                                                httplib::Response& response) {
+  auto ret = RunTemplateCommand(request, response, "--project");
+  if (ret == modelbox::STATUS_OK) {
+    response.status = HttpStatusCodes::CREATED;
+  }
 }
 
 void ModelboxEditorPlugin::HandlerFlowUnitInfo(
@@ -204,26 +557,159 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfo(
     std::shared_ptr<modelbox::Configuration> config) {
   modelbox::FlowUnitInfo flowunit_info;
 
-  AddSafeHeader(response);
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
   auto status = flowunit_info.Init(config);
   if (!status) {
-    response.status = HttpStatusCodes::INTERNAL_ERROR;
-    response.set_content(HTTP_RESP_ERR_GETINFO_FAILED, TEXT_PLAIN);
-    MBLOG_ERROR << status;
+    rspret = {status, HTTP_RESP_ERR_GETINFO_FAILED};
     return;
   }
 
   std::string info;
   status = flowunit_info.GetInfoInJson(&info);
   if (!status) {
-    response.status = HttpStatusCodes::INTERNAL_ERROR;
-    response.set_content(HTTP_RESP_ERR_GETINFO_FAILED, TEXT_PLAIN);
-    MBLOG_ERROR << status;
+    rspret = {status, HTTP_RESP_ERR_GETINFO_FAILED};
     return;
   }
 
+  AddSafeHeader(response);
   response.status = HttpStatusCodes::OK;
   response.set_content(info, JSON);
+}
+
+void ModelboxEditorPlugin::HandlerProjectTemplateListGet(
+    const httplib::Request& request, httplib::Response& response) {
+  std::vector<std::string> dirs;
+  std::map<std::string, std::vector<std::string>> graphs;
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
+  std::vector<std::string> files;
+  std::string template_dir = template_dir_ + "/project";
+  MBLOG_INFO << "template_dir:" << template_dir;
+  auto ret = modelbox::ListSubDirectoryFiles(template_dir, "desc.toml", &files);
+  if (!ret) {
+    rspret = {ret, HTTP_RESP_ERR_CANNOT_READ};
+    MBLOG_INFO << "read template dir " << template_dir << " failed, " << ret;
+    return;
+  }
+
+  nlohmann::json response_json;
+  response_json["project_template_list"] = nlohmann::json::array();
+
+  for (const auto& file : files) {
+    std::string dirname = modelbox::GetBaseName(modelbox::GetDirName(file));
+    std::string name = dirname;
+
+    std::string json_data;
+    std::string desc;
+    auto ret = GraphFileToJson(file, json_data);
+    if (ret) {
+      try {
+        auto desc_json = nlohmann::json::parse(json_data);
+        desc_json["dirname"] = dirname;
+        response_json["project_template_list"].push_back(desc_json);
+      } catch (const std::exception& e) {
+        MBLOG_WARN << "parser json " << file << " failed, " << e.what();
+      }
+    }
+  }
+
+  AddSafeHeader(response);
+  response.status = HttpStatusCodes::OK;
+  response.set_content(response_json.dump(), JSON);
+  return;
+}
+
+void ModelboxEditorPlugin::HandlerProjectListGet(
+    const httplib::Request& request, httplib::Response& response) {
+  nlohmann::json response_json;
+  nlohmann::json subdir_json;
+  std::vector<std::string> listfiles;
+  subdir_json = nlohmann::json::array();
+  modelbox::Status ret;
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
+  try {
+    if (request.has_param("path") == false) {
+      rspret = {modelbox::STATUS_INVALID, "argument path is not set."};
+      return;
+    }
+
+    std::string list_path = "";
+    list_path = request.params.find("path")->second;
+    MBLOG_DEBUG << "list path: " << list_path;
+    ret = ListFiles(list_path, "*", &listfiles, LIST_FILES_DIR);
+    if (!ret) {
+      rspret = {ret, "List path failed."};
+      return;
+    }
+
+    response_json["dirname"] = list_path;
+    response_json["isproject"] = IsModelboxProjectDir(list_path);
+
+    for (auto f : listfiles) {
+      nlohmann::json dirname;
+      dirname["dirname"] = modelbox::GetBaseName(f);
+      dirname["isproject"] = IsModelboxProjectDir(f);
+      subdir_json.push_back(dirname);
+    }
+
+    response_json["subdir"] = subdir_json;
+  } catch (const std::exception& e) {
+    std::string errmsg = "internal error when searching path, ";
+    errmsg += e.what();
+    MBLOG_ERROR << errmsg;
+    rspret = {STATUS_FAULT, errmsg};
+    return;
+  }
+
+  AddSafeHeader(response);
+  response.set_content(response_json.dump(), JSON);
+  return;
+}
+
+bool ModelboxEditorPlugin::IsModelboxProjectDir(std::string& path) {
+  struct stat statbuf;
+  std::string checkfile;
+  checkfile = path + "/CMakeLists.txt";
+  if (stat(checkfile.c_str(), &statbuf) || !S_ISREG(statbuf.st_mode)) {
+    return false;
+  }
+
+  checkfile = path + "/src";
+  if (stat(checkfile.c_str(), &statbuf) || !S_ISDIR(statbuf.st_mode)) {
+    return false;
+  }
+
+  checkfile = path + "/src/flowunit";
+  if (stat(checkfile.c_str(), &statbuf) || !S_ISDIR(statbuf.st_mode)) {
+    return false;
+  }
+
+  checkfile = path + "/src/graph";
+  if (stat(checkfile.c_str(), &statbuf) || !S_ISDIR(statbuf.st_mode)) {
+    return false;
+  }
+
+  return true;
 }
 
 void ModelboxEditorPlugin::HandlerUIGet(const httplib::Request& request,
@@ -233,8 +719,14 @@ void ModelboxEditorPlugin::HandlerUIGet(const httplib::Request& request,
   struct stat path_stat;
   std::string resolve_file;
   std::string redirect_file;
+  modelbox::Status rspret;
 
-  AddSafeHeader(response);
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
   MBLOG_DEBUG << "request file:" << file_name;
   if (GetHtmlFile(file_name, &resolve_file, &redirect_file) == false) {
     if (!redirect_file.empty()) {
@@ -243,33 +735,28 @@ void ModelboxEditorPlugin::HandlerUIGet(const httplib::Request& request,
       return;
     }
 
-    response.status = HttpStatusCodes::NOT_FOUND;
-    response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
+    rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
     return;
   }
 
   file_name = resolve_file;
   if (file_name.find(web_root_) != 0) {
-    response.status = HttpStatusCodes::NOT_FOUND;
-    response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
+    rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
     return;
   }
 
   if (stat(file_name.c_str(), &path_stat) != 0) {
-    response.status = HttpStatusCodes::NOT_FOUND;
-    response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
+    rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
     return;
   }
 
   if (!S_ISREG(path_stat.st_mode)) {
-    response.status = HttpStatusCodes::NOT_FOUND;
-    response.set_content(HTTP_RESP_ERR_PATH_NOT_FILE, TEXT_PLAIN);
+    rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FILE};
     return;
   }
 
   if (access(file_name.c_str(), R_OK | F_OK) != 0) {
-    response.status = HttpStatusCodes::NOT_FOUND;
-    response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+    rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_CANNOT_READ};
     return;
   }
 
@@ -279,14 +766,22 @@ void ModelboxEditorPlugin::HandlerUIGet(const httplib::Request& request,
 void ModelboxEditorPlugin::SendFile(const std::string& file_name,
                                     httplib::Response& response) {
   auto content_type = ModelboxGetMimeType(file_name);
+
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
   auto file = std::shared_ptr<std::ifstream>(new std::ifstream(file_name),
                                              [](std::ifstream* ptr) {
                                                ptr->close();
                                                delete ptr;
                                              });
   if (!file->is_open()) {
-    response.status = HttpStatusCodes::NOT_FOUND;
-    response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+    rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_CANNOT_READ};
     return;
   }
 
@@ -294,11 +789,11 @@ void ModelboxEditorPlugin::SendFile(const std::string& file_name,
   auto data = std::shared_ptr<char>(new (std::nothrow) char[data_size],
                                     [](char* ptr) { delete[] ptr; });
   if (data.get() == nullptr) {
-    response.status = HttpStatusCodes::INTERNAL_ERROR;
-    response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+    rspret = {STATUS_FAULT, HTTP_RESP_ERR_CANNOT_READ};
     return;
   }
 
+  AddSafeHeader(response);
   response.status = HttpStatusCodes::OK;
   response.set_content_provider(
       content_type.c_str(),
@@ -326,14 +821,15 @@ modelbox::Status ModelboxEditorPlugin::GraphFileToJson(const std::string& file,
                                                        std::string& json_data) {
   std::ifstream infile(file);
   if (infile.fail()) {
-    return {modelbox::STATUS_NOTFOUND, "Get solution failed"};
+    return {modelbox::STATUS_NOTFOUND,
+            "Get graph failed" + modelbox::StrError(errno)};
   }
   Defer { infile.close(); };
 
   std::string data((std::istreambuf_iterator<char>(infile)),
                    std::istreambuf_iterator<char>());
   if (data.length() <= 0) {
-    return {modelbox::STATUS_BADCONF, "solution file is invalid."};
+    return {modelbox::STATUS_BADCONF, "graph file is invalid."};
   }
 
   std::string extension = file.substr(file.find_last_of(".") + 1);
@@ -342,127 +838,220 @@ modelbox::Status ModelboxEditorPlugin::GraphFileToJson(const std::string& file,
   } else {
     auto ret = modelbox::TomlToJson(data, &json_data);
     if (!ret) {
-      return {modelbox::STATUS_FAULT, "solution format error"};
+      return {ret, "graph format error"};
     }
   }
 
   return modelbox::STATUS_OK;
 }
 
-void ModelboxEditorPlugin::HandlerSolutionGetList(
-    const httplib::Request& request, httplib::Response& response) {
-  AddSafeHeader(response);
-  std::vector<std::string> files;
-  auto ret = modelbox::ListSubDirectoryFiles(solution_path_, "*.toml", &files);
+void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
+                                              httplib::Response& response) {
+  std::vector<std::string> dirs;
+  std::map<std::string, std::vector<std::string>> graphs;
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
+  auto ret =
+      modelbox::ListFiles(demo_path_, "*", &dirs, modelbox::LIST_FILES_DIR);
   if (!ret) {
-    response.status = HttpStatusCodes::NOT_FOUND;
-    response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
+    rspret = {ret, HTTP_RESP_ERR_CANNOT_READ};
     return;
   }
 
-  ret = modelbox::ListSubDirectoryFiles(solution_path_, "*.json", &files);
-  if (!ret) {
-    response.status = HttpStatusCodes::NOT_FOUND;
-    response.set_content(HTTP_RESP_ERR_CANNOT_READ, TEXT_PLAIN);
-    return;
+  for (auto const& dir : dirs) {
+    std::vector<std::string> files;
+    std::string graphdir = dir + "/graph";
+
+    auto ret = modelbox::ListSubDirectoryFiles(graphdir, "*.toml", &files);
+    if (!ret) {
+      MBLOG_INFO << "list directory " << demo_path_ << "failed.";
+    }
+
+    ret = modelbox::ListSubDirectoryFiles(graphdir, "*.json", &files);
+    if (!ret) {
+      MBLOG_INFO << "list directory " << demo_path_ << "failed.";
+    }
+
+    if (files.size() == 0) {
+      continue;
+    }
+
+    graphs[dir] = files;
   }
 
   nlohmann::json response_json;
-  response_json["solution_list"] = nlohmann::json::array();
-  for (const auto& file : files) {
-    nlohmann::json solution;
-    std::string filename = modelbox::GetBaseName(file);
-    std::string name = filename;
+  response_json["demo_list"] = nlohmann::json::array();
+  for (auto it : graphs) {
+    std::string demoname = modelbox::GetBaseName(it.first);
+    for (const auto& file : it.second) {
+      nlohmann::json demo;
+      std::string filename = modelbox::GetBaseName(file);
+      std::string name = filename;
 
-    std::string json_data;
-    std::string desc;
-    auto ret = GraphFileToJson(file, json_data);
-    if (ret) {
-      try {
-        auto response = nlohmann::json::parse(json_data);
-        desc = response["flow"]["desc"].get<std::string>();
-      } catch (const std::exception& e) {
-        MBLOG_WARN << "parser json failed, " << e.what();
+      std::string json_data;
+      std::string desc;
+      auto ret = GraphFileToJson(file, json_data);
+      if (ret) {
+        try {
+          auto response = nlohmann::json::parse(json_data);
+          desc = response["flow"]["desc"].get<std::string>();
+          name = response["flow"]["name"].get<std::string>();
+        } catch (const std::exception& e) {
+          MBLOG_WARN << "parser json " << file << " failed, " << e.what();
+        }
       }
-    }
 
-    solution["desc"] = desc;
-    solution["name"] = name;
-    solution["file"] = file;
-    response_json["solution_list"].push_back(solution);
+      demo["demo"] = demoname;
+      demo["name"] = name;
+      demo["desc"] = desc;
+      demo["graphfile"] = filename;
+      response_json["demo_list"].push_back(demo);
+    }
   }
 
+  AddSafeHeader(response);
   response.status = HttpStatusCodes::OK;
   response.set_content(response_json.dump(), JSON);
   return;
 }
 
-void ModelboxEditorPlugin::HandlerSolutionGet(const httplib::Request& request,
-                                              httplib::Response& response) {
+void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
+                                          httplib::Response& response) {
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
   try {
-    std::string relative_path = request.path.substr(solution_url.size());
-    std::string pre_path;
-    std::string solution_file;
-    std::string solution_name;
-    SplitPath(relative_path, pre_path, solution_name);
-    if (solution_name.length() == 0) {
-      HandlerSolutionGetList(request, response);
+    std::string relative_path = request.path.substr(demo_url.size());
+    std::string graph_file;
+    std::string demo_file;
+    std::string demo_name;
+    SplitPath(relative_path, demo_name, graph_file);
+    if (demo_name.length() == 0 && graph_file.length() == 0) {
+      HandlerDemoGetList(request, response);
       return;
     }
 
-    std::vector<std::string> files;
-    modelbox::ListSubDirectoryFiles(solution_path_, "*.toml", &files);
-    modelbox::ListSubDirectoryFiles(solution_path_, "*.json", &files);
-    for (const auto& file : files) {
-      std::string filename = modelbox::GetBaseName(file);
-      if (filename == solution_name) {
-        solution_file = file;
-        break;
-      }
-    }
-
-    AddSafeHeader(response);
-    if (solution_file.length() == 0) {
-      response.status = HttpStatusCodes::NOT_FOUND;
-      response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
+    if (graph_file.length() == 0 || demo_name.length() == 0) {
+      rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
       return;
     }
 
-    auto resolve_path = modelbox::PathCanonicalize(solution_file);
-    if (resolve_path.length() == 0) {
-      response.status = HttpStatusCodes::NOT_FOUND;
-      response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
-      return;
-    }
-
-    solution_file = resolve_path;
-    if (solution_file.find(solution_path_) != 0) {
-      response.status = HttpStatusCodes::NOT_FOUND;
-      response.set_content(HTTP_RESP_ERR_PATH_NOT_FOUND, TEXT_PLAIN);
+    demo_file =
+        PathCanonicalize(demo_name + "/graph/" + graph_file, demo_path_);
+    if (demo_file.length() == 0) {
+      rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
       return;
     }
 
     std::string json_data;
-    MBLOG_INFO << "load solution file " << solution_file;
-    auto ret = GraphFileToJson(solution_file, json_data);
-    if (!ret) {
-      std::string msg = "solution file is invalid.";
-      msg += ret.Errormsg();
-      response.status = HttpStatusCodes::NOT_FOUND;
-      response.set_content(msg, TEXT_PLAIN);
-      MBLOG_WARN << "Get graph file failed, " << ret.WrapErrormsgs();
+    MBLOG_INFO << "load demo file " << demo_file;
+    rspret = GraphFileToJson(demo_file, json_data);
+    if (!rspret) {
+      MBLOG_WARN << "Get graph file failed, " << rspret.WrapErrormsgs();
+      std::string msg = "demo file is invalid.";
+      rspret = {STATUS_BADCONF, msg};
       return;
     }
 
+    AddSafeHeader(response);
     response.status = HttpStatusCodes::OK;
     response.set_content(json_data, JSON);
     return;
   } catch (const std::exception& e) {
-    MBLOG_ERROR << "solution get failed, " << e.what();
-    response.status = HttpStatusCodes::INTERNAL_ERROR;
-    response.set_content(HTTP_RESP_ERR_GETINFO_FAILED, TEXT_PLAIN);
+    MBLOG_ERROR << "demo get failed, " << e.what();
+    rspret = {STATUS_FAULT,
+              std::string(HTTP_RESP_ERR_GETINFO_FAILED) + e.what()};
     return;
   }
+
+  return;
+}
+
+void ModelboxEditorPlugin::HandlerPassEncode(const httplib::Request& request,
+                                             httplib::Response& response) {
+  std::string out;
+  nlohmann::json response_json;
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
+  try {
+    std::string keypass;
+    std::string plainpass;
+    std::string sysrelated = " -n";
+    keypass = "modelbox-tool key -pass";
+
+    auto body = nlohmann::json::parse(request.body);
+
+    if (body.find("password") == body.end()) {
+      std::string errmsg = "password key not found";
+      rspret = {modelbox::STATUS_NOTFOUND, errmsg};
+      return;
+    }
+
+    plainpass = body["password"].get<std::string>();
+
+    if (body.find("sysrelated") != body.end()) {
+      auto issys = body["sysrelated"].get<bool>();
+      if (issys == false) {
+        sysrelated = "";
+      }
+    }
+
+    keypass += sysrelated;
+    plainpass += "\n";
+    rspret = RunCommand(keypass, &plainpass, &out);
+  } catch (const std::exception& e) {
+    std::string errmsg = "encrypt password failed, " + std::string(e.what());
+    rspret = {STATUS_FAULT, errmsg};
+    return;
+  }
+
+  if (rspret != modelbox::STATUS_SUCCESS) {
+    MBLOG_WARN << rspret.WrapErrormsgs();
+    return;
+  }
+
+  auto lines = modelbox::StringSplit(out, '\n');
+  if (lines.size() != 2) {
+    rspret = {STATUS_FAULT, "Run key command failed."};
+    return;
+  }
+
+  for (auto const& line : lines) {
+    auto values = modelbox::StringSplit(line, ':');
+    if (values.size() != 2) {
+      rspret = {STATUS_FAULT, "Get values failed."};
+      return;
+    }
+
+    if (values[0].find("Key") != std::string::npos) {
+      response_json["key"] =
+          std::string(values[1].begin() + 1, values[1].end());
+    } else if (values[0].find("Encrypted password") >= 0) {
+      response_json["enpass"] =
+          std::string(values[1].begin() + 1, values[1].end());
+    }
+  }
+
+  AddSafeHeader(response);
+  response.status = HttpStatusCodes::OK;
+  response.set_content(response_json.dump(), JSON);
 
   return;
 }
@@ -503,9 +1092,12 @@ bool ModelboxEditorPlugin::ParseConfig(
                                  config->GetString("server.ip", "127.0.0.1"));
   server_port_ = config->GetString("editor.port",
                                    config->GetString("server.port", "1104"));
-  solution_path_ =
-      config->GetString("editor.solution_graphs", DEFAULT_SOLUTION_GRAPHS_ROOT);
+  demo_path_ = config->GetString("editor.demo_root", DEFAULT_DEMO_ROOT_DIR);
 
+  template_cmd_ = config->GetString("editor.test.template_cmd",
+                                    DEFAULT_MODELBOX_TEMPLATE_CMD);
+  template_cmd_env_ = config->GetString("editor.test.template_cmd_env", "");
+  template_dir_ = config->GetString("editor.template_dir", DEFAULT_PROJECT_TEMPLATE_DIR);
   acl_white_list_ = config->GetStrings("acl.allow");
   return true;
 }

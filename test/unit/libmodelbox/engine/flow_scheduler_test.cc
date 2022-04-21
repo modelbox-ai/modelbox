@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-
 #include "engine/scheduler/flow_scheduler.h"
 
 #include <functional>
 #include <future>
 #include <thread>
 
-#include "modelbox/base/log.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "mockflow.h"
+#include "modelbox/base/log.h"
 
 namespace modelbox {
 
@@ -46,12 +45,11 @@ class FlowSchedulerTest : public testing::Test {
 
 class MockNode : public Node {
  public:
-  MockNode(const std::string& unit_type, const std::string& unit_name,
-           const std::string& unit_device_id,
-           std::shared_ptr<FlowUnitManager> flowunit_mgr)
-      : Node(unit_type, unit_name, unit_device_id, flowunit_mgr, nullptr) {}
+  MockNode() {}
   MOCK_METHOD1(Run, Status(RunType type));
 };
+
+static SessionManager g_test_session_manager;
 
 TEST_F(FlowSchedulerTest, ShowScheduleStatus) {
   auto device_ = flow_->GetDevice();
@@ -70,10 +68,11 @@ TEST_F(FlowSchedulerTest, ShowScheduleStatus) {
     config->SetProperty("interval_time", 1000);
     config->SetProperty("queue_size_event", 1);
 
-    node_a =
-        std::make_shared<Node>("listen", "cpu", "0", flowunit_mgr, nullptr);
+    node_a = std::make_shared<Node>();
+    node_a->SetFlowUnitInfo("listen", "cpu", "0", flowunit_mgr);
     node_a->SetName("gendata");
     node_a->Init({}, {"Out_1", "Out_2"}, config);
+    node_a->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_a));
   }
 
@@ -82,10 +81,11 @@ TEST_F(FlowSchedulerTest, ShowScheduleStatus) {
     auto config = configbuilder.Build();
     config->SetProperty("queue_size", "1");
 
-    node_b = std::make_shared<Node>("tensorlist_test_1", "cpu", "0",
-                                    flowunit_mgr, nullptr);
+    node_b = std::make_shared<Node>();
+    node_b->SetFlowUnitInfo("tensorlist_test_1", "cpu", "0", flowunit_mgr);
     node_b->SetName("tensorlist_test_1");
     node_b->Init({"IN1"}, {"OUT1"}, config);
+    node_b->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_b));
   }
 
@@ -97,9 +97,11 @@ TEST_F(FlowSchedulerTest, ShowScheduleStatus) {
     config->SetProperty("max_count", 1);
     config->SetProperty("batch_size", 1);
 
-    node_c = std::make_shared<Node>("slow", "cpu", "0", flowunit_mgr, nullptr);
+    node_c = std::make_shared<Node>();
+    node_c->SetFlowUnitInfo("slow", "cpu", "0", flowunit_mgr);
     node_c->SetName("slow");
     node_c->Init({"IN1", "IN2"}, {}, config);
+    node_c->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_c));
   }
 

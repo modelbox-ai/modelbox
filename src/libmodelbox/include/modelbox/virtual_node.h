@@ -19,120 +19,16 @@
 
 #include <chrono>
 
+#include "external_data_map.h"
 #include "modelbox/base/device.h"
+#include "modelbox/error.h"
+#include "modelbox/external_data_map.h"
 #include "modelbox/node.h"
 #include "modelbox/statistics.h"
 
 namespace modelbox {
 
-class ExternalDataMap {
- public:
-  virtual ~ExternalDataMap() = default;
-  virtual std::shared_ptr<BufferList> CreateBufferList() = 0;
-  virtual Status Send(std::string port_name,
-                      std::shared_ptr<BufferList> buffer_list) = 0;
-  virtual Status Recv(OutputBufferList& map_buffer_list, int timeout = 0) = 0;
-  virtual Status Close() = 0;
-  virtual std::shared_ptr<SessionContext> GetSessionContext() = 0;
-  virtual Status Shutdown() = 0;
-  virtual Status SetOutputMeta(std::string port_name,
-                               std::shared_ptr<DataMeta> meta) = 0;
-  virtual std::shared_ptr<FlowUnitError> GetLastError() = 0;
-
-  virtual std::shared_ptr<Configuration> GetSessionConfig() = 0;
-};
-
-class OutputUnmatchVirtualNode;
-class InputVirtualNode;
-class ExternalDataSelect;
-class VirtualStream;
-class ExternalDataMapImpl
-    : public ExternalDataMap,
-      public std::enable_shared_from_this<ExternalDataMapImpl> {
- public:
-  ExternalDataMapImpl(std::shared_ptr<NodeBase> input_node,
-                      std::shared_ptr<NodeBase> output_node,
-                      std::shared_ptr<StatisticsItem> graph_stats = nullptr);
-  virtual ~ExternalDataMapImpl() = default;
-  std::shared_ptr<BufferList> CreateBufferList() override;
-
-  Status Send(std::string port_name,
-              std::shared_ptr<BufferList> buffer_list) override;
-
-  // if we have no data to recv return STATUS_SUCESS else return STATUS_CONTINUE
-  Status Recv(OutputBufferList& map_buffer_list, int timeout = 0) override;
-
-  // unusual stop the stream
-  Status Close() override;
-
-  std::shared_ptr<SessionContext> GetSessionContext() override;
-
-  Status SetOutputMeta(std::string port_name,
-                       std::shared_ptr<DataMeta> meta) override;
-
-  // normal close the stream
-  Status Shutdown() override;
-
-  std::shared_ptr<FlowUnitError> GetLastError() override;
-
-  std::shared_ptr<Configuration> GetSessionConfig() override;
-
- private:
-  friend class SessionContext;
-  friend class Task;
-  friend class Graph;
-  friend class ExternalDataSelect;
-
-  void Init();
-  Status SendData(OriginDataMap& data);
-  void SetEndError(std::shared_ptr<FlowUnitError> error);
-  Status SetOutputBuffer(OutputBufferList& output);
-  void UpdateInputMeta(std::string port_name,
-                       std::shared_ptr<IndexBufferList> index_buffer_list);
-  void SetSelector(std::shared_ptr<ExternalDataSelect> selector);
-  bool GetReadyFlag();
-  void UnbindSession();
-
-  // lock_ protcet virtual_stream_
-  std::mutex lock_;
-  std::shared_ptr<Device> device_;
-  std::shared_ptr<FlowUnitError> error_;
-  bool end_flag_;
-  std::unordered_map<std::string, std::shared_ptr<InPort>> input_ports_;
-  std::shared_ptr<BlockingQueue<OutputBufferList>> output_buffer_cache_;
-  std::weak_ptr<SessionContext> session_context_;
-  std::shared_ptr<VirtualStream> virtual_stream_;
-  std::unordered_map<std::string, std::list<std::shared_ptr<Buffer>>>
-      input_buffer_cache_;
-  std::unordered_map<std::string, std::shared_ptr<DataMeta>> input_meta_;
-  std::unordered_map<std::string, std::shared_ptr<DataMeta>> output_meta_;
-
-  std::weak_ptr<ExternalDataSelect> selector_;
-};
-
-class ExternalDataSelect
-    : public std::enable_shared_from_this<ExternalDataSelect> {
- public:
-  ExternalDataSelect();
-  virtual ~ExternalDataSelect();
-  void RegisterExternalData(std::shared_ptr<ExternalDataMap> externl_data);
-  void RemoveExternalData(std::shared_ptr<ExternalDataMap>& externl_data);
-
-  Status SelectExternalData(
-      std::list<std::shared_ptr<ExternalDataMap>>& external_list,
-      std::chrono::duration<long, std::milli> timeout =
-          std::chrono::milliseconds(-1));
-
- private:
-  friend class ExternalDataMapImpl;
-  void NotifySelect();
-  bool IsExtenalDataReady();
-  std::list<std::shared_ptr<ExternalDataMapImpl>> external_list_;
-  std::mutex mtx_;
-  std::condition_variable cv_;
-};
-
-class InputVirtualNode : public DataMatcherNode {
+class InputVirtualNode : public Node {
  public:
   InputVirtualNode(const std::string& unit_device_name,
                    const std::string& unit_device_id,
@@ -158,26 +54,22 @@ class InputVirtualNode : public DataMatcherNode {
    */
   Status Run(RunType type) override;
 
-  bool ExternalToOutput(InputIndexBuffer& ext_buffer,
-                        OutputIndexBuffer& output);
-
   std::shared_ptr<Device> GetDevice() override;
 
  private:
-  Status RecvExternalData(InputIndexBuffer& input_buffer);
-  InputIndexBuffer CreateExternalBuffer();
   std::shared_ptr<DeviceManager> device_mgr_;
   std::string device_name_;
   std::string device_id_;
 };
 
-class OutputVirtualNode : public DataMatcherNode {
+class OutputVirtualNode : public Node {
  public:
   OutputVirtualNode(const std::string& device_name,
                     const std::string& device_id,
                     std::shared_ptr<DeviceManager> device_manager);
 
   virtual ~OutputVirtualNode();
+
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,
               std::shared_ptr<Configuration> config) override;
@@ -199,47 +91,38 @@ class OutputVirtualNode : public DataMatcherNode {
   std::shared_ptr<Device> GetDevice() override;
 
  private:
-  Status RecvData(InputIndexBuffer& input_buffer);
+  void EraseInvalidData();
+
   std::shared_ptr<DeviceManager> device_mgr_;
   std::string device_name_;
   std::string device_id_;
 };
 
-class MultiLevelCache {
+class SessionUnmatchCache {
  public:
-  MultiLevelCache();
+  SessionUnmatchCache(const std::set<std::string>& port_names);
 
-  virtual ~MultiLevelCache();
+  Status CacheBuffer(const std::string& port_name,
+                     std::shared_ptr<Buffer> buffer);
 
-  void PushBack(std::shared_ptr<IndexBuffer>& buffer_vector);
+  std::shared_ptr<FlowUnitError> GetLastError();
 
-  /**
-   * @brief Pop out the cache buffer vector
-   *
-   * @param buffer_vector
-   * @return true if the cache is not empty
-   * @return false if the cache is empty
-   */
-  bool PopOut(std::vector<std::shared_ptr<Buffer>>& buffer_vector);
+  Status PopCache(OutputBufferList& output_buffer_list);
 
-  bool PopOneGroup(std::string cur_key,
-                   std::vector<std::shared_ptr<Buffer>>& buffer_vector);
-  bool UpdateNextGroup();
-
-  std::shared_ptr<FlowUnitError> GetError();
+  bool AllPortStreamEnd();
 
  private:
-  uint32_t order_;
-  std::map<std::shared_ptr<BufferGroup>,
-           std::vector<std::shared_ptr<IndexBuffer>>>
-      cache_;
-  std::vector<uint32_t> cur_order_seq_;
-  std::unordered_map<std::string, std::shared_ptr<BufferGroup>> key_bg_map_;
-  std::shared_ptr<BufferGroup> cur_buffer_group_;
-  std::shared_ptr<FlowUnitError> error_;
+  std::unordered_map<std::string, std::map<std::shared_ptr<Stream>,
+                                           std::vector<std::shared_ptr<Buffer>>,
+                                           StreamPtrOrderCmp>>
+      port_streams_map_;
+
+  std::shared_ptr<FlowUnitError> last_error_;
+
+  std::unordered_map<std::string, bool> port_end_flag_map_;
 };
 
-class OutputUnmatchVirtualNode : public NodeBase {
+class OutputUnmatchVirtualNode : public Node {
  public:
   OutputUnmatchVirtualNode(const std::string& device_name,
                            const std::string& device_id,
@@ -271,12 +154,9 @@ class OutputUnmatchVirtualNode : public NodeBase {
   std::shared_ptr<DeviceManager> device_mgr_;
   std::string device_name_;
   std::string device_id_;
-  std::unordered_map<
-      std::shared_ptr<SessionContext>,
-      std::unordered_map<std::string, std::shared_ptr<MultiLevelCache>>>
-      cache_map_;
-  std::unordered_map<std::shared_ptr<SessionContext>, uint32_t>
-      session_sucess_count_;
+  std::unordered_map<std::shared_ptr<Session>,
+                     std::shared_ptr<SessionUnmatchCache>>
+      session_cache_map_;
 };
 
 }  // namespace modelbox

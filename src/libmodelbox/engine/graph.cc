@@ -18,6 +18,8 @@
 
 #include "modelbox/base/log.h"
 #include "modelbox/base/uuid.h"
+#include "modelbox/graph_checker.h"
+#include "modelbox/external_data_map.h"
 #include "modelbox/profiler.h"
 #include "scheduler/flow_scheduler.h"
 
@@ -39,10 +41,13 @@ Graph::Graph()
       src_to_dst_(),
       dst_to_src_(),
       topo_order_(),
-      scheduler_(nullptr) {}
+      scheduler_(nullptr),
+      is_stop_(false) {}
 
 Graph::~Graph() {
-  CloseNodes();
+  if (!is_stop_) {
+    Shutdown();
+  }
   src_to_dst_.clear();
   dst_to_src_.clear();
   topo_order_.clear();
@@ -111,16 +116,33 @@ Status Graph::CheckLoopStructureNode() {
   return status;
 }
 
-Status Graph::Build(std::shared_ptr<GCGraph> g) {
-  if (g == nullptr) {
-    return STATUS_INVALID;
-  }
-
+void Graph::ShowGraphInfo(std::shared_ptr<GCGraph> g) {
   name_ = g->GetGraphName();
   MBLOG_INFO << "Build graph name:" << name_ << ", id:" << id_;
   g->ShowAllSubGraph();
   g->ShowAllNode();
   g->ShowAllEdge();
+}
+
+Status Graph::CheckGraph() {
+  auto start_nodes = GetStartNodes();
+  auto graph_checker = std::make_shared<GraphChecker>(topo_order_, start_nodes,
+                                                      loop_links_, loop_structures_, src_to_dst_);
+  Status res = graph_checker->Check();
+  if (!res) {
+    return res;
+  }
+
+  graph_checker->SetMatchNodes();
+  graph_checker->ShowMatchNodes();
+
+  return res;
+}
+
+Status Graph::Build(std::shared_ptr<GCGraph> g) {
+  if (g == nullptr) {
+    return STATUS_INVALID;
+  }
 
   if (flowunit_mgr_ == nullptr || device_mgr_ == nullptr ||
       config_ == nullptr) {
@@ -128,6 +150,8 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
     auto ret = Status(STATUS_INVALID, msg);
     return ret;
   }
+
+  ShowGraphInfo(g);
 
   // build node and add link
   Status status = BuildGraph(g);
@@ -146,9 +170,9 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
 
   status = FindLoopStructure();
   if (!status) {
-    auto msg = "there is no loop structure in the graph";
-    MBLOG_DEBUG << msg;
-    return status;
+    auto msg = "loop node is illegal.";
+    auto ret = Status(status, msg);
+    return ret;
   }
 
   status = GenerateTopology();
@@ -172,16 +196,16 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
     return ret;
   }
 
-  status = CheckStreamMatcher();
+  status = CheckLoopStructureNode();
   if (!status) {
-    auto msg = "check stream fail, msg: " + status.WrapErrormsgs();
+    auto msg = "check loop node fail.";
     auto ret = Status(status, msg);
     return ret;
   }
 
-  status = CheckLoopStructureNode();
+  status = CheckGraph();
   if (!status) {
-    auto msg = "check loop node fail.";
+    auto msg = "check graph failed.";
     auto ret = Status(status, msg);
     return ret;
   }
@@ -242,6 +266,8 @@ std::shared_ptr<OutPort> Graph::GetOutPort(const std::string &nodeName,
                                            const std::string &portName) const {
   auto ite = nodes_.find(nodeName);
   if (ite == nodes_.end()) {
+    auto msg = "node is not found, name: " + nodeName;
+    StatusError = {STATUS_BADCONF, msg};
     return nullptr;
   }
 
@@ -290,14 +316,14 @@ Status Graph::AddLink(const std::string &srcNodeName,
   if (srcPort == nullptr) {
     auto msg =
         "src port is not exist. node: " + srcNodeName + " port: " + srcPortName;
-    return {STATUS_INVALID, msg};
+    return {STATUS_BADCONF, msg};
   }
 
   auto dstPort = GetInPort(dstNodeName, dstPortName);
   if (dstPort == nullptr) {
     auto msg =
         "dst port is not exist. node: " + dstNodeName + " port: " + dstPortName;
-    return {STATUS_INVALID, msg};
+    return {STATUS_BADCONF, msg};
   }
 
   return AddLink(srcPort, dstPort);
@@ -471,10 +497,12 @@ std::shared_ptr<ExternalDataMap> Graph::CreateExternalDataMap() {
     MBLOG_ERROR << "virtual input_node is nullptr";
     return nullptr;
   }
-  auto extrern_data = std::make_shared<ExternalDataMapImpl>(
-      input_node_, output_node_, graph_stats_);
-  extrern_data->Init();
-  return extrern_data;
+  auto session = session_manager_.CreateSession(graph_stats_);
+  auto init_stream = std::make_shared<Stream>(session);
+  auto extern_data =
+      std::make_shared<ExternalDataMapImpl>(input_node_, init_stream);
+  session->SetSessionIO(extern_data);
+  return extern_data;
 }
 
 Status Graph::UpdateGraphConfigToNode(std::shared_ptr<GCGraph> g,
@@ -533,15 +561,17 @@ Status Graph::BuildFlowunitNode(std::shared_ptr<GCGraph> g,
     return {STATUS_BADCONF, msg};
   }
 
-  auto node = std::make_shared<Node>(flowunit, device, deviceid, flowunit_mgr_,
-                                     profiler_, graph_stats_);
-
+  auto node = std::make_shared<Node>();
+  node->SetFlowUnitInfo(flowunit, device, deviceid, flowunit_mgr_);
+  node->SetProfiler(profiler_);
+  node->SetStats(graph_stats_);
+  node->SetSessionManager(&session_manager_);
+  node->SetName(name);
   auto status = InitNode(node, *inports, *outports, node_config);
   if (!status) {
     return status;
   }
 
-  node->SetName(name);
   status = AddNode(node);
   if (!status) {
     auto msg = "add node failed. name: '" + name + "'";
@@ -648,11 +678,6 @@ Status Graph::BuildNode(std::shared_ptr<GCGraph> g,
 }
 
 Status Graph::BuildNodes(std::shared_ptr<GCGraph> g) {
-  if (g == nullptr) {
-    auto msg = "g is null pointer.";
-    return {STATUS_INVALID, msg};
-  }
-
   auto strict = config_->GetBool("graph.strict", true);
 
   auto nodes = g->GetAllNodes();
@@ -665,7 +690,7 @@ Status Graph::BuildNodes(std::shared_ptr<GCGraph> g) {
     if (!status) {
       MBLOG_ERROR << status;
       auto msg = "build node failed. name: '" + name + "'";
-      return {STATUS_FAULT, msg};
+      return {status, msg};
     }
     MBLOG_INFO << "build node " << name << " success";
   }
@@ -950,15 +975,6 @@ Status Graph::Topology(
   return STATUS_OK;
 }
 
-Status Graph::CheckStreamMatcher() {
-  auto checkingNodes = GetStartNodes();
-  auto allNodes = GetAllNodes();
-  allNodes.erase(output_node_);
-  auto stream_matcher =
-      std::make_shared<StreamMatcher>(checkingNodes, allNodes);
-  return stream_matcher->StartCheck();
-}
-
 void Graph::FindLoopSeq(std::shared_ptr<NodeBase> &root_node,
                         std::vector<std::string> &vis) {
   auto dstNodes = GetDstNodesByNode(root_node->GetName());
@@ -1136,7 +1152,7 @@ Status Graph::InitPort() {
                  outport->GetName() + " -> " + inport->GetNode()->GetName() +
                  ":" + inport->GetName();
       MBLOG_INFO << msg;
-      outport->AddPort(inport);
+      outport->ConnectPort(inport);
     }
   }
 
@@ -1228,6 +1244,10 @@ Status Graph::Shutdown() {
   if (profiler_ != nullptr) {
     profiler_->Stop();
   }
+
+  CloseNodes();
+
+  is_stop_ = true;
 
   return STATUS_OK;
 }

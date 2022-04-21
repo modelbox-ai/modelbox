@@ -52,12 +52,10 @@ class FlowTest : public testing::Test {
 
 class MockNode : public Node {
  public:
-  MockNode(const std::string& unit_type, const std::string& unit_name,
-           const std::string& unit_device_id,
-           std::shared_ptr<FlowUnitManager> flowunit_mgr)
-      : Node(unit_type, unit_name, unit_device_id, flowunit_mgr, nullptr) {}
   MOCK_METHOD1(Run, Status(RunType type));
 };
+
+static SessionManager g_test_session_manager;
 
 TEST_F(FlowTest, All) {
   auto graph = std::make_shared<Graph>();
@@ -71,10 +69,11 @@ TEST_F(FlowTest, All) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    node_a =
-        std::make_shared<Node>("listen", "cpu", "0", flowunit_mgr, nullptr);
+    node_a = std::make_shared<Node>();
+    node_a->SetFlowUnitInfo("listen", "cpu", "0", flowunit_mgr);
     node_a->SetName("gendata");
     node_a->Init({}, {"Out_1", "Out_2"}, config);
+    node_a->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_a));
   }
 
@@ -82,9 +81,11 @@ TEST_F(FlowTest, All) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    node_b = std::make_shared<Node>("add", "cpu", "0", flowunit_mgr, nullptr);
+    node_b = std::make_shared<Node>();
+    node_b->SetFlowUnitInfo("add", "cpu", "0", flowunit_mgr);
     node_b->SetName("addop");
     node_b->Init({"In_1", "In_2"}, {"Out_1"}, config);
+    node_b->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_b));
   }
 
@@ -93,10 +94,11 @@ TEST_F(FlowTest, All) {
     auto config = configbuilder.Build();
     config->SetProperty("max_count", 50);
 
-    node_c = std::make_shared<Node>("check_print", "cpu", "0", flowunit_mgr,
-                                    nullptr);
+    node_c = std::make_shared<Node>();
+    node_c->SetFlowUnitInfo("check_print", "cpu", "0", flowunit_mgr);
     node_c->SetName("check_print");
     node_c->Init({"IN1", "IN2", "IN3"}, {}, config);
+    node_c->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_c));
   }
 
@@ -130,11 +132,12 @@ TEST_F(FlowTest, PortEnlargeQueue) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    start_node = std::make_shared<Node>("test_orgin_0_2", "cpu", "0",
-                                        flowunit_mgr, nullptr);
+    start_node = std::make_shared<Node>();
+    start_node->SetFlowUnitInfo("test_orgin_0_2", "cpu", "0", flowunit_mgr);
     start_node->SetName("test_orgin_0_2");
     auto status = start_node->Init({}, {"Out_1", "Out_2"}, config);
     EXPECT_EQ(status, STATUS_OK);
+    start_node->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(start_node));
   }
 
@@ -142,11 +145,12 @@ TEST_F(FlowTest, PortEnlargeQueue) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    condition_node = std::make_shared<Node>("half-condition", "cpu", "0",
-                                            flowunit_mgr, nullptr);
+    condition_node = std::make_shared<Node>();
+    condition_node->SetFlowUnitInfo("half-condition", "cpu", "0", flowunit_mgr);
     condition_node->SetName("half-condition");
     auto status = condition_node->Init({"In_1"}, {"Out_1", "Out_2"}, config);
     EXPECT_EQ(status, STATUS_OK);
+    condition_node->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(condition_node));
   }
 
@@ -154,11 +158,12 @@ TEST_F(FlowTest, PortEnlargeQueue) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    simple_pass_node = std::make_shared<Node>("simple_pass", "cpu", "0",
-                                              flowunit_mgr, nullptr);
+    simple_pass_node = std::make_shared<Node>();
+    simple_pass_node->SetFlowUnitInfo("simple_pass", "cpu", "0", flowunit_mgr);
     simple_pass_node->SetName("simple_pass");
     auto status = simple_pass_node->Init({"In_1"}, {"Out_1"}, config);
     EXPECT_EQ(status, STATUS_OK);
+    simple_pass_node->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(simple_pass_node));
   }
 
@@ -167,11 +172,12 @@ TEST_F(FlowTest, PortEnlargeQueue) {
     auto config = configbuilder.Build();
     config->SetProperty("queue_size", "5");
 
-    receive_node =
-        std::make_shared<Node>("test_2_0", "cpu", "0", flowunit_mgr, nullptr);
+    receive_node = std::make_shared<Node>();
+    receive_node->SetFlowUnitInfo("test_2_0", "cpu", "0", flowunit_mgr);
     receive_node->SetName("receive");
     auto status = receive_node->Init({"In_1", "In_2"}, {}, config);
     EXPECT_EQ(status, STATUS_OK);
+    receive_node->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(receive_node));
   }
 
@@ -191,8 +197,6 @@ TEST_F(FlowTest, PortEnlargeQueue) {
       simple_pass_node->GetFlowUnitGroup()->GetExecutorUnit());
   EXPECT_CALL(*pass_fu, Process(testing::_)).Times(5).InSequence(s1);
 
-  EXPECT_EQ(receive_node->GetSingleMatchCache()->GetLimitCount(), 5);
-
   ConfigurationBuilder configbuilder;
   auto config = configbuilder.Build();
   graph->Initialize(flowunit_mgr, device_mgr, nullptr, config);
@@ -202,7 +206,6 @@ TEST_F(FlowTest, PortEnlargeQueue) {
   Status retval;
   graph->Wait(0, &retval);
   EXPECT_EQ(retval, STATUS_STOP);
-  EXPECT_EQ(receive_node->GetSingleMatchCache()->GetLimitCount(), 5);
 }
 
 TEST_F(FlowTest, TensorList_All) {
@@ -217,10 +220,11 @@ TEST_F(FlowTest, TensorList_All) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    node_a =
-        std::make_shared<Node>("listen", "cpu", "0", flowunit_mgr, nullptr);
+    node_a = std::make_shared<Node>();
+    node_a->SetFlowUnitInfo("listen", "cpu", "0", flowunit_mgr);
     node_a->SetName("gendata");
     node_a->Init({}, {"Out_1", "Out_2"}, config);
+    node_a->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_a));
   }
 
@@ -228,10 +232,11 @@ TEST_F(FlowTest, TensorList_All) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    node_b = std::make_shared<Node>("tensorlist_test_1", "cpu", "0",
-                                    flowunit_mgr, nullptr);
+    node_b = std::make_shared<Node>();
+    node_b->SetFlowUnitInfo("tensorlist_test_1", "cpu", "0", flowunit_mgr);
     node_b->SetName("tensorlist_test_1");
     node_b->Init({"IN1"}, {"OUT1"}, config);
+    node_b->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_b));
   }
 
@@ -239,10 +244,12 @@ TEST_F(FlowTest, TensorList_All) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    node_c = std::make_shared<Node>("check_tensorlist_test_1", "cpu", "0",
-                                    flowunit_mgr, nullptr);
+    node_c = std::make_shared<Node>();
+    node_c->SetFlowUnitInfo("check_tensorlist_test_1", "cpu", "0",
+                            flowunit_mgr);
     node_c->SetName("check_tensorlist_test_1");
     node_c->Init({"IN1", "IN2"}, {}, config);
+    node_c->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_c));
   }
 
@@ -274,11 +281,13 @@ TEST_F(FlowTest, FAILED_ALL) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    node_a = std::make_shared<MockNode>("listen", "cpu", "0", flowunit_mgr);
+    node_a = std::make_shared<MockNode>();
+    node_a->SetFlowUnitInfo("listen", "cpu", "0", flowunit_mgr);
     EXPECT_CALL(*node_a, Run(testing::_))
         .WillRepeatedly(testing::Return(STATUS_FAULT));
     node_a->SetName("gendata");
     node_a->Init({}, {"Out_1", "Out_2"}, config);
+    node_a->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_a));
   }
 
@@ -286,9 +295,11 @@ TEST_F(FlowTest, FAILED_ALL) {
     ConfigurationBuilder configbuilder;
     auto config = configbuilder.Build();
 
-    node_b = std::make_shared<Node>("add", "cpu", "0", flowunit_mgr, nullptr);
+    node_b = std::make_shared<Node>();
+    node_b->SetFlowUnitInfo("add", "cpu", "0", flowunit_mgr);
     node_b->SetName("addop");
     node_b->Init({"In_1", "In_2"}, {"Out_1"}, config);
+    node_b->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_b));
   }
 
@@ -297,10 +308,11 @@ TEST_F(FlowTest, FAILED_ALL) {
     auto config = configbuilder.Build();
     config->SetProperty("max_count", 50);
 
-    node_c = std::make_shared<Node>("check_print", "cpu", "0", flowunit_mgr,
-                                    nullptr);
+    node_c = std::make_shared<Node>();
+    node_c->SetFlowUnitInfo("check_print", "cpu", "0", flowunit_mgr);
     node_c->SetName("check_print");
     node_c->Init({"IN1", "IN2", "IN3"}, {}, config);
+    node_c->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_c));
   }
 
@@ -424,10 +436,11 @@ TEST_F(FlowTest, DISABLED_Perf) {
     config->SetProperty("interval_time", 0);
     config->SetProperty("queue_size", 1024);
 
-    node_a =
-        std::make_shared<Node>("listen", "cpu", "0", flowunit_mgr, nullptr);
+    node_a = std::make_shared<Node>();
+    node_a->SetFlowUnitInfo("listen", "cpu", "0", flowunit_mgr);
     node_a->SetName("gendata");
     node_a->Init({}, {"Out_1", "Out_2"}, config);
+    node_a->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_a));
   }
 
@@ -436,9 +449,11 @@ TEST_F(FlowTest, DISABLED_Perf) {
     auto config = configbuilder.Build();
     config->SetProperty("queue_size", 1024);
 
-    node_b = std::make_shared<Node>("add", "cpu", "0", flowunit_mgr, nullptr);
+    node_b = std::make_shared<Node>();
+    node_b->SetFlowUnitInfo("add", "cpu", "0", flowunit_mgr);
     node_b->SetName("add");
     node_b->Init({"In_1", "In_2"}, {"Out_1"}, config);
+    node_b->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_b));
   }
 
@@ -448,10 +463,11 @@ TEST_F(FlowTest, DISABLED_Perf) {
     config->SetProperty("max_count", INT64_MAX);
     config->SetProperty("queue_size", 1024);
 
-    node_c = std::make_shared<Node>("check_print", "cpu", "0", flowunit_mgr,
-                                    nullptr);
+    node_c = std::make_shared<Node>();
+    node_c->SetFlowUnitInfo("check_print", "cpu", "0", flowunit_mgr);
     node_c->SetName("check_print");
     node_c->Init({"IN1", "IN2", "IN3"}, {}, config);
+    node_c->SetSessionManager(&g_test_session_manager);
     EXPECT_TRUE(graph->AddNode(node_c));
   }
 
@@ -553,7 +569,7 @@ TEST_F(FlowTest, Statistics) {
   external->Send("input", input_buffer);
   OutputBufferList output_buffer;
   external->Recv(output_buffer);
-  external->Shutdown();
+  external->Close();
 
   flow->Stop();
 

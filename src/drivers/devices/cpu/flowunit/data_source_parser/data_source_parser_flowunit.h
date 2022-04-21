@@ -64,22 +64,6 @@ class DataSourceParserFlowUnit : public modelbox::FlowUnit {
   /* run when processing data */
   modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
 
-  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx);
-
-  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx) {
-    return modelbox::STATUS_OK;
-  };
-
-  modelbox::Status DataGroupPre(
-      std::shared_ptr<modelbox::DataContext> data_ctx) {
-    return modelbox::STATUS_OK;
-  };
-
-  modelbox::Status DataGroupPost(
-      std::shared_ptr<modelbox::DataContext> data_ctx) {
-    return modelbox::STATUS_OK;
-  };
-
  private:
   std::shared_ptr<modelbox::SourceContext> Parse(
       std::shared_ptr<modelbox::SessionContext> session_context,

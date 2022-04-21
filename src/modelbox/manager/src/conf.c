@@ -31,6 +31,7 @@
 MANAGER_LOG_LEVEL conf_log_level = MANAGER_LOG_INFO;
 int conf_log_num = DEFAULT_LOG_NUM;
 size_t conf_log_size = DEFAULT_LOG_SIZE;
+char conf_log_file[PATH_MAX];
 
 int conf_parse_int(void *item, int argc, char *argv[]) {
   if (argc < 0) {
@@ -344,6 +345,9 @@ errout:
 
 static struct config_map common_config_map[] = {
     {CONF_LOG_LEVEL, conf_parse_loglevel, NULL},
+    {CONF_LOG_FILE, conf_parse_string,
+     .item =
+         &(struct CONF_PARSE_STRING){.value = conf_log_file, .max = PATH_MAX}},
     {CONF_LOG_NUM, conf_parse_int,
      .item = &(
          struct CONF_PARSE_INT){.value = &conf_log_num, .min = 1, .max = 512}},

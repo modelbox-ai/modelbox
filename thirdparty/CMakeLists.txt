@@ -102,6 +102,12 @@ set(CPP_HTTPLIB_DIR ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib/build)
 configure_file(CMake/cpp_httplib_cmakelist.in ${CPP_HTTPLIB_DIR}/CMakeLists.txt @ONLY)
 add_subdirectory(${CPP_HTTPLIB_DIR} ${THIRDPARTY_DOWNLOAD_WORKING_DIR}/cpp_httplib  EXCLUDE_FROM_ALL)
 
+if (${WITH_ALL_DEMO})
+  set(DEMO_DIR ${THIRDPARTY_DOWNLOAD_DIR}/demo)
+  configure_file(CMake/Demo_Files_CMakeList.in ${DEMO_DIR}/CMakeLists.txt @ONLY)
+  add_subdirectory(${DEMO_DIR} ${THIRDPARTY_DOWNLOAD_WORKING_DIR}/demo EXCLUDE_FROM_ALL)
+endif()
+
 # APIGW_CPP的签名库
 set(APIGW_CPP_DIR ${THIRDPARTY_DOWNLOAD_BINARY_DIR}/APIGW-cpp-sdk-1.0.2)
 configure_file(CMake/APIGW_CPP_CMakeList.in ${APIGW_CPP_DIR}/CMakeLists.txt @ONLY)

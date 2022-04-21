@@ -198,6 +198,7 @@ class Job {
   JobStatus status_{JOB_STATUS_UNKNOWN};
   ErrorInfo error_info_;
   std::shared_ptr<modelbox::Flow> flow_;
+  std::shared_ptr<modelbox::TimerTask> heart_beat_task_;
 };
 
 }  // namespace modelbox

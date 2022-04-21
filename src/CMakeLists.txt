@@ -22,18 +22,12 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
 endif()
 
+set(MODELBOX_DEMO_INSTALL_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/modelbox/demo")
+
 add_subdirectory(libmodelbox)
 add_subdirectory(drivers)
 add_subdirectory(develop)
 add_subdirectory(python)
 add_subdirectory(java)
-
-set(MODELBOX_SOLUTION_INSTALL_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/modelbox/solution")
-
 add_subdirectory(modelbox)
-
-if (${WITH_SOLUTION})
-    add_subdirectory(solution)
-else()
-    message(STATUS "Skip buiding solutions")
-endif()
+add_subdirectory(demo)

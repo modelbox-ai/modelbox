@@ -120,6 +120,13 @@ class DeferGuardChain {
 #define Defer \
   ::modelbox::DeferGuard MODELBOX_CONCAT(__defer__, __LINE__) = [&]()
 
+/**
+ * @brief Extend defer with capture list args
+ */
+#define DeferExt(...) \
+  ::modelbox::DeferGuard MODELBOX_CONCAT(__defer__, __LINE__) = [##__VA_ARGS__]()
+
+
 enum LIST_FILE_TYPE : unsigned int {
   LIST_FILES_ALL = 0x3,
   LIST_FILES_FILE = 0x1,
@@ -161,6 +168,14 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
  * @return create result
  */
 Status CreateDirectory(const std::string &path);
+
+/**
+ * @brief Revmoe directory recursively
+ * 
+ * @param path path to directory
+ * @return Status remove result
+ */
+void RemoveDirectory(const std::string &path);
 
 /**
  * @brief Copy from from src to dest

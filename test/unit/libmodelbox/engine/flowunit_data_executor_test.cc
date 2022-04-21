@@ -89,13 +89,13 @@ class ExecutorMockFlowUnit : public FlowUnit {
 class ExecutorMockDataContext : public FlowUnitDataContext {
  public:
   ExecutorMockDataContext(Node *node)
-      : FlowUnitDataContext(std::make_shared<BufferGroup>(), node) {}
+      : FlowUnitDataContext(node, nullptr, nullptr) {}
 
   void MockInput(std::shared_ptr<Device> device, size_t port_num,
                  size_t port_data_size) {
-    input_.clear();
+    cur_input_valid_data_.clear();
     for (size_t port_idx = 0; port_idx < port_num; ++port_idx) {
-      auto &port_data = input_[std::to_string(port_idx)];
+      auto &port_data = cur_input_valid_data_[std::to_string(port_idx)];
       for (size_t data_idx = 0; data_idx < port_data_size; ++data_idx) {
         auto mem = device->MemAlloc(10);
         port_data.push_back(std::make_shared<Buffer>(mem));
@@ -104,23 +104,7 @@ class ExecutorMockDataContext : public FlowUnitDataContext {
   }
 
  protected:
-  void SetInputData(std::shared_ptr<InputData> input_data) override {}
-  std::shared_ptr<FlowUnitInnerEvent> GenerateSendEvent() override {
-    return nullptr;
-  }
-  Status LabelData() override { return STATUS_OK; }
-  Status LabelError() override { return STATUS_OK; }
-  bool IsDataErrorVisible() override { return true; }
-  bool IsDataGroupPre() override { return true; }
-  bool IsDataGroupPost() override { return true; }
-  bool IsDataPre() override { return true; }
-  bool IsDataPost() override { return true; }
-  void ClearData() override {}
-  void DealWithDataPreError(std::shared_ptr<FlowUnitError> error) override {}
-  void DealWithProcessError(std::shared_ptr<FlowUnitError> error) override {}
-  void DealWithDataError(std::shared_ptr<FlowUnitError> error) override {}
-  Status GenerateOutData() override { return STATUS_OK; }
-  void CloseStreamIfNecessary() override {}
+  void UpdateProcessState() override{};
 };
 
 class ExecutorTestConfig {
@@ -215,12 +199,22 @@ class FlowUnitExecutorTest : public testing::Test {
           .WillRepeatedly(testing::Invoke(cfg.fu_process));
     }
 
-    auto node = std::make_shared<Node>("test_node", "", "", nullptr, nullptr);
+    auto node = std::make_shared<Node>();
     node->SetName("test_node");
     node->SetFlowType(cfg.node_flow_type);
     node->SetOutputType(cfg.node_output_type);
     node->SetConditionType(cfg.node_condition_type);
     node->SetInputContiguous(cfg.need_contiguous);
+    std::set<std::string> input_names;
+    std::set<std::string> output_names;
+    for (size_t i = 0; i < cfg.input_port_count; ++i) {
+      input_names.insert(std::to_string(i));
+    }
+    for (size_t i = 0; i < cfg.output_port_count; ++i) {
+      output_names.insert(std::to_string(i));
+    }
+    ConfigurationBuilder builder;
+    node->Init(input_names, output_names, builder.Build());
     auto ctx_list = CreateExecCtxs(cfg.ctx_count, node.get(), flowunits);
     if (cfg.input_port_count > 0) {
       MockInput(devices, ctx_list, cfg.input_port_count, cfg.input_data_count);
@@ -673,7 +667,7 @@ TEST_F(FlowUnitExecutorTest, DataViewPerfTest) {
               return STATUS_OK;
             }));
   }
-  auto node = std::make_shared<Node>("test_node", "", "", nullptr, nullptr);
+  auto node = std::make_shared<Node>();
   TestDataPreparePerf(devices, flowunits, node, false);
   TestDataPreparePerf(devices, flowunits, node, true);
   TestWriteBackPerf(devices, flowunits, node, false);

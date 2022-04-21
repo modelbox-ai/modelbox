@@ -113,7 +113,12 @@ std::shared_ptr<BufferListMap> FlowUnitExecData::GetInData() {
 
 std::shared_ptr<BufferList> FlowUnitExecData::GetInData(
     const std::string &name) {
-  return HasInData(name) ? in_data_->at(name) : nullptr;
+  if (!HasInData(name)) {
+    return nullptr;
+  }
+
+  // avoid user change input buffer list content
+  return std::make_shared<BufferList>(*(in_data_->at(name)));
 }
 
 void FlowUnitExecData::SetInData(
@@ -172,6 +177,14 @@ size_t FlowUnitExecData::GetInBufferNum() {
   return in_data_->begin()->second->Size();
 }
 
+size_t FlowUnitExecData::GetExtBufferNum() {
+  if (ext_data_->empty() || !(ext_data_->begin()->second)) {
+    return 0;
+  }
+
+  return ext_data_->begin()->second->Size();
+}
+
 size_t FlowUnitExecData::GetOutBufferNum(bool accumulate_all_port) {
   // All port data number is same
   if (out_data_->empty() || !(out_data_->begin()->second)) {
@@ -214,6 +227,102 @@ void FlowUnitExecData::FreezeData() {
   for (auto &ext_item : *ext_data_) {
     ext_item.second->SetMutable(false);
   }
+}
+
+Status FlowUnitExecData::SaveProcessInfo(bool one_to_one,
+                                         bool data_in_one_port) {
+  if (status_ != STATUS_OK && status_ != STATUS_CONTINUE) {
+    // process error, no need to save inherit info
+    return STATUS_OK;
+  }
+
+  auto in_count = GetInBufferNum();
+  auto parent_data = in_data_;
+  if (in_count == 0) {
+    in_count = GetExtBufferNum();
+    parent_data = ext_data_;
+  }
+
+  if (in_count == 0) {
+    // event driven
+    return STATUS_SUCCESS;
+  }
+
+  if (one_to_one) {
+    return SaveProcessOneToOne(parent_data, in_count, data_in_one_port);
+  }
+
+  return SaveProcessNToM(parent_data);
+}
+
+Status FlowUnitExecData::SaveProcessOneToOne(
+    std::shared_ptr<modelbox::BufferListMap> parent_data, size_t data_count,
+    bool data_in_one_port) {
+  // input n, output n, and inherit one to one
+  std::vector<std::shared_ptr<BufferProcessInfo>> process_info_list;
+
+  auto out_count = GetOutBufferNum(data_in_one_port);
+  if (data_count != out_count) {
+    return {STATUS_FAULT, "input buffer count " + std::to_string(data_count) +
+                              " should equal output buffer count " +
+                              std::to_string(out_count)};
+  }
+
+  process_info_list.reserve(data_count);
+  for (size_t i = 0; i < data_count; ++i) {
+    process_info_list.push_back(std::make_shared<BufferProcessInfo>());
+  }
+
+  for (auto &in_item : *parent_data) {
+    auto &port_name = in_item.first;
+    auto &port_data_list = in_item.second;
+    for (size_t i = 0; i < port_data_list->Size(); ++i) {
+      auto process_info = process_info_list[i];
+      auto buffer = port_data_list->At(i);
+      auto buffer_index_info = BufferManageView::GetIndexInfo(buffer);
+      process_info->SetParentBuffers(port_name, {buffer_index_info});
+    }
+  }
+
+  for (auto &out_item : *out_data_) {
+    auto &port_data_list = out_item.second;
+    for (size_t i = 0; i < port_data_list->Size(); ++i) {
+      auto process_info = process_info_list[i];
+      auto buffer = port_data_list->At(i);
+      auto index_info = BufferManageView::GetIndexInfo(buffer);
+      index_info->SetProcessInfo(process_info);
+    }
+  }
+
+  return STATUS_OK;
+}
+
+Status FlowUnitExecData::SaveProcessNToM(
+    std::shared_ptr<modelbox::BufferListMap> parent_data) {
+  // input n, output m
+  auto process_info = std::make_shared<BufferProcessInfo>();
+  for (auto &in_item : *parent_data) {
+    auto &port_name = in_item.first;
+    auto &port_data_list = in_item.second;
+    std::list<std::shared_ptr<BufferIndexInfo>> in_port_buffer_index_info_list;
+    for (auto &buffer : *port_data_list) {
+      auto buffer_index_info = BufferManageView::GetIndexInfo(buffer);
+      in_port_buffer_index_info_list.push_back(buffer_index_info);
+    }
+
+    process_info->SetParentBuffers(port_name,
+                                   std::move(in_port_buffer_index_info_list));
+  }
+
+  for (auto &out_item : *out_data_) {
+    auto &port_data_list = out_item.second;
+    for (auto &buffer : *port_data_list) {
+      auto index_info = BufferManageView::GetIndexInfo(buffer);
+      index_info->SetProcessInfo(process_info);
+    }
+  }
+
+  return STATUS_OK;
 }
 
 void FlowUnitExecDataMapper::AddExecCtx(
@@ -405,6 +514,21 @@ Status FlowUnitExecDataMapper::CheckOutputNumEqualInput(
   if (in_num != out_num) {
     return {STATUS_FAULT,
             "Output number must equals input number in normal flowunit"};
+  }
+
+  return STATUS_OK;
+}
+
+Status FlowUnitExecDataMapper::SaveProcessInfo(bool one_to_one,
+                                               bool data_in_one_port) {
+  for (auto &mapped_ctx_data : mapped_data_list_) {
+    for (auto &mapped_batch_data : mapped_ctx_data) {
+      auto ret =
+          mapped_batch_data->SaveProcessInfo(one_to_one, data_in_one_port);
+      if (!ret) {
+        return ret;
+      }
+    }
   }
 
   return STATUS_OK;
@@ -823,6 +947,18 @@ Status FlowUnitExecDataView::CheckOutputDataNumber(bool data_in_one_port) {
   return STATUS_OK;
 }
 
+Status FlowUnitExecDataView::SaveProcessInfo(bool one_to_one,
+                                             bool data_in_one_port) {
+  for (auto &mapper_item : mapper_of_flowunit_) {
+    auto &mapper = mapper_item.second;
+    auto ret = mapper->SaveProcessInfo(one_to_one, data_in_one_port);
+    if (!ret) {
+      return ret;
+    }
+  }
+  return STATUS_OK;
+}
+
 Status FlowUnitExecDataView::SaveOutputToExecCtx() {
   std::vector<std::shared_ptr<Executor>> executor_of_flowunit;
   std::vector<std::function<Status()>> task_of_flowunit;
@@ -1050,12 +1186,25 @@ Status FlowUnitDataExecutor::SaveExecuteOutput(
    * as usual, only need check output in develop mode
    * user could close check at running mode
    **/
-  if (need_check_output_) {
-    auto data_in_one_port = (node->GetConditionType() == IF_ELSE);
+  auto data_in_one_port = (node->GetConditionType() != ConditionType::NONE ||
+                           node->GetLoopType() == LOOP);
+  auto node_has_output = node->GetOutputNum() != 0;
+
+  if (need_check_output_ && node_has_output) {
     auto ret = exec_view.CheckOutputDataNumber(data_in_one_port);
     if (!ret) {
       MBLOG_ERROR << "check output failed, err " << ret;
       return ret;
+    }
+  }
+
+  if (node_has_output) {
+    auto ret = exec_view.SaveProcessInfo(
+        node->GetFlowType() == NORMAL && node->GetOutputType() == ORIGIN,
+        data_in_one_port);
+    if (!ret) {
+      MBLOG_ERROR << "save buffer inherit info failed, err " << ret;
+      return STATUS_FAULT;
     }
   }
 

@@ -40,7 +40,8 @@ std::map<std::string, std::string> ERROR_INFO = {
     {"MODELBOX_007",
      "job id contain invalid characters or contains more than 64 "
      "characters, please rename job with valid "
-     "charaters."}};
+     "charaters."},
+    {"MODELBOX_008", "request invalid, job config is invalid"}};
 
 const std::string ERROR_CODE = "error_code";
 const std::string ERROR_MSG = "error_msg";
@@ -70,7 +71,7 @@ std::shared_ptr<Plugin> CreatePlugin() {
 }
 
 void ModelboxPlugin::RegistHandlers() {
-  MBLOG_INFO << "modelbox plugin regist handlers";
+  MBLOG_INFO << "modelbox plugin register handlers";
   MBLOG_INFO << "regist url : " << SERVER_PATH;
 
   listener_->Register(SERVER_PATH, HttpMethods::PUT,
@@ -133,13 +134,8 @@ bool ModelboxPlugin::ParseConfig(
   }
 
   default_flow_path_ = config->GetString("server.flow_path");
-  if (default_flow_path_.length() <= 0) {
-    MBLOG_ERROR << "can not find flow from config file";
-    return false;
-  }
-
   acl_white_list_ = config->GetStrings("acl.allow");
-
+  default_application_path_ = config->GetString("server.application_root");
   oneshot_flow_path_ = default_flow_path_ + "/oneshot";
 
   return true;
@@ -148,10 +144,29 @@ bool ModelboxPlugin::ParseConfig(
 modelbox::Status ModelboxPlugin::CreateLocalJobs() {
   MBLOG_INFO << "create local job";
   std::vector<std::string> files;
+  if (default_flow_path_.length() > 0) {
   auto ret = modelbox::ListFiles(default_flow_path_, "*", &files,
                                  modelbox::LIST_FILES_FILE);
-  if (!ret) {
-    return ret;
+    if (!ret) {
+      MBLOG_WARN << "Load flow path failed. " << ret;
+    }
+  }
+
+  if (default_application_path_.length() > 0) {
+    std::vector<std::string> project_dirs;
+    auto ret = modelbox::ListFiles(default_application_path_, "*", &project_dirs,
+                        modelbox::LIST_FILES_DIR);
+    if (!ret) {
+      MBLOG_WARN << "Load project path failed. " << ret;
+    }
+
+    for (const auto& dir : project_dirs) {
+      std::string graph_dir = dir + "/graph";
+      modelbox::ListFiles(graph_dir, "*.toml", &files,
+                          modelbox::LIST_FILES_FILE);
+      modelbox::ListFiles(graph_dir, "*.json", &files,
+                          modelbox::LIST_FILES_FILE);
+    }
   }
 
   for (auto& file : files) {
@@ -168,9 +183,9 @@ modelbox::Status ModelboxPlugin::CreateLocalJobs() {
     }
 
     MBLOG_INFO << "Create local job " << file;
-    ret = CreateJobByFile(job_id, file);
+    auto ret = CreateJobByFile(job_id, file);
     if (!ret) {
-      MBLOG_WARN << "create job " << file << " failed, " << ret;
+      MBLOG_WARN << "create job " << file << " failed, " << ret.WrapErrormsgs();
     }
   }
 
@@ -239,7 +254,7 @@ modelbox::Status ModelboxPlugin::StartJob(std::shared_ptr<modelbox::Job> job) {
 
   ret = job->Build();
   if (!ret) {
-    MBLOG_ERROR << "start job build failed:" << ret;
+    MBLOG_ERROR << "start job build failed: " << ret;
     return ret;
   }
 
@@ -351,20 +366,17 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
 
     if (body.find("job_id") == body.end()) {
       error_code = "MODELBOX_003";
-      error_msg = ERROR_INFO[error_code];
       return;
     }
 
     auto jobid = body["job_id"].get<std::string>();
     if (body.find("job_graph") == body.end()) {
       error_code = "MODELBOX_004";
-      error_msg = ERROR_INFO[error_code];
       return;
     }
 
     if (!CheckJobIdValid(jobid)) {
       error_code = "MODELBOX_007";
-      error_msg = ERROR_INFO[error_code];
       return;
     }
 
@@ -392,7 +404,7 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
 
     auto status = CreateJobByString(jobid, graph_data, graph_format);
     if (!status) {
-      error_code = "MODELBOX_001";
+      error_code = "MODELBOX_008";
       error_msg = status.WrapErrormsgs();
       return;
     }

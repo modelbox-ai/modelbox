@@ -21,7 +21,7 @@
 namespace modelbox {
 
 // driver default search path
-#define MODELBOX_SOLUTION_PATH "@MODELBOX_SOLUTION_INSTALL_DIR@"
+#define MODELBOX_DEMO_PATH "@MODELBOX_DEMO_INSTALL_DIR@"
 
 }  // namespace modelbox
 

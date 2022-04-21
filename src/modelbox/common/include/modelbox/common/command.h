@@ -37,17 +37,30 @@ extern std::recursive_mutex ToolCommandGetOptLock;
 #define MODELBOX_TOOL_STRCAT(a, b) MODELBOX_TOOL_STRCAT_(a, b)
 #define MODELBOX_TOOL_ADD_COMMAND(new_func) \
   ::modelbox::ToolCommandList::Instance()->AddCommand(new_func);
+#define MODELBOX_TOOL_RMV_COMMAND(name) \
+  ::modelbox::ToolCommandList::Instance()->RmvCommand(name);
+#define MODELBOX_TOOL_CLEAR_COMMAND() \
+  ::modelbox::ToolCommandList::Instance()->Reset();
 
-#define REG_MODELBOX_TOOL_COMMAND(class)                               \
-  static auto __attribute__((unused))                                  \
-  MODELBOX_TOOL_STRCAT(__auto_reg__, __LINE__) = []() {                \
-    auto new_func = []() -> std::shared_ptr<::modelbox::ToolCommand> { \
-      auto cmd = std::make_shared<class>();                            \
-      return cmd;                                                      \
-    };                                                                 \
-    ::modelbox::ToolCommandList::Instance()->AddCommand(new_func);     \
-    return 0;                                                          \
-  }();
+#define REG_MODELBOX_TOOL_COMMAND(class)                                     \
+  static std::string cmd_name_##class;                                       \
+  static auto __attribute__((unused))                                        \
+  MODELBOX_TOOL_STRCAT(__auto_reg__, __LINE__) = []() {                      \
+    auto new_func = []() -> std::shared_ptr<::modelbox::ToolCommand> {       \
+      auto cmd = std::make_shared<class>();                                  \
+      return cmd;                                                            \
+    };                                                                       \
+    auto cmd = new_func();                                                   \
+    cmd_name_##class = cmd->GetCommandName();                                \
+    ::modelbox::ToolCommandList::Instance()->AddCommand(new_func);           \
+    return 0;                                                                \
+  }();                                                                       \
+  DeferExt() {                                                                    \
+    /* Remove command from command list.*/                                   \
+    if (cmd_name_##class.length() > 0) {                                     \
+      ::modelbox::ToolCommandList::Instance()->RmvCommand(cmd_name_##class); \
+    }                                                                        \
+  };
 
 #define MODELBOX_COMMAND_SUB_ARGC argc_sub
 #define MODELBOX_COMMAND_SUB_ARGV argv_sub
@@ -140,6 +153,8 @@ class ToolCommandList {
   void AddCommand(ToolCommandCreate new_func);
 
   void RmvCommand(const std::string &name);
+
+  void Reset();
 
   std::shared_ptr<ToolCommand> GetCommand(const std::string &name);
 

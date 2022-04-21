@@ -19,13 +19,13 @@
 namespace modelbox {
 
 DataMeta::DataMeta() {}
+
+DataMeta::DataMeta(const DataMeta &other) { private_map_ = other.private_map_; }
+
 DataMeta::~DataMeta() { private_map_.clear(); }
 
 void DataMeta::SetMeta(const std::string &key, std::shared_ptr<void> meta) {
-  auto iter = private_map_.find(key);
-  if (iter == private_map_.end()) {
-    private_map_.emplace(key, meta);
-  }
+  private_map_[key] = meta;
 }
 
 std::shared_ptr<void> DataMeta::GetMeta(const std::string &key) {
@@ -35,15 +35,83 @@ std::shared_ptr<void> DataMeta::GetMeta(const std::string &key) {
   }
   return private_map_[key];
 }
-FlowUnitError::FlowUnitError(std::string desc) { desc_ = desc; }
-FlowUnitError::FlowUnitError(std::string node, std::string error_pos,
-                             Status error_status) {
-  desc_ = "node:" + node + " error pos:" + error_pos +
-          " status:" + error_status.StrCode() +
-          " error:" + error_status.Errormsg();
-  error_status_ = error_status;
-};
-FlowUnitError::~FlowUnitError(){};
-std::string FlowUnitError::GetDesc() { return desc_; };
+
+std::unordered_map<std::string, std::shared_ptr<void>> DataMeta::GetMetas() {
+  return private_map_;
+}
+
+StreamOrder::StreamOrder() { index_at_each_expand_level_.push_back(0); }
+
+bool StreamOrder::operator<(const StreamOrder &other_stream_order) {
+  auto this_index = index_at_each_expand_level_.begin();
+  auto other_index = other_stream_order.index_at_each_expand_level_.begin();
+  while (true) {
+    if (other_index == other_stream_order.index_at_each_expand_level_.end()) {
+      // not short than this
+      return false;
+    }
+
+    if (this_index == index_at_each_expand_level_.end()) {
+      // short than other
+      return true;
+    }
+
+    if (*this_index < *other_index) {
+      return true;
+    }
+
+    if (*this_index > *other_index) {
+      return false;
+    }
+
+    // this level is same, compare next level
+    ++this_index;
+    ++other_index;
+  }
+}
+
+std::shared_ptr<StreamOrder> StreamOrder::Copy() {
+  auto stream_order = std::make_shared<StreamOrder>();
+  stream_order->index_at_each_expand_level_ = index_at_each_expand_level_;
+  return stream_order;
+}
+
+void StreamOrder::Expand(size_t index_in_this_level) {
+  index_at_each_expand_level_.push_back(index_in_this_level);
+}
+
+void StreamOrder::Collapse() { index_at_each_expand_level_.pop_back(); }
+
+Stream::Stream(std::shared_ptr<Session> session) : session_(session) {}
+
+std::shared_ptr<Session> Stream::GetSession() { return session_; }
+
+void Stream::SetMaxBufferCount(size_t max_buffer_count) {
+  max_buffer_count_ = max_buffer_count;
+}
+
+bool Stream::ReachEnd() {
+  if (max_buffer_count_ == 0) {
+    return false;
+  }
+
+  return max_buffer_count_ <= cur_buffer_count_;
+}
+
+size_t Stream::GetBufferCount() { return cur_buffer_count_; }
+
+void Stream::IncreaseBufferCount() { ++cur_buffer_count_; }
+
+void Stream::SetStreamMeta(std::shared_ptr<DataMeta> data_meta) {
+  data_meta_ = data_meta;
+}
+
+std::shared_ptr<DataMeta> Stream::GetStreamMeta() { return data_meta_; }
+
+std::shared_ptr<StreamOrder> Stream::GetStreamOrder() { return stream_order_; }
+
+void Stream::SetStreamOrder(std::shared_ptr<StreamOrder> stream_order) {
+  stream_order_ = stream_order;
+}
 
 }  // namespace modelbox

@@ -20,15 +20,24 @@
 # Required-Stop:   $network 
 # Default-Start:   2 3 4 5
 # Default-Stop:
-# Short-Description: Start modelbox-manager server
+# Short-Description: Start modelbox-manager service
 ### END INIT INFO
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 
-. @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager-opts
+# this env may changed by script, do not modify
+CUSTOM_ENV_FILE=""
+
 MODELBOX_MANAGER=@CMAKE_INSTALL_FULL_BINDIR@/modelbox-manager
-PIDDIR=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager
-PIDFILE=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.pid
+
+if [ -f "$CUSTOM_ENV_FILE" ]; then
+	. $CUSTOM_ENV_FILE
+else
+	. @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager-opts
+	PIDDIR=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager
+	PIDFILE=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.pid
+	KEYFILE=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.key
+fi
 
 test -x $MODELBOX_MANAGER || exit 5
 
@@ -38,7 +47,7 @@ case $1 in
 			mkdir $PIDDIR
 		fi
 
-		$MODELBOX_MANAGER $MODELBOX_MANAGER_OPTS -p $PIDFILE
+		$MODELBOX_MANAGER $MODELBOX_MANAGER_OPTS -p $PIDFILE -k $KEYFILE
 		LOOP=0
 		while true; do
 			if [ -e "$PIDFILE" ]; then
@@ -47,7 +56,7 @@ case $1 in
 			LOOP=$((LOOP+1))
 
 			if [ $LOOP -gt 10 ]; then
-				echo "start modelbox-manager server failed."
+				echo "start modelbox-manager service failed."
 				"$0" stop
 				exit 1
 			fi
@@ -56,29 +65,29 @@ case $1 in
 
 		PID="$(cat $PIDFILE 2>/dev/null)"
 		if [ -z "$PID" ]; then
-			echo "start modelbox-manager server failed."
+			echo "start modelbox-manager service failed."
 			exit 1
 		fi
 		if [ ! -e "/proc/$PID" ]; then
-			echo "start modelbox-manager server failed."
+			echo "start modelbox-manager service failed."
 			exit 1
 		fi
-		echo "start modelbox-manager server success."
+		echo "start modelbox-manager service success."
 		;;
 	stop)
 		if [ ! -f "$PIDFILE" ]; then
-			echo "modelbox-manager server is stopped."
+			echo "modelbox-manager service is stopped."
 			exit 0
 		fi
 		PID="$(cat $PIDFILE 2>/dev/null)"
 		if [ ! -e "/proc/$PID" ] || [ -z "$PID" ]; then
-			echo "modelbox-manager server is stopped"
+			echo "modelbox-manager service is stopped"
 			exit 0
 		fi
 
 		kill -TERM "$PID"
 		if [ $? -ne 0 ]; then
-			echo "Stop modelbox-manager server failed."
+			echo "Stop modelbox-manager service failed."
 			exit 1;
 		fi
 
@@ -96,7 +105,7 @@ case $1 in
 			sleep .5
 		done
 		rm -f "$PIDFILE"
-		echo "Stop modelbox-manager server success."
+		echo "Stop modelbox-manager service success."
 		;;
 	restart)
 		"$0" stop && sleep 1 && "$0" start
@@ -104,10 +113,10 @@ case $1 in
 	status)
 		PID="$(cat "$PIDFILE" 2>/dev/null)"
 		if [ ! -e "/proc/$PID" ] || [ -z "$PID" ]; then
-			echo "modelbox-manager server is not running."
+			echo "modelbox-manager service is not running."
 			exit 1
 		fi
-		echo "modelbox-manager server is running."
+		echo "modelbox-manager service is running. pid $PID"
 		status=$?
 		;;
 	*)

@@ -19,6 +19,7 @@
 
 #include <modelbox/flowunit.h>
 #include <modelbox/scheduler.h>
+#include <modelbox/session.h>
 
 #include <memory>
 #include <vector>
@@ -26,7 +27,6 @@
 #include "modelbox/base/graph_manager.h"
 #include "modelbox/node.h"
 #include "modelbox/statistics.h"
-#include "modelbox/stream_matcher.h"
 #include "modelbox/virtual_node.h"
 namespace modelbox {
 
@@ -112,6 +112,10 @@ class Graph {
   std::set<std::shared_ptr<NodeBase>> GetEndPointNodes() const;
 
  private:
+  void ShowGraphInfo(std::shared_ptr<GCGraph> g);
+
+  Status CheckGraph();
+
   Status BuildFlowunitNode(std::shared_ptr<GCGraph> g,
                            std::shared_ptr<GCNode> gcnode, bool strict);
 
@@ -160,8 +164,6 @@ class Graph {
 
   Status GenerateTopology();
 
-  Status CheckStreamMatcher();
-
   Status CheckLoopStructureNode();
 
   Status InitPort();
@@ -177,6 +179,8 @@ class Graph {
                           std::shared_ptr<Configuration> &config);
 
  private:
+  SessionManager session_manager_;
+
   std::map<std::string, std::shared_ptr<NodeBase>> nodes_;
 
   std::map<std::shared_ptr<OutPort>, std::set<std::shared_ptr<InPort>>>
@@ -207,7 +211,7 @@ class Graph {
   std::unordered_map<std::string, std::shared_ptr<Configuration>>
       input_node_config_map_;
 
-  std::shared_ptr<NodeBase> input_node_;
+  std::shared_ptr<Node> input_node_;
 
   std::string output_node_name_;
 
@@ -225,6 +229,8 @@ class Graph {
   std::vector<std::vector<std::string>> loop_structures_;
 
   std::map<std::string, std::string> loop_links_;
+
+  bool is_stop_;
 };
 
 class DynamicGraph : public Graph {

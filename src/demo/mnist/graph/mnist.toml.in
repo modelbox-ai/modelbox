@@ -1,0 +1,26 @@
+[driver]
+dir = ["@DEMO_MNIST_FLOWUNIT_DIR@"]
+[profile]
+profile=false
+trace=false
+dir=""
+[flow]
+name = "MNIST"
+desc = "MNIST detection for image"
+[graph]
+format = "graphviz"
+graphconf = '''digraph mnist_sample {
+    node [shape=Mrecord]
+    httpserver_sync_receive[type=flowunit, flowunit=httpserver_sync_receive, device=cpu, time_out_ms=5000, endpoint="http://0.0.0.0:8080", max_requests=100]
+    mnist_preprocess[type=flowunit, flowunit=mnist_preprocess, device=cpu]
+    mnist_infer[type=flowunit, flowunit=mnist_infer, device=cpu, deviceid=0, batch_size=1]
+    mnist_response[type=flowunit, flowunit=mnist_response, device=cpu]
+    httpserver_sync_reply[type=flowunit, flowunit=httpserver_sync_reply, device=cpu]
+
+    httpserver_sync_receive:out_request_info -> mnist_preprocess:in_data
+    mnist_preprocess:out_data -> mnist_infer:Input
+    mnist_infer:Output -> mnist_response:in_data
+    mnist_response:out_data -> httpserver_sync_reply:in_reply_info
+}
+'''
+

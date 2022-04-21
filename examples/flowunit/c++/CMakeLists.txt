@@ -18,15 +18,16 @@ cmake_minimum_required(VERSION 3.10)
  
 set(UNIT_NAME "example")
 set(UNIT_DEVICE "cpu")
+set(UNIT_SECT "generic")
 
 if(NOT DEFINED MODELBOX_PROJECT_VERSION_MAJOR)
     # build from flowunit cmakelists, not from project cmakelists
     set(MODELBOX_PROJECT_VERSION_MAJOR 0)
     set(MODELBOX_PROJECT_VERSION_MINOR 0)
     set(MODELBOX_PROJECT_VERSION_PATCH 1)
-    set(RELEASE_PACKAGE_DIR_ROOT /opt/modelbox/project/default )
-    set(RELEASE_PACKAGE_DIR_LIB ${RELEASE_PACKAGE_DIR_ROOT}/lib ) 
-    set(RELEASE_PACKAGE_DIR_BIN ${RELEASE_PACKAGE_DIR_ROOT}/bin ) 
+    set(RELEASE_PACKAGE_DIR_ROOT /opt/modelbox/flowunit/${UNIT_SECT} )
+    set(RELEASE_PACKAGE_DIR_LIB ${RELEASE_PACKAGE_DIR_ROOT} ) 
+    set(RELEASE_PACKAGE_DIR_BIN ${RELEASE_PACKAGE_DIR_ROOT} ) 
     if(${UNIT_DEVICE} STREQUAL "cuda" )
         find_package(CUDA 10.0)
     endif()
@@ -44,12 +45,6 @@ if(${UNIT_DEVICE} STREQUAL "ascend" )
         message(FATAL_ERROR "cannot find acl or dsmi in current environment ,please checkout you flowunit device type!")
     endif()
 endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-strict-aliasing -std=c++11")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fno-strict-aliasing")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBASE_FILE_NAME='\"$(notdir $<)\"'")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DBASE_FILE_NAME='\"$(notdir $<)\"'")
-
 
 file(GLOB_RECURSE UNIT_SOURCE *.cpp *.cc *.c)
  

@@ -1,0 +1,30 @@
+[driver]
+dir = [
+"@DEMO_CAR_DETECTION_FLOWUNIT_DIR@"
+]
+[flow]
+desc = "car detection for video streams"
+[graph]
+format = "graphviz"
+graphconf = """digraph car_detection {
+    node [shape=Mrecord]
+    video_input[type=flowunit, flowunit=video_input, device=cpu, deviceid=0, source_url="@DEMO_VIDEO_DIR@/car_test_video.mp4"]
+    videodemuxer[type=flowunit, flowunit=video_demuxer, device=cpu, deviceid=0]
+    videodecoder[type=flowunit, flowunit=video_decoder, device=cuda, deviceid=0, pix_fmt=bgr]
+    image_resize[type=flowunit, flowunit=resize, device=cpu, deviceid=0, image_width=512, image_height=288]
+    image_transpose[type=flowunit, flowunit=packed_planar_transpose, device=cpu, deviceid=0]
+    normalize[type=flowunit, flowunit=normalize, device=cpu, deviceid=0, standard_deviation_inverse="1,1,1"]
+    model_inference[type=flowunit, flowunit=car_detect, device=cuda, deviceid=0, batch_size=1]
+    yolox_post[type=flowunit, flowunit=yolox_post, device=cpu, deviceid=0]
+    videoencoder[type=flowunit, flowunit=video_encoder, device=cpu, deviceid=0, encoder=mpeg4, format=mp4, default_dest_url="/tmp/car_detection_result.mp4"]
+
+    video_input:out_video_url -> videodemuxer:in_video_url
+    videodemuxer:out_video_packet -> videodecoder:in_video_packet
+    videodecoder:out_video_frame -> image_resize:in_image
+    image_resize:out_image -> image_transpose:in_image
+    image_transpose:out_image -> normalize:in_data
+    normalize:out_data -> model_inference:input
+    model_inference:output -> yolox_post:in_feat
+    videodecoder:out_video_frame -> yolox_post:in_image
+    yolox_post:out_data -> videoencoder:in_video_frame
+}"""
