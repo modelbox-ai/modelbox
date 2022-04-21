@@ -19,13 +19,13 @@
 #include <future>
 #include <thread>
 
-#include "modelbox/base/log.h"
-#include "modelbox/buffer.h"
 #include "common/video_decoder/video_decoder_mock.h"
 #include "driver_flow_test.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "modelbox/base/log.h"
+#include "modelbox/buffer.h"
 #include "securec.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
@@ -40,7 +40,7 @@ class VideoDemuxerFlowUnitRetryTest : public testing::Test {
   std::shared_ptr<MockFlow> GetDriverFlow() { return driver_flow_; };
   std::shared_ptr<MockFlow> RunDriverFlow();
   modelbox::Status SendDataSourceCfg(const std::string &data_source_cfg,
-                                   const std::string &source_type);
+                                     const std::string &source_type);
 
  protected:
   virtual void SetUp(){};
@@ -50,7 +50,7 @@ class VideoDemuxerFlowUnitRetryTest : public testing::Test {
   std::string GetRtspTomlConfig();
 
   modelbox::Status StartFlow(std::string &toml_content,
-                           const uint64_t millisecond);
+                             const uint64_t millisecond);
 
  private:
   std::shared_ptr<MockFlow> driver_flow_;
@@ -74,7 +74,7 @@ modelbox::Status VideoDemuxerFlowUnitRetryTest::StartFlow(
   return flow_->Wait(millisecond);
 }
 
-TEST_F(VideoDemuxerFlowUnitRetryTest, DISABLED_RtspInputTest) {
+TEST_F(VideoDemuxerFlowUnitRetryTest, RtspInputTest) {
   auto toml_content = GetRtspTomlConfig();
   auto ret = StartFlow(toml_content, 10 * 1000);
   EXPECT_EQ(ret, modelbox::STATUS_TIMEDOUT);
@@ -95,7 +95,7 @@ std::string VideoDemuxerFlowUnitRetryTest::GetRtspTomlConfig() {
       max-thread-num = 100
       graphconf = '''digraph demo {
             input[type=input, device=cpu, deviceid=0]
-            data_source_parser[type=flowunit, flowunit=data_source_parser, device=cpu, deviceid=0, retry_interval_ms = 1000, obs_retry_interval_ms = 3000,url_retry_interval_ms = 2000, label="<data_uri>", plugin_dir=")" +
+            data_source_parser[type=flowunit, flowunit=data_source_parser, device=cpu, deviceid=0, retry_interval_ms = 1000, obs_retry_interval_ms = 3000,url_retry_interval_ms = 1000, label="<data_uri>", plugin_dir=")" +
       test_lib_dir + R"("] 
             videodemuxer[type=flowunit, flowunit=video_demuxer, device=cpu, deviceid=0, label="<in_video_url> | <out_video_packet>", queue_size = 16]
             videodecoder[type=flowunit, flowunit=video_decoder, device=cpu, deviceid=0, label="<in_video_packet> | <out_video_frame>", pix_fmt=nv12, queue_size = 16]  
@@ -121,7 +121,31 @@ modelbox::Status VideoDemuxerFlowUnitRetryTest::SendDataSourceCfg(
            data_source_cfg.size());
   buffer->Set("source_type", source_type);
   ext_data->Send("input", buffer_list);
+  ext_data->Close();
+  for (size_t i = 0; i < 5; ++i) {
+    // should continue reconnect
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    OutputBufferList output;
+    auto ret = ext_data->Recv(output, 100);
+    EXPECT_EQ(ret, STATUS_OK);
+    if (ret != STATUS_OK) {
+      return STATUS_FAULT;
+    }
+  }
+  // stop reconnect
   ext_data->Shutdown();
+  Status final_state = STATUS_OK;
+  for (size_t i = 0; i < 5; ++i) {
+    // should stop reconnect, session will close
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    OutputBufferList output;
+    auto ret = ext_data->Recv(output, 100);
+    if (ret == STATUS_INVALID) {
+      final_state = ret;
+      break;
+    }
+  }
+  EXPECT_EQ(final_state, STATUS_INVALID);
   return modelbox::STATUS_OK;
 }
 

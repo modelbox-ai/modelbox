@@ -22,6 +22,7 @@
 #include <modelbox/error.h>
 #include <modelbox/inner_event.h>
 #include <modelbox/match_stream.h>
+#include <modelbox/session.h>
 #include <modelbox/session_context.h>
 #include <modelbox/statistics.h>
 #include <modelbox/stream.h>
@@ -135,7 +136,7 @@ class DataContext {
       DataContextStatsType type = DataContextStatsType::NODE) = 0;
 };
 
-class FlowUnitDataContext : public DataContext {
+class FlowUnitDataContext : public DataContext, public SessionStateListener {
   // Implement interface DataContext
  public:
   FlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
@@ -228,6 +229,8 @@ class FlowUnitDataContext : public DataContext {
   Status PostProcess();
 
   std::shared_ptr<Session> GetSession();
+
+  void NotifySessionClose() override;
 
   // would be different in specify FlowUnitDataContext
  public:

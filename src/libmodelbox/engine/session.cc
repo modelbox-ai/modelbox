@@ -30,6 +30,11 @@ Session::~Session() {
   io->SessionEnd(error_);
 }
 
+void Session::AddStateListener(std::shared_ptr<SessionStateListener> listener) {
+  std::lock_guard<std::mutex> lock(state_listener_list_lock_);
+  state_listener_list_.push_back(listener);
+}
+
 void Session::SetSessionIO(std::shared_ptr<SessionIO> io_handle) {
   io_handle_ = io_handle;
 }
@@ -42,8 +47,23 @@ std::shared_ptr<SessionContext> Session::GetSessionCtx() { return ctx_; }
  * @brief will cause session end after current data in engine processed over
  **/
 void Session::Close() {
+  std::lock_guard<std::mutex> state_lock(state_lock_);
+  if (closed_) {
+    return;
+  }
+
   closed_ = true;
   error_ = std::make_shared<FlowUnitError>("EOF");
+
+  std::lock_guard<std::mutex> lock(state_listener_list_lock_);
+  for (auto &state_listener : state_listener_list_) {
+    auto listener = state_listener.lock();
+    if (listener == nullptr) {
+      continue;
+    }
+
+    listener->NotifySessionClose();
+  }
 }
 
 bool Session::IsClosed() { return closed_; }

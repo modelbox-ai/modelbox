@@ -17,6 +17,7 @@
 #ifndef MODELBOX_SESSION_H_
 #define MODELBOX_SESSION_H_
 
+#include <list>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -44,11 +45,18 @@ class SessionIO {
   virtual void SessionEnd(std::shared_ptr<FlowUnitError> error = nullptr) = 0;
 };
 
+class SessionStateListener {
+ public:
+  virtual void NotifySessionClose(){};
+};
+
 class Session {
  public:
   Session(std::shared_ptr<StatisticsItem> graph_stats);
 
   ~Session();
+
+  void AddStateListener(std::shared_ptr<SessionStateListener> listener);
 
   void SetSessionIO(std::shared_ptr<SessionIO> io_handle);
 
@@ -76,10 +84,15 @@ class Session {
  private:
   std::weak_ptr<SessionIO> io_handle_;  // hold by user
   std::shared_ptr<SessionContext> ctx_;
+
+  std::mutex state_lock_;
   std::atomic_bool closed_{false};
   std::atomic_bool abort_{false};
 
   std::shared_ptr<FlowUnitError> error_;
+
+  std::mutex state_listener_list_lock_;
+  std::list<std::weak_ptr<SessionStateListener>> state_listener_list_;
 };
 
 class SessionManager {

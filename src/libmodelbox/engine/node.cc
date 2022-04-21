@@ -322,8 +322,7 @@ bool Node::NeedNewIndex() {
   return false;
 }
 
-std::unordered_map<std::string, size_t>
-Node::GetStreamCountEachPort() {
+std::unordered_map<std::string, size_t> Node::GetStreamCountEachPort() {
   std::unordered_map<std::string, size_t> stream_count_each_port;
   for (auto& in_port : input_ports_) {
     auto port_count = in_port->GetConnectedPortNumber();
@@ -540,6 +539,7 @@ std::shared_ptr<FlowUnitDataContext> Node::CreateDataContext(
   }
 
   data_ctx_map_[key] = data_ctx;
+  session->AddStateListener(data_ctx);
   return data_ctx;
 }
 
@@ -610,8 +610,7 @@ Status Node::Process(
 Status Node::Send(
     std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list) {
   for (auto& data_ctx : data_ctx_list) {
-    std::unordered_map<std::string, modelbox::BufferPtrList>
-        stream_data_map;
+    std::unordered_map<std::string, modelbox::BufferPtrList> stream_data_map;
     data_ctx->PopOutputData(stream_data_map);
     auto ret = output_match_stream_mgr_->UpdateStreamInfo(
         stream_data_map, data_ctx->GetOutputPortStreamMeta(),
