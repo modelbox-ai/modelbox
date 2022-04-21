@@ -22,13 +22,16 @@ check_function_exists(nanosleep HAVE_NANOSLEEP)
 
 option(PYTHONE_DISABLED "Disable build python" OFF)
 option(WITH_SECURE_C "include libsecurec.so" ON)
-option(WITH_SOLUTION "build solution" ON)
+option(WITH_ALL_DEMO "build with all demo with large model file" OFF)
 option(TEST_COVERAGE "build with coverage" OFF)
 option(WITH_JAVA "build java support" OFF)
 option(USE_CN_MIRROR "download from cn mirror" OFF)
 option(WITH_WEBUI "build modelbox webui" ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-strict-aliasing -std=c++11")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-strict-aliasing")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fno-strict-aliasing")
 
 if (TEST_COVERAGE)
@@ -47,7 +50,7 @@ if(OS_LINUX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,--export-dynamic")
 endif(OS_LINUX)
 
-set(CUDA_NVCC_FLAGS "-std=c++11 -Xcompiler -Wall,-std=c++11,-fno-strict-aliasing,${CMAKE_CXX_FLAGS_DEBUG}" CACHE INTERNAL "") 
+set(CUDA_NVCC_FLAGS "-Xcompiler -Wall,-fno-strict-aliasing,${CMAKE_CXX_FLAGS_DEBUG}" CACHE INTERNAL "") 
 set(CUDA_PROPAGATE_HOST_FLAGS OFF CACHE INTERNAL "")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DBASE_FILE_NAME='\"$(notdir $<)\"'")

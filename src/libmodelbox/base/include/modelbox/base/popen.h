@@ -21,6 +21,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <map>
 
 #include "modelbox/base/status.h"
 
@@ -28,8 +29,72 @@ namespace modelbox {
 
 /**
  * @brief safe pipe stream to or from a process, support command timeout,
- * support getting standard error output
+ * support getting standard error output, and support setting enviroment.
  */
+class Popen;
+class PopenEnv {
+ public:
+  PopenEnv();
+
+  virtual ~PopenEnv();
+
+  /**
+   * @brief Construct a new Popen Env object
+   *
+   * @param item_list env var item in list
+   */
+  PopenEnv(const std::string  &item_list);
+
+  /**
+   * @brief Construct a new Popen Env object
+   *
+   * @param item_list env var item in list
+   */
+  PopenEnv(const char *item_list);
+
+  /**
+   * @brief Construct a new Popen Env object
+   *
+   * @param item
+   * @param value
+   */
+  PopenEnv(const std::string &item, const std::string &value);
+  /**
+   * @brief Add a new env variable
+   *
+   * @param item var name
+   * @param value  var value
+   */
+  PopenEnv &Add(const std::string &item, const std::string &value);
+
+  /**
+   * @brief Remove a item from env
+   *
+   * @param item var name
+   */
+  PopenEnv &Rmv(const std::string &item);
+
+  /**
+   * @brief Clear all enviroment
+   *
+   */
+  PopenEnv &Clear();
+
+ protected:
+  friend Popen;
+  
+  const std::vector<std::string> GetEnvs() const;
+
+  void LoadInherit();
+  void LoadEnvFromList(const std::string &item_list);
+  const bool Changed() const;
+
+ private:
+  std::map<std::string, std::string> env_;
+  bool inherit_{true};
+  bool load_inherit_{false};
+};
+
 class Popen {
  public:
   Popen();
@@ -45,10 +110,11 @@ class Popen {
    *    "w" for writing to standard input,
    *    "r" for reading standard output,
    *    "e" for reading standard error output.
+   * @param env command enviroment.
    * @return Status operation result
    */
   Status Open(std::vector<std::string> args, int timeout = -1,
-              const char *mode = "r");
+              const char *mode = "r", const PopenEnv &env = "");
 
   /**
    * @brief Opens a process by creating a pipe, forking.
@@ -60,10 +126,12 @@ class Popen {
    *    "w" for writing to standard input,
    *    "r" for reading standard output,
    *    "e" for reading standard error output.
+   * @param env command enviroment.
    * @return Status operation result
    */
   Status Open(const std::string &cmdline, int timeout = -1,
-              const char *mode = "r");
+              const char *mode = "r", const PopenEnv &env = "");
+
 
   /**
    * @brief Close the command and get the command execution result
@@ -99,7 +167,7 @@ class Popen {
    * @return 0: success
    *         -1: fail.
    */
-  int ReadOutLine(std::string &Line);
+  int ReadOutLine(std::string &line);
 
   /**
    * @brief Read all outputs at once
@@ -130,7 +198,7 @@ class Popen {
 
   /**
    * @brief Keep command alive
-   * 
+   *
    */
   void KeepAlive();
 
@@ -165,8 +233,6 @@ class Popen {
   void CloseAllParentFds(int keep_fd);
 
   void SetupMode(const char *mode);
-
-  int ParserArg(const std::string &cmd, std::vector<std::string> &args);
 
   struct stdfd fdout_;
   struct stdfd fderr_;

@@ -363,7 +363,7 @@ TEST_F(GraphTest, BuildGraph_SingleLoop) {
   <-- c             <--
 */
 
-TEST_F(GraphTest, BuildGraph_DoubleLoop) {
+TEST_F(GraphTest, DISABLED_BuildGraph_DoubleLoop) {
   auto conf_file_value =
       R"(
         digraph demo {
@@ -399,7 +399,7 @@ a --> b --> c --> d    |
       <----------------
 */
 
-TEST_F(GraphTest, BuildGraph_LoopInLoop) {
+TEST_F(GraphTest, DISABLED_BuildGraph_LoopInLoop) {
   auto conf_file_value =
       R"(
         digraph demo {
@@ -493,7 +493,7 @@ TEST_F(GraphTest, OrphanCheck) {
   auto config = configbuilder.Build();
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_FAULT);
+  EXPECT_EQ(BuildGraph(config), STATUS_BADCONF);
 }
 
 TEST_F(GraphTest, SkipOrphan) {
@@ -572,7 +572,7 @@ TEST_F(GraphTest, InputStreamUnmatch) {
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.strict", false);
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_INVALID);
+  EXPECT_EQ(BuildGraph(config), STATUS_OK);
 }
 
 TEST_F(GraphTest, InputStreamCollapseRoot) {
@@ -593,7 +593,7 @@ TEST_F(GraphTest, InputStreamCollapseRoot) {
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.strict", false);
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_INVALID);
+  EXPECT_EQ(BuildGraph(config), STATUS_BADCONF);
 }
 
 TEST_F(GraphTest, InputStreamCollapseUnmatch) {
@@ -617,7 +617,7 @@ TEST_F(GraphTest, InputStreamCollapseUnmatch) {
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.strict", false);
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_INVALID);
+  EXPECT_EQ(BuildGraph(config), STATUS_BADCONF);
 }
 
 TEST_F(GraphTest, InputStreamConditionUnmatch) {
@@ -641,7 +641,7 @@ TEST_F(GraphTest, InputStreamConditionUnmatch) {
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.strict", false);
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_INVALID);
+  EXPECT_EQ(BuildGraph(config), STATUS_BADCONF);
 }
 
 TEST_F(GraphTest, InputStreamConditionOne) {
@@ -664,7 +664,34 @@ TEST_F(GraphTest, InputStreamConditionOne) {
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.strict", false);
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_INVALID);
+  EXPECT_EQ(BuildGraph(config), STATUS_OK);
+}
+
+TEST_F(GraphTest, InputStreamConditionOne1) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          a[flowunit=test_0_1]
+          b[flowunit=condition_1_2]
+          c[flowunit=test_1_1]
+          d[flowunit=test_1_1]
+          e[flowunit=test_1_0]
+
+          a:Out_1 -> b:In_1
+          b:Out_1 -> c:In_1
+          b:Out_1 -> d:In_1
+          c:Out_1 -> e:In_1
+          d:Out_1 -> e:In_1
+          b:Out_2 -> e:In_1
+        }
+      )";
+
+  ConfigurationBuilder configbuilder;
+  auto config = configbuilder.Build();
+  config->SetProperty("graph.format", "graphviz");
+  config->SetProperty("graph.strict", false);
+  config->SetProperty("graph.graphconf", conf_file_value);
+  EXPECT_EQ(BuildGraph(config), STATUS_BADCONF);
 }
 
 TEST_F(GraphTest, InputConditionConnectWrongPort) {
@@ -691,7 +718,7 @@ TEST_F(GraphTest, InputConditionConnectWrongPort) {
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.strict", false);
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_INVALID);
+  EXPECT_EQ(BuildGraph(config), STATUS_BADCONF);
 }
 
 TEST_F(GraphTest, InputConditionNotHasSameCount) {
@@ -715,7 +742,7 @@ TEST_F(GraphTest, InputConditionNotHasSameCount) {
   config->SetProperty("graph.format", "graphviz");
   config->SetProperty("graph.strict", false);
   config->SetProperty("graph.graphconf", conf_file_value);
-  EXPECT_EQ(BuildGraph(config), STATUS_INVALID);
+  EXPECT_EQ(BuildGraph(config), STATUS_OK);
 }
 
 TEST_F(GraphTest, SucessConditionGraph) {

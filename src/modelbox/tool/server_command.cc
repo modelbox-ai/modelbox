@@ -82,6 +82,7 @@ std::string ToolCommandServer::GetHelp() {
 
 modelbox::Status ToolCommandServer::InitClient(const std::string &connect_url) {
   struct sockaddr_un client_sockaddr;
+  int unused __attribute__((unused));
   auto ret = modelbox::STATUS_OK;
   DeferCond { return ret != modelbox::STATUS_OK; };
 
@@ -127,7 +128,7 @@ modelbox::Status ToolCommandServer::InitClient(const std::string &connect_url) {
     MBLOG_ERROR << "ss chmod client ret: " << ss << ", " << modelbox::StrError(errno);
   }
 
-  chown(client_sockaddr.sun_path, -1, stat_buf.st_gid);
+  unused = chown(client_sockaddr.sun_path, -1, stat_buf.st_gid);
 
   client_fd_ = fd;
   return modelbox::STATUS_OK;
@@ -198,6 +199,7 @@ modelbox::Status ToolCommandServer::SendCommand(
 int ToolCommandServer::RecvCommand() {
   int result = 0;
   int len = 0;
+  int unused __attribute__((unused));
   auto msg = std::make_shared<ControlMsg>();
   struct sockaddr_un remote;
   socklen_t addr_len = sizeof(remote);
@@ -240,13 +242,13 @@ int ToolCommandServer::RecvCommand() {
         if (msg->GetMsgData()[out_len - 1] == '\0') {
           out_len -= 1;
         }
-        write(STDOUT_FILENO, msg->GetMsgData(), out_len);
+        unused = write(STDOUT_FILENO, msg->GetMsgData(), out_len);
         break;
       case SERVER_CONTROL_MSG_TYPE_ERRMSG:
         if (msg->GetMsgData()[out_len - 1] == '\0') {
           out_len -= 1;
         }
-        write(STDERR_FILENO, msg->GetMsgData(), out_len);
+        unused = write(STDERR_FILENO, msg->GetMsgData(), out_len);
         break;
       case SERVER_CONTROL_MSG_TYPE_RESULT: {
         auto new_msg = std::dynamic_pointer_cast<ControlMsgResult>(

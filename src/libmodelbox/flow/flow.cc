@@ -164,7 +164,7 @@ Status Flow::Init(std::shared_ptr<Configuration> config) {
   graphconfig_ = graphconf_mgr_->LoadGraphConfig(config_);
   if (graphconfig_ == nullptr) {
     MBLOG_ERROR << "Load graph config failed";
-    return StatusError;
+    return {StatusError, "load graph failed."};
   }
 
   ret = device_mgr_->Initialize(drivers_, config_);
@@ -289,7 +289,7 @@ Status Flow::Init(const std::string& name, const std::string& graph,
     std::string toml_data;
     ret = JsonToToml(graph, &toml_data);
     if (!ret) {
-      return {STATUS_NOTSUPPORT, "unknown file format"};
+      return {ret, "invalid graph"};
     }
     ifs.str(toml_data);
   } else {
@@ -433,7 +433,7 @@ Status Flow::Build() {
   auto ret = graph_->Build(gcgraph_);
   if (ret != STATUS_OK) {
     MBLOG_ERROR << "build graph failed, " << ret.WrapErrormsgs();
-    return STATUS_FAULT;
+    return ret;
   }
 
   return STATUS_OK;

@@ -34,11 +34,11 @@ class ExampleFlowUnit(modelbox.FlowUnit):
 
         # Example process code.
         # Remove the following code and add your own code here.
-        for buffer in in_data:
-            response = "Hello World " + buffer.as_object()
-            result = response.encode('utf-8').strip()
-            add_buffer = modelbox.Buffer(self.get_bind_device(), result)
-            out_data.push_back(add_buffer)
+        # for buffer in in_data:
+        #     response = "Hello World " + buffer.as_object()
+        #     result = response.encode('utf-8').strip()
+        #     add_buffer = modelbox.Buffer(self.get_bind_device(), result)
+        #     out_data.push_back(add_buffer)
 
         return modelbox.Status.StatusCode.STATUS_SUCCESS
 

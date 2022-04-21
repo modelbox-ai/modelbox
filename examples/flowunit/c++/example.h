@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MODELBOX_FLOWUNIT_HTTPSERVER_CPU_H_
-#define MODELBOX_FLOWUNIT_HTTPSERVER_CPU_H_
+#ifndef MODELBOX_FLOWUNIT_EXAMPLE_CPU_H_
+#define MODELBOX_FLOWUNIT_EXAMPLE_CPU_H_
 
 #include <modelbox/base/device.h>
 #include <modelbox/flow.h>
@@ -23,10 +23,8 @@
 
 constexpr const char *FLOWUNIT_NAME = "example";
 constexpr const char *FLOWUNIT_TYPE = "cpu";
-constexpr const char *FLOWUNIT_DESC =
-    "\n\t@Brief: A example flowunit on cpu \n"
-    "\t@Port parameter: "
-    "\t@Constraint: ";
+constexpr const char *FLOWUNIT_VERSION = "1.0.0";
+constexpr const char *FLOWUNIT_DESC = "\n\t@Brief: A example flowunit on cpu";
 
 class ExampleFlowUnit : public modelbox::FlowUnit {
  public:
@@ -42,4 +40,4 @@ class ExampleFlowUnit : public modelbox::FlowUnit {
   modelbox::Status DataGroupPost(std::shared_ptr<modelbox::DataContext> ct);
 };
 
-#endif  // MODELBOX_FLOWUNIT_HTTPSERVER_CPU_H_
+#endif  // MODELBOX_FLOWUNIT_EXAMPLE_CPU_H_

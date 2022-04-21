@@ -10,7 +10,7 @@ extern "C" {
 
 int app_monitor_keyfile(char *file);
 
-int app_monitor_init(const char *name);
+int app_monitor_init(const char *name, const char *keyfile);
 
 int app_monitor_heartbeat(void);
 

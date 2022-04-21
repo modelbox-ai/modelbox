@@ -635,6 +635,19 @@ void MockFlow::Register_Test_2_0_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
 }
 
+void MockFlow::Register_Test_OK_2_0_Flowunit() {
+  auto mock_desc = GenerateFlowunitDesc("test_ok_2_0", {"In_1", "In_2"}, {});
+  mock_desc->SetFlowType(STREAM);
+  auto data_post_func =
+      [=](std::shared_ptr<DataContext> ctx,
+          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    return modelbox::STATUS_OK;
+  };
+  auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+  mock_funcitons->RegisterDataPostFunc(data_post_func);
+  AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+}
+
 void MockFlow::Register_Test_Orgin_0_2_Flowunit() {
   auto mock_desc =
       GenerateFlowunitDesc("test_orgin_0_2", {}, {"Out_1", "Out_2"});
@@ -997,6 +1010,41 @@ void MockFlow::Register_Condition_Flowunit() {
         output_bufs_1->PushBack(buffer_ptr);
       } else {
         output_bufs_2->PushBack(buffer_ptr);
+      }
+    }
+    return modelbox::STATUS_OK;
+  };
+  mock_funcitons->RegisterProcessFunc(process_func);
+  AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+}
+
+void MockFlow::Register_Switch_Case_Flowunit() {
+  auto mock_desc = GenerateFlowunitDesc("switch_case", {"In_1"},
+                                        {"Out_1", "Out_2", "Out_3"});
+  mock_desc->SetConditionType(IF_ELSE);
+  auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+  auto process_func =
+      [=](std::shared_ptr<DataContext> ctx,
+          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    auto input_bufs_1 = ctx->Input("In_1");
+    auto output_bufs_1 = ctx->Output("Out_1");
+    auto output_bufs_2 = ctx->Output("Out_2");
+    auto output_bufs_3 = ctx->Output("Out_3");
+
+    auto device = mock_flowunit->GetBindDevice();
+
+    for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
+      auto input_data = (int*)(*input_bufs_1)[i]->ConstData();
+      auto buffer_ptr = std::make_shared<Buffer>(device);
+      buffer_ptr->Build(1 * sizeof(int));
+      auto output_data = (int*)buffer_ptr->MutableData();
+      output_data[0] = input_data[0];
+      if (input_data[0] % 3 == 0) {
+        output_bufs_1->PushBack(buffer_ptr);
+      } else if (input_data[0] % 3 == 1) {
+        output_bufs_2->PushBack(buffer_ptr);
+      } else {
+        output_bufs_3->PushBack(buffer_ptr);
       }
     }
     return modelbox::STATUS_OK;
@@ -2019,7 +2067,7 @@ void MockFlow::Register_Stream_End_Flowunit() {
     return modelbox::STATUS_OK;
   };
 
-  auto data_group_pre_func =
+  auto data_pre_func =
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     MBLOG_INFO << "stream_end "
@@ -2040,7 +2088,7 @@ void MockFlow::Register_Stream_End_Flowunit() {
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   mock_funcitons->RegisterProcessFunc(process_func);
-  mock_funcitons->RegisterDataGroupPreFunc(data_group_pre_func);
+  mock_funcitons->RegisterDataPreFunc(data_pre_func);
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc(true));
 }
 
@@ -3378,6 +3426,7 @@ bool MockFlow::Init(bool with_default_flowunit) {
     Register_ExternData_Flowunit();
     Register_Test_2_inputs_2_outputs_Flowunit();
     Register_Condition_Flowunit();
+    Register_Switch_Case_Flowunit();
     Register_Loop_Flowunit();
     Register_Loop_End_Flowunit();
     Register_Half_Condition_Flowunit();

@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-
 #include "engine/common/data_hub.h"
 
 #include <functional>
 #include <future>
 #include <thread>
 
-#include "modelbox/base/log.h"
 #include "gtest/gtest.h"
+#include "modelbox/base/log.h"
 
 namespace modelbox {
 
@@ -32,9 +31,7 @@ class DefaultDataHubTest : public testing::Test {
 
  protected:
   std::shared_ptr<Node> node_;
-  virtual void SetUp() {
-    node_ = std::make_shared<Node>("test", "cpu", "1", nullptr, nullptr);
-  };
+  virtual void SetUp() { node_ = std::make_shared<Node>(); };
   virtual void TearDown(){};
 };
 
@@ -86,22 +83,22 @@ TEST_F(DefaultDataHubTest, SelectActivePort) {
   EXPECT_EQ(status, STATUS_SUCCESS);
   EXPECT_EQ(data_hub.GetPortNum(), 3);
 
-  auto buffer_1_0 = std::make_shared<IndexBuffer>();
-  buffer_1_0->SetPriority(priority_1);
+  auto buffer_1_0 = std::make_shared<Buffer>();
+  BufferManageView::SetPriority(buffer_1_0, priority_1);
   auto in_port_1 =
       std::dynamic_pointer_cast<InPort>(priority_port_1->GetPort());
   in_port_1->GetQueue()->Push(buffer_1_0);
   in_port_1->NotifyPushEvent();
   auto in_port_0 =
       std::dynamic_pointer_cast<InPort>(priority_port_0->GetPort());
-  auto buffer_0_0 = std::make_shared<IndexBuffer>();
-  buffer_0_0->SetPriority(priority_0);
+  auto buffer_0_0 = std::make_shared<Buffer>();
+  BufferManageView::SetPriority(buffer_0_0, priority_0);
   in_port_0->GetQueue()->Push(buffer_0_0);
   in_port_0->NotifyPushEvent();
   auto in_port_3 =
       std::dynamic_pointer_cast<InPort>(priority_port_3->GetPort());
-  auto buffer_3_0 = std::make_shared<IndexBuffer>();
-  buffer_3_0->SetPriority(priority_3);
+  auto buffer_3_0 = std::make_shared<Buffer>();
+  BufferManageView::SetPriority(buffer_3_0, priority_3);
   in_port_3->GetQueue()->Push(buffer_3_0);
   in_port_3->NotifyPushEvent();
   EXPECT_EQ(data_hub.GetActivePortNum(), 3);
@@ -158,8 +155,8 @@ TEST_F(DefaultDataHubTest, InactivePort) {
 
   EXPECT_EQ(data_hub.GetPortNum(), 3);
 
-  auto buffer = std::make_shared<IndexBuffer>();
-  buffer->SetPriority(priority_1);
+  auto buffer = std::make_shared<Buffer>();
+  BufferManageView::SetPriority(buffer, priority_1);
   auto in_port_0 =
       std::dynamic_pointer_cast<InPort>(priority_port_0->GetPort());
   in_port_0->GetQueue()->Push(buffer);

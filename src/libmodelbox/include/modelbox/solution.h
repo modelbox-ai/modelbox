@@ -22,7 +22,7 @@
 #include <memory>
 #include <string>
 
-#define DEFAULT_SLOTION_PATH "/usr/local/share/modelbox/solution/graphs"
+#define DEFAULT_SLOTION_PATH "/usr/local/share/modelbox/solutions/graphs"
 
 namespace modelbox {
 

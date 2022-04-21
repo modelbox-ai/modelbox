@@ -39,7 +39,7 @@ static void _app_monitor_reset_msgkey(void) {
   g_msgid = -1;
 }
 
-int app_monitor_init(const char *name) {
+int app_monitor_init(const char *name, const char *keyfile) {
   if (name == NULL) {
     return -1;
   }
@@ -49,6 +49,10 @@ int app_monitor_init(const char *name) {
   _app_monitor_reset_msgkey();
   if (strlen(g_key_file) <= 0) {
     snprintf(g_key_file, PATH_MAX, "%s/%s.key", MANAGER_PID_PATH, MANAGER_NAME);
+  }
+
+  if (keyfile) {
+    snprintf(g_key_file, PATH_MAX, "%s", keyfile);
   }
 
   return 0;

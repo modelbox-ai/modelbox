@@ -2,6 +2,7 @@
 ip = "127.0.0.1"
 port = "1104"
 flow_path = "@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/graph"
+application_root = "/opt/modelbox/application"
 
 # [acl]
 # allow = [
@@ -23,7 +24,7 @@ enable = false
 # ip = "127.0.0.1"
 # port = "1104"
 root = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/www"
-solution_graphs = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/solution/graphs"
+demo_root = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/demo"
 
 [log]
 # log level, DEBUG, INFO, NOTICE, WARN, ERROR, FATAL, OFF

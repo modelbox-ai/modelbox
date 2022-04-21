@@ -166,7 +166,7 @@ modelbox::Status NppiCropFlowUnit::ProcessOneImage(
   auto output_buffer = output_buffer_list->At(index);
   output_buffer->Set("width", dst_size.width);
   output_buffer->Set("height", dst_size.height);
-  output_buffer->Set("width_stride", dst_size.width);
+  output_buffer->Set("width_stride", dst_size.width * 3);
   output_buffer->Set("height_stride", dst_size.height);
   output_buffer->Set("channel", src_size.channel);
   output_buffer->Set("pix_fmt", pix_fmt);

@@ -30,6 +30,11 @@ class ServerTimer : public modelbox::Timer {
   static ServerTimer *GetInstance();
 
   /**
+   * @brief Server timer start
+   */
+  void Start();
+
+  /**
    * @brief Server timer run
    */
   void Run() override;

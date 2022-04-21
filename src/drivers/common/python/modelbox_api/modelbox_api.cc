@@ -16,6 +16,7 @@
  */
 
 #include "modelbox_api.h"
+
 #include <modelbox/base/config.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
@@ -27,8 +28,11 @@
 #include <securec.h>
 
 #include <string>
+
 #include "modelbox/data_context.h"
+
 #include "modelbox/external_data_simple.h"
+#include "modelbox/error.h"
 #include "modelbox/flow.h"
 #include "modelbox/modelbox_engine.h"
 #include "modelbox/type.h"
@@ -48,7 +52,9 @@ struct pybind11::detail::npy_format_descriptor<modelbox::Float16> {
     return "e";
   }
 
-  static constexpr auto name() { return _("float16"); }
+  static constexpr auto name() -> pybind11::detail::descr<7> {
+    return _("float16");
+  }
 };
 
 namespace modelbox {
@@ -855,9 +861,11 @@ void ModelboxPyApiSetUpDataContext(pybind11::module &m) {
 
   py::class_<modelbox::DataContext, std::shared_ptr<modelbox::DataContext>>(
       m, "DataContext", py::module_local())
-      .def("input", py::overload_cast<const std::string &>(
-                        &modelbox::DataContext::Input, py::const_))
-      .def("output", py::overload_cast<const std::string &>(
+      .def("input", static_cast<std::shared_ptr<modelbox::BufferList> (
+                        modelbox::DataContext::*)(const std::string &) const>(
+                        &modelbox::DataContext::Input))
+      .def("output", static_cast<std::shared_ptr<modelbox::BufferList> (
+                         modelbox::DataContext::*)(const std::string &)>(
                          &modelbox::DataContext::Output))
       .def("external", &modelbox::DataContext::External)
       .def("event", &modelbox::DataContext::Event)
@@ -1122,17 +1130,20 @@ void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
              return sub_data;
            },
            py::call_guard<py::gil_scoped_release>())
+
       .def("setmeta",
-           py::overload_cast<const std::string &, const std::string &>(
+           static_cast<modelbox::Status (modelbox::DataHandler::*)(
+               const std::string &, const std::string &)>(
                &modelbox::DataHandler::SetMeta),
            py::call_guard<py::gil_scoped_release>())
       .def("pushdata",
-           py::overload_cast<std::shared_ptr<modelbox::Buffer> &,
-                             const std::string>(
+           static_cast<modelbox::Status (modelbox::DataHandler::*)(
+               std::shared_ptr<modelbox::Buffer> &, const std::string)>(
                &modelbox::DataHandler::PushData),
            py::call_guard<py::gil_scoped_release>())
       .def("pushdata",
-           py::overload_cast<std::shared_ptr<DataHandler> &, const std::string>(
+           static_cast<modelbox::Status (modelbox::DataHandler::*)(
+               std::shared_ptr<DataHandler> &, const std::string)>(
                &modelbox::DataHandler::PushData),
            py::call_guard<py::gil_scoped_release>())
       .def("get_datahandler", &modelbox::DataHandler::GetDataHandler,

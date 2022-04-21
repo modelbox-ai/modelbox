@@ -36,6 +36,7 @@ class ExternalCommandKey : public ToolCommand {
   void SetCommandName(const std::string &name);
   void SetCommandDesc(const std::string &desc);
   void SetHelpCmd(const std::string &help_cmd);
+  void SetTimeout(int timeout);
   std::string GetCommandName();
   std::string GetCommandDesc();
 
@@ -44,6 +45,7 @@ class ExternalCommandKey : public ToolCommand {
   std::string name_;
   std::string desc_;
   std::string help_cmd_;
+  int timeout_{-1};
 };
 
 constexpr const char *EXTERNAL_TOOLS_PATH = "/usr/local/share/modelbox/tools";

@@ -40,7 +40,7 @@ Status InPort::Init() {
   return STATUS_SUCCESS;
 }
 
-void InPort::Recv(std::vector<std::shared_ptr<IndexBuffer>>& buffer_vector,
+void InPort::Recv(std::vector<std::shared_ptr<Buffer>>& buffer_vector,
                   uint32_t left_buffer_num) {
   if (left_buffer_num == 0) {
     if (queue_->RemainCapacity() == 0) {
@@ -61,9 +61,12 @@ bool InPort::SetOutputPort(std::shared_ptr<OutPort> output_port) {
       return false;
     }
   }
+
   output_ports.push_back(output_port);
   return true;
 }
+
+size_t InPort::GetConnectedPortNumber() { return output_ports.size(); }
 
 std::vector<std::weak_ptr<OutPort>> InPort::GetAllOutPort() {
   return output_ports;
@@ -82,9 +85,9 @@ Status OutPort::Init() {
   return STATUS_SUCCESS;
 }
 
-Status OutPort::Send(std::vector<std::shared_ptr<IndexBuffer>>& buffer_vector) {
-  std::vector<std::vector<std::shared_ptr<IndexBuffer>>> buffer_vectors(
-      input_ports_.size(), buffer_vector);
+Status OutPort::Send(std::vector<std::shared_ptr<Buffer>>& buffers) {
+  std::vector<std::vector<std::shared_ptr<Buffer>>> buffer_vectors(
+      connected_input_ports_.size(), buffers);
   size_t idx = 0;
   bool loop;
   auto real_node = std::dynamic_pointer_cast<Node>(GetNode());
@@ -93,22 +96,23 @@ Status OutPort::Send(std::vector<std::shared_ptr<IndexBuffer>>& buffer_vector) {
     loop_type = real_node->GetLoopType();
   }
 
-  for (auto input_port : input_ports_) {
+  for (auto input_port : connected_input_ports_) {
     loop = false;
     auto queue = input_port->GetQueue();
     auto priority = input_port->GetPriority();
     for (auto& buffer : buffer_vectors[idx]) {
       // only loop flowunit itself in the loop structure
+      auto buffer_priority = BufferManageView::GetPriority(buffer);
       if (loop_type == LOOP) {
-        buffer->SetPriority(buffer->GetPriority() + 1);
+        BufferManageView::SetPriority(buffer, buffer_priority + 1);
         continue;
       }
-      
-      if (buffer->GetPriority() < priority) {
-        buffer->SetPriority(priority);
+
+      if (buffer_priority < priority) {
+        BufferManageView::SetPriority(buffer, priority);
         continue;
       }
-      
+
       // during loop
       loop = true;
     }
@@ -132,32 +136,32 @@ Status OutPort::Send(std::vector<std::shared_ptr<IndexBuffer>>& buffer_vector) {
     idx++;
   }
 
-  for (auto& input_port : input_ports_) {
+  for (auto& input_port : connected_input_ports_) {
     input_port->NotifyPushEvent();
   }
 
   return STATUS_SUCCESS;
 }
 
-bool OutPort::AddPort(std::shared_ptr<InPort> inport) {
+bool OutPort::ConnectPort(std::shared_ptr<InPort> inport) {
   if (inport == nullptr) {
     return false;
   }
   if (!inport->SetOutputPort(shared_from_this())) {
     return false;
   }
-  auto pair = input_ports_.emplace(inport);
+  auto pair = connected_input_ports_.emplace(inport);
   return pair.second;
 }
 
 void OutPort::Shutdown() {
-  for (auto inport : input_ports_) {
+  for (auto inport : connected_input_ports_) {
     inport->Shutdown();
   }
 }
 
 std::set<std::shared_ptr<InPort>> OutPort::GetConnectInPort() {
-  return input_ports_;
+  return connected_input_ports_;
 }
 
 Status EventPort::SendBatch(

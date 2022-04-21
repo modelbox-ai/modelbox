@@ -39,16 +39,14 @@ modelbox::MockDriverGraphConfig *GetDriverMock() {
 
 void DriverDescription(modelbox::DriverDesc *desc) {
   if (modelbox::MockDriverGraphConfig::Instance()->GetDriverDesc() == nullptr) {
-    ColoredPrintf(
-        ::testing::internal::COLOR_RED,
-        "===========================================================\n");
-    ColoredPrintf(::testing::internal::COLOR_RED,
-                  "= WARNNING: Driver is not mocked. \n");
-    ColoredPrintf(::testing::internal::COLOR_RED,
-                  "= please clean directory : %s \n", TEST_LIB_DIR);
-    ColoredPrintf(
-        ::testing::internal::COLOR_RED,
-        "===========================================================\n");
+    printf(
+        "\x1B[31m==========================================================="
+        "\x1B[0m\n");
+    printf("\x1B[31m= WARNNING: Driver is not mocked. \x1B[0m\n");
+    printf("\x1B[31m= please clean directory : %s \x1B[0m\n", TEST_LIB_DIR);
+    printf(
+        "\x1B[31m==========================================================="
+        "\x1B[0m\n");
     FAIL();
     return;
   }

@@ -70,14 +70,6 @@ modelbox::Status DataSourceParserFlowUnit::Close() {
 
 modelbox::Status DataSourceParserFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> ctx) {
-  auto buffer_list = ctx->Output(OUTPUT_STREAM_META);
-  buffer_list->Build({1});
-
-  return modelbox::STATUS_OK;
-}
-
-modelbox::Status DataSourceParserFlowUnit::DataPre(
-    std::shared_ptr<modelbox::DataContext> ctx) {
   auto session_ctx = ctx->GetSessionContext();
   if (!session_ctx) {
     MBLOG_ERROR << "Session ctx is null";
@@ -135,7 +127,8 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
   DestroyUriFunc destroy_uri_func;
   std::string stream_type;
 
-  auto ret = plugin->Parse(session_context, data_source_cfg, uri_str, destroy_uri_func);
+  auto ret = plugin->Parse(session_context, data_source_cfg, uri_str,
+                           destroy_uri_func);
   if (!ret) {
     MBLOG_ERROR << "Parse config failed, source uri is empty";
   }
@@ -143,7 +136,7 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
   auto source_context = plugin->GetSourceContext(source_type);
   plugin->GetStreamType(data_source_cfg, stream_type);
   if (source_context) {
-    source_context->SetStreamType(stream_type);    
+    source_context->SetStreamType(stream_type);
     source_context->SetSessionContext(session_context);
   }
 
@@ -178,6 +171,9 @@ modelbox::Status DataSourceParserFlowUnit::WriteData(
   data_meta->SetMeta(STREAM_META_SOURCE_URL, uri);
   data_meta->SetMeta(PARSER_RETRY_CONTEXT, source_context);
   ctx->SetOutputMeta(OUTPUT_STREAM_META, data_meta);
+
+  auto buffer_list = ctx->Output(OUTPUT_STREAM_META);
+  buffer_list->Build({1});
   return modelbox::STATUS_OK;
 }
 

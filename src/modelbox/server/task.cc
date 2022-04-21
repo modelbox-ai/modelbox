@@ -111,11 +111,13 @@ Status Task::Stop() {
     return {STATUS_INVALID, "task is already finished"};
   }
 
-  auto status = external_data->Close();
+  auto status = external_data->Shutdown();
   if (status != STATUS_SUCCESS) {
     return status;
   }
-  cv_.wait(guard);
+  cv_.wait(guard, [this]() {
+    return status_ == STOPPED || status_ == ABNORMAL || status_ == FINISHED;
+  });
   return STATUS_SUCCESS;
 }
 
@@ -205,8 +207,9 @@ Status Task::SendData() {
 }
 
 void Task::UpdateTaskStatus(TaskStatus task_status) {
+  std::unique_lock<std::mutex> guard(lock_);
   status_ = task_status;
-  cv_.notify_one();
+  cv_.notify_all();
 }
 
 OneShotTask::OneShotTask() : Task() {}
@@ -269,7 +272,7 @@ Status OneShotTask::FeedData() {
     }
     data_iter++;
   }
-  external_data->Shutdown();
+  external_data->Close();
   return STATUS_EOF;
 }
 

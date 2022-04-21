@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/virtual_node.h"
 
 #include <fstream>
 #include <string>
 
-#include "modelbox/base/log.h"
-#include "modelbox/data_context.h"
-#include "modelbox/graph.h"
-#include "modelbox/session_context.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "graph_conf_mockgraphconf/graph_conf_mockgraphconf.h"
 #include "gtest/gtest.h"
 #include "mock_driver_ctl.h"
 #include "mockflow.h"
+#include "modelbox/base/log.h"
+#include "modelbox/data_context.h"
+#include "modelbox/graph.h"
+#include "modelbox/session_context.h"
 
 using ::testing::_;
 namespace modelbox {
@@ -61,11 +60,13 @@ class VirtualNodeTest : public testing::Test {
         mock_flowunit_desc->SetFlowType(NORMAL);
         mock_flowunit_desc->SetFlowUnitName("add10");
         mock_flowunit_desc->AddFlowUnitInput(modelbox::FlowUnitInput("In_1"));
-        mock_flowunit_desc->AddFlowUnitOutput(modelbox::FlowUnitOutput("Out_1"));
+        mock_flowunit_desc->AddFlowUnitOutput(
+            modelbox::FlowUnitOutput("Out_1"));
         mock_flowunit->SetFlowUnitDesc(mock_flowunit_desc);
         EXPECT_CALL(*mock_flowunit, Open(_))
             .WillRepeatedly(testing::Invoke(
-                [&](const std::shared_ptr<modelbox::Configuration>& flow_option) {
+                [&](const std::shared_ptr<modelbox::Configuration>&
+                        flow_option) {
                   MBLOG_INFO << "add Open";
                   return modelbox::STATUS_OK;
                 }));
@@ -125,7 +126,9 @@ class VirtualNodeTest : public testing::Test {
     drivers->Scan(TEST_LIB_DIR, "/libmodelbox-unit-*");
   }
 
-  virtual void TearDown() { ModelBoxLogger.GetLogger()->SetLogLevel(old_level_); }
+  virtual void TearDown() {
+    ModelBoxLogger.GetLogger()->SetLogLevel(old_level_);
+  }
 
   const std::string test_lib_dir = TEST_LIB_DIR;
   const std::string test_data_dir = TEST_DATA_DIR;
@@ -176,7 +179,7 @@ TEST_F(VirtualNodeTest, VirtualNode_ONE_INPUT) {
       MBLOG_ERROR << "external data send buffer list failed:" << status;
     }
 
-    status = ext_data->Shutdown();
+    status = ext_data->Close();
     if (!status) {
       MBLOG_ERROR << "external data close failed:" << status;
     }
@@ -221,7 +224,7 @@ TEST_F(VirtualNodeTest, VirtualNode_ONE_INPUT) {
       MBLOG_ERROR << "external data send buffer list failed:" << status;
     }
 
-    status = ext_data->Shutdown();
+    status = ext_data->Close();
     if (!status) {
       MBLOG_ERROR << "external data close failed:" << status;
     }
@@ -326,7 +329,7 @@ TEST_F(VirtualNodeTest, VirtualNode_MULTI_INPUT) {
 
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data->Shutdown();
+    status = ext_data->Close();
     EXPECT_EQ(status, STATUS_SUCCESS);
 
     OutputBufferList map_buffer_list_2;
@@ -395,7 +398,7 @@ TEST_F(VirtualNodeTest, VirtualNode_NO_OUTPUT) {
     auto status = ext_data->Send("input1", output_buf);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data->Shutdown();
+    status = ext_data->Close();
     EXPECT_EQ(status, STATUS_SUCCESS);
 
     OutputBufferList map_buffer_list;
@@ -417,17 +420,14 @@ TEST_F(VirtualNodeTest, VirtualNode_NO_OUTPUT) {
     auto status = ext_data->Send("input1", output_buf);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data->Shutdown();
+    status = ext_data->Close();
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data->Close();
-
     OutputBufferList map_buffer_list;
-
     status = ext_data->Recv(map_buffer_list);
-    EXPECT_EQ(status, STATUS_INVALID);
+    EXPECT_EQ(status, STATUS_EOF);
     auto error = ext_data->GetLastError();
-    EXPECT_EQ(error->GetDesc(), "EOF");
+    EXPECT_EQ(error, nullptr);
   }
   flow->Wait(5 * 1000);
 }
@@ -469,7 +469,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop) {
     auto status = ext_data->Send("input1", output_buf);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data->Shutdown();
+    status = ext_data->Close();
     EXPECT_EQ(status, STATUS_SUCCESS);
 
     OutputBufferList map_buffer_list;
@@ -478,7 +478,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop) {
     while (true) {
       auto status = ext_data->Recv(map_buffer_list);
       if (i == 5) {
-        ext_data->Close();
+        ext_data->Shutdown();
       }
       if (status != STATUS_SUCCESS) {
         EXPECT_EQ(status, STATUS_INVALID);
@@ -532,7 +532,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop_2) {
     auto status = ext_data->Send("input1", output_buf);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data->Shutdown();
+    status = ext_data->Close();
     EXPECT_EQ(status, STATUS_SUCCESS);
 
     OutputBufferList map_buffer_list;
@@ -541,7 +541,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop_2) {
     while (true) {
       auto status = ext_data->Recv(map_buffer_list);
       if (i == 200) {
-        ext_data->Close();
+        ext_data->Shutdown();
       }
       if (status != STATUS_SUCCESS) {
         EXPECT_EQ(status, STATUS_INVALID);
@@ -552,6 +552,79 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop_2) {
       i++;
     }
   }
+  flow->Wait(5 * 1000);
+}
+
+TEST_F(VirtualNodeTest, VirtualNode_Stop_3) {
+  std::string toml_content = R"(
+    [driver]
+    skip-default=true
+    dir=[")" + std::string(TEST_LIB_DIR) +
+                             "\"]\n    " +
+                             R"(
+    [graph]
+    graphconf = '''digraph demo {
+          input1[type=input, device=cpu,deviceid=0] 
+          output1[type=output, device=cpu, deviceid=0]
+          stream_start[type=flowunit, flowunit=virtual_stream_start, device=cpu, deviceid=0, label="<In_1> | <Out_1>"]
+          stream_mid[type=flowunit, flowunit=virtual_stream_mid, device=cpu, deviceid=0, label="<In_1> | <Out_1>", batch_size=5]
+          
+          input1 ->stream_start:In_1
+          stream_start:Out_1 ->stream_mid:In_1
+          stream_mid:Out_1->output1
+
+        }'''
+    format = "graphviz"
+  )";
+  auto ret = mock_flow_->BuildAndRun("VirtualNode_Select", toml_content, -1);
+  auto flow = mock_flow_->GetFlow();
+
+  {
+    auto ext_data_1 = flow->CreateExternalDataMap();
+
+    auto output_buf_1 = ext_data_1->CreateBufferList();
+    output_buf_1->Build({3 * sizeof(int)});
+    auto data_1 = (int*)output_buf_1->MutableData();
+    data_1[0] = 0;
+    data_1[1] = 25000;
+    data_1[2] = 3;
+
+    auto status = ext_data_1->Send("input1", output_buf_1);
+    EXPECT_EQ(status, STATUS_SUCCESS);
+
+    auto selector = std::make_shared<ExternalDataSelect>();
+    selector->RegisterExternalData(ext_data_1);
+
+    int recv_count = 0;
+    while (true) {
+      std::list<std::shared_ptr<ExternalDataMap>> external_list;
+      auto select_status = selector->SelectExternalData(
+          external_list, std::chrono::milliseconds(3000));
+      if (select_status == STATUS_TIMEDOUT) {
+        break;
+      }
+
+      for (auto external : external_list) {
+        OutputBufferList map_buffer_list;
+        external->Recv(map_buffer_list);
+
+        if (external == ext_data_1) {
+          recv_count++;
+          if (recv_count >= 50) {
+            ext_data_1->Close();
+          }
+          if (recv_count >= 100) {
+            ext_data_1->Shutdown();
+          }
+        }
+      }
+    }
+
+    OutputBufferList map_buffer_list;
+    auto last_status_1 = ext_data_1->Recv(map_buffer_list);
+    EXPECT_EQ(last_status_1, STATUS_INVALID);
+  }
+
   flow->Wait(5 * 1000);
 }
 
@@ -592,7 +665,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
     auto status = ext_data_1->Send("input1", output_buf_1);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data_1->Shutdown();
+    status = ext_data_1->Close();
     EXPECT_EQ(status, STATUS_SUCCESS);
 
     auto ext_data_2 = flow->CreateExternalDataMap();
@@ -613,8 +686,6 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
 
     int size = 0;
     int recv_count = 0;
-    Status last_status_1 = STATUS_SUCCESS;
-    Status last_status_2 = STATUS_SUCCESS;
 
     while (true) {
       std::list<std::shared_ptr<ExternalDataMap>> external_list;
@@ -623,7 +694,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
       if (select_status == STATUS_TIMEDOUT) {
         break;
       }
-      
+
       for (auto external : external_list) {
         OutputBufferList map_buffer_list;
         auto status = external->Recv(map_buffer_list);
@@ -631,21 +702,20 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
           size += map_buffer_list["output1"]->Size();
         }
 
-        if (external == ext_data_1) {
-          last_status_1 = status;
-        }
-
         if (external == ext_data_2) {
-          last_status_2 = status;
           recv_count++;
           if (recv_count >= 10) {
-            ext_data_2->Close();
+            ext_data_2->Shutdown();
           }
         }
       }
     }
     EXPECT_EQ(size, 8334);
+
+    OutputBufferList map_buffer_list;
+    auto last_status_1 = ext_data_1->Recv(map_buffer_list);
     EXPECT_EQ(last_status_1, STATUS_EOF);
+    auto last_status_2 = ext_data_2->Recv(map_buffer_list);
     EXPECT_EQ(last_status_2, STATUS_INVALID);
   }
 
@@ -746,7 +816,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Muliti_Output) {
     auto status = ext_data_1->Send("input1", output_buf_1);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    status = ext_data_1->Shutdown();
+    status = ext_data_1->Close();
     EXPECT_EQ(status, STATUS_SUCCESS);
 
     uint32_t size_1 = 0;

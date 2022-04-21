@@ -59,8 +59,6 @@ class SingleNode : public Node {
 
  private:
   std::shared_ptr<FlowUnitDataContext> data_context_;
-  std::string flowunit_name_;
-  std::string flowunit_type_;
   std::shared_ptr<Configuration> config_;
 };
 

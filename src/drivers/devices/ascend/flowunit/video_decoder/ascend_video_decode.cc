@@ -335,15 +335,11 @@ modelbox::Status AscendVideoDecoder::ProcessLastPacket(
 
   aclError ret = ACL_ERROR_NONE;
 
-  do {
-    ret = aclvdecSendFrame(vdecChannelDesc_.get(), dvpp_packet->GetStreamDesc(),
-                           nullptr, nullptr, (void *)dvpp_decoder_ctx.get());
-    if (ret == ACL_ERROR_NONE) {
-      continue;
-    }
-    MBLOG_DEBUG << "send eos frame failed, err code: " << ret;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  } while (ret != ACL_ERROR_NONE);
+  ret = aclvdecSendFrame(vdecChannelDesc_.get(), dvpp_packet->GetStreamDesc(),
+                         nullptr, nullptr, (void *)dvpp_decoder_ctx.get());
+  if (ret != ACL_ERROR_NONE) {
+    MBLOG_ERROR << "send eos frame failed, err code: " << ret;
+  }
 
   return modelbox::STATUS_NODATA;
 }
@@ -373,16 +369,13 @@ modelbox::Status AscendVideoDecoder::Decode(
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
-  do {
-    ret = aclvdecSendFrame(vdecChannelDesc_.get(), dvpp_packet->GetStreamDesc(),
-                           pic_desc.get(), nullptr,
-                           (void *)dvpp_decoder_ctx.get());
-    if (ret == ACL_ERROR_NONE) {
-      continue;
-    }
-    MBLOG_DEBUG << "send vdec frame failed, err code " << ret;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  } while (ret != ACL_ERROR_NONE);
+  ret =
+      aclvdecSendFrame(vdecChannelDesc_.get(), dvpp_packet->GetStreamDesc(),
+                       pic_desc.get(), nullptr, (void *)dvpp_decoder_ctx.get());
+
+  if (ret != ACL_ERROR_NONE) {
+    MBLOG_ERROR << "send vdec frame failed, err code " << ret;
+  }
 
   return modelbox::STATUS_SUCCESS;
 }

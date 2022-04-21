@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/port.h"
 
 #include "gmock/gmock.h"
@@ -29,20 +28,12 @@ class PortTest : public testing::Test {
   PortTest() {}
 
  protected:
-  std::shared_ptr<MockFlow> flow_;
   std::shared_ptr<Node> node_;
   virtual void SetUp() {
-    flow_ = std::make_shared<MockFlow>();
-    flow_->Init();
-    ConfigurationBuilder configbuilder;
-    auto config = configbuilder.Build();
-    node_ = std::make_shared<Node>("test_2_inputs_2_outputs", "cpu", "0",
-                                   nullptr, nullptr);
+    node_ = std::make_shared<Node>();
+    node_->SetFlowUnitInfo("test_2_inputs_2_outputs", "cpu", "0", nullptr);
   };
-  virtual void TearDown() {
-    node_ = nullptr;
-    flow_->Destroy();
-  };
+  virtual void TearDown(){};
 };
 
 class InPortTest : public testing::Test {
@@ -50,105 +41,8 @@ class InPortTest : public testing::Test {
   InPortTest() {}
 
  protected:
-  std::shared_ptr<MockFlow> flow_;
-
-  std::shared_ptr<Node> node_;
-  std::vector<std::shared_ptr<IndexBuffer>> root_vector_1_;
-  std::vector<std::shared_ptr<IndexBuffer>> root_vector_2_;
-  std::vector<std::shared_ptr<IndexBuffer>> buffer_vector_1_;
-  std::vector<std::shared_ptr<IndexBuffer>> buffer_vector_2_;
-  std::vector<std::shared_ptr<IndexBuffer>> other_buffer_vector_1_;
-  std::vector<std::shared_ptr<IndexBuffer>> other_buffer_vector_2_;
-
-  std::shared_ptr<IndexBuffer> root_buffer_1_;
-  std::shared_ptr<IndexBuffer> root_buffer_2_;
-  std::shared_ptr<IndexBuffer> buffer_01_;
-  std::shared_ptr<IndexBuffer> buffer_02_;
-  std::shared_ptr<IndexBuffer> buffer_03_;
-  std::shared_ptr<IndexBuffer> buffer_11_;
-  std::shared_ptr<IndexBuffer> buffer_12_;
-  std::shared_ptr<IndexBuffer> other_buffer_01_;
-  std::shared_ptr<IndexBuffer> other_buffer_02_;
-  std::shared_ptr<IndexBuffer> other_buffer_03_;
-
-  std::shared_ptr<SingleMatch> single_match_;
-  std::shared_ptr<StreamMatch> group_match_;
-  virtual void SetUp() {
-    flow_ = std::make_shared<MockFlow>();
-    flow_->Init();
-    auto flowunit_mgr = FlowUnitManager::GetInstance();
-    ConfigurationBuilder configbuilder;
-    auto config = configbuilder.Build();
-    node_ = std::make_shared<Node>("test_2_inputs_2_outputs", "cpu", "0",
-                                   flowunit_mgr, nullptr);
-
-    std::set<std::string> input_port_names = {"In_1", "In_2"};
-    std::set<std::string> output_port_names = {"Out_1", "Out_2"};
-    auto status = node_->Init(input_port_names, output_port_names, config);
-
-    single_match_ = node_->GetSingleMatchCache()->GetReceiveBuffer();
-    group_match_ = node_->GetStreamMatchCache()->GetStreamReceiveBuffer();
-
-    root_buffer_1_ = std::make_shared<IndexBuffer>();
-    root_buffer_1_->BindToRoot();
-
-    root_buffer_2_ = std::make_shared<IndexBuffer>();
-    root_buffer_1_->CopyMetaTo(root_buffer_2_);
-
-    buffer_01_ = std::make_shared<IndexBuffer>();
-    root_buffer_1_->BindDownLevelTo(buffer_01_, true, false);
-
-    buffer_02_ = std::make_shared<IndexBuffer>();
-    root_buffer_1_->BindDownLevelTo(buffer_02_, false, false);
-
-    buffer_03_ = std::make_shared<IndexBuffer>();
-    root_buffer_1_->BindDownLevelTo(buffer_03_, false, true);
-
-    buffer_11_ = std::make_shared<IndexBuffer>();
-    root_buffer_1_->BindDownLevelTo(buffer_11_, true, false);
-
-    buffer_12_ = std::make_shared<IndexBuffer>();
-    root_buffer_1_->BindDownLevelTo(buffer_12_, false, true);
-
-    other_buffer_01_ = std::make_shared<IndexBuffer>();
-    root_buffer_2_->BindDownLevelTo(other_buffer_01_, true, false);
-
-    other_buffer_02_ = std::make_shared<IndexBuffer>();
-    root_buffer_2_->BindDownLevelTo(other_buffer_02_, false, false);
-
-    other_buffer_03_ = std::make_shared<IndexBuffer>();
-    root_buffer_2_->BindDownLevelTo(other_buffer_03_, false, true);
-
-    root_vector_1_.push_back(root_buffer_1_);
-    root_vector_2_.push_back(root_buffer_2_);
-
-    buffer_vector_1_.push_back(buffer_03_);
-    buffer_vector_1_.push_back(buffer_01_);
-    buffer_vector_1_.push_back(buffer_11_);
-    buffer_vector_1_.push_back(buffer_12_);
-
-    buffer_vector_2_.push_back(buffer_11_);
-    buffer_vector_2_.push_back(buffer_12_);
-    buffer_vector_2_.push_back(buffer_01_);
-
-    other_buffer_vector_1_.push_back(other_buffer_01_);
-    other_buffer_vector_1_.push_back(other_buffer_02_);
-    other_buffer_vector_1_.push_back(buffer_01_);
-    other_buffer_vector_1_.push_back(buffer_03_);
-    other_buffer_vector_1_.push_back(buffer_11_);
-    other_buffer_vector_1_.push_back(buffer_12_);
-
-    other_buffer_vector_2_.push_back(other_buffer_01_);
-    other_buffer_vector_2_.push_back(other_buffer_03_);
-    other_buffer_vector_2_.push_back(buffer_01_);
-    other_buffer_vector_2_.push_back(buffer_03_);
-    other_buffer_vector_2_.push_back(buffer_11_);
-    other_buffer_vector_2_.push_back(buffer_12_);
-  };
-  virtual void TearDown() {
-    node_ = nullptr;
-    flow_->Destroy();
-  };
+  virtual void SetUp(){};
+  virtual void TearDown(){};
 };
 
 TEST_F(PortTest, Construct) {
@@ -164,141 +58,21 @@ TEST_F(InPortTest, GetDataCount) {
   EXPECT_EQ(port->GetDataCount(), 0);
 
   {
-    auto buffer = std::make_shared<IndexBuffer>();
+    auto buffer = std::make_shared<Buffer>();
     port->Send(buffer);
     EXPECT_EQ(port->GetDataCount(), 1);
   }
 
   {
-    auto buffer = std::make_shared<IndexBuffer>();
+    auto buffer = std::make_shared<Buffer>();
     port->Send(buffer);
     EXPECT_EQ(port->GetDataCount(), 2);
   }
 
   auto notify_port =
-      std::dynamic_pointer_cast<NotifyPort<IndexBuffer, CustomCompare>>(port);
+      std::dynamic_pointer_cast<NotifyPort<Buffer, CustomCompare>>(port);
   notify_port->Recv();
   EXPECT_EQ(port->GetDataCount(), 1);
-}
-
-TEST_F(InPortTest, RecvEmpty) {
-  auto port_1 = node_->GetInputPort("In_1");
-  auto port_2 = node_->GetInputPort("In_2");
-
-  EXPECT_EQ(node_->ReceiveBuffer(port_1), STATUS_SUCCESS);
-  EXPECT_EQ(0, single_match_->size());
-  EXPECT_EQ(0, group_match_->size());
-  EXPECT_EQ(node_->ReceiveBuffer(port_2), STATUS_SUCCESS);
-  EXPECT_EQ(0, single_match_->size());
-  EXPECT_EQ(0, group_match_->size());
-}
-
-TEST_F(InPortTest, RecvRoot) {
-  auto port_1 = node_->GetInputPort("In_1");
-  auto input_queue_1 = port_1->GetQueue();
-  input_queue_1->PushBatch(&root_vector_1_);
-
-  auto port_2 = node_->GetInputPort("In_2");
-  auto input_queue_2 = port_2->GetQueue();
-  input_queue_2->PushBatch(&root_vector_2_);
-
-  EXPECT_EQ(node_->ReceiveBuffer(port_1), STATUS_SUCCESS);
-  node_->ReceiveGroupBuffer();
-  EXPECT_EQ(1, single_match_->size());
-  EXPECT_EQ(0, group_match_->size());
-  EXPECT_EQ(node_->ReceiveBuffer(port_2), STATUS_SUCCESS);
-  node_->ReceiveGroupBuffer();
-  EXPECT_EQ(0, single_match_->size());
-  EXPECT_EQ(1, group_match_->size());
-}
-
-TEST_F(InPortTest, RecvStream) {
-  auto key_group_1 = std::make_tuple(buffer_01_->GetStreamLevelGroup(), 1);
-  auto key_group_2 = std::make_tuple(buffer_11_->GetStreamLevelGroup(), 2);
-
-  auto port_1 = node_->GetInputPort("In_1");
-  auto input_queue_1 = port_1->GetQueue();
-  input_queue_1->PushBatch(&buffer_vector_1_);
-
-  auto port_2 = node_->GetInputPort("In_2");
-  auto input_queue_2 = port_2->GetQueue();
-  input_queue_2->PushBatch(&buffer_vector_2_);
-
-  EXPECT_EQ(node_->ReceiveBuffer(port_1), STATUS_SUCCESS);
-  node_->ReceiveGroupBuffer();
-  EXPECT_EQ(4, single_match_->size());
-  EXPECT_EQ(0, group_match_->size());
-
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_01_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_03_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_11_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_12_->GetSameLevelGroup()));
-
-  EXPECT_EQ(node_->ReceiveBuffer(port_2), STATUS_SUCCESS);
-  node_->ReceiveGroupBuffer();
-  EXPECT_EQ(1, single_match_->size());
-  EXPECT_EQ(2, group_match_->size());
-
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_03_->GetSameLevelGroup()));
-
-  EXPECT_NE(group_match_->end(), group_match_->find(key_group_1));
-  EXPECT_NE(group_match_->end(), group_match_->find(key_group_2));
-  EXPECT_EQ(1, group_match_->find(key_group_1)->second.size());
-  EXPECT_EQ(2, group_match_->find(key_group_2)->second.size());
-}
-
-TEST_F(InPortTest, RecvDiffrenceStream) {
-  auto key_group_1 = std::make_tuple(buffer_01_->GetStreamLevelGroup(), 1);
-  auto key_group_2 = std::make_tuple(buffer_11_->GetStreamLevelGroup(), 2);
-  auto key_other_group_1 =
-      std::make_tuple(other_buffer_01_->GetStreamLevelGroup(), 1);
-
-  auto port_1 = node_->GetInputPort("In_1");
-  auto input_queue_1 = port_1->GetQueue();
-  input_queue_1->PushBatch(&other_buffer_vector_1_);
-
-  auto port_2 = node_->GetInputPort("In_2");
-  auto input_queue_2 = port_2->GetQueue();
-  input_queue_2->PushBatch(&other_buffer_vector_2_);
-
-  EXPECT_EQ(node_->ReceiveBuffer(port_1), STATUS_SUCCESS);
-  node_->ReceiveGroupBuffer();
-  EXPECT_EQ(6, single_match_->size());
-  EXPECT_EQ(0, group_match_->size());
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(other_buffer_01_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(other_buffer_02_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_01_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_03_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_11_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(buffer_12_->GetSameLevelGroup()));
-
-  EXPECT_EQ(node_->ReceiveBuffer(port_2), STATUS_SUCCESS);
-  node_->ReceiveGroupBuffer();
-  EXPECT_EQ(2, single_match_->size());
-  EXPECT_EQ(3, group_match_->size());
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(other_buffer_02_->GetSameLevelGroup()));
-  EXPECT_NE(single_match_->end(),
-            single_match_->find(other_buffer_03_->GetSameLevelGroup()));
-
-  EXPECT_NE(group_match_->end(), group_match_->find(key_group_1));
-  EXPECT_NE(group_match_->end(), group_match_->find(key_group_2));
-  EXPECT_NE(group_match_->end(), group_match_->find(key_other_group_1));
-
-  EXPECT_EQ(2, group_match_->find(key_group_1)->second.size());
-  EXPECT_EQ(2, group_match_->find(key_group_2)->second.size());
-  EXPECT_EQ(1, group_match_->find(key_other_group_1)->second.size());
 }
 
 class EventPortTest : public testing::Test {

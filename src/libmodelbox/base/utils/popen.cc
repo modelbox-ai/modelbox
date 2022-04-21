@@ -25,11 +25,58 @@
 #include <chrono>
 #include <iostream>
 
+extern char **environ;
+
 namespace modelbox {
 
 constexpr int POPEN_ERROR = -1;
 constexpr int POPEN_EOF = -2;
 constexpr int POPEN_STOP_READ = -3;
+
+int ParserArg(const std::string &cmd, std::vector<std::string> &args) {
+  std::string arg;
+  char quoteChar = 0;
+
+  for (std::string::const_iterator it = cmd.begin(), it_end = cmd.end();
+       it != it_end; ++it) {
+    char ch = *it;
+    if (quoteChar == '\\') {
+      arg.push_back(ch);
+      quoteChar = 0;
+      continue;
+    }
+
+    if (quoteChar && ch != quoteChar) {
+      arg.push_back(ch);
+      continue;
+    }
+
+    switch (ch) {
+      case '\'':
+      case '\"':
+      case '\\':
+        quoteChar = quoteChar ? 0 : ch;
+        break;
+      case ' ':
+      case '\t':
+      case '\n':
+        if (!arg.empty()) {
+          args.push_back(arg);
+          arg.clear();
+        }
+        break;
+      default:
+        arg.push_back(ch);
+        break;
+    }
+  }
+
+  if (!arg.empty()) {
+    args.push_back(arg);
+  }
+
+  return 0;
+}
 
 Popen::Popen() {
   start_tm_ = std::chrono::high_resolution_clock::now();
@@ -53,95 +100,20 @@ void Popen::SetupMode(const char *mode) {
   }
 }
 
-int Popen::ParserArg(const std::string &cmd, std::vector<std::string> &args) {
-  int quotation = 0;
-  int is_in_args = 0;
-  char end_char = ' ';
-  int escape = 0;
-
-  std::vector<char> data;
-  data.reserve(cmd.length() + 1);
-  data.assign(cmd.begin(), cmd.end());
-  data.push_back('\0');
-  char *cmdline_ptr = data.data();
-  std::vector<char *> cmd_arg_ptr;
-
-  do {
-    if (escape) {
-      escape = 0;
-      cmdline_ptr++;
-      continue;
-    }
-
-    if (*cmdline_ptr == '\\') {
-      if (escape == 0) {
-        escape = 1;
-
-        char *tmp = cmdline_ptr + 1;
-        for (; *tmp; tmp++) {
-          *(tmp - 1) = *tmp;
-        }
-        *(tmp - 1) = 0;
-        continue;
-      }
-    }
-
-    if (*cmdline_ptr == '"' || *cmdline_ptr == '\'') {
-      if (quotation == 0) {
-        quotation = 1;
-        end_char = *cmdline_ptr;
-        cmdline_ptr++;
-        continue;
-      }
-    }
-
-    if (*cmdline_ptr == end_char) {
-      if (is_in_args == 0) {
-        if (quotation == 0) {
-          cmdline_ptr++;
-          continue;
-        }
-
-        cmd_arg_ptr.push_back(cmdline_ptr);
-      }
-
-      *cmdline_ptr = '\0';
-      end_char = ' ';
-      is_in_args = 0;
-      quotation = 0;
-      cmdline_ptr++;
-      continue;
-    }
-
-    if (is_in_args == 0) {
-      cmd_arg_ptr.push_back(cmdline_ptr);
-      is_in_args = 1;
-    }
-
-    cmdline_ptr++;
-  } while (*cmdline_ptr != '\0');
-
-  for (auto const &ptr : cmd_arg_ptr) {
-    std::string cmdline;
-    cmdline = ptr;
-    args.push_back(cmdline);
-  }
-
-  return 0;
-}
-
-Status Popen::Open(const std::string &cmdline, int timeout, const char *mode) {
+Status Popen::Open(const std::string &cmdline, int timeout, const char *mode,
+                   const PopenEnv &env) {
   std::vector<std::string> args;
+  std::vector<std::string> envs;
 
   if (ParserArg(cmdline, args) != 0) {
     return {STATUS_INVALID, "command line is invalid"};
   }
 
-  return Open(args, timeout, mode);
+  return Open(args, timeout, mode, env);
 }
 
-Status Popen::Open(std::vector<std::string> args, int timeout,
-                   const char *mode) {
+Status Popen::Open(std::vector<std::string> args, int timeout, const char *mode,
+                   const PopenEnv &env) {
   pid_t child_pid;
   int fd_out[2] = {-1, -1};
   int fd_err[2] = {-1, -1};
@@ -194,13 +166,27 @@ Status Popen::Open(std::vector<std::string> args, int timeout,
 
     CloseAllParentFds(fd_out_keep);
 
+    // args
     char *argv[args.size() + 1];
     for (i = 0; i < args.size(); i++) {
       argv[i] = (char *)args[i].c_str();
     }
-
     argv[args.size()] = 0;
-    execvp(argv[0], argv);
+
+    // env
+    auto envs = env.GetEnvs();
+    char *envp[envs.size() + 1];
+    for (i = 0; i < envs.size(); i++) {
+      envp[i] = (char *)envs[i].c_str();
+    }
+    envp[envs.size()] = 0;
+
+    // exec command
+    if (env.Changed()) {
+      execvpe(argv[0], argv, envp);
+    } else {
+      execvp(argv[0], argv);
+    }
     fprintf(stderr, "exec failed for %s, %s\n", argv[0],
             StrError(errno).c_str());
     _exit(1);
@@ -542,11 +528,12 @@ int Popen::WaitChildTimeOut() {
   }
 
   int ret = WaitForFds(fds, -1, [&buff](struct stdfd *stdfd, int revent) {
+    int unused __attribute__((unused));
     if (!(revent & POLLIN)) {
       return 0;
     }
 
-    read(stdfd->fd_, buff, sizeof(buff));
+    unused = read(stdfd->fd_, buff, sizeof(buff));
 
     return 0;
   });
@@ -609,6 +596,93 @@ int Popen::Close() {
 
   child_pid_ = 0;
   return wstatus;
+}
+
+PopenEnv::PopenEnv() {}
+
+PopenEnv::~PopenEnv() {}
+
+PopenEnv::PopenEnv(const std::string &item_list) { LoadEnvFromList(item_list); }
+
+PopenEnv::PopenEnv(const char *item_list) { LoadEnvFromList(item_list); }
+
+void PopenEnv::LoadEnvFromList(const std::string &item_list) {
+  inherit_ = true;
+  std::vector<std::string> envs;
+  ParserArg(item_list, envs);
+  if (envs.size() <= 0) {
+    return;
+  }
+
+  LoadInherit();
+
+  for (auto const &env : envs) {
+    const char *envp = env.c_str();
+    auto field = strstr(envp, "=");
+    if (field == nullptr) {
+      continue;
+    }
+
+    std::string item(envp, field);
+    std::string value = field + 1;
+    Add(item, value);
+  }
+}
+
+PopenEnv::PopenEnv(const std::string &item, const std::string &value) {
+  inherit_ = true;
+  Add(item, value);
+}
+
+void PopenEnv::LoadInherit() {
+  char **ep;
+  if (load_inherit_) {
+    return;
+  }
+
+  load_inherit_ = true;
+  for (ep = environ; *ep != NULL; ep++) {
+    auto field = strstr(*ep, "=");
+    if (field == nullptr) {
+      continue;
+    }
+
+    std::string item(*ep, field);
+    std::string value = field + 1;
+    Add(item, value);
+  }
+}
+
+PopenEnv &PopenEnv::Add(const std::string &item, const std::string &value) {
+  LoadInherit();
+  env_[item] = value;
+  return *this;
+}
+
+PopenEnv &PopenEnv::Rmv(const std::string &item) {
+  LoadInherit();
+  env_.erase(item);
+  return *this;
+}
+
+PopenEnv &PopenEnv::Clear() {
+  env_.clear();
+  load_inherit_ = true;
+  return *this;
+}
+
+const bool PopenEnv::Changed() const { return load_inherit_; }
+
+const std::vector<std::string> PopenEnv::GetEnvs() const {
+  std::vector<std::string> envs;
+
+  for (auto const &it : env_) {
+    std::string value;
+    value = it.first + "=" + it.second;
+    envs.emplace_back(value);
+  }
+
+  return envs;
 }
 
 }  // namespace modelbox

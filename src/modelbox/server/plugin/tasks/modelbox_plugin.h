@@ -59,6 +59,7 @@ class ModelboxPlugin : public modelbox::Plugin {
   std::string ip_;
   std::string port_;
   std::string default_flow_path_;
+  std::string default_application_path_;
   std::string oneshot_flow_path_;
 
   std::vector<std::string> acl_white_list_;

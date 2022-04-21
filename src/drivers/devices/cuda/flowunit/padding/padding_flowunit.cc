@@ -176,7 +176,7 @@ modelbox::Status PaddingFlowUnit::PaddingOneImage(
 
   out_image->Set("width", width_);
   out_image->Set("height", height_);
-  out_image->Set("width_stride", width_);
+  out_image->Set("width_stride", width_ * 3);
   out_image->Set("height_stride", height_);
   out_image->Set("channel", (int32_t)3);
   out_image->Set("pix_fmt", pix_fmt);

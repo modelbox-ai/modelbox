@@ -1,0 +1,1217 @@
+#!/bin/bash
+#
+# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+MODELBOX_TEMPLATE_PATH="${MODELBOX_TEMPLATE_PATH:-/usr/local/share/modelbox/project-template}"
+DEFAULT_PROJECT_PATH="$HOME/modelbox-project"
+APPLICATION_PATH="/opt/modelbox/application"
+
+showhelp() {
+	echo "usage $(basename $0) [OPTIONS]"
+	echo "create modelbox project or flowunit"
+	echo "-project                              create modelbox project."
+	echo "  -name [name]                          project name, default is example"
+	echo "  -path [path]                          project path, default is \$HOME/modelbox-project."
+	echo "  -getname [path]                       get project name."
+	echo "  -list-template                        list suppored template."
+	echo "  -rootpath [path]                      project root path."
+	echo "  -template [template name]             project template, default is empty project."
+	echo "-flowunit                             create modelbox flowunit."
+	echo "  -name [name]                          flowunit name"
+	echo "  -lang [python|c++|infer|yolo]       flowunit program language."
+	echo "  -type [type]                          flowunit type:"
+	echo "                                          normal|stream|condition|collapse|collapse_all|expand"
+	echo "  -group-type [group type]              flowunit group type, for UI display:"
+	echo "                                          generic|video|inference" 
+	echo "  -project-path [path-to-project]       create flowunit in specific project, default is \$HOME/modelbox-project."
+	echo "  -input [name=name,device=device|-]      flowunit input ports. '-' for default port name"
+	echo "  -output [name-name,device=device|-]     flowunit output ports. '-' for default port name"
+	echo "  -device [cpu|cuda|ascend]             flowunit device."	
+
+	echo "  flowunit infer"
+	echo "    -virtual-type [type]                  virtual flowunit type: 'tensorflow', 'tensorrt', 'torch', 'acl', 'mindspore'"
+	echo "    -model [path]                         model file path"
+	echo "    -copy-model                           copy model file to flowunit source dir"
+	echo "  flowunit yolo"  
+	echo "    -virtual-type [type]                  virtual flowunit type: 'yolov3_postprocess', 'yolov5_postprocess'"
+	echo "-service-plugin                        create modelbox service plugin"
+	echo "  -project-path [path-to-project]       create flowunit in specific project, default is \$HOME/modelbox-project."
+	echo "  -name [name]                          plugin name"
+	echo "-help                                  show this help message."
+	echo ""
+	echo "example:"
+	echo " create project:"
+	echo "   $(basename $0) -project -name=\"project\""
+	echo " create flowunit:"
+	echo "   $(basename $0) -flowunit -name \"flowunit\" -lang python -input name=in1,device=cuda -output -"
+	echo " create service plugin:"
+	echo "   $(basename $0) -service-plugin -name=\"project\""
+	echo ""
+}
+
+echoerr() {
+	echo "$@" 1>&2
+}
+
+create_project_template()
+{
+	if [ -d "${project_path}" ]; then
+		echoerr "Project '${project_path}' already exists."
+		return 2
+	fi
+
+	mkdir -p "${project_path}"
+	if [ $? -ne 0 ]; then
+		echoerr "Create project directory ${project_path} failed."
+		return 1
+	fi
+
+	if [ ! -d "$MODELBOX_TEMPLATE_PATH/project/${template}" ]; then
+		echoerr "Project template $MODELBOX_TEMPLATE_PATH/project/${template} not exists, please input valid project template"
+		return 1
+	fi
+
+	cp -r "$MODELBOX_TEMPLATE_PATH/project/${template}"/* "${project_path}"
+	if [ $? -ne 0 ]; then
+		echoerr "Copy project template failed."
+		return 1
+	fi
+
+	sed -i "s/example/$project_name/g" "${project_path}/CMakeLists.txt"
+	if [ $? -ne 0 ]; then
+		echoerr "sed CMakeLists.txt failed."
+		return 1
+	fi
+
+	mv ${project_path}/src/graph/${template}.toml ${project_path}/src/graph/${project_name}.toml 2>/dev/null
+	mv ${project_path}/src/graph/${template}.json ${project_path}/src/graph/${project_name}.json 2>/dev/null
+
+	project_dir_name=$(basename ${project_path})
+	driver_dir="${APPLICATION_PATH}/${project_name}"
+	sed -i "s#@APPLICATION_PATH@#${driver_dir}#g" ${project_path}/src/graph/*.toml 2>/dev/null
+	sed -i "s#@APPLICATION_PATH@#${driver_dir}#g" ${project_path}/src/graph/*.json 2>/dev/null
+	
+	sed -i "s# graph_.* {# graph_${project_name} {#g" ${project_path}/src/graph/*.toml 2>/dev/null
+	sed -i "s# graph_.* {# graph_${project_name} {#g" ${project_path}/src/graph/*.json 2>/dev/null
+
+	echo "Create project at '${project_path}' success"
+
+	rm -f ${project_path}/desc.toml
+    
+	return 0
+}
+
+get_project_name() {
+	if [ -z "${project_path}" ]; then
+		echoerr "project path is not set"
+		return 1
+	fi
+
+	CMAKEFILE="${project_path}"/CMakeLists.txt 
+
+	if [ ! -e "${CMAKEFILE}" ]; then
+		echoerr "${project_path} is not a project directory"
+		return 1
+	fi
+	grep "^ *project" "${CMAKEFILE}" | sed 's/^ *project *(\(.*\))/\1/g' 2>/dev/null
+	return $?
+}
+
+list_project_template () {
+	for tempdir in $MODELBOX_TEMPLATE_PATH/project/*; do
+		if [ ! -d "$tempdir" ]; then
+			continue
+		fi
+
+		if [ ! -f "${tempdir}/desc.toml" ]; then
+			continue
+		fi
+
+		name=$(basename ${tempdir})
+		desc=$(cat ${tempdir}/desc.toml | grep -E "^desc *=" | sed "s/desc *= *\"\(.*\)\"/\1/g")
+		printf "%-20.20s %s\n" "$name" "$desc"
+	done
+	return 0
+}
+
+create_project() {
+	project_name=""
+	project_path="$DEFAULT_PROJECT_PATH"
+	project_root_path=""
+	template="empty"
+
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+		case "$arg_option" in
+		--name)
+			project_name="$arg_value"
+			shift "$shift_count" ;;
+		--template)
+			template="$arg_value"
+			shift "$shift_count" ;;
+		--getname)
+			project_path="$arg_value"
+			get_project_name "$project_path"
+			return $?
+			shift "$shift_count" ;;
+		--list-template)
+			list_project_template
+			return $?
+			shift "$shift_count" ;;
+		--path)
+			project_path="$arg_value"
+			shift "$shift_count" ;;
+		--rootpath)
+			project_root_path="$arg_value"
+			shift "$shift_count" ;;
+		-- ) shift; break ;;
+		* ) break ;;
+  		esac
+	done
+
+	if [ -z "${project_name}" ]; then
+		echoerr "Project name is not set"
+		return 1
+	fi
+
+	if [ "${project_path}" = "$DEFAULT_PROJECT_PATH" ] && [ -n "$project_root_path" ]; then
+		project_path="${project_root_path}/${project_name}"
+		if [ ! -d "" ]; then
+			mkdir -p "${project_root_path}"
+		fi
+	fi
+
+	create_project_template "$project_name" "${project_path}" "$template"
+	ret=$?
+	if [ $ret -ne 0 ] && [ $ret -ne 2 ]; then
+		echoerr "Create project template failed."
+		if [ -n "${project_path}" ]; then
+			rm -fr "${project_path}"
+		fi
+		return 1
+	fi
+
+	return $ret
+}
+
+create_service_plugin_template() {
+	TEMPLATE_PATH="$MODELBOX_TEMPLATE_PATH/plugin"
+	SOURCE_DIR="${project_path}/src/service-plugin/${plugin_name}"
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+	SOURCE_FILE="${SOURCE_DIR}/${plugin_name}.cc"
+	HEAD_FILE="${SOURCE_DIR}/${plugin_name}.h"
+
+	if [ ! -d "$TEMPLATE_PATH" ]; then
+		echoerr "Server plugin template not exist."
+		return 1
+	fi
+
+	if [ -d "$SOURCE_DIR" ]; then
+		echoerr "Server plugin source directory $SOURCE_DIR already exists."
+		return 2
+	fi
+
+	mkdir -p "$SOURCE_DIR"
+	if [ $? -ne 0 ]; then
+		echoerr "Create server plugin source directory $SOURCE_DIR failed."
+		return 1
+	fi
+
+	cp -a "$TEMPLATE_PATH"/* "$SOURCE_DIR"
+	if [ $? -ne 0 ]; then
+		echoerr "Copy template source $TEMPLATE_PATH failed."
+		return 1
+	fi
+
+	for example_name in "$SOURCE_DIR"/example*; do
+		newname=$(basename "$example_name" | sed "s/example/${plugin_name}/g")
+		mv "$example_name" "$SOURCE_DIR/$newname"
+		if [ $? -ne 0 ]; then
+			echoerr "Rename template file failed."
+			return 1
+		fi
+	done
+
+	for file in ${CMAKE_FILE} ${SOURCE_FILE} ${HEAD_FILE}; do
+		sed -i "s/example/${plugin_name}/g" "$file"
+		if [ $? -ne 0 ]; then
+			echoerr "Setup cmake file failed."
+			return 1
+		fi
+
+		sed -i "s/Example/${plugin_name}/g" "$file"
+		if [ $? -ne 0 ]; then
+			echoerr "Setup source file failed."
+			return 1
+		fi
+	done
+
+	echo "Create server plugin at $SOURCE_DIR success"
+	return 0	
+}
+
+create_service_plugin() {
+	plugin_name=""
+	project_path="$DEFAULT_PROJECT_PATH"
+	SOURCE_DIR=""
+
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+		case "$arg_option" in
+		--name)
+			plugin_name="$arg_value"
+			shift "$shift_count" ;;
+		--path)
+			project_path="$arg_value"
+			shift "$shift_count" ;;
+		-- ) shift; break ;;
+		* ) break ;;
+  		esac
+	done
+
+	if [ -z "${plugin_name}" ]; then
+		echoerr "Plugin name is not set"
+		return 1
+	fi
+
+	is_project_path_valid "${project_path}"
+	if [ $? -ne 0 ]; then
+		echoerr "Project path ${project_path} is invalid, create project first."
+		return 1
+	fi
+
+	create_service_plugin_template "${plugin_name}" "${project_path}"
+	ret=$?
+	if [ $ret -ne 0 ] && [ $ret -ne 2 ]; then
+		echoerr "Create plugin template failed."
+		if [ -n "${SOURCE_DIR}" ]; then
+			rm -fr "${SOURCE_DIR}"
+		fi
+		return 1
+	fi
+
+	return $ret
+}
+
+toml_data_init() {
+	TOML_DATA=""
+}
+
+toml_data_append() {
+	TOML_DATA="${TOML_DATA}$*\n"
+}
+
+toml_data_complete() {
+	echo -e "${TOML_DATA}" > "$1"
+}
+
+toml_data_write_base() {
+	toml_data_append "[base]"
+	toml_data_append "name = \"${flowunit_name}\" # The FlowUnit name "
+	toml_data_append "device = \"${flowunit_device}\" # The device the flowunit runs on,cpu,cuda,ascend"
+	toml_data_append "version = \"1.0.0\" # The version of the flowunit"
+	toml_data_append "description = \"${flowunit_desc}\" # The description of the flowunit"
+	toml_data_append "group_type = \"$group_type\" # flowunit group attribution "
+	if [ -n "$flowunit_type" ]; then
+		toml_data_append "${flowunit_type} = true # flowunit type"
+	fi
+}
+
+toml_data_write_inputports() {
+	toml_data_append "# Input ports description"
+	toml_data_append "[input]"
+	i=1
+	for input in "${flowunit_inputs[@]}"; do
+		toml_data_append "[input.input$i]"
+		i=$((i+1))
+		IFS=',' read -ra options <<< "$input"
+		for option in "${options[@]}"; do
+			IFS="=" read -r -a values <<< "$option"
+			toml_data_append "${values[0]} = \"${values[1]}\""
+		done
+		toml_data_append ""
+	done
+}
+
+toml_data_write_outputports() {
+	toml_data_append ""
+	toml_data_append "# Output ports description"
+	toml_data_append "[output]"
+	i=1
+	for output in "${flowunit_outputs[@]}"; do
+		toml_data_append "[output.output$i]"
+		i=$((i+1))
+		IFS=',' read -ra options <<< "$output"
+		for option in "${options[@]}"; do
+			IFS="=" read -r -a values <<< "$option"
+			toml_data_append "${values[0]} = \"${values[1]}\""
+		done
+		toml_data_append ""
+	done
+}
+
+prepare_flowunit_base() {
+	TEMPLATE_PATH="$MODELBOX_TEMPLATE_PATH/flowunit/$1"
+	SOURCE_DIR="${project_path}/src/flowunit/${flowunit_name}"
+
+	if [ ! -d "$TEMPLATE_PATH" ]; then
+		echoerr "Flowunit template not exist."
+		return 1
+	fi
+
+	if [ -d "$SOURCE_DIR" ]; then
+		echoerr "Flowunit source directory $SOURCE_DIR already exists."
+		return 2
+	fi
+
+	mkdir -p "$SOURCE_DIR"
+	if [ $? -ne 0 ]; then
+		echoerr "Create flowunit source directory $SOURCE_DIR failed."
+		return 1
+	fi
+
+	cp -a "$TEMPLATE_PATH"/* "$SOURCE_DIR"
+	if [ $? -ne 0 ]; then
+		echoerr "Copy template source $TEMPLATE_PATH failed."
+		return 1
+	fi
+
+	for example_name in "$SOURCE_DIR"/example*; do
+		newname=$(basename "$example_name" | sed "s/example/${flowunit_name}/g")
+		mv "$example_name" "$SOURCE_DIR/$newname"
+		if [ $? -ne 0 ]; then
+			echoerr "Rename template file failed."
+			return 1
+		fi
+	done
+
+	return 0
+}
+
+setup_flowunit_python_source() {
+	SOURCE_FILE="${SOURCE_DIR}/${flowunit_name}.py"
+	classname=${flowunit_name^}
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+
+	sed -i "s/ExampleFlowUnit/${classname}FlowUnit/g" "$SOURCE_FILE" 
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed -i "s/example/${flowunit_name}/g" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	space=$(grep "in_data = data_context.input" "$SOURCE_FILE" | sed 's/\([ |\t]*\)in_data = data_context.input.*/\1/g')
+	input_flag="# input data"
+	sed -i "s/in_data = data_context.input.*/${input_flag}/" "$SOURCE_FILE"
+	i=1
+	for port in "${flowunit_input_names[@]}"; do
+		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
+			line="in_data = data_context.input(\"${port}\")"
+		else
+			line="in_data_${i} = data_context.input(\"${port}\")"
+		fi
+		sed -i "/${input_flag}/a \\${space}${line}" "$SOURCE_FILE"
+		i=$((i+1))
+	done
+
+	
+	output_flag="# output data"
+	sed -i "s/out_data = data_context.output.*/${output_flag}/" "$SOURCE_FILE"
+	i=1
+	for port in "${flowunit_output_names[@]}"; do
+		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
+			line="out_data = data_context.output(\"${port}\")"
+		else
+			line="out_data_${i} = data_context.output(\"${port}\")"
+		fi
+		sed -i "/${output_flag}/a \\${space}${line}" "$SOURCE_FILE"
+		i=$((i+1))
+	done
+	
+	return 0
+}
+
+setup_flowunit_python_toml() {
+	TOML_FILE="${SOURCE_DIR}/${flowunit_name}.toml"
+	classname="${flowunit_name^}FlowUnit"
+
+	toml_data_init
+	toml_data_write_base
+	toml_data_append "entry = \"${flowunit_name}@${classname}\" # Python flowunit entry function"
+	toml_data_append "type = \"python\" # Fixed value"
+	toml_data_append ""
+	toml_data_write_inputports
+	toml_data_write_outputports
+
+	toml_data_complete "$TOML_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Write toml file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+create_flowunit_python() {
+	prepare_flowunit_base "python"
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	setup_flowunit_python_source
+	if [ $? -ne 0 ]; then
+		echoerr "Setup python source file failed."
+		return 1
+	fi
+
+	setup_flowunit_python_toml
+	if [ $? -ne 0 ]; then
+		echoerr "Setup python toml file failed."
+		return 1
+	fi
+
+	echo "create python flowunit at $SOURCE_DIR success"
+	return 0
+}
+
+setup_flowunit_cpp_source() {
+	HEADER_FILE="${SOURCE_DIR}/${flowunit_name}.h"
+	SOURCE_FILE="${SOURCE_DIR}/${flowunit_name}.cc"
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+	HEAD_MACRO="${flowunit_name^^}_${flowunit_device^^}"
+	classname=${flowunit_name^}
+	sed -i "s/ExampleFlowUnit/${classname}FlowUnit/g" "$HEADER_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed -i "s/ExampleFlowUnit/${classname}FlowUnit/g" "$SOURCE_FILE" 
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed -i "s/example.h/${flowunit_name}.h/g" "$SOURCE_FILE" 
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed -i "s/cpu/${flowunit_device}/g" "$HEADER_FILE" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed -i "s/example/${flowunit_name}/g" "$HEADER_FILE" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed -i "s/EXAMPLE_CPU/${HEAD_MACRO}/g" "$HEADER_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	sed -i "s/@Brief: A .*/@Brief: ${flowunit_desc}\";/g" "$HEADER_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	# add input port information
+	space=$(grep "auto input_bufs = ctx->Input" "$SOURCE_FILE" | sed 's/\([ |\t]*\)auto input_bufs = ctx->Input.*/\1/g')
+	space_desc=$(grep "desc.AddFlowUnitInput(modelbox::FlowUnitInput" "$SOURCE_FILE" | sed 's/\([ |\t]*\)desc.AddFlowUnitInput(modelbox::FlowUnitInput.*/\1/g')
+	input_flag="// input data"
+	input_port_flag="// input port"
+	sed -i "s#auto input_bufs = ctx->Input.*#${input_flag}#" "$SOURCE_FILE"
+	sed -i "s#desc.AddFlowUnitInput(modelbox::FlowUnitInput.*#${input_port_flag}#" "$SOURCE_FILE"
+	i=1
+	for port in "${flowunit_input_names[@]}"; do
+		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
+			line="auto input_bufs = ctx->Input(\"${port}\");"
+		else
+			line="auto input_bufs_${i} = ctx->Input(\"${port}\");"
+		fi
+		sed -i "\#${input_flag}#a \\${space}${line}" "$SOURCE_FILE"
+		i=$((i+1))
+
+		line="desc.AddFlowUnitInput(modelbox::FlowUnitInput(\"${port}\", FLOWUNIT_TYPE));"
+		sed -i "\#${input_port_flag}#a \\${space_desc}${line}" "$SOURCE_FILE"
+	done
+
+	# add output port information
+	output_flag="// output data"
+	output_port_flag="// output port"
+	sed -i "s#auto output_bufs = ctx->Output.*#${output_flag}#" "$SOURCE_FILE"
+	sed -i "s#desc.AddFlowUnitOutput(modelbox::FlowUnitOutput.*#${output_port_flag}#" "$SOURCE_FILE"
+	i=1
+	for port in "${flowunit_output_names[@]}"; do
+		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
+			line="auto output_bufs = ctx->Output(\"${port}\");"
+		else
+			line="auto output_bufs_${i} = ctx->Output(\"${port}\");"
+		fi
+
+		sed -i "\#${output_flag}#a \\${space}${line}" "$SOURCE_FILE"
+		i=$((i+1))
+
+		line="desc.AddFlowUnitOutput(modelbox::FlowUnitOutput(\"${port}\", FLOWUNIT_TYPE));"
+		sed -i "\#${output_port_flag}#a \\${space_desc}${line}" "$SOURCE_FILE"
+	done
+
+	return 0
+}
+
+setup_flowunit_cpp_toml() {
+	TOML_FILE="${SOURCE_DIR}/${flowunit_name}.toml"
+	classname="${flowunit_name^}FlowUnit"
+
+	toml_data_init
+	toml_data_write_base
+	toml_data_append "type = \"c++\" # Fixed value"
+	toml_data_append ""
+	toml_data_write_inputports
+	toml_data_write_outputports
+
+	toml_data_complete "$TOML_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Write toml file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+create_flowunit_cpp() {
+	prepare_flowunit_base "c++"
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	setup_flowunit_cpp_source
+	if [ $? -ne 0 ]; then
+		echoerr "Setup cpp source file failed."
+		return 1
+	fi
+
+	setup_flowunit_cpp_toml
+	if [ $? -ne 0 ]; then
+		echoerr "Setup cpp toml file failed."
+		return 1
+	fi
+
+	echo "create c++ flowunit at $SOURCE_DIR success";
+	return 0;
+}
+
+setup_flowunit_yolo_source() {
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+
+	sed -i "s/example/${flowunit_name}/g" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+setup_flowunit_yolo_toml() {
+	TOML_FILE="${SOURCE_DIR}/${flowunit_name}.toml"
+
+	toml_data_init
+	toml_data_write_base
+	toml_data_append "type = \"yolo_postprocess\" # Fixed value"
+	toml_data_append "virtual_type = \"$virtual_type\" # yolo type 'yolov3_postprocess', 'yolov5_postprocess' "
+	toml_data_append ""
+
+	toml_data_append "[config]"
+	toml_data_append "# input_width = 800"
+	toml_data_append "# input_height = 480"
+	toml_data_append "# class_num = 1"
+	toml_data_append "# score_threshold = [0.6,0.7]"
+	toml_data_append "# nms_threshold = [0.45,0.3]"
+	toml_data_append "# yolo_output_layer_num = 2"
+	toml_data_append "# yolo_output_layer_wh = [25,15,50,30]"
+	toml_data_append "# anchor_num = [4,4]"
+	toml_data_append "# anchor_biases = [100.0,72.0,173.12,55.04,165.12,132.0,280.0,252.0,10.0,8.0,20.0,16.0,30.0,24.0,67.0,56.0]"
+	toml_data_append ""
+
+	toml_data_write_inputports
+	toml_data_write_outputports
+
+	toml_data_complete "$TOML_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Write toml file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+flowunit_yolo_valid_virtual_type() {
+	case "$1" in
+	yolov3_postprocess | yolov5_postprocess)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0
+}
+
+create_flowunit_yolo() {
+	virtual_type=""
+	args=""
+
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+
+		case "$arg_option" in
+		--virtual-type)
+			virtual_type="$arg_value"
+			shift "$shift_count" ;;
+		* ) 
+			appendargs "$1"
+			shift ;;
+  		esac
+	done
+
+	if [ -z "$virtual_type" ]; then
+		echoerr "virtual type for yolo is not set"
+		return 1
+	fi
+
+	flowunit_yolo_valid_virtual_type "$virtual_type"
+	if [ $? -ne 0 ]; then
+		echoerr "Virtual type $virtual_type is invalid"
+		return 1
+	fi
+
+	prepare_flowunit_base "yolo"
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	setup_flowunit_yolo_source
+	if [ $? -ne 0 ]; then
+		echoerr "Setup yolo source file failed."
+		return 1
+	fi
+
+	setup_flowunit_yolo_toml
+	if [ $? -ne 0 ]; then
+		echoerr "Setup yolo toml file failed."
+		return 1
+	fi
+
+	echo "create yolo flowunit at $SOURCE_DIR success";
+	return 0;
+}
+
+setup_flowunit_infer_source() {
+	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
+
+	sed -i "s/example/${flowunit_name}/g" "$CMAKE_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Setup source file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+setup_flowunit_infer_toml() {
+	TOML_FILE="${SOURCE_DIR}/${flowunit_name}.toml"
+
+	toml_data_init
+	toml_data_write_base
+	toml_data_append "type = \"inference\" # Fixed value"
+	toml_data_append "entry = \"${modelfile}\" # model file path"
+	toml_data_append "virtual_type = \"$virtual_type\" # inference engine type: 'tensorflow', 'tensorrt', 'torch', 'acl', 'mindspore' "
+	toml_data_append ""
+
+	if [ -n "$plugin" ]; then
+		toml_data_append "[config]"
+		toml_data_append "plugin = \"$plugin\""
+		toml_data_append ""
+	fi
+
+	toml_data_write_inputports
+	toml_data_write_outputports
+
+	toml_data_complete "$TOML_FILE"
+	if [ $? -ne 0 ]; then
+		echoerr "Write toml file failed."
+		return 1
+	fi
+
+	return 0
+}
+
+flowunit_valid_device() {
+	case "$1" in
+	cpu | cuda | ascend)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0
+}
+
+flowunit_infer_valid_virtual_type() {
+	case "$1" in
+	tensorrt | tensorflow | torch | acl |mindspore)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0
+}
+
+flowunit_type_valid() {
+	if [ -z "$1" ]; then
+		return 0
+	fi
+
+	case "$1" in
+	stream | condition | collapse | expand | normal | collapse_all | loop)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0	
+}
+
+create_flowunit_infer() {
+	modelfile=""
+	virtual_type=""
+	args=""
+	plugin=""
+	do_copy=""
+
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+
+		case "$arg_option" in
+		--model)
+			modelfile="$arg_value"
+			shift "$shift_count" ;;
+		--copy-model)
+			do_copy="true"
+			shift 1;;
+		--virtual-type)
+			virtual_type="$arg_value"
+			shift "$shift_count" ;;
+		--plugin)
+			plugin="$arg_value"
+			shift "$shift_count" ;;
+		* ) 
+			appendargs "$1"
+			shift ;;
+  		esac
+	done
+
+	if [ -z "$modelfile" ]; then
+		echoerr "Model file path is not set"
+		return 1
+	fi
+
+	flowunit_infer_valid_virtual_type "$virtual_type"
+	if [ $? -ne 0 ]; then
+		echoerr "Virtual type $virtual_type is invalid"
+		return 1
+	fi
+
+	prepare_flowunit_base "infer"
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	if [ "$do_copy" = "true" ]; then
+		if [ ! -e "$modelfile" ]; then
+			echoerr "Model file $modelfile is not exists"
+			return 1
+		fi
+
+		modelfilename=$(basename "$modelfile")
+		cp "$modelfile" "${SOURCE_DIR}/${modelfilename}"
+		if [ $? -ne 0 ]; then
+			echoerr "Copy model file to $SOURCE_DIR failed"
+			return 1
+		fi
+
+		modelfile=${modelfilename}
+	fi
+
+	if [ -z "$group_type" ] || [ "$group_type" = "generic" ]; then
+		group_type="inference"
+	fi
+
+	setup_flowunit_infer_source
+	if [ $? -ne 0 ]; then
+		echoerr "Setup infer source file failed."
+		return 1
+	fi
+
+	setup_flowunit_infer_toml
+	if [ $? -ne 0 ]; then
+		echoerr "Setup infer toml file failed."
+		return 1
+	fi
+
+	echo "create infer flowunit at $SOURCE_DIR success";
+
+	return 0
+}
+
+flowunit_port_valid_check() {
+	case "$1" in
+	name)
+		return 0
+		;;
+	type)
+		return 0
+		;;
+	device)
+		return 0
+		;;
+	*)
+		return 1
+	esac
+
+	return 0	
+}
+
+flowunit_parser_ports() {
+	for output in "${flowunit_inputs[@]}"; do
+		IFS=',' read -ra options <<< "$output"
+		for option in "${options[@]}"; do
+			IFS="=" read -r -a values <<< "$option"
+			flowunit_port_valid_check "${values[0]}" "${values[1]}"
+			if [ $? -ne 0 ]; then
+				echo "invalid input port option $option"
+				return 1
+			fi
+
+			case "${values[0]}" in
+			name)
+				flowunit_input_names+=("${values[1]}")
+				;;
+			*)
+				;;
+			esac
+		done
+	done
+
+	for output in "${flowunit_outputs[@]}"; do
+		IFS=',' read -ra options <<< "$output"
+		for option in "${options[@]}"; do
+			IFS="=" read -r -a values <<< "$option"
+			flowunit_port_valid_check "${values[0]}" "${values[1]}"
+			if [ $? -ne 0 ]; then
+				echo "invalid output port option $option"
+				return 1
+			fi
+			case "${values[0]}" in
+			name)
+				flowunit_output_names+=("${values[1]}")
+				;;
+			*)
+				;;
+			esac
+		done
+	done
+}
+
+is_project_path_valid() {
+	local project=$1
+	if [ ! -d "$project/src" ]; then
+		return 1
+	fi
+
+	if [ ! -e "$project/CMakeLists.txt" ]; then
+		return 1
+	fi
+
+	return 0
+}
+
+create_flowunit() {
+	args=""
+	flowunit_lang=""
+	flowunit_name=""
+	project_path="$DEFAULT_PROJECT_PATH"
+	flowunit_device="cpu"
+	flowunit_desc="A flowunit for modelbox"
+	flowunit_inputs=()
+	flowunit_outputs=()
+	flowunit_input_names=()
+	flowunit_output_names=()
+	flowunit_type=""
+	group_type="generic"	
+	SOURCE_DIR=""
+
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+
+		case "$arg_option" in
+		--lang)
+			flowunit_lang="$arg_value"
+			shift "$shift_count" ;;
+		--type)
+			flowunit_type="$arg_value"
+			shift "$shift_count" ;;
+		--group-type)
+			group_type="$arg_value"
+			shift "$shift_count" ;;
+		--name)
+			flowunit_name="$arg_value"
+			shift "$shift_count" ;;
+		--desc)
+			flowunit_desc="$arg_value"
+			shift "$shift_count" ;;
+		--device)
+			flowunit_device="$arg_value"
+			shift "$shift_count" ;;
+		--project-path)
+			project_path="$arg_value"
+			shift "$shift_count" ;;
+		--input)
+			if [ "$arg_value" = "-" ]; then
+				arg_value="name=in"
+			fi
+			flowunit_inputs+=("$arg_value")
+			shift "$shift_count" ;;
+		--output)
+			if [ "$arg_value" = "-" ]; then
+				arg_value="name=out"
+			fi
+			flowunit_outputs+=("$arg_value")
+			shift "$shift_count" ;;
+		* ) 
+			appendargs "$1"
+			shift ;;
+  		esac
+	done
+
+	if [ ${#flowunit_inputs[@]} -eq 0 ] && [ ${#flowunit_outputs[@]} -eq 0 ]; then
+		echoerr "Flowunit input or output port is not set."
+		return 1
+	fi
+
+	flowunit_parser_ports
+	if [ $? -ne 0 ]; then
+		echoerr "Read port name failed"
+		return 1
+	fi
+
+	flowunit_type_valid
+	if [ $? -ne 0 ]; then
+		echoerr "Flowunit type is invalid."
+		return 1
+	fi
+
+	is_project_path_valid "${project_path}"
+	if [ $? -ne 0 ]; then
+		echoerr "Project path ${project_path} is invalid, create project first."
+		return 1
+	fi
+
+	flowunit_valid_device "${flowunit_device}"
+	if [ $? -ne 0 ]; then
+		echoerr "Input device is invalid."
+		return 1
+	fi
+
+	if [ -z "$flowunit_name" ]; then
+		echoerr "Flowunit name is not set."
+		return 1
+	fi
+
+	if [ -z "$flowunit_lang" ]; then
+		echoerr "Flowunit program language is not set".
+		return 1
+	fi
+
+	if [ ! -d "${project_path}" ]; then 
+		echoerr "Project ${project_path} is not exist, please create project first, or set project path to create."
+		return 1
+	fi
+
+	appendargs "$@"
+	eval set -- "${args}"
+
+	case "$flowunit_lang" in 
+	python)
+		create_flowunit_python "$@"
+		;;
+	c++)
+		create_flowunit_cpp "$@"
+		;;
+	infer)
+		create_flowunit_infer "$@"
+		;;
+	yolo)
+		create_flowunit_yolo "$@"
+		;;
+	*)
+		echoerr "Program language '$flowunit_lang' is not supported."
+		return 1
+		;;
+	esac
+
+	ret=$?
+	if [ $ret -ne 0 ] && [ $ret -ne 2 ] && [ -n "$SOURCE_DIR" ]; then
+		rm -fr "$SOURCE_DIR"
+		return 1
+	fi
+
+	return $ret
+}
+
+appendargs() {
+	i=0
+	while [ $i -lt $# ]; do
+		i=$((i+1))
+		eval ARG="\${$i}"
+		pattern=" |'"
+		if [[ "$ARG" =~ $pattern ]]; then
+			args="$args \"$ARG\""
+		else
+			args="$args $ARG"
+		fi
+	done
+}
+
+parserarg() {
+	# Support -o=v, --o=v -o v, --o v parameter forms
+	IFS="=" read -r -a arr <<< "$1"
+
+	arg_option="$1"
+	arg_value="$2"
+	shift_count=2
+
+	if [ -z "$2" ]; then
+		shift_count=1
+	fi
+
+	if [ ${#arr[@]} -gt 1 ]; then
+		arg_option="${arr[0]}"
+		arg_value=${1#"$arg_option"=}
+		shift_count=1
+	fi
+
+	if [[ "$arg_option" = "--"* ]]; then
+		return
+	fi
+
+	if [[ "$arg_option" = "-"* ]]; then
+		arg_option="-${arg_option}"
+		return
+	fi
+
+	return
+}
+
+main() {
+	args=""
+
+	if [ $# -lt 1 ]; then showhelp; exit 1; fi
+	while true; do
+		if [ $# -le 0 ]; then
+			break
+		fi
+
+		parserarg "$1" "$2"
+
+		case "$arg_option" in
+		--project)
+			shift
+			appendargs "$@"
+			eval set -- "${args}"
+			create_project "$@"
+			return $?
+			break;;
+		--flowunit)
+			shift
+			appendargs "$@"
+			eval set -- "${args}"
+			create_flowunit "$@"
+			return $?
+			break;;
+		--service-plugin)
+			shift
+			appendargs "$@"
+			eval set -- "${args}"
+			create_service_plugin "$@"
+			return $?
+			break;;
+		--help)
+			showhelp
+			return 0
+			;;
+		* ) 
+			appendargs "$1"
+			shift ;;
+  		esac
+	done
+
+	echoerr "unknown command, please try $(basename $0) --help for more information."
+
+	return 1
+}
+
+main "$@"

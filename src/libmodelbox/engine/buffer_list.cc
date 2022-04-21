@@ -91,7 +91,8 @@ const std::shared_ptr<Buffer>& BufferList::operator[](size_t pos) const {
 }
 
 void BufferList::PushBack(const std::shared_ptr<Buffer>& buf) {
-  buffer_list_.push_back(buf);
+  // ensure each buffer container is unique
+  buffer_list_.push_back(buf->Copy());
   SetNoContiguous();
 }
 
@@ -207,6 +208,7 @@ Status BufferList::CopyToNewBufferList(std::shared_ptr<DeviceMemory>& dev_mem) {
     }
 
     auto new_buffer = buffer->Copy();
+    new_buffer->index_info_ = buffer->index_info_;
     if (!new_buffer) {
       MBLOG_ERROR << "Buffer copy failed.";
       return STATUS_FAULT;
@@ -464,6 +466,7 @@ Status BufferList::MoveAllBufferToTargetDevice() {
       new_buffer->CopyMeta(buffer);
       new_buffer->SetDelayedCopyDestinationDevice(target_device);
       new_buffer->SetDelayedCopyDestinationMemFlags(dev_mem_flags_);
+      new_buffer->index_info_ = buffer->index_info_;
       new_buffer_list.push_back(new_buffer);
       continue;
     }
@@ -475,6 +478,7 @@ Status BufferList::MoveAllBufferToTargetDevice() {
     auto new_buffer = std::make_shared<Buffer>(dev_mem);
     new_buffer_list.push_back(new_buffer);
     new_buffer->CopyMeta(buffer);
+    new_buffer->index_info_ = buffer->index_info_;
     if (data_size == 0) {
       continue;
     }

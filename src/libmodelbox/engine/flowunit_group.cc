@@ -16,6 +16,7 @@
 
 #include "modelbox/flowunit_group.h"
 
+#include "modelbox/error.h"
 #include "modelbox/flowunit_balancer.h"
 #include "modelbox/flowunit_data_executor.h"
 #include "modelbox/node.h"
@@ -87,48 +88,28 @@ void FlowUnitGroup::PreProcess(FUExecContextList &exec_ctx_list,
     const auto &data_ctx = exec_ctx->GetDataCtx();
     const auto &flowunit = exec_ctx->GetFlowUnit();
 
-    if (!data_ctx->IsDataErrorVisible()) {
-      auto error = data_ctx->GetError();
-      if (error != nullptr) {
-        data_ctx->DealWithDataError(error);
-        err_exec_ctx_list.push_back(exec_ctx);
-        exec_ctx_iter = exec_ctx_list.erase(exec_ctx_iter);
-        continue;
-      }
-    }
-
-    if (data_ctx->IsDataGroupPre()) {
-      auto status = flowunit->DataGroupPre(
-          std::dynamic_pointer_cast<DataContext>(data_ctx));
-      if (status != STATUS_SUCCESS) {
-        auto error = std::make_shared<FlowUnitError>(this->unit_name_,
-                                                     "DataGroupPre", status);
-        std::dynamic_pointer_cast<StreamCollapseFlowUnitDataContext>(data_ctx)
-            ->DealWithDataGroupPreError(error);
-
-        exec_ctx_iter = exec_ctx_list.erase(exec_ctx_iter);
-        err_exec_ctx_list.push_back(exec_ctx);
-        continue;
-      }
-
-      std::dynamic_pointer_cast<StreamCollapseFlowUnitDataContext>(data_ctx)
-          ->UpdateDataGroupPostFlag(true);
-    }
-
+    // stream start
     if (data_ctx->IsDataPre()) {
       auto status =
           flowunit->DataPre(std::dynamic_pointer_cast<DataContext>(data_ctx));
-      data_ctx->UpdateStartFlag();
       if (status != STATUS_SUCCESS) {
+        MBLOG_INFO << "flowunit " << unit_name_
+                   << " data pre return: " << status;
         auto error = std::make_shared<FlowUnitError>(this->unit_name_,
                                                      "DataPre", status);
         data_ctx->DealWithDataPreError(error);
         exec_ctx_iter = exec_ctx_list.erase(exec_ctx_iter);
         err_exec_ctx_list.push_back(exec_ctx);
         continue;
-      } else {
-        data_ctx->UpdateDataPostFlag(true);
       }
+    }
+
+    // error buffer only affect process
+    if (data_ctx->HasError() && !data_ctx->IsDataErrorVisible()) {
+      data_ctx->DealWithDataError();
+      exec_ctx_iter = exec_ctx_list.erase(exec_ctx_iter);
+      err_exec_ctx_list.push_back(exec_ctx);
+      continue;
     }
 
     ++exec_ctx_iter;
@@ -145,7 +126,6 @@ Status FlowUnitGroup::Process(FUExecContextList &exec_ctx_list) {
     } else {
       data_ctx->SetStatus(data_ctx->GetLastStatus());
       data_ctx->SetSkippable(false);
-      data_ctx->FillEmptyOutput();
     }
   }
 
@@ -164,8 +144,7 @@ Status FlowUnitGroup::Process(FUExecContextList &exec_ctx_list) {
   return status;
 }
 
-Status FlowUnitGroup::PostProcessData(FUExecContextList &exec_ctx_list,
-                                      FUExecContextList &err_exec_ctx_list) {
+Status FlowUnitGroup::PostProcess(FUExecContextList &exec_ctx_list) {
   auto exec_ctx_iter = exec_ctx_list.begin();
   auto status = STATUS_OK;
   auto ret_status = STATUS_OK;
@@ -173,18 +152,14 @@ Status FlowUnitGroup::PostProcessData(FUExecContextList &exec_ctx_list,
     auto exec_ctx = *exec_ctx_iter;
     const auto &data_ctx = exec_ctx->GetDataCtx();
     if (data_ctx->IsErrorStatus()) {
+      MBLOG_INFO << "flowunit " << unit_name_
+                 << " process return: " << data_ctx->GetStatus();
       auto error = std::make_shared<FlowUnitError>(this->unit_name_, "Process",
-                                                   data_ctx->process_status_);
+                                                   data_ctx->GetStatus());
       data_ctx->DealWithProcessError(error);
     }
 
-    if (data_ctx->IsOutputStreamError()) {
-      err_exec_ctx_list.push_back(exec_ctx);
-      exec_ctx_iter = exec_ctx_list.erase(exec_ctx_iter);
-      continue;
-    }
-
-    status = data_ctx->LabelData();
+    status = data_ctx->PostProcess();
     if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
       ret_status = status;
       return ret_status;
@@ -194,11 +169,10 @@ Status FlowUnitGroup::PostProcessData(FUExecContextList &exec_ctx_list,
     if (data_ctx->IsDataPost()) {
       status =
           flowunit->DataPost(std::dynamic_pointer_cast<DataContext>(data_ctx));
-    }
-
-    if (data_ctx->IsDataGroupPost()) {
-      status = flowunit->DataGroupPost(
-          std::dynamic_pointer_cast<DataContext>(data_ctx));
+      if (!status) {
+        MBLOG_INFO << "flowunit " << unit_name_
+                   << " data post return: " << status;
+      }
     }
 
     if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
@@ -208,27 +182,6 @@ Status FlowUnitGroup::PostProcessData(FUExecContextList &exec_ctx_list,
     exec_ctx_iter++;
   }
   return ret_status;
-}
-
-Status FlowUnitGroup::PostProcessError(FUExecContextList &err_exec_ctx_list) {
-  auto status = STATUS_OK;
-  for (auto &err_exec_ctx : err_exec_ctx_list) {
-    const auto &err_data_ctx = err_exec_ctx->GetDataCtx();
-    const auto &flowunit = err_exec_ctx->GetFlowUnit();
-    status = err_data_ctx->LabelError();
-    if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
-      return status;
-    }
-    if (err_data_ctx->IsDataPost()) {
-      flowunit->DataPost(std::dynamic_pointer_cast<DataContext>(err_data_ctx));
-    }
-
-    if (err_data_ctx->IsDataGroupPost()) {
-      flowunit->DataGroupPost(
-          std::dynamic_pointer_cast<DataContext>(err_data_ctx));
-    }
-  }
-  return status;
 }
 
 void FlowUnitGroup::PostProcessEvent(FUExecContextList &exec_ctx_list) {
@@ -268,21 +221,7 @@ Status FlowUnitGroup::Run(
   try {
     PreProcess(exec_ctx_list, err_exec_ctx_list);
 
-    if (exec_ctx_list.size() != 0) {
-      status = Process(exec_ctx_list);
-      if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
-        ret_status = status;
-        return ret_status;
-      }
-
-      status = PostProcessData(exec_ctx_list, err_exec_ctx_list);
-      if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
-        ret_status = status;
-        return ret_status;
-      }
-    }
-
-    status = PostProcessError(err_exec_ctx_list);
+    status = Process(exec_ctx_list);
     if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
       ret_status = status;
       return ret_status;
@@ -290,6 +229,12 @@ Status FlowUnitGroup::Run(
 
     for (auto &err_ctx : err_exec_ctx_list) {
       exec_ctx_list.push_back(err_ctx);
+    }
+
+    status = PostProcess(exec_ctx_list);
+    if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
+      ret_status = status;
+      return ret_status;
     }
 
     PostProcessEvent(exec_ctx_list);
