@@ -18,6 +18,10 @@ cmake_minimum_required(VERSION 3.10)
 file(GLOB_RECURSE SOURCES *.cpp *.cc *.c)
 group_source_test_files(IMAGE_ROTATE_SOURCE MODELBOX_UNIT_TEST_SOURCE "test_base.c*" ${SOURCES})
 
+if (NOT OPENCV_FOUND) 
+    set(MODELBOX_UNIT_TEST_SOURCE "")
+endif()
+
 set(INCLUDE ${CMAKE_CURRENT_LIST_DIR})
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})

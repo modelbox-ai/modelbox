@@ -29,6 +29,7 @@ static std::map<std::string, mindspore::ModelType> model_type_map{
     {"mindir", mindspore::ModelType::kMindIR},
     {"air", mindspore::ModelType::kAIR},
     {"om", mindspore::ModelType::kOM},
+    {"ms", mindspore::ModelType::kMindIR},
     {"onnx", mindspore::ModelType::kONNX}};
 
 static std::map<mindspore::DataType, std::string> data_type_map{
@@ -121,12 +122,10 @@ modelbox::Status MindSporeInference::CheckMindSporeInfo(
 }
 
 modelbox::Status MindSporeInference::CheckMindSporeIO(
-    const std::vector<std::string> &input_name_list,
-    const std::vector<std::string> &output_name_list,
-    const std::vector<std::string> &input_type_list,
-    const std::vector<std::string> &output_type_list) {
+    struct MindSporeIOList &io_list) {
   auto input_tensor = model_->GetInputs();
-  auto ret = CheckMindSporeInfo(input_tensor, input_name_list, input_type_list);
+  auto ret = CheckMindSporeInfo(input_tensor, io_list.input_name_list,
+                                io_list.input_type_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms input failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
@@ -134,7 +133,8 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
   }
 
   auto output_tensor = model_->GetOutputs();
-  ret = CheckMindSporeInfo(output_tensor, output_name_list, output_type_list);
+  ret = CheckMindSporeInfo(output_tensor, io_list.output_name_list,
+                           io_list.output_type_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms output failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
@@ -144,30 +144,16 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
   return modelbox::STATUS_OK;
 }
 
-void MindSporeInference::InitContext(
-    std::shared_ptr<modelbox::Configuration> &config) {
-  context_ = std::make_shared<mindspore::Context>();
-  auto ascend310_info = std::make_shared<mindspore::Ascend310DeviceInfo>();
-  auto device_id = config->GetInt32("deviceid", 0);
-  // NCHW or NHWC
-  auto input_format = config->GetString("input_format", "NCHW");
-  ascend310_info->SetDeviceID(device_id);
-  ascend310_info->SetInputFormat(input_format);
-  auto &device_list = context_->MutableDeviceInfo();
-  device_list.push_back(ascend310_info);
-}
-
 modelbox::Status MindSporeInference::Init(
+    std::shared_ptr<mindspore::Context> mindspore_context,
     const std::string &model_entry,
     std::shared_ptr<modelbox::Configuration> &config,
-    const std::vector<std::string> &input_name_list,
-    const std::vector<std::string> &output_name_list,
-    const std::vector<std::string> &input_type_list,
-    const std::vector<std::string> &output_type_list,
+    struct MindSporeIOList &io_list,
     const std::shared_ptr<modelbox::Drivers> &drivers_ptr) {
-  InitContext(config);
 
-  mindspore::ModelType mindspore_type;
+  context_ = mindspore_context;
+
+  mindspore::ModelType mindspore_type = mindspore::ModelType::kAIR;
   auto ret = GetModelType(model_entry, mindspore_type);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "get model type failed " + ret.WrapErrormsgs();
@@ -190,30 +176,36 @@ modelbox::Status MindSporeInference::Init(
     if (!modelBuf) {
       return {modelbox::STATUS_FAULT, "Decrypt model fail"};
     }
-    ms_status = mindspore::Serialization::Load(
-        (const void *)modelBuf.get(), (size_t)model_len, mindspore_type, &graph);
+    ms_status = mindspore::Serialization::Load((const void *)modelBuf.get(),
+                                               (size_t)model_len,
+                                               mindspore_type, &graph);
   } else if (model_decrypt.GetModelState() ==
              ModelDecryption::MODEL_STATE_PLAIN) {
     ms_status = mindspore::Serialization::Load(model_entry.c_str(),
-                                                mindspore_type, &graph);
+                                               mindspore_type, &graph);
   }
   if (ms_status != mindspore::kSuccess) {
-    auto err_msg = "mindspore load model failed, path " + model_entry + ", msg: " + ms_status.GetErrDescription();
+    auto err_msg = "mindspore load model failed, path " + model_entry + ", ";
+    std::stringstream stream;
+    stream << std::hex << ms_status.StatusCode();
+    err_msg += " code: " + stream.str();
+    err_msg += ", msg: " + ms_status.ToString();
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
   model_ = std::make_shared<mindspore::Model>();
-  ms_status =
-      model_->Build(mindspore::GraphCell(graph), context_);
+  ms_status = model_->Build(mindspore::GraphCell(graph), context_);
   if (ms_status != mindspore::kSuccess) {
-    auto err_msg = "build model failed: " + ms_status.GetErrDescription();
+    auto err_msg = "build model failed, errmsg: " + ms_status.ToString();
+    std::stringstream stream;
+    stream << std::hex << ms_status.StatusCode();
+    err_msg += " code: " + stream.str();
     MBLOG_ERROR << err_msg;
-    return {modelbox::STATUS_FAULT, err_msg};
+    return {modelbox::STATUS_INVALID, err_msg};
   }
 
-  ret = CheckMindSporeIO(input_name_list, output_name_list, input_type_list,
-                         output_type_list);
+  ret = CheckMindSporeIO(io_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "input or output info got error, " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;

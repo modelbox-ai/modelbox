@@ -14,45 +14,42 @@
  * limitations under the License.
  */
 
+#ifndef MODELBOX_MINDSPRORE_INFERENCE_H_
+#define MODELBOX_MINDSPRORE_INFERENCE_H_
 
-#ifndef MODELBOX_MINDSPRORE_ASCEND_INFERENCE_H_
-#define MODELBOX_MINDSPRORE_ASCEND_INFERENCE_H_
-
-#include <acl/acl.h>
-
+#include "include/api/context.h"
+#include "include/api/model.h"
 #include "modelbox/base/configuration.h"
 #include "modelbox/data_context.h"
-#include "include/api/model.h"
-#include "include/api/context.h"
+
+struct MindSporeIOList {
+  std::vector<std::string> input_name_list;
+  std::vector<std::string> output_name_list;
+  std::vector<std::string> input_type_list;
+  std::vector<std::string> output_type_list;
+};
 
 class MindSporeInference {
  public:
   MindSporeInference() = default;
   ~MindSporeInference();
 
-  modelbox::Status Init(const std::string &model_entry,
-                      std::shared_ptr<modelbox::Configuration> &config,
-                      const std::vector<std::string> &input_name_list,
-                      const std::vector<std::string> &output_name_list,
-                      const std::vector<std::string> &input_type_list,
-                      const std::vector<std::string> &output_type_list,
-                      const std::shared_ptr<modelbox::Drivers>& drivers_ptr);
+  modelbox::Status Init(std::shared_ptr<mindspore::Context> mindspore_context,
+                        const std::string &model_entry,
+                        std::shared_ptr<modelbox::Configuration> &config,
+                        struct MindSporeIOList &io_list,
+                        const std::shared_ptr<modelbox::Drivers> &drivers_ptr);
   modelbox::Status Infer(std::shared_ptr<modelbox::DataContext> data_ctx);
   int64_t GetBatchSize() { return batch_size_; };
 
  private:
-  void InitContext(std::shared_ptr<modelbox::Configuration> &config);
   modelbox::Status GetModelType(const std::string &model_entry,
-                              mindspore::ModelType &model_type);
+                                mindspore::ModelType &model_type);
   modelbox::Status CheckMindSporeInfo(
       const std::vector<mindspore::MSTensor> &tensor_list,
       const std::vector<std::string> &name_list,
       const std::vector<std::string> &type_list);
-  modelbox::Status CheckMindSporeIO(
-      const std::vector<std::string> &input_name_list,
-      const std::vector<std::string> &output_name_list,
-      const std::vector<std::string> &input_type_list,
-      const std::vector<std::string> &output_type_list);
+  modelbox::Status CheckMindSporeIO(struct MindSporeIOList &io_list);
   std::shared_ptr<mindspore::Model> model_{nullptr};
   std::shared_ptr<mindspore::Context> context_{nullptr};
   int64_t batch_size_{0};

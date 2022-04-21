@@ -367,9 +367,11 @@ std::shared_ptr<FlowUnit> FlowUnitManager::CreateSingleFlowUnit(
 
   auto iter = flowunit_factory_.find(std::make_pair(unit_type, unit_name));
   if (iter == flowunit_factory_.end()) {
-    StatusError = {STATUS_NOTFOUND, "can not find flowunit[type: " + unit_type +
-                                        ", name:" + unit_name +
-                                        "], may not loaded."};
+    StatusError = {STATUS_NOTFOUND,
+                   "can not find flowunit [type: " + unit_type +
+                       ", name:" + unit_name +
+                       "], Please check if the 'device' configured correctly "
+                       "or if the flowunit library exists."};
     return nullptr;
   }
 

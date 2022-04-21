@@ -103,11 +103,15 @@ install(PROGRAMS ${MANAGER_BIN_FILES}
     DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}
     COMPONENT server)
 
+if (SYSTEMDSYSTEMUNITDIR) 
 install(FILES 
     ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox-manager.service 
     DESTINATION ${SYSTEMDSYSTEMUNITDIR} 
     COMPONENT server
     )
+else()
+message("Skip install systemd unit")
+endif()
 
 set(MODELBOX_MANAGER_INCLUDE 
     ${MANAGER_INCLUDES} 

@@ -24,6 +24,12 @@ project(modelbox-flowunit-${UNIT_DEVICE}-${UNIT_NAME})
 file(GLOB_RECURSE UNIT_SOURCE *.cpp *.cc *.c *.cu)
 group_source_test_files(MODELBOX_UNIT_SOURCE MODELBOX_UNIT_TEST_SOURCE "_test.c*" ${UNIT_SOURCE})
 
+if (NOT OPENCV_FOUND) 
+    set(MODELBOX_UNIT_TEST_SOURCE "")
+else()
+    list(APPEND DRIVER_UNIT_TEST_LINK_LIBRARIES opencv_imgproc)
+endif()
+
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${LIBMODELBOX_INCLUDE})
@@ -57,8 +63,6 @@ target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_DEVICE_CUDA_SHARED})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_SHARED})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${CUDA_nppc_LIBRARY})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${CUDA_nppicc_LIBRARY})
-
-list(APPEND DRIVER_UNIT_TEST_LINK_LIBRARIES opencv_imgproc)
 
 set_target_properties(${MODELBOX_UNIT_SHARED} PROPERTIES OUTPUT_NAME "modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}")
 

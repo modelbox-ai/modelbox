@@ -24,6 +24,10 @@ project(modelbox-unit-${UNIT_NAME}-${UNIT_DEVICE})
 file(GLOB_RECURSE UNIT_SOURCE *.cpp *.cc * .cu)
 group_source_test_files(MODELBOX_UNIT_SOURCE MODELBOX_UNIT_TEST_SOURCE "_test.c*" ${UNIT_SOURCE})
 
+if (NOT OPENCV_FOUND) 
+    set(MODELBOX_UNIT_TEST_SOURCE "")
+endif()
+
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${LIBMODELBOX_INCLUDE})

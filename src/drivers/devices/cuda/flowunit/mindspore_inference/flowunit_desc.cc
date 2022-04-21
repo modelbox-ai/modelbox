@@ -18,18 +18,18 @@
 
 #include <memory>
 
-#include "mindspore_ascend_inference_flowunit.h"
+#include "mindspore_cuda_inference_flowunit.h"
 #include "modelbox/base/driver_api_helper.h"
 #include "modelbox/base/status.h"
-#include "modelbox/device/ascend/device_ascend.h"
+#include "modelbox/device/cuda/device_cuda.h"
 #include "modelbox/flowunit.h"
 
 constexpr const char *FLOWUNIT_NAME = "mindspore_inference";
-constexpr const char *FLOWUNIT_DESC = "A mindspore ascend inference flowunit";
+constexpr const char *FLOWUNIT_DESC = "A mindspore cuda inference flowunit";
 
 std::shared_ptr<modelbox::DriverFactory> CreateDriverFactory() {
   std::shared_ptr<modelbox::DriverFactory> factory =
-      std::make_shared<MindSporeInferenceAsendFlowUnitFactory>();
+      std::make_shared<MindSporeInferenceCudaFlowUnitFactory>();
   return factory;
 }
 

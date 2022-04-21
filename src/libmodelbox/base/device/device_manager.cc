@@ -148,7 +148,7 @@ std::shared_ptr<Device> DeviceManager::CreateDevice(
   auto id_desc = device_desc_list_[device_type].find(device_id);
   if (id_desc == device_desc_list_[device_type].end()) {
     StatusError = {STATUS_NOTFOUND,
-                   "Don't probe type " + device_type + " id: " + device_id};
+                   "Can't find device, type " + device_type + " id: " + device_id};
     MBLOG_ERROR << StatusError.Errormsg();
     return nullptr;
   }

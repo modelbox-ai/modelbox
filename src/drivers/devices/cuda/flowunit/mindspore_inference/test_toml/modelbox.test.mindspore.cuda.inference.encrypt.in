@@ -1,0 +1,30 @@
+[base]
+name = "mindspore_inference_encrypt"
+device = "cuda"
+version = "1.0.0"
+description = "an mindspore cuda inference flowunit"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/mindspore_inference/tensor_add_en.mindir"
+type = "inference"
+virtual_type = "mindspore"
+
+[encryption]
+plugin_name = "modeldecrypt-plugin"
+plugin_version = "1.0.0"
+rootkey = "8VluyoB6j8rMYTNdOsudq+iKiqemMM9tJXuA+Gtx+Y28EhCAS0dFxcI8iunuMItqCSMPhUU2UWeCoI3UYVZ6XYr3J/w8FDHyOzuc3OQGj2e+"
+passwd = "seBOMRLhAcPEElOAwDYSRyad0Szrke73OPrbK0DES0d50VSA7qRaC3lKukKkLZQL9GU3Q6R05KsWMGPwweACCQ=="
+
+[input]
+[input.input1]
+name = "x_"
+type = "float"
+device = "cpu"
+
+[input.input2]
+name = "y_"
+type = "float"
+device = "cpu"
+
+[output]
+[output.output1]
+name = "output0"
+type = "float"
