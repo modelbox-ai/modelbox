@@ -366,20 +366,17 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
 
     if (body.find("job_id") == body.end()) {
       error_code = "MODELBOX_003";
-      error_msg = ERROR_INFO[error_code];
       return;
     }
 
     auto jobid = body["job_id"].get<std::string>();
     if (body.find("job_graph") == body.end()) {
       error_code = "MODELBOX_004";
-      error_msg = ERROR_INFO[error_code];
       return;
     }
 
     if (!CheckJobIdValid(jobid)) {
       error_code = "MODELBOX_007";
-      error_msg = ERROR_INFO[error_code];
       return;
     }
 
