@@ -18,7 +18,6 @@
 #include <modelbox/match_stream.h>
 #include <modelbox/node.h>
 #include <modelbox/port.h>
-#include <modelbox/session.h>
 #include <modelbox/session_context.h>
 
 namespace modelbox {
@@ -228,6 +227,10 @@ std::shared_ptr<BufferListMap> FlowUnitDataContext::Output() {
 std::shared_ptr<BufferList> FlowUnitDataContext::External() { return nullptr; }
 
 void FlowUnitDataContext::SetEvent(std::shared_ptr<FlowUnitEvent> event) {
+  if (wait_user_events_.find(event) == wait_user_events_.end()) {
+    // not sent by user, should not cause data process
+    SetSkippable(true);
+  }
   wait_user_events_.erase(event);
   user_event_ = event;
 }
@@ -606,7 +609,8 @@ bool FlowUnitDataContext::HasValidOutput() {
 }
 
 bool FlowUnitDataContext::IsContinueProcess() {
-  return process_status_ == STATUS_CONTINUE && !wait_user_events_.empty();
+  return (process_status_ == STATUS_CONTINUE && !session_->IsClosed()) ||
+         !wait_user_events_.empty();
 }
 
 size_t FlowUnitDataContext::GetOutputBufferNum() {
@@ -692,6 +696,25 @@ std::shared_ptr<BufferProcessInfo> FlowUnitDataContext::GetCurNodeProcessInfo(
 }
 
 std::shared_ptr<Session> FlowUnitDataContext::GetSession() { return session_; }
+
+void FlowUnitDataContext::NotifySessionClose() {
+  if (process_status_ == STATUS_CONTINUE) {
+    /** append one event to push data ctx end, event not sent by user will not
+     *  cause data process
+     *  case: videodemuxer connect failed, and return continue
+     *  at Node::Run, then user call session close, and demuxer reconnect event
+     *  still wait, session will be stuck
+     **/
+    auto inner_event = std::make_shared<FlowUnitInnerEvent>(
+        FlowUnitInnerEvent::EXPAND_UNFINISH_DATA);
+    inner_event->SetUserEvent(std::make_shared<FlowUnitEvent>());
+    inner_event->SetDataCtxMatchKey(data_ctx_match_key_);
+    if (node_ == nullptr) {
+      return;
+    }
+    node_->SendEvent(inner_event);
+  }
+}
 
 void FlowUnitDataContext::DealWithDataError() {
   DealWithProcessError(GetError());
@@ -991,7 +1014,7 @@ bool StreamFlowUnitDataContext::IsDataPre() {
 }
 
 bool StreamFlowUnitDataContext::IsDataPost() {
-  return input_has_stream_end_ && !is_empty_stream;
+  return end_flag_received_ && !is_empty_stream && !IsContinueProcess();
 }
 
 void StreamFlowUnitDataContext::DealWithDataPreError(
@@ -1097,7 +1120,7 @@ bool StreamExpandFlowUnitDataContext::IsDataPre() {
 }
 
 bool StreamExpandFlowUnitDataContext::IsDataPost() {
-  return input_has_stream_end_ && !is_empty_stream;
+  return end_flag_received_ && !is_empty_stream && !IsContinueProcess();
 }
 
 std::shared_ptr<FlowUnitInnerEvent>

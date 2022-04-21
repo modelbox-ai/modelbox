@@ -1734,9 +1734,14 @@ TEST_F(NodeRunTest, StreamInfo) {
   EXPECT_EQ(stream_mid_node->Run(DATA), STATUS_SUCCESS);
   queue_3->PopBatch(&mid_buffer_vector);
   EXPECT_EQ(mid_buffer_vector.size(), 5);
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 5; i++) {
+    auto buffer = mid_buffer_vector[i];
+    auto index = BufferManageView::GetIndexInfo(buffer);
+    if (index->IsEndFlag()) {
+      continue;
+    }
     auto data_result = (int*)mid_buffer_vector[i]->ConstData();
-    EXPECT_EQ(data_result[0], 6 + i * 3);
+    EXPECT_EQ(data_result[0], index->GetIndex() * 3);
   }
   queue_3->PushBatch(&mid_buffer_vector);
   mid_buffer_vector.clear();
