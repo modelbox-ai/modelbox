@@ -105,6 +105,9 @@ class OverHierarchyCheck {
 
  private:
   void InitFirstNode(std::shared_ptr<Node> node);
+  Status CheckInputPortsColorReady(
+      std::shared_ptr<IndexPort> &index_port,
+      const std::vector<std::shared_ptr<InPort>> &input_ports);
   Status CheckInputPorts(
       std::shared_ptr<Node> node,
       const std::unordered_map<std::string,

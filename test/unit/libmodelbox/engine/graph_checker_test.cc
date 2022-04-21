@@ -146,7 +146,23 @@ class GraphCheckerTest : public testing::Test {
 
     {
       auto mock_desc =
+          GenerateFlowunitDesc("expand_2_2", {"In_1", "In_2"}, {"Out_1", "Out_2"});
+      mock_desc->SetOutputType(EXPAND);
+      auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+      flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+    }
+
+    {
+      auto mock_desc =
           GenerateFlowunitDesc("test_1_2", {"In_1"}, {"Out_1", "Out_2"});
+      mock_desc->SetFlowType(STREAM);
+      auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+      flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+    }
+
+    {
+      auto mock_desc =
+          GenerateFlowunitDesc("test_1_3", {"In_1"}, {"Out_1", "Out_2", "Out_3"});
       mock_desc->SetFlowType(STREAM);
       auto mock_funcitons = std::make_shared<MockFunctionCollection>();
       flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
@@ -171,6 +187,14 @@ class GraphCheckerTest : public testing::Test {
     {
       auto mock_desc =
           GenerateFlowunitDesc("test_2_1", {"In_1", "In_2"}, {"Out_1"});
+      mock_desc->SetFlowType(STREAM);
+      auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+      flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+    }
+
+    {
+      auto mock_desc =
+          GenerateFlowunitDesc("test_4_1", {"In_1", "In_2", "In_3", "In_4"}, {"Out_1"});
       mock_desc->SetFlowType(STREAM);
       auto mock_funcitons = std::make_shared<MockFunctionCollection>();
       flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
@@ -1135,6 +1159,83 @@ TEST_F(GraphCheckerTest, ConditionMatch_SinglePortLinkMultiPortThroughNode) {
           image_resolution_judge:Out_2 -> face_condition:In_1
           face_condition:Out_1 -> g:In_1
           face_condition:Out_2 -> g:In_1
+        }
+      )";
+
+  TestGraph(conf_file_value, STATUS_OK);
+}
+
+TEST_F(GraphCheckerTest, Bicycle) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
+          b[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          c[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          d[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          e[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          f[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          g[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          h[type=flowunit, flowunit=test_1_3, device=cpu, deviceid=0]
+          i[type=flowunit, flowunit=test_3_1, device=cpu, deviceid=0]
+          j[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          k[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          l[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          m[type=flowunit, flowunit=test_1_2, device=cpu, deviceid=0]
+          n[type=flowunit, flowunit=expand_2_2, device=cpu, deviceid=0]
+          o[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          p[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          q[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          r[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          s[type=flowunit, flowunit=collapse_1_1, device=cpu, deviceid=0]
+          t[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          u[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          v[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          w[type=flowunit, flowunit=test_1_3, device=cpu, deviceid=0]
+          x[type=flowunit, flowunit=test_3_1, device=cpu, deviceid=0]
+          y[type=flowunit, flowunit=test_4_1, device=cpu, deviceid=0]
+          z[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          out[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0]
+
+          a:Out_1 -> b:In_1
+          b:Out_1 -> c: In_1
+          c:Out_1 -> d:In_1
+          d:Out_1 -> e:In_1
+          e:Out_1 -> f:In_1
+          e:Out_1 -> j:In_2
+          e:Out_1 -> t:In_1
+          e:Out_1 -> k:In_1
+          e:Out_1 -> y:In_4
+          f:Out_1 -> g:In_1
+          g:Out_1 -> h:In_1
+          h:Out_1 -> i:In_1
+          h:Out_2 -> i:In_2
+          h:Out_3 -> i:In_3
+          i:Out_1 -> j:In_1
+          j:Out_1 -> k:In_2
+          j:Out_1 -> y:In_3
+          t:Out_1 -> y:In_2
+          t:Out_2 -> u:In_1
+          u:Out_1 -> v:In_1
+          v:Out_1 -> w:In_1
+          w:Out_1 -> x:In_1
+          w:Out_2 -> x:In_2
+          w:Out_3 -> x:In_3
+          x:Out_1 -> y:In_2
+          k:Out_1 -> l:In_1
+          l:Out_1 -> m:In_1
+          l:Out_2 -> y:In_1
+          m:Out_1 -> n:In_1
+          m:Out_2 -> n:In_2
+          n:Out_1 -> o:In_1
+          n:Out_2 -> o:In_2
+          o:Out_1 -> p:In_1
+          p:Out_1 -> q:In_1
+          q:Out_1 -> r:In_1
+          r:Out_1 -> s:In_1
+          s:Out_1 -> y:In_1
+          y:Out_1 -> z:In_1
+          z:Out_1 -> out:In_1
         }
       )";
 
