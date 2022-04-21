@@ -37,7 +37,7 @@ showhelp() {
 	echo "                                          generic|video|inference" 
 	echo "  -project-path [path-to-project]       create flowunit in specific project, default is \$HOME/modelbox-project."
 	echo "  -input [name=name,device=device|-]      flowunit input ports. '-' for default port name"
-	echo "  -output [name-name,device=device|-]     flowunit output ports. '-' for default port name"
+	echo "  -output [name=name,device=device|-]     flowunit output ports. '-' for default port name"
 	echo "  -device [cpu|cuda|ascend]             flowunit device."	
 
 	echo "  flowunit infer"
@@ -1168,6 +1168,8 @@ parserarg() {
 
 main() {
 	args=""
+
+	umask 0027
 
 	if [ $# -lt 1 ]; then showhelp; exit 1; fi
 	while true; do

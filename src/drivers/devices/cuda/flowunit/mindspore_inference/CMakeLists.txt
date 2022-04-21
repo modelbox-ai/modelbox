@@ -14,56 +14,59 @@
 # limitations under the License.
 
 
-cmake_minimum_required(VERSION 3.10)
-
-if (NOT OPENCV_FOUND) 
-    message(STATUS "Not found opencv, disable cuda image decoder flowunit")
-    return()
-endif()
+cmake_minimum_required(VERSION 3.10.2)
 
 set(UNIT_DEVICE "cuda")
-set(UNIT_NAME "image_decoder")
+set(UNIT_NAME "mindspore-inference")
 
 project(modelbox-flowunit-${UNIT_DEVICE}-${UNIT_NAME})
+if (NOT MINDSPORE_FOUND) 
+    message(STATUS "Not found mindspore, disable ${UNIT_NAME} flowunit")
+    return()
+endif()
+set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB_RECURSE UNIT_SOURCE *.cpp *.cc *.c)
 group_source_test_files(MODELBOX_UNIT_SOURCE MODELBOX_UNIT_TEST_SOURCE "_test.c*" ${UNIT_SOURCE})
 
+
 include_directories(${CMAKE_CURRENT_LIST_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})
 include_directories(${LIBMODELBOX_DEVICE_CUDA_INCLUDE})
 include_directories(${CUDA_INCLUDE_DIRS})
-include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${LIBMODELBOX_VIRTUALDRIVER_INFERENCE_INCLUDE})
+include_directories(${MINDSPORE_INCLUDE_DIR})
+include_directories(${LIBMODELBOX_FLOWUNIT_INFERENCE_MINDSPORE_INCLUDE})
+include_directories(${MODELBOX_COMMON_INFERENCE_INCLUDE})
 
 set(MODELBOX_UNIT_SHARED libmodelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}-shared)
 set(MODELBOX_UNIT_SOURCE_INCLUDE ${CMAKE_CURRENT_LIST_DIR})
 
-cuda_add_library(${MODELBOX_UNIT_SHARED} SHARED ${MODELBOX_UNIT_SOURCE})
-set(LIBMODELBOX_FLOWUNIT_IMAGE_DECODE_CUDA_SHARED ${MODELBOX_UNIT_SHARED})
+add_library(${MODELBOX_UNIT_SHARED} SHARED ${MODELBOX_UNIT_SOURCE})
+set(LIBMODELBOX_FLOWUNIT_INFERENCE_ASCEND_SHARED ${MODELBOX_UNIT_SHARED})
 
 set_target_properties(${MODELBOX_UNIT_SHARED} PROPERTIES 
     SOVERSION ${MODELBOX_VERSION_MAJOR}
     VERSION ${MODELBOX_VERSION_MAJOR}.${MODELBOX_VERSION_MINOR}.${MODELBOX_VERSION_PATCH}
 )
 
-find_cuda_helper_libs(nppidei)
-find_cuda_helper_libs(nvjpeg) 
+target_compile_options(${MODELBOX_UNIT_SHARED} PUBLIC -fvisibility=hidden)
+
 target_link_libraries(${MODELBOX_UNIT_SHARED} pthread)
 target_link_libraries(${MODELBOX_UNIT_SHARED} rt)
 target_link_libraries(${MODELBOX_UNIT_SHARED} dl)
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_DEVICE_CUDA_SHARED})
+target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_VIRTUALDRIVER_INFERENCE_SHARED})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_SHARED})
-target_link_libraries(${MODELBOX_UNIT_SHARED} ${OpenCV_LIBS})
-target_link_libraries(${MODELBOX_UNIT_SHARED} ${CUDA_nppidei_LIBRARY})
-target_link_libraries(${MODELBOX_UNIT_SHARED} ${CUDA_nvjpeg_LIBRARY})
+target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_FLOWUNIT_INFERENCE_MINDSPORE_SHARED})
+target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_COMMON_INFERENCE_LIBRARY})
 
 set_target_properties(${MODELBOX_UNIT_SHARED} PROPERTIES OUTPUT_NAME "modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}")
-list(APPEND DRIVER_UNIT_TEST_LINK_LIBRARIES ${OPENCV_CORE_LIBRARY} 
-        ${OPENCV_IMGPROC_LIBRARY} 
-        ${CUDA_nppidei_LIBRARY}
-        ${OPENCV_IMGCODECS_LIBRARY})
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_toml/modelbox.test.mindspore.cuda.inference.in ${CMAKE_BINARY_DIR}/test/test-working-dir/data/virtual_mindspore_cuda_infer_test.toml @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_toml/modelbox.test.mindspore.cuda.inference.encrypt.in ${CMAKE_BINARY_DIR}/test/test-working-dir/data/virtual_mindspore_cuda_infer_test_en.toml @ONLY)
+
 
 install(TARGETS ${MODELBOX_UNIT_SHARED}
         COMPONENT cuda-device-flowunit
@@ -73,16 +76,15 @@ install(TARGETS ${MODELBOX_UNIT_SHARED}
         OPTIONAL)
 install(DIRECTORY ${HEADER} 
         DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}
-        COMPONENT cuda-device-flowunit)
+        COMPONENT cuda-device-flowunit-devel)
 
-set(LIBMODELBOX_FLOWUNIT_IMAGE_DECODE_CUDA_SHARED ${MODELBOX_UNIT_SHARED} CACHE INTERNAL "")
-set(LIBMODELBOX_FLOWUNIT_IMAGE_DECODE_CUDA_INCLUDE ${MODELBOX_UNIT_SOURCE_INCLUDE} CACHE INTERNAL "")
-set(LIBMODELBOX_FLOWUNIT_IMAGE_DECODE_SOURCES ${MODELBOX_UNIT_SOURCE} CACHE INTERNAL "")
-set(LIBMODELBOX_FLOWUNIT_IMAGE_DECODE_SO_PATH ${CMAKE_CURRENT_BINARY_DIR}/libmodelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}.so CACHE INTERNAL "")
+set(LIBMODELBOX_FLOWUNIT_MINDSPORE_CPU_SHARED ${MODELBOX_UNIT_SHARED} CACHE INTERNAL "")
+set(LIBMODELBOX_FLOWUNIT_MINDSPORE_CPU_INCLUDE ${MODELBOX_UNIT_SOURCE_INCLUDE} CACHE INTERNAL "")
+set(LIBMODELBOX_FLOWUNIT_MINDSPORE_CPU_SOURCES ${MODELBOX_UNIT_SOURCE} CACHE INTERNAL "")
+set(LIBMODELBOX_FLOWUNIT_MINDSPORE_CPU_SO_PATH ${CMAKE_CURRENT_BINARY_DIR}/libmodelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}.so CACHE INTERNAL "")
 
 # driver test
 list(APPEND DRIVER_UNIT_TEST_SOURCE ${MODELBOX_UNIT_TEST_SOURCE})
 list(APPEND DRIVER_UNIT_TEST_TARGET ${MODELBOX_UNIT_SHARED})
 set(DRIVER_UNIT_TEST_SOURCE ${DRIVER_UNIT_TEST_SOURCE} CACHE INTERNAL "")
 set(DRIVER_UNIT_TEST_TARGET ${DRIVER_UNIT_TEST_TARGET} CACHE INTERNAL "")
-set(DRIVER_UNIT_TEST_LINK_LIBRARIES ${DRIVER_UNIT_TEST_LINK_LIBRARIES} CACHE INTERNAL "")

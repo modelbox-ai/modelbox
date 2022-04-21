@@ -27,6 +27,7 @@ option(TEST_COVERAGE "build with coverage" OFF)
 option(WITH_JAVA "build java support" OFF)
 option(USE_CN_MIRROR "download from cn mirror" OFF)
 option(WITH_WEBUI "build modelbox webui" ON)
+option(WITH_MINDSPORE "build mindspore" OFF)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

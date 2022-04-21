@@ -1,0 +1,27 @@
+[base]
+name = "mindspore_inference"
+device = "cpu"
+version = "1.0.0"
+description = "an mindspore cpu inference flowunit"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/mindspore_inference/tensor_add.ms"
+type = "inference"
+virtual_type = "mindspore"
+
+[config]
+input_format = "NCHW"
+
+[input]
+[input.input1]
+name = "x_"
+type = "float"
+device = "cpu"
+
+[input.input2]
+name = "y_"
+type = "float"
+device = "cpu"
+
+[output]
+[output.output1]
+name = "Default/Add-op3"
+type = "float"

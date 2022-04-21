@@ -14,16 +14,31 @@
  * limitations under the License.
  */
 
-
 #include "mindspore_inference_flowunit.h"
 
 #include <fstream>
 
-#include "modelbox/device/ascend/device_ascend.h"
 #include "virtualdriver_inference.h"
 
 MindSporeInferenceFlowUnit::MindSporeInferenceFlowUnit(){};
 MindSporeInferenceFlowUnit::~MindSporeInferenceFlowUnit(){};
+
+std::shared_ptr<mindspore::Context>
+MindSporeInferenceFlowUnit::InitMindSporeContext(
+    std::shared_ptr<modelbox::Configuration> &config) {
+  modelbox::StatusError = modelbox::STATUS_BADCONF;
+  auto context = std::make_shared<mindspore::Context>();
+  auto &device_list = context->MutableDeviceInfo();
+  auto info = GetDeviceInfoContext(config);
+  if (info == nullptr) {
+    modelbox::StatusError = {modelbox::StatusError,
+                             "Init device info context failed."};
+    return nullptr;
+  }
+
+  device_list.push_back(info);
+  return context;
+}
 
 modelbox::Status MindSporeInferenceFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
@@ -35,20 +50,21 @@ modelbox::Status MindSporeInferenceFlowUnit::Open(
   merge_config->Add(*config);
   merge_config->Add(*opts);
 
-  std::vector<std::string> input_name_list;
-  std::vector<std::string> output_name_list;
-  std::vector<std::string> input_type_list;
-  std::vector<std::string> output_type_list;
-  auto ret = GetFlowUnitIO(input_name_list, output_name_list, input_type_list,
-                           output_type_list);
+  struct MindSporeIOList iolist;
+
+  auto ret = GetFlowUnitIO(iolist);
   if (ret != modelbox::STATUS_OK) {
     return ret;
   }
 
+  auto context = InitMindSporeContext(merge_config);
+  if (context == nullptr) {
+    return {modelbox::StatusError, "init mindspore context failed."};
+  }
+
   merge_config->SetProperty("deviceid", dev_id_);
   infer_ = std::make_shared<MindSporeInference>();
-  ret = infer_->Init(unit_desc->GetModelEntry(), merge_config, input_name_list,
-                     output_name_list, input_type_list, output_type_list,
+  ret = infer_->Init(context, unit_desc->GetModelEntry(), merge_config, iolist,
                      GetBindDevice()->GetDeviceManager()->GetDrivers());
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Init inference failed, " << ret;
@@ -61,34 +77,31 @@ modelbox::Status MindSporeInferenceFlowUnit::Open(
 }
 
 modelbox::Status MindSporeInferenceFlowUnit::GetFlowUnitIO(
-    std::vector<std::string> &input_name_list,
-    std::vector<std::string> &output_name_list,
-    std::vector<std::string> &input_type_list,
-    std::vector<std::string> &output_type_list) {
+    struct MindSporeIOList &io_list) {
   auto unit_desc = std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(
       this->GetFlowUnitDesc());
   auto input_desc = unit_desc->GetFlowUnitInput();
   auto output_desc = unit_desc->GetFlowUnitOutput();
   for (auto &input : input_desc) {
-    input_name_list.push_back(input.GetPortName());
-    input_type_list.push_back(input.GetPortType());
+    io_list.input_name_list.push_back(input.GetPortName());
+    io_list.input_type_list.push_back(input.GetPortType());
   }
 
   for (auto &output : output_desc) {
-    output_name_list.push_back(output.GetPortName());
-    output_type_list.push_back(output.GetPortType());
+    io_list.output_name_list.push_back(output.GetPortName());
+    io_list.output_type_list.push_back(output.GetPortType());
   }
 
-  if (input_name_list.empty() || output_name_list.empty()) {
-    MBLOG_ERROR << "Wrong input name [" << input_name_list.size()
-                << "] or output name [" << output_name_list.size()
+  if (io_list.input_name_list.empty() || io_list.output_name_list.empty()) {
+    MBLOG_ERROR << "Wrong input name [" << io_list.input_name_list.size()
+                << "] or output name [" << io_list.output_name_list.size()
                 << "] number";
     return modelbox::STATUS_BADCONF;
   }
 
-  if (input_type_list.empty() || output_type_list.empty()) {
-    MBLOG_ERROR << "Wrong input type [" << input_type_list.size()
-                << "] or output type [" << output_type_list.size()
+  if (io_list.input_type_list.empty() || io_list.output_type_list.empty()) {
+    MBLOG_ERROR << "Wrong input type [" << io_list.input_type_list.size()
+                << "] or output type [" << io_list.output_type_list.size()
                 << "] number";
     return modelbox::STATUS_BADCONF;
   }
@@ -107,23 +120,7 @@ modelbox::Status MindSporeInferenceFlowUnit::Process(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status MindSporeInferenceFlowUnit::Close() { 
+modelbox::Status MindSporeInferenceFlowUnit::Close() {
   infer_ = nullptr;
-  return modelbox::STATUS_OK; 
+  return modelbox::STATUS_OK;
 }
-
-void MindSporeInferenceFlowUnitDesc::SetModelEntry(
-    const std::string model_entry) {
-  model_entry_ = model_entry;
-}
-
-const std::string MindSporeInferenceFlowUnitDesc::GetModelEntry() {
-  return model_entry_;
-}
-
-std::shared_ptr<modelbox::FlowUnit>
-MindSporeInferenceFlowUnitFactory::VirtualCreateFlowUnit(
-    const std::string &unit_name, const std::string &unit_type,
-    const std::string &virtual_type) {
-  return std::make_shared<MindSporeInferenceFlowUnit>();
-};

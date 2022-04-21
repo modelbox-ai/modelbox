@@ -2,12 +2,15 @@ set(HITS_DDK_PATH $ENV{DDK_PATH})
 find_path(ACL_INCLUDE
   NAMES acl/acl.h
   HINTS ${CMAKE_INSTALL_FULL_INCLUDEDIR} ${HITS_DDK_PATH}/include
+        /usr/local/Ascend/ascend-toolkit/latest/fwkacllib/include
 )
 mark_as_advanced(ACL_INCLUDE)
 
 # Look for the library (sorted from most current/relevant entry to least).
 set(ACL_LIBRARY_NAME ascendcl)
-set(DDK_LIB_PATH ${HITS_DDK_PATH}/lib64)
+list(APPEND DDK_LIB_PATH ${HITS_DDK_PATH}/lib64)
+list(APPEND DDK_LIB_PATH /usr/local/Ascend/ascend-toolkit/latest/fwkacllib/lib64)
+
 find_library(ACL_LIBRARY NAMES ascendcl HINTS ${CMAKE_INSTALL_FULL_LIBDIR} ${DDK_LIB_PATH})
 find_library(ACL_DVPP_LIBRARY NAMES acl_dvpp HINTS ${CMAKE_INSTALL_FULL_LIBDIR} ${DDK_LIB_PATH})
 find_library(ACL_CBLAS_LIBRARY NAMES acl_cblas HINTS ${CMAKE_INSTALL_FULL_LIBDIR} ${DDK_LIB_PATH})

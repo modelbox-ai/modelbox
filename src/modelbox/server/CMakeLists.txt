@@ -148,11 +148,15 @@ install(PROGRAMS ${SERVER_BIN_FILES}
     DESTINATION ${MODELBOX_TOOLS_PATH}
     COMPONENT server)
 
+if (SYSTEMDSYSTEMUNITDIR)
 install(FILES 
     ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox.service 
     DESTINATION ${SYSTEMDSYSTEMUNITDIR} 
     COMPONENT server
     )
+else()
+message("Skip install systemd unit")
+endif()
 
 set(MODELBOX_SERVER_INCLUDE 
     ${MODELBOX_SERVER_INCLUDES} 

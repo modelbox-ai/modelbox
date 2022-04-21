@@ -1,0 +1,30 @@
+[base]
+name = "mindspore_inference_encrypt"
+device = "cpu"
+version = "1.0.0"
+description = "an mindspore cpu inference flowunit"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/mindspore_inference/tensor_add_en.ms"
+type = "inference"
+virtual_type = "mindspore"
+
+[encryption]
+plugin_name = "modeldecrypt-plugin"
+plugin_version = "1.0.0"
+rootkey = "9v0CybHeDMeEQDrymhSxPKd4N+ZceM8Mm3VYazBD9TThdguUODmdDpyTY6vlqvA9QfnpzBtc4Ucqiw1+RNvU+gDcfq0ET4Wa8Lsf18WcCFZl"
+passwd = "ToT+qoCsXk6r49CowwSVM2rqJmU0y279CIlnqzaBfRdMbYaYF5lp2pwhbiZ4/L5lhr4LJuX7Wjl09WyL/3CKMg=="
+
+[input]
+[input.input1]
+name = "x_"
+type = "float"
+device = "cpu"
+
+[input.input2]
+name = "y_"
+type = "float"
+device = "cpu"
+
+[output]
+[output.output1]
+name = "Default/Add-op3"
+type = "float"

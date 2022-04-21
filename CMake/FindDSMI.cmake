@@ -1,7 +1,9 @@
 set(HITS_DRIVER_PATH $ENV{DRIVER_PATH})
 find_path(DSMI_INCLUDE
   NAMES dsmi_common_interface.h
-  HINTS ${CMAKE_INSTALL_FULL_INCLUDEDIR} ${HITS_DRIVER_PATH}/include
+  HINTS ${CMAKE_INSTALL_FULL_INCLUDEDIR} 
+        ${HITS_DRIVER_PATH}/include
+        /usr/local/Ascend/driver/include
 )
 mark_as_advanced(DSMI_INCLUDE)
 
@@ -12,6 +14,7 @@ find_library(DSMI_LIBRARY NAMES
     HINTS ${CMAKE_INSTALL_FULL_LIBDIR} 
           ${DRIVER_LIB_PATH}
           ${DRIVER_LIB_PATH}/driver
+          /usr/local/Ascend/driver/lib64
 )
 mark_as_advanced(DSMI_LIBRARY)
 

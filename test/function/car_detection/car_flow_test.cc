@@ -23,7 +23,6 @@
 #include <future>
 #include <random>
 #include <thread>
-#include <cuda_runtime.h>
 
 #include "modelbox/base/log.h"
 #include "modelbox/base/utils.h"

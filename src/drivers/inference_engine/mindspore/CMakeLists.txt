@@ -16,16 +16,19 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(modelbox-inference)
+project(modelbox-mindspore-common-inference)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
 endif()
 
-set(MINDSPORE_FLOWUNIT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(MINDSPORE_ENGINE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
 
 foreach(subdir ${SUBDIRS})
     add_subdirectory(${subdir})
 endforeach()
+
+list(APPEND DRIVER_UNIT_TEST_INCLUDE ${CMAKE_CURRENT_LIST_DIR})
+set(DRIVER_UNIT_TEST_INCLUDE ${DRIVER_UNIT_TEST_INCLUDE} CACHE INTERNAL "")
