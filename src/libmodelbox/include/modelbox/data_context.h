@@ -324,6 +324,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
   // state for single run
   bool is_skippable_{false};  // no data
+  std::mutex wait_user_events_lock_;
   std::unordered_set<std::shared_ptr<FlowUnitEvent>>
       wait_user_events_;  // user send event, wait to process
 
@@ -414,6 +415,8 @@ class StreamFlowUnitDataContext : public FlowUnitDataContext {
   void UpdateBufferIndexInfo(
       std::shared_ptr<BufferIndexInfo> cur_buffer,
       std::shared_ptr<BufferIndexInfo> parent_buffer) override;
+
+  PortDataMap cached_input_end_flag_;  // process after output stream end
 };
 
 class NormalExpandFlowUnitDataContext : public FlowUnitDataContext {

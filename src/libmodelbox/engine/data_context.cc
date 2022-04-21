@@ -262,12 +262,15 @@ std::shared_ptr<void> FlowUnitDataContext::GetPrivate(const std::string &key) {
 }
 
 void FlowUnitDataContext::SendEvent(std::shared_ptr<FlowUnitEvent> event) {
-  if (session_ != nullptr && session_->IsClosed()) {
-    // stop event driven
-    return;
-  }
+  {
+    std::lock_guard<std::mutex> lock(wait_user_events_lock_);
+    if (session_ != nullptr && session_->IsClosed()) {
+      // stop event driven
+      return;
+    }
 
-  wait_user_events_.insert(event);
+    wait_user_events_.insert(event);
+  }
   auto inner_event = std::make_shared<FlowUnitInnerEvent>(
       FlowUnitInnerEvent::EXPAND_UNFINISH_DATA);
   inner_event->SetUserEvent(event);
@@ -698,7 +701,8 @@ std::shared_ptr<BufferProcessInfo> FlowUnitDataContext::GetCurNodeProcessInfo(
 std::shared_ptr<Session> FlowUnitDataContext::GetSession() { return session_; }
 
 void FlowUnitDataContext::NotifySessionClose() {
-  if (process_status_ == STATUS_CONTINUE) {
+  std::lock_guard<std::mutex> lock(wait_user_events_lock_);
+  if (process_status_ == STATUS_CONTINUE && wait_user_events_.empty()) {
     /** append one event to push data ctx end, event not sent by user will not
      *  cause data process
      *  case: videodemuxer connect failed, and return continue
@@ -1025,7 +1029,20 @@ void StreamFlowUnitDataContext::UpdateProcessState() {
 }
 
 bool StreamFlowUnitDataContext::NeedStreamEndFlag() {
-  return end_flag_received_ && !IsContinueProcess();
+  auto ret = end_flag_received_ && !IsContinueProcess();
+  if (!ret) {
+    if (!cur_input_end_flag_.empty()) {
+      // received end flag, but not process at this run, cache it
+      cached_input_end_flag_.swap(cur_input_end_flag_);
+    }
+    return false;
+  }
+
+  if (cur_input_end_flag_.empty()) {
+    // use cached input end flag
+    cur_input_end_flag_.swap(cached_input_end_flag_);
+  }
+  return true;
 }
 
 void StreamFlowUnitDataContext::UpdateBufferIndexInfo(

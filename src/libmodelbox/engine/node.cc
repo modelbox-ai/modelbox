@@ -521,6 +521,7 @@ std::shared_ptr<FlowUnitDataContext> Node::CreateDataContext(
     } else {
       data_ctx =
           std::make_shared<StreamFlowUnitDataContext>(this, key, session);
+      session->AddStateListener(data_ctx);
     }
   } else {  // NORMAL
     if (GetOutputType() == EXPAND) {
@@ -539,7 +540,6 @@ std::shared_ptr<FlowUnitDataContext> Node::CreateDataContext(
   }
 
   data_ctx_map_[key] = data_ctx;
-  session->AddStateListener(data_ctx);
   return data_ctx;
 }
 
