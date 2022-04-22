@@ -15,6 +15,8 @@
 # limitations under the License.
 
 
-# the script will be executed after rpm package installed
+if [ "$1" = "configure" ]; then
+	chown -R modelbox:modelbox @RELEASE_PACKAGE_DIR_ROOT@
+fi
 ldconfig 
 

@@ -14,4 +14,7 @@
 # limitations under the License.
  
 # the script will be executed after rpm package installed
+
+chown -R modelbox:modelbox @RELEASE_PACKAGE_DIR_ROOT@
+
 ldconfig 

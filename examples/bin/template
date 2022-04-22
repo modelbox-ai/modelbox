@@ -83,7 +83,7 @@ create_project_template()
 		return 1
 	fi
 
-	cp -r "$MODELBOX_TEMPLATE_PATH/project/${template}"/* "${project_path}"
+	cp -r "$MODELBOX_TEMPLATE_PATH/project/${template}"/. "${project_path}"
 	if [ $? -ne 0 ]; then
 		echoerr "Copy project template failed."
 		return 1
@@ -105,6 +105,9 @@ create_project_template()
 	
 	sed -i "s# graph_.* {# graph_${project_name} {#g" ${project_path}/src/graph/*.toml 2>/dev/null
 	sed -i "s# graph_.* {# graph_${project_name} {#g" ${project_path}/src/graph/*.json 2>/dev/null
+
+	chmod 600 ${project_path}/src/graph/*.toml 2>/dev/null
+	chmod 600 ${project_path}/src/graph/*.json 2>/dev/null
 
 	echo "Create project at '${project_path}' success"
 
@@ -323,6 +326,7 @@ toml_data_append() {
 
 toml_data_complete() {
 	echo -e "${TOML_DATA}" > "$1"
+	chmod 600 "$1"
 }
 
 toml_data_write_base() {
@@ -1169,7 +1173,7 @@ parserarg() {
 main() {
 	args=""
 
-	umask 0027
+	umask 0022
 
 	if [ $# -lt 1 ]; then showhelp; exit 1; fi
 	while true; do
