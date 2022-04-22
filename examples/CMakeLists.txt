@@ -64,7 +64,7 @@ foreach (ITR ${PROJECT_TEMPLATE})
 
     # check if whether copy demo source
     foreach (ITR1 ${DEMO_LIST})
-        if(${ITR} MATCHES ${ITR1})
+        if(${ITR} STREQUAL ${ITR1})
             file(COPY ${DEMO_SOURCE_DIR}/${ITR1}/ DESTINATION ${PROJECT_TEMPLATE_DIR}/src)
             set(PROJECT_DEMO_DIR "${DEMO_SOURCE_DIR}/${ITR1}")
         endif()
