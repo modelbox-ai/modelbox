@@ -465,6 +465,14 @@ Status FlowUnitDataContext::AppendEndFlag() {
     return STATUS_OK;
   }
 
+  if (end_flag_generated_) {
+    // protect end flag
+    MBLOG_WARN
+        << "forbidden append redundant end flag, state for this run, has data:"
+        << cur_input_ << ", has event:" << user_event_;
+    return STATUS_OK;
+  }
+
   std::vector<std::shared_ptr<BufferProcessInfo>> process_info_list;
   auto end_flag_parent = &cur_input_end_flag_;
   if (end_flag_parent->empty()) {
@@ -498,6 +506,7 @@ Status FlowUnitDataContext::AppendEndFlag() {
     port_data_list.push_back(buffer);
   }
 
+  end_flag_generated_ = true;
   return STATUS_OK;
 }
 
@@ -1128,6 +1137,7 @@ void StreamExpandFlowUnitDataContext::ExpandNextBuffer() {
   }
 
   cur_expand_buffer_index_received_ = true;
+  end_flag_generated_ = false;  // each expand buffer generate new stream
   ++cur_data_pose_in_first_cache_;
   SetCurrentInputData(cur_input_data);
 }

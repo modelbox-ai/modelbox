@@ -353,7 +353,9 @@ TEST_F(VirtualNodeTest, VirtualNode_MULTI_INPUT) {
       MBLOG_INFO << name << " " << dataStr;
     }
 
-    status = ext_data->Recv(map_buffer_list_2);
+    OutputBufferList map_buffer_list_3;
+    status = ext_data->Recv(map_buffer_list_3);
+    EXPECT_TRUE(map_buffer_list_3.empty());
     EXPECT_EQ(status, STATUS_EOF);
   }
 

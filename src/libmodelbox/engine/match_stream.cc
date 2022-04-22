@@ -358,9 +358,11 @@ Status InputMatchStreamManager::GenMatchStreamData(
     }
 
     if (match_stream_cache->IsStreamEnd()) {
-      MBLOG_DEBUG << "node " << node_name_ << ", stop input match stream "
-                  << match_key << ", total input count "
-                  << match_stream_cache->TotalInputCount();
+      MBLOG_DEBUG
+          << "node " << node_name_ << ", stop input match stream " << match_key
+          << ", total input count " << match_stream_cache->TotalInputCount()
+          << ", id "
+          << match_stream_cache->GetSession()->GetSessionCtx()->GetSessionId();
       cache_iter = match_stream_cache_map_.erase(cache_iter);
       continue;
     }
@@ -392,7 +394,8 @@ Status InputMatchStreamManager::CacheBuffer(const std::string& port_name,
         buffer_index_info->GetStream()->GetSession());
     match_stream_cache_map_[stream_match_key] = match_stream_cache;
     MBLOG_DEBUG << "node " << node_name_ << ", start input match stream "
-                << stream_match_key;
+                << stream_match_key << ", id "
+                << stream->GetSession()->GetSessionCtx()->GetSessionId();
   } else {
     match_stream_cache = match_stream_cache_item->second;
   }
@@ -605,7 +608,8 @@ Status OutputMatchStreamManager::UpdateStreamInfo(
   auto& output_match_stream = output_stream_map_[match_key];
   if (output_match_stream.Empty()) {
     MBLOG_DEBUG << "node " << node_name_ << ", start output match stream "
-                << match_key;
+                << match_key << ", id "
+                << session->GetSessionCtx()->GetSessionId();
     output_match_stream.SetSession(session);
     GenerateOutputStream(output_match_stream, stream_data_map, port_stream_meta,
                          session);
@@ -655,7 +659,8 @@ Status OutputMatchStreamManager::UpdateStreamInfo(
 
   output_stream_map_.erase(match_key);
   MBLOG_DEBUG << "node " << node_name_ << ", stop output match stream "
-              << match_key << stream_count_stats.str();
+              << match_key << stream_count_stats.str() << ", id "
+              << session->GetSessionCtx()->GetSessionId();
   return STATUS_OK;
 }
 
