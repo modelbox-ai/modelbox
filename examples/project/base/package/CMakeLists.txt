@@ -47,8 +47,8 @@ function(FUNC_CPACK)
     # deb package configuration
     set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON PARENT_SCOPE)
     set(CPACK_COMPONENT_${UNIT_COMPONENT_UPPER_NAME}_DESCRIPTION "${UNIT_COMPONENT} for modelbox" PARENT_SCOPE)
-    configure_file(${CPACK_SOURCE_DIR}/debian/postinst ${CPACK_BINARY_DIR}/debian/postinst @ONLY)
-    configure_file(${CPACK_SOURCE_DIR}/debian/postrm ${CPACK_BINARY_DIR}/debian/postrm @ONLY)
+    configure_file(${CPACK_SOURCE_DIR}/debian/postinst.in ${CPACK_BINARY_DIR}/debian/postinst @ONLY)
+    configure_file(${CPACK_SOURCE_DIR}/debian/postrm.in ${CPACK_BINARY_DIR}/debian/postrm @ONLY)
     set(CPACK_DEBIAN_${UNIT_COMPONENT_UPPER_NAME}_PACKAGE_CONTROL_EXTRA
         ${CPACK_BINARY_DIR}/debian/postinst
         ${CPACK_BINARY_DIR}/debian/postrm PARENT_SCOPE)
@@ -71,8 +71,8 @@ function(FUNC_CPACK)
         ${CMAKE_INSTALL_FULL_LIBDIR}
         "${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig"
         ${SYSTEMDSYSTEMUNITDIR} PARENT_SCOPEN)
-    configure_file(${CPACK_SOURCE_DIR}/rpm/postinscript ${CPACK_BINARY_DIR}/rpm/postinscript @ONLY)
-    configure_file(${CPACK_SOURCE_DIR}/rpm/postunscript ${CPACK_BINARY_DIR}/rpm/postunscript @ONLY)
+    configure_file(${CPACK_SOURCE_DIR}/rpm/postinscript.in ${CPACK_BINARY_DIR}/rpm/postinscript @ONLY)
+    configure_file(${CPACK_SOURCE_DIR}/rpm/postunscript.in ${CPACK_BINARY_DIR}/rpm/postunscript @ONLY)
     set(CPACK_RPM_${UNIT_COMPONENT_UPPER_NAME}_POST_INSTALL_SCRIPT_FILE ${CPACK_BINARY_DIR}/rpm/postinscript PARENT_SCOPE)
     set(CPACK_RPM_${UNIT_COMPONENT_UPPER_NAME}_POST_UNINSTALL_SCRIPT_FILE ${CPACK_BINARY_DIR}/rpm/postunscript PARENT_SCOPE)
     set(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_BINARY_DIR}/release PARENT_SCOPE)
