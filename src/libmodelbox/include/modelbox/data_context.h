@@ -321,6 +321,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   bool end_flag_received_{false};
   size_t input_stream_max_buffer_count_{0};
   size_t input_stream_cur_buffer_count_{0};
+  bool end_flag_generated_{false};
 
   // state for single run
   bool is_skippable_{false};  // no data

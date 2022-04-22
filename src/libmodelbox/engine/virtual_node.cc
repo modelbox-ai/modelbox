@@ -209,7 +209,16 @@ Status OutputVirtualNode::Run(RunType type) {
 
         valid_output.push_back(data);
       }
+
+      if (valid_output.empty()) {
+        continue;
+      }
+
       output[port_name] = std::make_shared<BufferList>(valid_output);
+    }
+
+    if (output.empty()) {
+      continue;
     }
     io->PushGraphOutputBuffer(output);
     io->SetLastError(last_error);
