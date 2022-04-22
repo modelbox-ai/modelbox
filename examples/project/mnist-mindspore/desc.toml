@@ -1,0 +1,2 @@
+name = "mnist-mindspore"
+desc = "A mnist with mindspore example project template for modelbox"
