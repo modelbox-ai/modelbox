@@ -600,10 +600,6 @@ Status Node::Process(
     return ret;
   }
 
-  for (auto& data_ctx : data_ctx_list) {
-    data_ctx->UpdateProcessState();
-  }
-
   return STATUS_SUCCESS;
 }
 

@@ -179,6 +179,10 @@ Status FlowUnitGroup::PostProcess(FUExecContextList &exec_ctx_list) {
       ret_status = status;
       return ret_status;
     }
+
+    // make sure ctx state is right for next process
+    data_ctx->UpdateProcessState();
+
     exec_ctx_iter++;
   }
   return ret_status;

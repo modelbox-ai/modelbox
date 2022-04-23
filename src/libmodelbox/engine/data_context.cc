@@ -1093,53 +1093,93 @@ StreamExpandFlowUnitDataContext::StreamExpandFlowUnitDataContext(
 
 void StreamExpandFlowUnitDataContext::WriteInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {
+  if (stream_data_map->empty()) {
+    SetSkippable(true);
+    return;
+  }
+
+  if (stream_data_map->begin()->second.empty()) {
+    SetSkippable(true);
+    return;
+  }
+
   stream_data_cache_.push_back(stream_data_map);
+  if (next_expand_buffer_event_generated_) {
+    // next buffer expand will trigger by event
+    SetSkippable(true);
+    return;
+  }
+
+  // no event trigger next buffer expand
   ExpandNextBuffer();
 }
 
-void StreamExpandFlowUnitDataContext::ExpandNextBuffer() {
+/**
+ * @brief cache structure
+ * stream_data_cache: block block block x n
+ * each block: buffer buffer buffer x m
+ * for each expand process, only take one buffer
+ **/
+std::shared_ptr<PortDataMap>
+StreamExpandFlowUnitDataContext::ReadFirstInCache() {
   if (stream_data_cache_.empty()) {
     // no data to process
-    SetSkippable(true);
-    return;
+    return nullptr;
   }
 
   auto front_cache = stream_data_cache_.front();
   auto &first_port = front_cache->begin()->second;
   if (first_port.size() <= cur_data_pose_in_first_cache_) {
-    // remove processed data
+    // this block read over
     stream_data_cache_.pop_front();
     cur_data_pose_in_first_cache_ = 0;
     if (stream_data_cache_.empty()) {
       // No data to process
-      SetSkippable(true);
-      return;
+      return nullptr;
     }
 
     front_cache = stream_data_cache_.front();
   }
 
-  auto cur_input_data = std::make_shared<PortDataMap>();
+  auto first_data = std::make_shared<PortDataMap>();
   for (auto &port_data : *front_cache) {
     auto &port_name = port_data.first;
     auto &data_list = port_data.second;
-    (*cur_input_data)[port_name].push_back(
+    (*first_data)[port_name].push_back(
         data_list[cur_data_pose_in_first_cache_]);
   }
 
+  return first_data;
+}
+
+bool StreamExpandFlowUnitDataContext::IsNextExpand(
+    std::shared_ptr<PortDataMap> data) {
   // test cur input is next buffer to process
-  auto &first_input = cur_input_data->begin()->second.front();
+  auto &first_input = data->begin()->second.front();
   auto first_input_index = BufferManageView::GetIndexInfo(first_input);
-  if (first_input_index->GetIndex() != cur_expand_buffer_index_) {
-    // not the index to process next
+  return first_input_index->GetIndex() == cur_expand_buffer_index_;
+}
+
+void StreamExpandFlowUnitDataContext::ExpandNextBuffer() {
+  auto next_cache = ReadFirstInCache();
+  if (next_cache == nullptr) {
+    // no data to process
+    SetSkippable(true);
+    return;
+  }
+
+  if (!IsNextExpand(next_cache)) {
+    // next buffer not received
     SetSkippable(true);
     return;
   }
 
   cur_expand_buffer_index_received_ = true;
   end_flag_generated_ = false;  // each expand buffer generate new stream
+  SetCurrentInputData(next_cache);
+  // state for next process
   ++cur_data_pose_in_first_cache_;
-  SetCurrentInputData(cur_input_data);
+  next_expand_buffer_event_generated_ = false;
 }
 
 bool StreamExpandFlowUnitDataContext::IsDataPre() {
@@ -1162,11 +1202,23 @@ StreamExpandFlowUnitDataContext::GenerateSendEvent() {
     return nullptr;
   }
 
-  if (stream_data_cache_.empty()) {
-    // no cache data
+  auto next_cache = ReadFirstInCache();
+  if (next_cache == nullptr) {
+    // no data to expand
     return nullptr;
   }
 
+  if (!IsNextExpand(next_cache)) {
+    // cache is not target expand buffer
+    return nullptr;
+  }
+
+  if (next_expand_buffer_event_generated_) {
+    // event has been sent, should not repeat
+    return nullptr;
+  }
+
+  next_expand_buffer_event_generated_ = true;
   auto expand_event = std::make_shared<FlowUnitInnerEvent>(
       FlowUnitInnerEvent::EXPAND_NEXT_STREAM);
   expand_event->SetDataCtxMatchKey(data_ctx_match_key_);
@@ -1185,7 +1237,7 @@ void StreamExpandFlowUnitDataContext::UpdateProcessState() {
 }
 
 bool StreamExpandFlowUnitDataContext::NeedStreamEndFlag() {
-  return !IsContinueProcess();
+  return cur_expand_buffer_index_received_ && !IsContinueProcess();
 }
 
 void StreamExpandFlowUnitDataContext::UpdateBufferIndexInfo(

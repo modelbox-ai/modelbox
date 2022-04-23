@@ -459,6 +459,10 @@ class StreamExpandFlowUnitDataContext : public FlowUnitDataContext {
   void UpdateProcessState() override;
 
  protected:
+  std::shared_ptr<PortDataMap> ReadFirstInCache();
+
+  bool IsNextExpand(std::shared_ptr<PortDataMap> data);
+
   bool NeedStreamEndFlag() override;
 
   void UpdateBufferIndexInfo(
@@ -471,6 +475,7 @@ class StreamExpandFlowUnitDataContext : public FlowUnitDataContext {
   size_t cur_data_pose_in_first_cache_{0};
   size_t cur_expand_buffer_index_{0};
   bool cur_expand_buffer_index_received_{false};
+  bool next_expand_buffer_event_generated_{false};
 };
 
 class NormalCollapseFlowUnitDataContext : public FlowUnitDataContext {
