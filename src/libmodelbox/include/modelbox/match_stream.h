@@ -172,10 +172,11 @@ class InputMatchStreamManager {
   void SetInputStreamGatherAll(bool need_gather_all);
 
   void UpdateStreamCountEachPort(
-      std::unordered_map<std::string, size_t>&&
-          stream_count_each_port);
+      std::unordered_map<std::string, size_t>&& stream_count_each_port);
 
-  Status LoadData(std::vector<std::shared_ptr<InPort>>& data_ports);
+  Status LoadData(
+      std::vector<std::shared_ptr<InPort>>& data_ports,
+      std::function<bool(std::shared_ptr<Buffer>)> drop_filter = nullptr);
 
   Status GenMatchStreamData(
       std::list<std::shared_ptr<MatchStreamData>>& match_stream_list);

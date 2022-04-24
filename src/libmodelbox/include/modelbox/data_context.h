@@ -294,6 +294,9 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   std::shared_ptr<Session> session_;
   std::weak_ptr<SessionContext> session_context_;
 
+  // record last input in case event sent out of Node::Run
+  PortDataMap last_input_valid_data_;
+
   // total input
   std::shared_ptr<PortDataMap> cur_input_;
   // valid data for flowunit process

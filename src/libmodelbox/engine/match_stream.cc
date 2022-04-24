@@ -309,7 +309,8 @@ void InputMatchStreamManager::UpdateStreamCountEachPort(
 }
 
 Status InputMatchStreamManager::LoadData(
-    std::vector<std::shared_ptr<InPort>>& data_ports) {
+    std::vector<std::shared_ptr<InPort>>& data_ports,
+    std::function<bool(std::shared_ptr<Buffer>)> drop_filter) {
   if (port_inherit_backward_level_.empty() &&
       !InitInheritBackwardLevel(data_ports)) {
     // can not process data
@@ -328,6 +329,10 @@ Status InputMatchStreamManager::LoadData(
     data_port->Recv(buffer_list, read_count);
     auto backward_level = port_inherit_backward_level_[port_name];
     for (auto& buffer : buffer_list) {
+      if (drop_filter && drop_filter(buffer)) {
+        continue;
+      }
+
       auto ret = CacheBuffer(data_port->GetName(), buffer, backward_level);
       if (!ret) {
         return {STATUS_FAULT, "port " + port_name + " match stream failed"};

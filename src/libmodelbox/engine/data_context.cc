@@ -192,6 +192,15 @@ void FlowUnitDataContext::SetCurrentInputData(
 
   bool has_no_data = cur_input_valid_data_.empty() ||
                      cur_input_valid_data_.begin()->second.empty();
+  if (!has_no_data) {
+    // save data for next event trigger, will not clear
+    last_input_valid_data_.clear();
+    for (auto &in_port_data : cur_input_valid_data_) {
+      auto &port_name = in_port_data.first;
+      auto &port_data_list = in_port_data.second;
+      last_input_valid_data_[port_name].push_back(port_data_list.back());
+    }
+  }
   SetSkippable(has_no_data);
   UpdateInputInfo();
 }
@@ -261,6 +270,10 @@ std::shared_ptr<void> FlowUnitDataContext::GetPrivate(const std::string &key) {
   return private_map_[key];
 }
 
+/**
+ * @brief might not call in Node::Run, we need use last_input_valid_data as
+ *parent
+ **/
 void FlowUnitDataContext::SendEvent(std::shared_ptr<FlowUnitEvent> event) {
   {
     std::lock_guard<std::mutex> lock(wait_user_events_lock_);
@@ -280,16 +293,15 @@ void FlowUnitDataContext::SendEvent(std::shared_ptr<FlowUnitEvent> event) {
   }
   node_->SendEvent(inner_event);
 
-  // save last unfinished input
-  if (!cur_input_valid_data_.empty()) {
-    // driven by data
-    cur_event_input_data_.clear();
-  }  // else driven by event, use last valid input
-  for (auto &in_port_data : cur_input_valid_data_) {
-    auto &port_name = in_port_data.first;
-    auto &port_data_list = in_port_data.second;
-    cur_event_input_data_[port_name].push_back(port_data_list.back());
+  // event expand last valid data
+  if (last_input_valid_data_.empty()) {
+    MBLOG_ERROR << "node " << node_->GetName()
+                << ", can not find last input valid data";
+    return;
   }
+
+  // driven by data
+  cur_event_input_data_ = last_input_valid_data_;
 }
 
 const std::shared_ptr<DataMeta> FlowUnitDataContext::GetInputMeta(
@@ -674,6 +686,9 @@ Status FlowUnitDataContext::UpdateOutputIndexInfo() {
       }
       auto cur_buffer_index_info = BufferManageView::GetIndexInfo(buffer);
       auto cur_node_process_info = GetCurNodeProcessInfo(cur_buffer_index_info);
+      if (cur_node_process_info == nullptr) {
+        return STATUS_STOP;  // fatal error
+      }
       auto first_input_port = cur_node_process_info->GetParentBuffers().begin();
       auto first_buffer_info_in_port = first_input_port->second.front();
       UpdateBufferIndexInfo(cur_buffer_index_info, first_buffer_info_in_port);
@@ -690,6 +705,11 @@ std::shared_ptr<BufferProcessInfo> FlowUnitDataContext::GetCurNodeProcessInfo(
   }
 
   // event driven
+  if (cur_event_input_data_.empty()) {
+    MBLOG_ERROR << "node " << node_->GetName()
+                << ", current event expand no data";
+    return nullptr;
+  }
   cur_node_process_info = std::make_shared<BufferProcessInfo>();
   for (auto &in_port_data_item : cur_event_input_data_) {
     auto &in_port_name = in_port_data_item.first;
