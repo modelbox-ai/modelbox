@@ -749,7 +749,7 @@ Status Graph::OpenNodes() {
 
     auto ret = fut.get();
     if (!ret) {
-      return Status(ret, msg);
+      return ret;
     }
   }
 

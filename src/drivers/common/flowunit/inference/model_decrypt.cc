@@ -51,15 +51,18 @@ Status ModelDecryption::Init(const std::string& model_path,
 
   fmodel_.open(model_path, std::ios::binary);
   if (fmodel_.fail() || !fmodel_.is_open()) {
-    MBLOG_ERROR << "open model '" << model_path << "' failed, "
-                << StrError(errno);
-    return STATUS_FAULT;
+    std::string errmsg = "open model '";
+    errmsg += model_path + "' failed, " + StrError(errno);
+    MBLOG_ERROR << errmsg;
+    return {STATUS_INVALID, errmsg};
   }
+
   fmodel_.seekg(0, std::ios::end);
   fsize_ = fmodel_.tellg();
   if (fsize_ <= 0) {
-    MBLOG_ERROR << "empty model file: " << model_path;
-    return STATUS_FAULT;
+    std::string errmsg = "empty model file: " + model_path;
+    MBLOG_ERROR << errmsg;
+    return {STATUS_BADCONF, errmsg};
   }
 
   auto plugin_name = config->GetString("encryption.plugin_name");
@@ -73,31 +76,36 @@ Status ModelDecryption::Init(const std::string& model_path,
       MBLOG_ERROR << "drivers_ptr is null";
       return STATUS_FAULT;
     }
+
     auto plugin_driver = drivers_ptr->GetDriver(
         DRIVER_CLASS_MODEL_DECRYPT, DRIVER_TYPE, plugin_name, plugin_version);
     if (plugin_driver == nullptr) {
-      MBLOG_ERROR << "Can not find drivers: " << plugin_name;
+      std::string errmsg = "Can not find decrytp drivers: " + plugin_name;
+      MBLOG_ERROR << errmsg;
       // fclose will call when ~ModelDecryption
-      return STATUS_FAULT;
+      return {STATUS_BADCONF, errmsg};
     }
+
     cur_factory_ = plugin_driver->CreateFactory();
     if (cur_factory_ == nullptr) {
       MBLOG_ERROR << "Plugin : " << plugin_name << " factory create failed";
-      return STATUS_FAULT;
+      return {STATUS_FAULT, "decrypt driver create failed"};
     }
+
     cur_plugin_ = std::dynamic_pointer_cast<IModelDecryptPlugin>(
         cur_factory_->GetDriver());
     if (cur_plugin_ == nullptr) {
       MBLOG_ERROR << "plugin : " << plugin_name
                   << " is not derived from IModelDecryptPlugin";
-      return STATUS_FAULT;
+      return {STATUS_FAULT, "decrypt driver create failed"};
     }
 
-    if (cur_plugin_->Init(model_path, config) == STATUS_SUCCESS) {
+    auto ret = cur_plugin_->Init(model_path, config);
+    if (ret == STATUS_SUCCESS) {
       model_state_ = MODEL_STATE_ENCRYPT;
     } else {
       MBLOG_ERROR << "drivers Init Error";
-      return STATUS_FAULT;
+      return ret;
     }
   } else {
     model_state_ = MODEL_STATE_PLAIN;
@@ -134,6 +142,7 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
   model_len = 0;
   if (model_state_ == MODEL_STATE_ERROR) {
     MBLOG_ERROR << "model_state is error";
+    modelbox::StatusError = {modelbox::STATUS_INVALID, "model_state is error"};
     return nullptr;
   }
 
@@ -141,6 +150,7 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
   uint8_t* model_buf = static_cast<uint8_t*>(malloc(fsize_));
   if (!model_buf) {
     MBLOG_ERROR << "memory alloc fail with size =." << fsize_;
+    modelbox::StatusError = {modelbox::STATUS_NOMEM, "Read file fail."};
     return nullptr;
   }
 
@@ -149,6 +159,7 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
   if (fmodel_.gcount() != fsize_) {
     MBLOG_ERROR << "Read file fail.";
     free(model_buf);
+    modelbox::StatusError = {modelbox::STATUS_INVALID, "Read file fail."};
     return nullptr;
   }
   
@@ -163,6 +174,7 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
       MBLOG_ERROR << "ModelDecrypt fail.";
       model_len = 0;
       free(plain_buf);
+      modelbox::StatusError = {ret, "ModelDecrypt fail."};
       return nullptr;
     }
     model_len = plain_len;

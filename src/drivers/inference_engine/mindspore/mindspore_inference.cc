@@ -129,7 +129,7 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms input failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
-    return {modelbox::STATUS_BADCONF, err_msg};
+    return ret;
   }
 
   auto output_tensor = model_->GetOutputs();
@@ -138,7 +138,7 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms output failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
-    return {modelbox::STATUS_BADCONF, err_msg};
+    return ret;
   }
 
   return modelbox::STATUS_OK;
@@ -158,15 +158,15 @@ modelbox::Status MindSporeInference::Init(
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "get model type failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
-    return {modelbox::STATUS_BADCONF, err_msg};
+    return ret;
   }
 
   mindspore::Graph graph(nullptr);
   mindspore::Status ms_status{mindspore::kSuccess};
   ModelDecryption model_decrypt;
-  if (modelbox::STATUS_SUCCESS !=
-      model_decrypt.Init(model_entry, drivers_ptr, config)) {
-    return {modelbox::STATUS_FAULT, "init model fail"};
+  ret = model_decrypt.Init(model_entry, drivers_ptr, config);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    return {ret, "init model fail"};
   }
 
   if (model_decrypt.GetModelState() == ModelDecryption::MODEL_STATE_ENCRYPT) {
@@ -174,8 +174,9 @@ modelbox::Status MindSporeInference::Init(
     std::shared_ptr<uint8_t> modelBuf =
         model_decrypt.GetModelSharedBuffer(model_len);
     if (!modelBuf) {
-      return {modelbox::STATUS_FAULT, "Decrypt model fail"};
+      return {modelbox::StatusError, "Decrypt model fail"};
     }
+
     ms_status = mindspore::Serialization::Load((const void *)modelBuf.get(),
                                                (size_t)model_len,
                                                mindspore_type, &graph);
