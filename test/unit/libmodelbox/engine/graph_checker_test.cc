@@ -1242,6 +1242,43 @@ TEST_F(GraphCheckerTest, Bicycle) {
   TestGraph(conf_file_value, STATUS_OK);
 }
 
+TEST_F(GraphCheckerTest, park) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
+          b[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          c[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          d[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          e[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          f[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          g[type=flowunit, flowunit=test_1_3, device=cpu, deviceid=0]
+          h[type=flowunit, flowunit=test_3_1, device=cpu, deviceid=0]
+          i[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          j[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          k[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0]
+
+          a:Out_1 -> b:In_1
+          b:Out_1 -> c:In_1
+          c:Out_1 -> d:In_1
+          d:Out_1 -> e:In_1
+          d:Out_2 -> i:In_1
+          e:Out_1 -> f:In_1
+          f:Out_1 -> g:In_1
+          g:Out_1 -> h:In_1
+          g:Out_2 -> h:In_2
+          g:Out_3 -> h:In_3
+          h:Out_1 -> i:In_1
+          b:Out_1 -> i:In_2
+          i:Out_1 -> j:In_1
+          b:Out_1 -> j:In_2
+          j:Out_1 -> k:In_1
+        }
+      )";
+
+  TestGraph(conf_file_value, STATUS_OK);
+}
+
 TEST_F(GraphCheckerTest, GetSetMatchNode) {
   auto conf_file_value =
       R"(

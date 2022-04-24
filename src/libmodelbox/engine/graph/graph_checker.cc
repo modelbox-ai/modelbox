@@ -365,7 +365,10 @@ std::shared_ptr<NodeBase> OverHierarchyCheck::FindLoopLinkNode(
 void OverHierarchyCheck::GetColorMap(
     std::shared_ptr<Node> node,
     const std::vector<std::shared_ptr<OutPort>> &output_ports,
-    const std::unordered_map<std::string, std::string> &graph_match_map) {
+    const std::unordered_map<std::string, std::string> &graph_match_map,
+    const std::unordered_map<std::string,
+                             std::unordered_map<std::string, std::string>>
+        &graph_single_port_match_map) {
   std::string node_name = node->GetName();
   std::vector<int> new_color;
   auto input_ports = node->GetInputPorts();
@@ -454,10 +457,12 @@ void OverHierarchyCheck::GetColorMap(
   }
 
   bool single_port_has_multi_links = false;
+  std::string input_port_name;
   for (auto &input_port : input_ports) {
     auto outputs = input_port->GetAllOutPort();
     if (outputs.size() > 1) {
       single_port_has_multi_links = true;
+      input_port_name = input_port->GetName();
       break;
     }
   }
@@ -468,6 +473,21 @@ void OverHierarchyCheck::GetColorMap(
   }
 
   if (pre_match_real_node->GetConditionType() == ConditionType::IF_ELSE) {
+    new_color.pop_back();
+    SetOutPortColor(node, output_ports, new_color);
+    return;
+  }
+
+  auto condition_match_node =
+      graph_single_port_match_map.at(node_name).at(input_port_name);
+  if (condition_match_node.empty()) {
+    SetOutPortColor(node, output_ports, new_color);
+    return;
+  }
+
+  auto condition_match_real_node = CastNode(all_nodes_.at(condition_match_node));
+  if (condition_match_real_node != nullptr &&
+      condition_match_real_node->GetConditionType() == ConditionType::IF_ELSE) {
     new_color.pop_back();
     SetOutPortColor(node, output_ports, new_color);
     return;
@@ -523,7 +543,8 @@ Status OverHierarchyCheck::Check(
       }
 
       auto output_ports = node->GetOutputPorts();
-      GetColorMap(node, output_ports, graph_match_map);
+      GetColorMap(node, output_ports, graph_match_map,
+                  graph_single_port_match_map);
 
       for (auto &output_port : output_ports) {
         std::shared_ptr<IndexPort> index_output_port =

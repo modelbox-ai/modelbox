@@ -116,7 +116,10 @@ class OverHierarchyCheck {
   void GetColorMap(
       std::shared_ptr<Node> node,
       const std::vector<std::shared_ptr<OutPort>> &output_ports,
-      const std::unordered_map<std::string, std::string> &graph_match_map);
+      const std::unordered_map<std::string, std::string> &graph_match_map,
+      const std::unordered_map<std::string,
+                             std::unordered_map<std::string, std::string>>
+        &graph_single_port_match_map);
   std::shared_ptr<NodeBase> FindLoopLinkNode(std::shared_ptr<Node> node);
   void SetOutPortColor(std::shared_ptr<Node> node,
                        const std::vector<std::shared_ptr<OutPort>> &out_ports,
