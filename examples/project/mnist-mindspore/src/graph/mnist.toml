@@ -19,7 +19,7 @@ graphconf = '''digraph mnist_sample {
 
     httpserver_sync_receive:out_request_info -> mnist_preprocess:in_data
     mnist_preprocess:out_data -> mnist_infer:x
-    mnist_infer:"Default/fc3-Dense/BiasAdd-op21" -> mnist_response:in_data
+    mnist_infer:"Default/fc3-Dense/BiasAdd-op229" -> mnist_response:in_data
     mnist_response:out_data -> httpserver_sync_reply:in_reply_info
 }
 '''

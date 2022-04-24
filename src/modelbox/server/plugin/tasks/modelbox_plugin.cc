@@ -398,7 +398,6 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
     if (modelbox::JobStatus::JOB_STATUS_NOTEXIST !=
         jobmanager_.QueryJobStatus(jobid)) {
       error_code = "MODELBOX_005";
-      error_msg = ERROR_INFO[error_code];
       return;
     }
 
