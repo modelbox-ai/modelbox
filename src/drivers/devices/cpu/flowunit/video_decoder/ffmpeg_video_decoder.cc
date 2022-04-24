@@ -31,7 +31,7 @@ Status FfmpegVideoDecoder::Init(AVCodecID codec_id) {
 
   auto av_ctx_ptr = avcodec_alloc_context3(codec_ptr);
   if (av_ctx_ptr == nullptr) {
-    MBLOG_ERROR << "avcodec_alloc_context3 return null， codec_id "
+    MBLOG_ERROR << "avcodec_alloc_context3 return, codec_id "
                 << codec_id_;
     return STATUS_FAULT;
   }

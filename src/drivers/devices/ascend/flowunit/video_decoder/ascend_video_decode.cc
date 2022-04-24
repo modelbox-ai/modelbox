@@ -186,7 +186,7 @@ modelbox::Status AscendVideoDecoder::Init(
   aclError ret = aclrtSetDevice(device_id_);
   if (ret != ACL_ERROR_NONE) {
     auto errMsg = "acl set device " + std::to_string(device_id_) +
-                  " failed， err code" + std::to_string(ret);
+                  " failed, err code" + std::to_string(ret);
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }

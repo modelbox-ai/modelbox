@@ -92,6 +92,7 @@ const std::shared_ptr<Buffer>& BufferList::operator[](size_t pos) const {
 
 void BufferList::PushBack(const std::shared_ptr<Buffer>& buf) {
   // ensure each buffer container is unique
+  buf->ClearDelayedCopyDestinationInfo();
   buffer_list_.push_back(buf->Copy());
   SetNoContiguous();
 }
@@ -458,14 +459,17 @@ Status BufferList::MoveAllBufferToTargetDevice() {
       return modelbox::STATUS_FAULT;
     }
 
+    auto same_device_flag = dev_mem_->IsSameDevice(buffer->dev_mem_);
+    auto delayed_copy_flag = buffer->GetDelayedCopyFlag(target_device);
     // No need to copy real data or need delayed copy .
-    if (dev_mem_->IsSameDevice(buffer->dev_mem_) ||
-        buffer->GetDelayedCopyFlag(target_device)) {
+    if (same_device_flag || delayed_copy_flag) {
       auto new_mem = buffer->dev_mem_->Clone();
       auto new_buffer = std::make_shared<Buffer>(new_mem);
       new_buffer->CopyMeta(buffer);
-      new_buffer->SetDelayedCopyDestinationDevice(target_device);
-      new_buffer->SetDelayedCopyDestinationMemFlags(dev_mem_flags_);
+      if (delayed_copy_flag) {
+        new_buffer->SetDelayedCopyDestinationDevice(target_device);
+        new_buffer->SetDelayedCopyDestinationMemFlags(dev_mem_flags_);
+      }
       new_buffer->index_info_ = buffer->index_info_;
       new_buffer_list.push_back(new_buffer);
       continue;
