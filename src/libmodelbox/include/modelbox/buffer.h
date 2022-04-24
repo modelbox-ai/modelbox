@@ -347,6 +347,11 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
   void SetDelayedCopyDestinationMemFlags(uint32_t mem_flags);
 
   /**
+   * @brief Clear delayed copy destination info
+   */
+  void ClearDelayedCopyDestinationInfo();
+
+  /**
    * @brief Get whether need to delayed copy
    * @param target_device destination device
    * @return delayed copy flag.

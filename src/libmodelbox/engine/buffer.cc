@@ -296,6 +296,11 @@ void Buffer::SetDelayedCopyDestinationMemFlags(uint32_t mem_flags) {
   delayed_copy_dest_mem_flags_ = mem_flags;
 }
 
+void Buffer::ClearDelayedCopyDestinationInfo() {
+  delayed_copy_dest_device_ = nullptr;
+  delayed_copy_dest_mem_flags_ = 0;
+}
+
 bool Buffer::GetDelayedCopyFlag(std::shared_ptr<Device> dest_device) {
   // if current buffer device type is "cuda"/"ascend" and input port device
   // type is "cpu" , the real data will be copied to target device when the
