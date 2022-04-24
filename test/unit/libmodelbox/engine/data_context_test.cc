@@ -311,6 +311,80 @@ TEST_F(DataContextTest, StreamTest2) {
   ASSERT_EQ(data_ctx->GetStatus(), STATUS_CONTINUE);
 }
 
+TEST_F(DataContextTest, StreamTest_SendEventOutOfNodeRun) {
+  node_->SetFlowType(FlowType::STREAM);
+
+  auto data_ctx = std::make_shared<StreamFlowUnitDataContext>(
+      node_.get(), nullptr, session_);
+  session_->AddStateListener(data_ctx);
+  /* 1. recv data and continue generate */
+  // write data
+  auto data = BuildData(1, false);
+  data_ctx->WriteInputData(data);
+  EXPECT_TRUE(data_ctx->IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx->IsSkippable());
+  ProcessData(data_ctx.get(), BufferProcessType::ORIGIN, 1, 1);
+
+  data_ctx->SetStatus(STATUS_CONTINUE);  // event will send out of node run
+
+  // post process
+  data_ctx->PostProcess();
+  EXPECT_FALSE(data_ctx->IsDataPost());
+  data_ctx->UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx->PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  ASSERT_EQ(out_data.begin()->second.size(), 1);
+  auto out_index =
+      BufferManageView::GetIndexInfo(out_data.begin()->second.front());
+  EXPECT_FALSE(out_index->IsEndFlag());
+  data_ctx->ClearData();
+  ASSERT_FALSE(data_ctx->IsFinished());
+  ASSERT_EQ(data_ctx->GetStatus(), STATUS_CONTINUE);
+  /* 2. send delay event */
+  data_ctx->SendEvent(std::make_shared<FlowUnitEvent>());
+
+  FlowunitEventList event_list;
+  node_->GetEventPort()->Recv(event_list);
+  ASSERT_EQ(event_list->size(), 1);  // event to continue process
+  auto process_event = event_list->front();
+  ASSERT_NE(process_event, nullptr);
+  auto user_event = process_event->GetUserEvent();
+  ASSERT_EQ(process_event->GetEventCode(),
+            FlowUnitInnerEvent::EventCode::EXPAND_UNFINISH_DATA);
+  /* 3. recv event */
+  // set event
+  data_ctx->SetEvent(user_event);
+  EXPECT_FALSE(data_ctx->IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx->IsSkippable());
+  ASSERT_EQ(data_ctx->Event(), user_event);
+
+  auto output_map = data_ctx->Output();
+  ASSERT_NE(output_map, nullptr);
+  auto output_list = std::make_shared<BufferList>();
+  (*output_map)["out_1"] = output_list;
+  output_list->PushBack(std::make_shared<Buffer>());
+
+  data_ctx->SetStatus(STATUS_SUCCESS);
+  // post process
+  ASSERT_EQ(data_ctx->PostProcess(), STATUS_SUCCESS);
+  EXPECT_FALSE(data_ctx->IsDataPost());
+  data_ctx->UpdateProcessState();
+  // check output and clear
+  out_data.clear();
+  data_ctx->PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  ASSERT_EQ(out_data.begin()->second.size(), 1);
+  out_index = BufferManageView::GetIndexInfo(out_data.begin()->second.front());
+  EXPECT_FALSE(out_index->IsEndFlag());
+  data_ctx->ClearData();
+  ASSERT_FALSE(data_ctx->IsFinished());
+  ASSERT_EQ(data_ctx->GetStatus(), STATUS_SUCCESS);
+}
+
 TEST_F(DataContextTest, NormalExpandTest) {
   node_->SetOutputType(FlowOutputType::EXPAND);
   node_->SetFlowType(FlowType::NORMAL);

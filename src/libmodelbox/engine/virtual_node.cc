@@ -152,9 +152,21 @@ void OutputVirtualNode::EraseInvalidData() {
 Status OutputVirtualNode::Run(RunType type) {
   EraseInvalidData();
   std::list<std::shared_ptr<MatchStreamData>> match_stream_data_list;
-  auto ret = GenInputMatchStreamData(type, match_stream_data_list);
+  auto ret = input_match_stream_mgr_->LoadData(
+      input_ports_, [](std::shared_ptr<Buffer> buffer) {
+        // no need to cache buffer that can not send to user
+        auto index_info = BufferManageView::GetIndexInfo(buffer);
+        return index_info->GetStream()->GetSession()->GetSessionIO() == nullptr;
+      });
   if (!ret) {
-    MBLOG_ERROR << "OutputVirtualNode generate match stream failed, error "
+    MBLOG_ERROR << "OutputVirtualNode load data from input ports failed, error "
+                << ret;
+    return ret;
+  }
+
+  ret = input_match_stream_mgr_->GenMatchStreamData(match_stream_data_list);
+  if (!ret) {
+    MBLOG_ERROR << "OutputVirtualNode generate match stream data failed, error "
                 << ret;
     return ret;
   }
