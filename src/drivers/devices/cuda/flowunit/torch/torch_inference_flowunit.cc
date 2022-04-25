@@ -21,10 +21,13 @@
 #include <modelbox/base/crypto.h>
 
 #include <fstream>
+#include <mutex>
 
 #include "modelbox/device/cuda/device_cuda.h"
 #include "modelbox/type.h"
 #include "virtualdriver_inference.h"
+
+static std::mutex torch_load_mutex;
 
 static std::map<std::string, c10::ScalarType> type_map = {
     {"FLOAT", torch::kFloat32},  {"DOUBLE", torch::kFloat64},
@@ -68,6 +71,7 @@ void TorchInferenceFlowUnit::FillOutput(
 modelbox::Status TorchInferenceFlowUnit::LoadModel(
     const std::string &model_path,
     const std::shared_ptr<modelbox::Configuration> &config) {
+  std::lock_guard<std::mutex> lck(torch_load_mutex);
   try {
     MBLOG_DEBUG << "model_path: " << model_path;
     auto drivers_ptr = GetBindDevice()->GetDeviceManager()->GetDrivers();
