@@ -520,7 +520,16 @@ Status Drivers::GatherScanInfo(const std::string &scan_path) {
   }
 
   nlohmann::json dump_json;
-  scan_info_file >> dump_json;
+  try {
+    std::string ss((std::istreambuf_iterator<char>(scan_info_file)),
+                   std::istreambuf_iterator<char>());
+    dump_json = nlohmann::json::parse(ss);
+
+  } catch (const std::exception &e) {
+    auto err_msg = "gather scan info failed, err: " + std::string(e.what());
+    MBLOG_ERROR << err_msg;
+    return {STATUS_FAULT, err_msg};
+  }
 
   auto driver_json_arr = dump_json["scan_drivers"];
   for (auto &driver_info : driver_json_arr) {
@@ -555,8 +564,22 @@ void Drivers::FillCheckInfo(std::string &file_check_node,
                             std::unordered_map<std::string, bool> &file_map,
                             int64_t &ld_cache_time) {
   std::ifstream scan_info(DEFAULT_SCAN_INFO);
+  if (!scan_info.is_open()) {
+    MBLOG_ERROR << "open " << DEFAULT_SCAN_INFO << " failed.";
+    return;
+  }
+
   nlohmann::json dump_json;
-  scan_info >> dump_json;
+  try {
+    std::string ss((std::istreambuf_iterator<char>(scan_info)),
+                   std::istreambuf_iterator<char>());
+    dump_json = nlohmann::json::parse(ss);
+  } catch (const std::exception &e) {
+    MBLOG_ERROR << "filee check info parse " << DEFAULT_SCAN_INFO
+                << " failed, err: " << e.what();
+    return;
+  }
+
   file_check_node = dump_json["check_code"];
   ld_cache_time = dump_json["ld_cache_time"];
   auto driver_json_arr = dump_json["scan_drivers"];
@@ -671,10 +694,19 @@ void Drivers::PrintScanResults(const std::string &scan_path) {
   std::ifstream scan_info_file(scan_path);
   if (!scan_info_file.is_open()) {
     MBLOG_ERROR << "Open file " << scan_path << " for read failed";
+    return;
   }
 
   nlohmann::json dump_json;
-  scan_info_file >> dump_json;
+  try {
+    std::string ss((std::istreambuf_iterator<char>(scan_info_file)),
+                   std::istreambuf_iterator<char>());
+    dump_json = nlohmann::json::parse(ss);
+
+  } catch (const std::exception &e) {
+    MBLOG_ERROR << "print scan result failed, err: " << e.what();
+    return;
+  }
 
   nlohmann::json dump_driver_json_arr = nlohmann::json::array();
   dump_driver_json_arr = dump_json["scan_drivers"];
