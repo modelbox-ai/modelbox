@@ -85,7 +85,7 @@ ExternalProject_Add(
 # nlohmann json
 ExternalProject_Add(
   nlohmann
-  URL               @LOCAL_PACKAGE_PATH@/v3.7.3.tar.gz
+  URL               @LOCAL_PACKAGE_PATH@/json-3.10.5.tar.gz
   SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/nlohmann
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
