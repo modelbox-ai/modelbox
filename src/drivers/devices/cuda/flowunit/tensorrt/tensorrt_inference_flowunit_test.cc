@@ -66,9 +66,9 @@ class TensorRTFlowUnitTest : public testing::Test {
 
   const std::string test_lib_dir = TEST_DRIVER_DIR,
                     test_data_dir = TEST_DATA_DIR, test_assets = TEST_ASSETS,
-                    test_uff_file = "frozen_model.uff",
+                    test_onnx_file = "model.onnx",
                     test_toml_file = "virtual_tensorrt_test.toml",
-                    test_uff_file_en = "frozen_model_en.uff",
+                    test_onnx_file_en = "model_en.onnx",
                     test_toml_file_en = "virtual_tensorrt_encrypt_test.toml",
                     test_plugin_toml_file = "virtual_plugin_tensorrt_test.toml";
 
@@ -85,9 +85,9 @@ class TensorRTFlowUnitTest : public testing::Test {
 };
 
 void TensorRTFlowUnitTest::SetUpTomlFile() {
-  const std::string src_file = test_assets + "/tensorrt/" + test_uff_file;
+  const std::string src_file = test_assets + "/tensorrt/" + test_onnx_file;
   const std::string src_toml = test_data_dir + "/" + test_toml_file;
-  const std::string src_file_en = test_assets + "/tensorrt/" + test_uff_file_en;
+  const std::string src_file_en = test_assets + "/tensorrt/" + test_onnx_file_en;
   const std::string src_toml_en = test_data_dir + "/" + test_toml_file_en;
   const std::string src_plugin_toml =
       test_data_dir + "/" + test_plugin_toml_file;
@@ -95,7 +95,7 @@ void TensorRTFlowUnitTest::SetUpTomlFile() {
   tensorrt_path = test_data_dir + "/tensorrt";
   auto mkdir_ret = mkdir(tensorrt_path.c_str(), 0700);
   EXPECT_EQ(mkdir_ret, 0);
-  dest_model_file = tensorrt_path + "/" + test_uff_file;
+  dest_model_file = tensorrt_path + "/" + test_onnx_file;
   dest_toml_file = tensorrt_path + "/" + test_toml_file;
   auto status = CopyFile(src_file, dest_model_file, 0);
   EXPECT_EQ(status, STATUS_OK);
@@ -105,7 +105,7 @@ void TensorRTFlowUnitTest::SetUpTomlFile() {
   tensorrt_path_en = test_data_dir + "/tensorrt_encrypt";
   mkdir_ret = mkdir(tensorrt_path_en.c_str(), 0700);
   EXPECT_EQ(mkdir_ret, 0);
-  dest_model_file_en = tensorrt_path_en + "/" + test_uff_file_en;
+  dest_model_file_en = tensorrt_path_en + "/" + test_onnx_file_en;
   dest_toml_file_en = tensorrt_path_en + "/" + test_toml_file_en;
   status = CopyFile(src_file_en, dest_model_file_en, 0);
   EXPECT_EQ(status, STATUS_OK);
@@ -116,7 +116,7 @@ void TensorRTFlowUnitTest::SetUpTomlFile() {
   mkdir_ret = mkdir(tensorrt_plugin_path.c_str(), 0700);
   EXPECT_EQ(mkdir_ret, 0);
 
-  dest_plugin_model_file = tensorrt_plugin_path + "/" + test_uff_file;
+  dest_plugin_model_file = tensorrt_plugin_path + "/" + test_onnx_file;
   dest_plugin_toml_file = tensorrt_plugin_path + "/" + test_plugin_toml_file;
   status = CopyFile(src_file, dest_plugin_model_file, 0);
   EXPECT_EQ(status, STATUS_OK);
@@ -304,16 +304,16 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
                 MBLOG_DEBUG << input_data[i];
               }
 
-              EXPECT_TRUE(abs(input_data[0] - 0.03358638) < 1e-7);
-              EXPECT_TRUE(abs(input_data[1] - 0.08878537) < 1e-7);
-              EXPECT_TRUE(abs(input_data[2] - 0.08054963) < 1e-7);
-              EXPECT_TRUE(abs(input_data[3] - 0.04498528) < 1e-7);
-              EXPECT_TRUE(abs(input_data[4] - 0.05727876) < 1e-7);
-              EXPECT_TRUE(abs(input_data[5] - 0.44096065) < 1e-7);
-              EXPECT_TRUE(abs(input_data[6] - 0.05128878) < 1e-7);
-              EXPECT_TRUE(abs(input_data[7] - 0.15043454) < 1e-7);
-              EXPECT_TRUE(abs(input_data[8] - 0.00774629) < 1e-7);
-              EXPECT_TRUE(abs(input_data[9] - 0.04438426) < 1e-7);
+              EXPECT_NEAR(input_data[0], 0.0356422, 1e-6);
+              EXPECT_NEAR(input_data[1], 0.0931573, 1e-6);
+              EXPECT_NEAR(input_data[2], 0.0815316, 1e-6);
+              EXPECT_NEAR(input_data[3], 0.0455169, 1e-6);
+              EXPECT_NEAR(input_data[4], 0.0595113, 1e-6);
+              EXPECT_NEAR(input_data[5], 0.4212710, 1e-6);
+              EXPECT_NEAR(input_data[6], 0.051922, 1e-6);
+              EXPECT_NEAR(input_data[7], 0.160296, 1e-6);
+              EXPECT_NEAR(input_data[8], 0.00811869, 1e-6);
+              EXPECT_NEAR(input_data[9], 0.0430332, 1e-6);
               return modelbox::STATUS_OK;
             }));
 
@@ -343,13 +343,13 @@ TEST_F(TensorRTFlowUnitTest, RunUnitSingle) {
           test_0_1[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]             
           tensorrt[type=flowunit, flowunit=tensorrt, device=cuda, deviceid=0, label="<input> | <output>"]
           test_1_0[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0, label="<In_1>"]                          
-          test_0_1:Out_1 -> tensorrt:input
-          tensorrt:output -> test_1_0:In_1                                                                  
+          test_0_1:Out_1 -> tensorrt:"input:0"
+          tensorrt:"output:0" -> test_1_0:In_1                                                                  
         }'''
     format = "graphviz"
   )";
   auto driver_flow = GetDriverFlow();
-  auto ret = driver_flow->BuildAndRun("RunPlugin", toml_content);
+  auto ret = driver_flow->BuildAndRun("RunUnit", toml_content);
   EXPECT_EQ(ret, STATUS_STOP);
 }
 
@@ -364,8 +364,8 @@ TEST_F(TensorRTFlowUnitTest, RunUnitPlugin) {
           test_0_1[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]             
           tensorrt[type=flowunit, flowunit=tensorrt_plugin, device=cuda, deviceid=0, label="<input> | <output>"]
           test_1_0[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0, label="<In_1>"]                          
-          test_0_1:Out_1 -> tensorrt:input
-          tensorrt:output -> test_1_0:In_1                                                                  
+          test_0_1:Out_1 -> tensorrt:"input:0"
+          tensorrt:"output:0" -> test_1_0:In_1                                                                  
         }'''
     format = "graphviz"
   )";
@@ -385,8 +385,8 @@ TEST_F(TensorRTFlowUnitTest, RunUnitSingleEncrypt) {
           test_0_1[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]             
           tensorrt[type=flowunit, flowunit=tensorrt_encrypt, device=cuda, deviceid=0, label="<input> | <output>"]
           test_1_0[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0, label="<In_1>"]                          
-          test_0_1:Out_1 -> tensorrt:input
-          tensorrt:output -> test_1_0:In_1                                                                  
+          test_0_1:Out_1 -> tensorrt:"input:0"
+          tensorrt:"output:0" -> test_1_0:In_1                                                                  
         }'''
     format = "graphviz"
   )";
@@ -395,7 +395,6 @@ TEST_F(TensorRTFlowUnitTest, RunUnitSingleEncrypt) {
   EXPECT_EQ(ret, STATUS_STOP);
 }
 
-// TODO test caffe/engine/onnx model
 // TODO test batch inference
 // TODO test quantize
 
