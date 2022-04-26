@@ -1,0 +1,20 @@
+name: Mirror-To-Gitee
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * *'
+
+concurrency:
+  group: git-mirror
+
+jobs:
+  git-mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: wearerequired/git-mirror-action@v1
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+        with:
+          source-repo: 'https://github.com/modelbox-ai/modelbox.git'
+          destination-repo: 'git@gitee.com:modelbox/modelbox.git'
