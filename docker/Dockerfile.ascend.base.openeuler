@@ -1,0 +1,57 @@
+FROM openeuler/openeuler:20.03-lts-sp3 as base
+
+COPY ascend_c80 /root/ascend
+
+WORKDIR /root
+
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
+    yum update -y && \
+    yum install -y python3-devel python3-pip curl pciutils shadow-utils net-tools bc && \
+    yum clean all && rm -rf /var/cache /tmp/* /var/tmp/*
+
+RUN umask 0022 && \
+    mkdir -p /root/.pip && \
+    echo "[global]" > /root/.pip/pip.conf && \
+    echo "index-url = https://pypi.mirrors.ustc.edu.cn/simple" >>/root/.pip/pip.conf && \
+    echo "trusted-host = pypi.mirrors.ustc.edu.cn" >>/root/.pip/pip.conf && \
+    echo "timeout = 120" >>/root/.pip/pip.conf && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir wheel attrs psutil decorator numpy protobuf scipy sympy cffi grpcio grpcio-tools requests pillow && \
+    ls -lh ascend/ && groupadd HwHiAiUser && \
+    useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser
+
+FROM base as dev
+ARG cann_ver="5.0.4"
+ARG driver_ver="21.0.4"
+RUN bash ascend/Ascend-cann-toolkit_${cann_ver}_linux-x86_64.run --quiet --full && \
+    bash ascend/A300-3010-npu-driver_${driver_ver}_linux-x86_64.run --quiet --docker && \
+    cp -af /usr/local/Ascend/driver/lib64 /root/ && \
+    bash ascend/A300-3010-npu-driver_${driver_ver}_linux-x86_64.run --quiet --devel && \
+    cp -af /root/lib64 /usr/local/Ascend/driver/ && \
+    rm -rf /root/lib64 /usr/local/Ascend/develop && \
+    ls -lh /usr/local/Ascend/* && \
+    rm -rf /root/*
+
+FROM base as run
+ARG cann_ver="5.0.4"
+ARG driver_ver="21.0.4"
+RUN bash ascend/Ascend-cann-nnae_${cann_ver}_linux-x86_64.run --quiet --install && \
+    bash ascend/A300-3010-npu-driver_${driver_ver}_linux-x86_64.run --quiet --docker && \
+    ls -lh /usr/local/Ascend/* && \
+    rm -rf /root/*
+
+FROM openeuler/openeuler:20.03-lts-sp3
+
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
+    yum update -y && \
+    yum install -y shadow-utils net-tools && \
+    yum clean all && rm -rf /var/cache /tmp/* /var/tmp/* && \
+    groupadd HwHiAiUser && \
+    useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser
+
+COPY --from=dev /usr/local/Ascend /usr/local/Ascend_dev
+COPY --from=run /usr/local/Ascend /usr/local/Ascend_run
+
+RUN ls -lh /usr/local/Ascend_dev/* && \
+    ls -lh /usr/local/Ascend_run/*
+

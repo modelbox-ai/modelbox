@@ -1,0 +1,68 @@
+FROM modelbox/modelbox-ascend-openeuler:latest
+FROM openeuler/openeuler:20.03-lts-sp3
+
+COPY release /opt/release
+COPY ldconfig.service /etc/systemd/system/
+COPY --from=0 /usr/local/Ascend_run /usr/local/Ascend
+
+ADD *.tar.gz /usr/local/
+
+ARG ASCEND_PATH=/usr/local/Ascend
+ENV LOCAL_ASCEND=/usr/local/Ascend
+ENV ASCEND_AICPU_PATH=${ASCEND_PATH}/nnae/latest
+ENV ASCEND_OPP_PATH=${ASCEND_PATH}/nnae/latest/opp
+ENV DDK_PATH=${ASCEND_PATH}/nnae/latest/fwkacllib
+ENV DRIVER_PATH=${ASCEND_PATH}/driver
+
+ENV PYTHONPATH=${ASCEND_PATH}/nnae/latest/pyACL/python/site-packages/acl${PYTHONPATH:+:${PYTHONPATH}}
+
+WORKDIR /root
+RUN ls -lh /usr/local/Ascend/*
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
+    dnf update -y && \
+    dnf install -y curl boost libnsl libssh2 libatomic mesa-libGL graphviz protobuf-c systemd \
+        openblas python3-devel lapack python3-perf rsyslog pciutils fuse libxml2 openssl bc && \
+    if [ -f /usr/bin/python ]; then rm -f /usr/bin/python; fi && ln -s python3 /usr/bin/python && \
+    dnf clean all && rm -rf /var/cache /tmp/* /var/tmp/*
+
+RUN mkdir -p /root/.pip && \
+    echo "[global]" > /root/.pip/pip.conf && \
+    echo "index-url = https://pypi.python.org/simple" >>/root/.pip/pip.conf && \
+    echo "trusted-host = pypi.python.org" >>/root/.pip/pip.conf && \
+    echo "timeout = 120" >>/root/.pip/pip.conf && \
+    groupadd HwHiAiUser && \
+    useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir wheel attrs psutil decorator numpy protobuf scipy sympy cffi grpcio grpcio-tools requests pillow pyyaml opencv-python && \
+    python3 -m pip install --no-cache-dir https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.6.1/MindSpore/ascend/x86_64/mindspore_ascend-1.6.1-cp37-cp37m-linux_x86_64.whl && \
+    python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/topi-0.4.0-py3-none-any.whl && \
+    python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/te-0.4.0-py3-none-any.whl && \
+    python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/hccl-0.1.0-py3-none-any.whl && \
+    echo "/usr/local/lib" >>/etc/ld.so.conf && \
+    echo "/usr/local/lib64" >>/etc/ld.so.conf && \
+    echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf && \
+    echo "${ASCEND_PATH}/nnae/latest/fwkacllib/lib64" >>/etc/ld.so.conf && \
+    echo "/usr/local/lib/python3.7/site-packages/mindspore/lib" >>/etc/ld.so.conf
+
+RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && \
+    ls /opt/release|egrep 'devel|document|solution'|xargs -i rm -f /opt/release/{} && \
+    rpm -ivh /opt/release/*.rpm && \
+    usermod -G HwHiAiUser modelbox && \
+    (cd /lib/systemd/system/sysinit.target.wants/; for i in *; \
+    do [ $i = systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+    rm -f /lib/systemd/system/multi-user.target.wants/*; \
+    rm -f /etc/systemd/system/*.wants/*; \
+    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+    rm -f /lib/systemd/system/basic.target.wants/*; \
+    rm -f /lib/systemd/system/anaconda.target.wants/*; \
+    sed -i 's/^SystemMaxUse=.*/SystemMaxUse=16M/g' /etc/systemd/journald.conf && \
+    sed -i '/ForwardToSyslog/s/^#//g' /etc/systemd/journald.conf && \
+    sed -i 's/^\(module(load="imklog")\)/#\1/' /etc/rsyslog.conf && \
+    ldconfig &>/dev/null && systemctl enable modelbox ldconfig
+
+VOLUME ["/sys/fs/cgroup", "/tmp", "/run", "/run/lock"]
+STOPSIGNAL SIGRTMIN+3
+
+CMD ["/usr/sbin/init", "--log-target=journal"]
