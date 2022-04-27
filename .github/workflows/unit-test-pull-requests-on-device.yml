@@ -1,0 +1,61 @@
+name: Pull-Requests Unit Test On Device
+
+on:
+  workflow_dispatch:
+    inputs:
+      PullRequestId:
+        description: Pull Request ID
+        default: ""
+        required: true
+      maxParallel:
+        type: choice
+        description: Max Parallel
+        default: 4
+        options: 
+        - 1
+        - 2
+        - 4
+        - 6
+        - 8
+      WithWebUI:
+        type: choice
+        description: build with webui or not
+        options:
+        - OFF
+        - ON
+
+env:
+  BUILD_TYPE: Debug
+
+jobs:
+  build:
+    runs-on: ${{ matrix.devices }}
+    strategy:
+      max-parallel: 2
+      matrix:
+          devices: 
+            - tensorrt
+            - pytorch
+            - tensorflow
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: pull/${{github.event.inputs.PullRequestId}}/head
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_CN_MIRROR=yes -DWITH_WEBUI=${{github.event.inputs.WithWebUI}}
+
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j${{github.event.inputs.maxParallel}}
+
+    - name: Test
+      working-directory: build
+      run: | 
+        make build-test -j${{github.event.inputs.maxParallel}}
+        unset LD_LIBRARY_PATH
+        make unittest
