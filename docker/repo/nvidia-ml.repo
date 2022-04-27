@@ -1,0 +1,5 @@
+[nvidia]
+name=nvidia
+baseurl=https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/$basearch/
+enabled=1
+gpgcheck=0

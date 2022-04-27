@@ -1,0 +1,95 @@
+FROM modelbox/modelbox-ascend-openeuler:latest
+FROM openeuler/openeuler:20.03-lts-sp3
+
+COPY release /opt/release
+COPY ldconfig.service /etc/systemd/system/
+COPY --from=0 /usr/local/Ascend_dev /usr/local/Ascend
+
+ADD *.tar.gz /usr/local/
+
+ARG ASCEND_PATH=/usr/local/Ascend
+ENV LOCAL_ASCEND=/usr/local/Ascend
+ENV ASCEND_AICPU_PATH=${ASCEND_PATH}/ascend-toolkit/latest
+ENV ASCEND_OPP_PATH=${ASCEND_PATH}/ascend-toolkit/latest/opp
+ENV TOOLCHAIN_HOME=${ASCEND_PATH}/ascend-toolkit/latest/toolkit
+ENV TBE_IMPL_PATH=${ASCEND_PATH}/ascend-toolkit/latest/opp/op_impl/build-in/ai_core/tbe
+ENV MINDSPORE_PATH=/usr/local/lib/python3.7/site-packages/mindspore
+ENV DDK_PATH=${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib
+ENV DRIVER_PATH=${ASCEND_PATH}/driver
+
+ENV PATH=\
+${ASCEND_PATH}/ascend-toolkit/latest/atc/bin:\
+${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/bin:\
+${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/ccec_compiler/bin:\
+${ASCEND_PATH}/ascend-toolkit/latest/atc/ccec_compiler/bin${PATH:+:${PATH}}
+
+ENV PYTHONPATH=\
+${ASCEND_PATH}/ascend-toolkit/latest/atc/python/site-packages:\
+${ASCEND_PATH}/ascend-toolkit/latest/toolkit/python/site-packages:\
+${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/python/site-packages:\
+${ASCEND_PATH}/ascend-toolkit/latest/opp/op_impl/build-in/ai_core/tbe:\
+${ASCEND_PATH}/ascend-toolkit/latest/pyACL/python/site-packages/acl${PYTHONPATH:+:${PYTHONPATH}}
+
+WORKDIR /root
+
+RUN ls -lh /usr/local/Ascend/*
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
+    dnf update -y && \
+    dnf install -y \
+        vim gcc gcc-c++ make cmake libnsl perf rsyslog doxygen gcc-gfortran pciutils alsa-lib gdb clang systemd \
+        zlib-devel curl-devel bzip2-devel rpm-build sqlite-devel libffi-devel openssl-devel xz-devel git passwd \
+        krb5-devel expat-devel boost-devel ncurses-devel libxml2-devel libssh2-devel python3-devel python3-perf bc \
+        readline-devel nss-devel fuse-devel gdbm-devel glibc-devel glibc-debuginfo gnutls-devel net-tools libatomic \
+        xauth tk-devel lapack-devel graphviz-devel mesa-libGL-devel openblas-devel protobuf-c-devel openssh-server && \
+    if [ -f /usr/bin/python ]; then rm -f /usr/bin/python; fi && ln -s python3 /usr/bin/python && \
+    dnf clean all && rm -rf /var/cache /tmp/* /var/tmp/*
+
+RUN mkdir -p /root/.pip && \
+    echo "[global]" > /root/.pip/pip.conf && \
+    echo "index-url = https://pypi.python.org/simple" >>/root/.pip/pip.conf && \
+    echo "trusted-host = pypi.python.org" >>/root/.pip/pip.conf && \
+    echo "timeout = 120" >>/root/.pip/pip.conf && \
+    groupadd HwHiAiUser && \
+    useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir wheel attrs psutil decorator numpy protobuf scipy sympy cffi grpcio grpcio-tools requests pillow pyyaml opencv-python && \
+    python3 -m pip install --no-cache-dir https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.6.1/MindSpore/ascend/x86_64/mindspore_ascend-1.6.1-cp37-cp37m-linux_x86_64.whl && \
+    python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/topi-0.4.0-py3-none-any.whl && \
+    python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/te-0.4.0-py3-none-any.whl && \
+    python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/hccl-0.1.0-py3-none-any.whl && \
+    echo "/usr/local/lib" >>/etc/ld.so.conf && \
+    echo "/usr/local/lib64" >>/etc/ld.so.conf && \
+    echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf && \
+    echo "${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64" >>/etc/ld.so.conf && \
+    echo "/usr/local/lib/python3.7/site-packages/mindspore/lib" >>/etc/ld.so.conf
+
+RUN curl https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-x64.tar.xz|tar -xJ && \
+    cp -af node-v16.13.2-linux-x64/{bin,include,lib,share} /usr/local/ && \
+    npm install -g npm@latest && npm -v && node -v && \
+    npm install -g @angular/cli && \
+    npm cache clean --force && rm -rf /root/* && \
+    python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && \
+    rpm -ivh /opt/release/*.rpm && \
+    usermod -G HwHiAiUser modelbox && \
+    (cd /lib/systemd/system/sysinit.target.wants/; for i in *; \
+    do [ $i = systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+    rm -f /lib/systemd/system/multi-user.target.wants/*; \
+    rm -f /etc/systemd/system/*.wants/*; \
+    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+    rm -f /lib/systemd/system/basic.target.wants/*; \
+    rm -f /lib/systemd/system/anaconda.target.wants/*; \
+    sed -i 's/^SystemMaxUse=.*/SystemMaxUse=16M/g' /etc/systemd/journald.conf && \
+    sed -i '/ForwardToSyslog/s/^#//g' /etc/systemd/journald.conf && \
+    sed -i 's/^\(module(load="imklog")\)/#\1/' /etc/rsyslog.conf && \
+    ldconfig &>/dev/null && systemctl enable modelbox sshd ldconfig && \
+    echo 'export TMOUT=0' >> /etc/bashrc && \
+    echo 'export HISTSIZE=1000' >> /etc/bashrc && \
+    echo '[ -n "${SSH_TTY}" ] && export $(cat /proc/1/environ|tr "\\0" "\\n"|xargs)' >> /etc/bashrc && \
+    echo 'export PS1="\[\e[35;1m\][\u@\h \W]$ \[\e[0m\]"' >> /etc/bashrc
+
+VOLUME ["/sys/fs/cgroup", "/tmp", "/run", "/run/lock"]
+STOPSIGNAL SIGRTMIN+3
+
+CMD ["/sbin/init", "--log-target=journal"]
