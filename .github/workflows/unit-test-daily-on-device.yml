@@ -11,6 +11,7 @@ env:
 jobs:
   build:
     runs-on: ${{ matrix.devices }}
+    if: ${{!github.event.repository.fork}}
     strategy:
       max-parallel: 1
       matrix:
