@@ -32,7 +32,7 @@ enum TaskStatus { UNKNOWN, WAITING, WORKING, STOPPED, ABNORMAL, FINISHED };
 class TaskManager;
 class OneShotTask;
 
-using TaskDataCallback = std::function<void(OneShotTask*, OutputBufferList)>;
+using TaskDataCallback = std::function<void(OneShotTask*, const OutputBufferList &)>;
 using TaskStatusCallback = std::function<void(OneShotTask*, TaskStatus)>;
 
 class Task : public std::enable_shared_from_this<Task> {
