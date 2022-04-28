@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_STATISTICS_H_
 #define MODELBOX_STATISTICS_H_
 
@@ -418,7 +417,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
    * @brief Delete item with name
    * @param name Target item name
    */
-  void DelItem(const std::string& name);
+  void DelItem(const std::string& name) noexcept;
 
   /**
    * @brief Clear all item
