@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_SERVER_TASK_H_
 #define MODELBOX_SERVER_TASK_H_
 #include <modelbox/base/status.h>
@@ -165,13 +164,13 @@ class OneShotTask : public Task {
    * @brief Register data callback function
    * @param callback data callback function
    */
-  void RegisterDataCallback(TaskDataCallback callback);
+  void RegisterDataCallback(const TaskDataCallback& callback);
 
   /**
    * @brief Register task status function
    * @param callback status callback function
    */
-  void RegisterStatusCallback(TaskStatusCallback callback);
+  void RegisterStatusCallback(const TaskStatusCallback& callback);
 
  protected:
   /**

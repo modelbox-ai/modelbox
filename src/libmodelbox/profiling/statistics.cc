@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/statistics.h"
 
 namespace modelbox {
@@ -286,7 +285,7 @@ std::shared_ptr<StatisticsItem> StatisticsItem::GetItem(
   return child->GetItem(sub_path);
 }
 
-void StatisticsItem::DelItem(const std::string& name) {
+void StatisticsItem::DelItem(const std::string& name) noexcept {
   std::lock_guard<std::mutex> lck(children_lock_);
   auto item = children_.find(name);
   if (item == children_.end()) {

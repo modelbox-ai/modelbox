@@ -291,13 +291,13 @@ void OneShotTask::FetchData(Status fetch_status, OutputBufferList& output_buf) {
   }
 }
 
-void OneShotTask::RegisterDataCallback(TaskDataCallback callback) {
+void OneShotTask::RegisterDataCallback(const TaskDataCallback& callback) {
   data_callback_ = callback;
 }
 
 TaskDataCallback OneShotTask::GetDataCallback() { return data_callback_; }
 
-void OneShotTask::RegisterStatusCallback(TaskStatusCallback callback) {
+void OneShotTask::RegisterStatusCallback(const TaskStatusCallback& callback) {
   status_callback_ = callback;
 }
 
