@@ -16,7 +16,7 @@
 
 
 MODELBOX_DEV_FILE="/usr/local/share/modelbox/misc/modelbox-template.conf"
-MODELBOX_USER_HOME="$HOME/modelbox"
+MODELBOX_USER_HOME="$HOME/modelbox-service"
 
 MODELBOX_SYS_FLOW_DIR="/usr/local/etc/modelbox/graph/"
 MODELBOX_DEFAULT_PORT="1104"

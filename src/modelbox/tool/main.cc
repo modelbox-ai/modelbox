@@ -91,7 +91,7 @@ static void showhelp(void) {
   printf("modelbox-tool commands list:\n");
   printf("Usage: modelbox-tool [cmd] [OPTION]...\n");
   auto all_cmds = modelbox::ToolCommandList::Instance()->GetAllCommands();
-  for (const auto cmd : all_cmds) {
+  for (const auto &cmd : all_cmds) {
     printf("  %-10.10s \t\t%s\n", cmd->GetCommandName().c_str(),
            cmd->GetCommandDesc().c_str());
   }
