@@ -10,8 +10,8 @@ virtual_type = "tensorrt"
 [encryption]
 plugin_name = "modeldecrypt-plugin"
 plugin_version = "1.0.1"
-rootkey = "74nZaOiEuml8O6SRSd7AEOslZpPW8wgJFvqnvez+DfauWoPdfrM/80R0llrqNj6HFpK13QxT8uHAmVvvsYM8e5uciG41h0XI01WnH68jSaqY"
-passwd = "Ss5WuSilGXqokwV3iDE0r7pse0xCkCwVCcDGtelEGlDn++qHMl1b0pNZnboSkuYC6BYJkKZGP85tqwx7tIgyew=="
+rootkey = "73/h8m9FOODRPHXjHS8FB78zAmU6v1bMYbbfavkf06WB0+xdSqgc+1rjx8UWuPdT+bEroyiz3yPqWcNcyP/ZdwtAhkZ3GDIAesY4GYk4KGk5"
+passwd = "DM06gWG0wrGL3iJx2a1WUtGrFDO9dHtsLGf6fTLre2/ajy6a+46XAINQjv8+RxzQ09DYdrouUA5TpgdMo7EqLQ=="
 
 [input]
 [input.input1]
