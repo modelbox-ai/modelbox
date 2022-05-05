@@ -11,7 +11,7 @@ concurrency:
 jobs:
   git-mirror:
     runs-on: ubuntu-latest
-    if: ${{!github.event.repository.fork}}
+    if: github.repository == 'modelbox-ai/modelbox'
     steps:
       - uses: wearerequired/git-mirror-action@v1
         env:

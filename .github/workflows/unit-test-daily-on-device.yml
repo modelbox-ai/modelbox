@@ -11,7 +11,7 @@ env:
 jobs:
   build:
     runs-on: ${{ matrix.devices }}
-    if: ${{!github.event.repository.fork}}
+    if: github.repository == 'modelbox-ai/modelbox'
     strategy:
       max-parallel: 1
       matrix:
