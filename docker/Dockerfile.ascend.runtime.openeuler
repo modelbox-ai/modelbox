@@ -16,8 +16,10 @@ ENV DRIVER_PATH=${ASCEND_PATH}/driver
 
 ENV PYTHONPATH=${ASCEND_PATH}/nnae/latest/pyACL/python/site-packages/acl${PYTHONPATH:+:${PYTHONPATH}}
 
+ENV LD_LIBRARY_PATH=${ASCEND_PATH}/nnae/latest/fwkacllib/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
 WORKDIR /root
-RUN ls -lh /usr/local/Ascend/*
+
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     dnf update -y && \
     dnf install -y curl boost libnsl libssh2 libatomic mesa-libGL graphviz protobuf-c systemd \
@@ -41,7 +43,7 @@ RUN mkdir -p /root/.pip && \
     echo "/usr/local/lib" >>/etc/ld.so.conf && \
     echo "/usr/local/lib64" >>/etc/ld.so.conf && \
     echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf && \
-    echo "${ASCEND_PATH}/nnae/latest/fwkacllib/lib64" >>/etc/ld.so.conf && \
+    echo "${ASCEND_PATH}/nnae/latest/x86_64-linux/lib64" >>/etc/ld.so.conf && \
     echo "/usr/local/lib/python3.7/site-packages/mindspore/lib" >>/etc/ld.so.conf
 
 RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && \

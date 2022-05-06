@@ -30,9 +30,10 @@ ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/python/site-packages:\
 ${ASCEND_PATH}/ascend-toolkit/latest/opp/op_impl/build-in/ai_core/tbe:\
 ${ASCEND_PATH}/ascend-toolkit/latest/pyACL/python/site-packages/acl${PYTHONPATH:+:${PYTHONPATH}}
 
+ENV LD_LIBRARY_PATH=${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
 WORKDIR /root
 
-RUN ls -lh /usr/local/Ascend/*
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     dnf update -y && \
     dnf install -y \
@@ -60,7 +61,7 @@ RUN mkdir -p /root/.pip && \
     echo "/usr/local/lib" >>/etc/ld.so.conf && \
     echo "/usr/local/lib64" >>/etc/ld.so.conf && \
     echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf && \
-    echo "${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64" >>/etc/ld.so.conf && \
+    echo "${ASCEND_PATH}/ascend-toolkit/latest/x86_64-linux/lib64" >>/etc/ld.so.conf && \
     echo "/usr/local/lib/python3.7/site-packages/mindspore/lib" >>/etc/ld.so.conf
 
 RUN curl https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-x64.tar.xz|tar -xJ && \
