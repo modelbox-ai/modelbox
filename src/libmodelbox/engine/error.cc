@@ -32,4 +32,25 @@ FlowUnitError::~FlowUnitError(){};
 
 std::string FlowUnitError::GetDesc() { return desc_; };
 
+DataError::DataError(const std::string &error_code,
+                     const std::string &error_msg) {
+  error_code_ = error_code;
+  error_msg_ = error_msg;
+  new_error_ = true;
+}
+
+std::string DataError::GetErrorCode() { return error_code_; }
+
+std::string DataError::GetErrorMsg() { return error_msg_; }
+
+void DataError::SetErrorDeepth(size_t error_deepth) {
+  // only new error need set deepth
+  if (new_error_) {
+    error_deepth_ = error_deepth;
+    new_error_ = false;
+  }
+}
+
+size_t DataError::GetErrorDeepth() { return error_deepth_; }
+
 }  // namespace modelbox

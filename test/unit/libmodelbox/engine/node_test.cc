@@ -95,27 +95,27 @@ void CheckQueueHasDataError(std::shared_ptr<BufferQueue> queue,
                             uint32_t queue_size) {
   std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
   queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
+  bool has_error{false};
   for (auto& buffer : error_buffer_vector) {
     if (buffer->HasError()) {
-      error = buffer->GetError();
+      has_error = true;
     }
   }
   EXPECT_EQ(error_buffer_vector.size(), queue_size);
-  EXPECT_NE(error, nullptr);
+  EXPECT_EQ(has_error, true);
   queue->PushBatch(&error_buffer_vector);
 }
 
 void CheckQueueNotHasDataError(std::shared_ptr<BufferQueue> queue) {
   std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
   queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
+  bool has_error{false};
   for (auto& buffer : error_buffer_vector) {
     if (buffer->HasError()) {
-      error = buffer->GetError();
+      has_error = true;
     }
   }
-  EXPECT_EQ(error, nullptr);
+  EXPECT_EQ(has_error, false);
   queue->PushBatch(&error_buffer_vector);
 }
 
@@ -327,6 +327,7 @@ std::shared_ptr<Node> Add_Node(
   }
   auto flowunit_mgr = FlowUnitManager::GetInstance();
   auto node = std::make_shared<Node>();
+  node->SetName(name);
   node->SetFlowUnitInfo(name, "cpu", "0", flowunit_mgr);
   node->SetSessionManager(&node_test_session_manager);
   EXPECT_EQ(node->Init(inputs, outputs, config), STATUS_SUCCESS);
@@ -471,16 +472,21 @@ std::shared_ptr<Node> Add_Stream_Info_Node(
 }
 
 std::shared_ptr<Node> Add_Stream_Start_Node(
-    uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
+    std::vector<uint32_t> times,
+    std::shared_ptr<Configuration> config = nullptr) {
   auto node = Add_Node("stream_start", {"In_1"}, {"Out_1"}, config);
   Sequence s1;
   auto stream_start_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
-  EXPECT_CALL(*stream_start_fu, DataPre(testing::_)).Times(1).InSequence(s1);
-  EXPECT_CALL(*stream_start_fu, Process(testing::_))
-      .Times(times)
+  EXPECT_CALL(*stream_start_fu, DataPre(testing::_))
+      .Times(times[0])
       .InSequence(s1);
-  EXPECT_CALL(*stream_start_fu, DataPost(testing::_)).Times(1).InSequence(s1);
+  EXPECT_CALL(*stream_start_fu, Process(testing::_))
+      .Times(times[1])
+      .InSequence(s1);
+  EXPECT_CALL(*stream_start_fu, DataPost(testing::_))
+      .Times(times[2])
+      .InSequence(s1);
   return node;
 }
 
@@ -538,42 +544,45 @@ std::shared_ptr<Node> Add_Simple_Error_Node(
 }
 
 std::shared_ptr<Node> Add_Stream_Datapre_Error_Node(
+    std::vector<size_t> times,
     std::shared_ptr<Configuration> config = nullptr) {
   auto node = Add_Node("stream_datapre_error", {"In_1"}, {"Out_1"}, config);
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
-  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(1).InSequence(s1);
-  EXPECT_CALL(*node_fu, Process(testing::_)).Times(0).InSequence(s1);
-  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(0).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times[0]).InSequence(s1);
+  EXPECT_CALL(*node_fu, Process(testing::_)).Times(times[1]).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(times[2]).InSequence(s1);
   return node;
 }
 
 std::shared_ptr<Node> Add_Collapse_Recieve_Error_Node(
-    uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
+    uint32_t times, bool catch_error = true,
+    std::shared_ptr<Configuration> config = nullptr) {
   auto node = Add_Node("collapse_recieve_error", {"In_1"}, {"Out_1"}, config);
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
-  EXPECT_CALL(*node_fu, DataGroupPre(testing::_)).Times(1).InSequence(s1);
   for (uint32_t i = 0; i < times; i++) {
     EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(1).InSequence(s1);
-    EXPECT_CALL(*node_fu, Process(testing::_)).Times(1).InSequence(s1);
+    if (catch_error) {
+      EXPECT_CALL(*node_fu, Process(testing::_)).Times(1).InSequence(s1);
+    }
     EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(1).InSequence(s1);
   }
-  EXPECT_CALL(*node_fu, DataGroupPost(testing::_)).Times(1).InSequence(s1);
   return node;
 }
 
 std::shared_ptr<Node> Add_Stream_Process_Error_Node(
+    std::vector<size_t> times,
     std::shared_ptr<Configuration> config = nullptr) {
   auto node = Add_Node("stream_process_error", {"In_1"}, {"Out_1"}, config);
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
-  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(1).InSequence(s1);
-  EXPECT_CALL(*node_fu, Process(testing::_)).Times(1).InSequence(s1);
-  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(1).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times[0]).InSequence(s1);
+  EXPECT_CALL(*node_fu, Process(testing::_)).Times(times[1]).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(times[2]).InSequence(s1);
   return node;
 }
 
@@ -628,15 +637,16 @@ std::shared_ptr<Node> Add_Normal_Expand_Process_Error_Node(
 }
 
 std::shared_ptr<Node> Add_Normal_Collapse_Recieve_Error_Node(
-    uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
+    std::vector<uint32_t> times,
+    std::shared_ptr<Configuration> config = nullptr) {
   auto node =
       Add_Node("normal_collapse_recieve_error", {"In_1"}, {"Out_1"}, config);
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
-  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times).InSequence(s1);
-  EXPECT_CALL(*node_fu, Process(testing::_)).Times(times).InSequence(s1);
-  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(times).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times[0]).InSequence(s1);
+  EXPECT_CALL(*node_fu, Process(testing::_)).Times(times[1]).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(times[2]).InSequence(s1);
   return node;
 }
 
@@ -651,14 +661,15 @@ std::shared_ptr<Node> Add_Normal_Expand_Process_Node(
 }
 
 std::shared_ptr<Node> Add_Stream_In_Process_Error_Node(
-    uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
+    std::vector<uint32_t> times,
+    std::shared_ptr<Configuration> config = nullptr) {
   auto node = Add_Node("stream_in_process_error", {"In_1"}, {"Out_1"}, config);
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
-  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(1).InSequence(s1);
-  EXPECT_CALL(*node_fu, Process(testing::_)).Times(times).InSequence(s1);
-  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(1).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times[0]).InSequence(s1);
+  EXPECT_CALL(*node_fu, Process(testing::_)).Times(times[1]).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(times[2]).InSequence(s1);
   return node;
 }
 
@@ -703,7 +714,7 @@ std::shared_ptr<Node> Add_Expand_Process_Node(
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
   if (times == 0) {
-    EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(0).InSequence(s1);
+    EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(1).InSequence(s1);
     EXPECT_CALL(*node_fu, Process(testing::_)).Times(0).InSequence(s1);
     EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(0).InSequence(s1);
   } else {
@@ -735,11 +746,11 @@ std::shared_ptr<Node> Add_Collapse_DataPre_Error_Node(
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
-  EXPECT_CALL(*node_fu, DataGroupPre(testing::_)).Times(1).InSequence(s1);
-  EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times).InSequence(s1);
-  EXPECT_CALL(*node_fu, Process(testing::_)).Times(0).InSequence(s1);
-  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(0).InSequence(s1);
-  EXPECT_CALL(*node_fu, DataGroupPost(testing::_)).Times(1).InSequence(s1);
+  for (uint32_t i = 0; i < times; i++) {
+    EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(1).InSequence(s1);
+    EXPECT_CALL(*node_fu, Process(testing::_)).Times(0).InSequence(s1);
+    EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(1).InSequence(s1);
+  }
   return node;
 }
 
@@ -749,13 +760,11 @@ std::shared_ptr<Node> Add_Collapse_Process_Error_Node(
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
-  EXPECT_CALL(*node_fu, DataGroupPre(testing::_)).Times(1).InSequence(s1);
   for (uint32_t i = 0; i < times; i++) {
     EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(1).InSequence(s1);
     EXPECT_CALL(*node_fu, Process(testing::_)).Times(1).InSequence(s1);
     EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(1).InSequence(s1);
   }
-  EXPECT_CALL(*node_fu, DataGroupPost(testing::_)).Times(1).InSequence(s1);
   return node;
 }
 
@@ -782,7 +791,7 @@ std::shared_ptr<Node> Add_Normal_Collapse_Datapre_Error_Node(
       node->GetFlowUnitGroup()->GetExecutorUnit());
   EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times).InSequence(s1);
   EXPECT_CALL(*node_fu, Process(testing::_)).Times(0).InSequence(s1);
-  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(0).InSequence(s1);
+  EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(times).InSequence(s1);
   return node;
 }
 
@@ -817,18 +826,18 @@ std::shared_ptr<Node> Add_Normal_Collapse_Process_Node2(
 }
 
 std::shared_ptr<Node> Add_Normal_Collapse_Process_Node(
-    uint32_t times, bool repeat,
+    std::vector<uint32_t> times, bool repeat,
     std::shared_ptr<Configuration> config = nullptr) {
   auto node = Add_Node("normal_collapse_process", {"In_1"}, {"Out_1"}, config);
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
   if (!repeat) {
-    EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times).InSequence(s1);
-    EXPECT_CALL(*node_fu, Process(testing::_)).Times(times).InSequence(s1);
-    EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(times).InSequence(s1);
+    EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(times[0]).InSequence(s1);
+    EXPECT_CALL(*node_fu, Process(testing::_)).Times(times[1]).InSequence(s1);
+    EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(times[2]).InSequence(s1);
   } else {
-    for (uint32_t i = 0; i < times; i++) {
+    for (uint32_t i = 0; i < times[0]; i++) {
       EXPECT_CALL(*node_fu, DataPre(testing::_)).Times(1).InSequence(s1);
       EXPECT_CALL(*node_fu, Process(testing::_)).Times(1).InSequence(s1);
       EXPECT_CALL(*node_fu, DataPost(testing::_)).Times(1).InSequence(s1);
@@ -1630,7 +1639,7 @@ TEST_F(NodeRunTest, LoopRunBatchMultiFlowUnit) {
 
 TEST_F(NodeRunTest, StreamInfo) {
   auto stream_info_node = Add_Stream_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 1});
   auto simple_pass_node = Add_Simple_Pass_Node(15);
   auto stream_mid_node = Add_Stream_Mid_Node();
   auto stream_end_node = Add_Stream_End_Node(2);
@@ -1901,10 +1910,10 @@ TEST_F(NodeRunTest, DISABLED_RunPriority) {
 
 TEST_F(NodeRunTest, Normal_Process_Error_Recieve_InVisible) {
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(5);
+  auto stream_start_node = Add_Stream_Start_Node({1, 5, 1});
   auto simple_error_node = Add_Simple_Error_Node(25);
   // Invisible error end node do not execute process function
-  auto error_end_node = Add_Error_End_Normal_Node(0);
+  auto error_end_node = Add_Error_End_Normal_Node(23);
 
   stream_info_node->SetName("stream_info_normal_node");
   stream_info_node->SetPriority(0);
@@ -1944,7 +1953,7 @@ TEST_F(NodeRunTest, Normal_Process_Error_Recieve_InVisible) {
 
 TEST_F(NodeRunTest, Normal_Process_Error_Recieve_Visible) {
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(5);
+  auto stream_start_node = Add_Stream_Start_Node({1, 5, 1});
   auto simple_error_node = Add_Simple_Error_Node(25);
   auto error_end_node = Add_Error_End_Normal_Node(25);
 
@@ -1987,7 +1996,7 @@ TEST_F(NodeRunTest, Normal_Process_Error_Expand_Visible) {
   auto start_node = Add_Error_Start_Normal_Node();
   auto expand_process_node = Add_Normal_Expand_Process_Node(0);
   auto simple_pass_node = Add_Simple_Pass_Node(0);
-  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node(1);
+  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node({1, 0, 1});
 
   start_node->SetName("start_node");
   expand_process_node->SetName("expand_process_node");
@@ -2013,8 +2022,8 @@ TEST_F(NodeRunTest, Normal_Process_Error_Expand_Visible) {
 TEST_F(NodeRunTest, Normal_Process_Error_Expand_Invisible) {
   auto start_node = Add_Error_Start_Normal_Node();
   auto expand_process_node = Add_Normal_Expand_Process_Node(1);
-  auto simple_pass_node = Add_Simple_Pass_Node(1);
-  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node(1);
+  auto simple_pass_node = Add_Simple_Pass_Node(0);
+  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node({1, 0, 1});
 
   start_node->SetName("start_node");
   expand_process_node->SetName("expand_process_node");
@@ -2033,7 +2042,7 @@ TEST_F(NodeRunTest, Normal_Process_Error_Expand_Invisible) {
   EXPECT_EQ(expand_process_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   auto recv_queue = receive_error_node->GetInputPort("In_1")->GetQueue();
-  CheckQueueNotHasDataError(recv_queue);
+  CheckQueueHasDataError(recv_queue, 3);
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
 }
 
@@ -2041,7 +2050,7 @@ TEST_F(NodeRunTest, Normal_Process_Error_Collapse_Visible) {
   auto start_node = Add_Error_Start_Normal_Node();
   auto expand_process_node = Add_Normal_Expand_Process_Node(0);
   auto simple_pass_node = Add_Simple_Pass_Node(0);
-  auto collapse_node = Add_Normal_Collapse_Process_Node(1, false);
+  auto collapse_node = Add_Normal_Collapse_Process_Node({1, 0, 1}, false);
   auto receive_node = Add_Stream_Process_Node({0, 0, 0});
 
   start_node->SetName("start_node");
@@ -2066,20 +2075,7 @@ TEST_F(NodeRunTest, Normal_Process_Error_Collapse_Visible) {
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_EQ(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 2);
-
-  EXPECT_FALSE(error_buffer_vector[0]->HasError());
-
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueHasDataError(receive_queue, 2);
 }
 
 TEST_F(NodeRunTest, Normal_Process_Error_Collapse_Invisible) {
@@ -2111,29 +2107,16 @@ TEST_F(NodeRunTest, Normal_Process_Error_Collapse_Invisible) {
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_NE(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 2);
-
-  EXPECT_TRUE(error_buffer_vector[1]->HasError());
-
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueHasDataError(receive_queue, 2);
   EXPECT_EQ(receive_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Process_Error) {
+TEST_F(NodeRunTest, Normal_Process_Error) {
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
-  auto simple_error_node = Add_Simple_Error_Node(10);
-  auto simple_pass_node = Add_Simple_Pass_Node(0);
-  auto recieve_node = Add_Stream_Process_Node({1, 15, 1});
+  auto stream_start_node = Add_Stream_Start_Node({1, 5, 1});
+  auto simple_error_node = Add_Simple_Error_Node(25);
+  auto simple_pass_node = Add_Simple_Pass_Node(23);
+  auto recieve_node = Add_Stream_Process_Node({1, 25, 1});
 
   stream_info_node->SetName("stream_info_node");
   stream_start_node->SetName("stream_start_node");
@@ -2152,25 +2135,17 @@ TEST_F(NodeRunTest, DISABLED_Normal_Process_Error) {
       recieve_node->GetInputPort("In_1")));
 
   EXPECT_EQ(stream_info_node->Run(DATA), STATUS_SUCCESS);
+  auto stream_start_queue = stream_start_node->GetInputPort("In_1")->GetQueue();
+  CheckQueueNotHasDataError(stream_start_queue);
   EXPECT_EQ(stream_start_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(simple_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
-  std::vector<std::shared_ptr<Buffer>> index_buffer_vector;
   auto queue = recieve_node->GetInputPort("In_1")->GetQueue();
-  queue->PopBatch(&index_buffer_vector);
-
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : index_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_NE(error, nullptr);
-
-  queue->PushBatch(&index_buffer_vector);
+  CheckQueueHasDataError(queue, 10);
   EXPECT_EQ(recieve_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
@@ -2179,12 +2154,12 @@ TEST_F(NodeRunTest, DISABLED_Normal_Process_Error) {
   EXPECT_EQ(recieve_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Recv_InVisible_Error) {
+TEST_F(NodeRunTest, Normal_Recv_InVisible_Error) {
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(2);
-  auto simple_error_node = Add_Stream_Datapre_Error_Node();
+  auto stream_start_node = Add_Stream_Start_Node({1, 2, 0});
+  auto simple_error_node = Add_Stream_Datapre_Error_Node({1, 0, 0});
   auto simple_pass_node = Add_Simple_Pass_Node(0);
-  auto recieve_node = Add_Stream_Process_Node({1, 1, 1});
+  auto recieve_node = Add_Stream_Process_Node({1, 1, 0});
 
   stream_info_node->SetName("stream_info_node");
   stream_start_node->SetName("stream_start_node");
@@ -2218,18 +2193,18 @@ TEST_F(NodeRunTest, DISABLED_Normal_Recv_InVisible_Error) {
   EXPECT_EQ(recieve_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Recv_Visible_Error) {
+TEST_F(NodeRunTest, Normal_Recv_Visible_Error) {
   ConfigurationBuilder builder;
   auto stream_info_node = Add_Stream_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 0});
   auto simple_error_node_cfg = builder.Build();
   simple_error_node_cfg->SetProperty<uint32_t>("batch_size", 5);
   auto simple_error_node =
-      Add_Stream_In_Process_Error_Node(2, simple_error_node_cfg);
+      Add_Stream_In_Process_Error_Node({1, 3, 1}, simple_error_node_cfg);
   auto simple_pass_node = Add_Simple_Pass_Node(6);
   auto recieve_node_cfg = builder.Build();
   recieve_node_cfg->SetProperty<uint32_t>("batch_size", 6);
-  auto recieve_node = Add_Stream_Process_Node({1, 1, 1}, recieve_node_cfg);
+  auto recieve_node = Add_Stream_Process_Node({1, 1, 0}, recieve_node_cfg);
 
   stream_info_node->SetName("stream_info_node");
   stream_start_node->SetName("stream_start_node");
@@ -2265,11 +2240,11 @@ TEST_F(NodeRunTest, DISABLED_Normal_Recv_Visible_Error) {
   EXPECT_EQ(recieve_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Send_Error) {
+TEST_F(NodeRunTest, Normal_Send_Error) {
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
-  auto simple_pass_node = Add_Simple_Pass_Node(10);
-  auto simple_error_node = Add_Stream_Datapre_Error_Node();
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 0});
+  auto simple_pass_node = Add_Simple_Pass_Node(15);
+  auto simple_error_node = Add_Stream_Datapre_Error_Node({1, 0, 0});
 
   stream_info_node->SetName("stream_info_node");
   stream_start_node->SetName("stream_start_node");
@@ -2300,10 +2275,10 @@ TEST_F(NodeRunTest, DISABLED_Normal_Send_Error) {
   EXPECT_EQ(simple_error_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_DataPre_Error) {
+TEST_F(NodeRunTest, Stream_DataPre_Error) {
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(2);
-  auto simple_error_node = Add_Stream_Datapre_Error_Node();
+  auto stream_start_node = Add_Stream_Start_Node({1, 5, 1});
+  auto simple_error_node = Add_Stream_Datapre_Error_Node({1, 0, 1});
   auto receive_node = Add_Collapse_Recieve_Error_Node(1);
 
   stream_info_node->SetName("stream_info_node");
@@ -2333,16 +2308,22 @@ TEST_F(NodeRunTest, DISABLED_Stream_DataPre_Error) {
   auto simple_error_queue = simple_error_node->GetInputPort("In_1")->GetQueue();
   EXPECT_EQ(simple_error_queue->Size(), 5);
   EXPECT_EQ(simple_error_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(simple_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(receive_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Process_Error) {
+TEST_F(NodeRunTest, Stream_Process_Error) {
   ConfigurationBuilder builder;
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(2);
+  auto stream_start_node = Add_Stream_Start_Node({1, 5, 1});
   auto simple_error_node_cfg = builder.Build();
   simple_error_node_cfg->SetProperty<uint32_t>("batch_size", 5);
-  auto simple_error_node = Add_Stream_Process_Error_Node(simple_error_node_cfg);
+  auto simple_error_node =
+      Add_Stream_Process_Error_Node({1, 5, 1}, simple_error_node_cfg);
   auto receive_node = Add_Collapse_Recieve_Error_Node(1);
 
   stream_info_node->SetName("stream_info_node");
@@ -2369,15 +2350,19 @@ TEST_F(NodeRunTest, DISABLED_Stream_Process_Error) {
   CheckQueueHasDataError(recieve_queue, 1);
 
   EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
   auto simple_error_queue = simple_error_node->GetInputPort("In_1")->GetQueue();
-  EXPECT_EQ(simple_error_queue->Size(), 5);
+  EXPECT_EQ(simple_error_queue->Size(), 22);
 
   EXPECT_EQ(simple_error_node->Run(DATA), STATUS_SUCCESS);
 
   EXPECT_EQ(receive_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Recv_Visible_Error) {
+TEST_F(NodeRunTest, Stream_Recv_Visible_Error) {
   auto error_start_node = Add_Error_Start_Node();
   auto simple_stream_node = Add_Stream_Process_Node({1, 1, 1});
   auto receive_node = Add_Collapse_Recieve_Error_Node(1);
@@ -2403,9 +2388,9 @@ TEST_F(NodeRunTest, DISABLED_Stream_Recv_Visible_Error) {
   EXPECT_EQ(receive_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Recv_Invisible_Error) {
+TEST_F(NodeRunTest, Stream_Recv_Invisible_Error) {
   auto error_start_node = Add_Error_Start_Node();
-  auto simple_stream_node = Add_Stream_Process_Node({0, 0, 0});
+  auto simple_stream_node = Add_Stream_Process_Node({1, 0, 1});
   auto receive_node = Add_Collapse_Recieve_Error_Node(1);
 
   error_start_node->SetName("error_start_node");
@@ -2425,21 +2410,21 @@ TEST_F(NodeRunTest, DISABLED_Stream_Recv_Invisible_Error) {
   EXPECT_EQ(simple_stream_node->Run(DATA), STATUS_SUCCESS);
 
   auto recieve_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  CheckQueueHasDataError(recieve_queue, 1);
+  CheckQueueHasDataError(recieve_queue, 2);
   EXPECT_EQ(receive_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Send_Error) {
+TEST_F(NodeRunTest, Stream_Send_Error) {
   ConfigurationBuilder builder;
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 0});
 
   auto simple_stream_node_cfg = builder.Build();
   simple_stream_node_cfg->SetProperty<uint32_t>("batch_size", 5);
   auto simple_stream_node =
-      Add_Stream_Process_Node({1, 2, 1}, simple_stream_node_cfg);
+      Add_Stream_Process_Node({1, 3, 0}, simple_stream_node_cfg);
 
-  auto simple_error_node = Add_Stream_Datapre_Error_Node();
+  auto simple_error_node = Add_Stream_Datapre_Error_Node({1, 0, 0});
 
   stream_info_node->SetName("stream_info_node");
   stream_start_node->SetName("stream_start_node");
@@ -2467,11 +2452,11 @@ TEST_F(NodeRunTest, DISABLED_Stream_Send_Error) {
   EXPECT_EQ(simple_error_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Expand_Process_Error) {
+TEST_F(NodeRunTest, Normal_Expand_Process_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_process_error_node = Add_Normal_Expand_Process_Error_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(12);
-  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node(4);
+  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node({4, 4, 4});
 
   start_node->SetName("start_node");
   expand_process_error_node->SetName("expand_process_error_node");
@@ -2497,11 +2482,11 @@ TEST_F(NodeRunTest, DISABLED_Normal_Expand_Process_Error) {
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Expand_Recieve_Invisible_Error) {
+TEST_F(NodeRunTest, Normal_Expand_Recieve_Invisible_Error) {
   auto start_node = Add_Error_Start_Node();
   auto expand_process_node = Add_Normal_Expand_Process_Node(0);
   auto simple_pass_node = Add_Simple_Pass_Node(0);
-  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node(1);
+  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node({1, 0, 1});
 
   start_node->SetName("start_node");
   expand_process_node->SetName("expand_process_node");
@@ -2523,15 +2508,15 @@ TEST_F(NodeRunTest, DISABLED_Normal_Expand_Recieve_Invisible_Error) {
   EXPECT_EQ(expand_process_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   auto recv_queue = receive_error_node->GetInputPort("In_1")->GetQueue();
-  CheckQueueHasDataError(recv_queue, 1);
+  CheckQueueHasDataError(recv_queue, 3);
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Expand_Recieve_Visible_Error) {
+TEST_F(NodeRunTest, Normal_Expand_Recieve_Visible_Error) {
   auto start_node = Add_Error_Start_Node();
   auto expand_process_node = Add_Normal_Expand_Process_Node(1);
-  auto simple_pass_node = Add_Simple_Pass_Node(1);
-  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node(1);
+  auto simple_pass_node = Add_Simple_Pass_Node(0);
+  auto receive_error_node = Add_Normal_Collapse_Recieve_Error_Node({1, 0, 1});
 
   start_node->SetName("start_node");
   expand_process_node->SetName("expand_process_node");
@@ -2553,15 +2538,15 @@ TEST_F(NodeRunTest, DISABLED_Normal_Expand_Recieve_Visible_Error) {
   EXPECT_EQ(expand_process_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   auto recv_queue = receive_error_node->GetInputPort("In_1")->GetQueue();
-  CheckQueueNotHasDataError(recv_queue);
+  CheckQueueHasDataError(recv_queue, 3);
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Expand_Send_Error) {
+TEST_F(NodeRunTest, Normal_Expand_Send_Error) {
   auto stream_info_node = Add_Stream_Normal_Info_Node();
   auto normal_start_node = Add_Normal_Expand_Start_Node(3);
   auto simple_pass_node = Add_Simple_Pass_Node(10);
-  auto simple_error_node = Add_Stream_Datapre_Error_Node();
+  auto simple_error_node = Add_Stream_Datapre_Error_Node({1, 0, 0});
 
   stream_info_node->SetName("stream_info_node");
   normal_start_node->SetName("normal_start_node");
@@ -2588,11 +2573,11 @@ TEST_F(NodeRunTest, DISABLED_Normal_Expand_Send_Error) {
   EXPECT_EQ(normal_start_node->Run(EVENT), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Expand_DataPre_Error) {
+TEST_F(NodeRunTest, Stream_Expand_DataPre_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_datapre_error_node = Add_Expand_Datapre_Error_Node();
   auto simple_pass_node = Add_Simple_Pass_Node(0);
-  auto receive_error_node = Add_Collapse_Recieve_Error_Node(4);
+  auto receive_error_node = Add_Collapse_Recieve_Error_Node(1);
 
   start_node->SetName("start_node");
   expand_datapre_error_node->SetName("expand_datapre_error_node");
@@ -2614,29 +2599,20 @@ TEST_F(NodeRunTest, DISABLED_Stream_Expand_DataPre_Error) {
   EXPECT_EQ(expand_datapre_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   auto receive_queue = receive_error_node->GetInputPort("In_1")->GetQueue();
-  CheckQueueHasDataError(receive_queue, 1);
+  CheckQueueHasDataError(receive_queue, 2);
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(expand_datapre_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_datapre_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_datapre_error_node->Run(EVENT), STATUS_SUCCESS);
 
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  EXPECT_EQ(error_buffer_vector.size(), 3);
-  for (uint32_t i = 0; i < 3; i++) {
-    auto error = error_buffer_vector[i]->GetError();
-    EXPECT_NE(error, nullptr);
-  }
-  receive_queue->PushBatch(&error_buffer_vector);
-
   EXPECT_EQ(receive_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(receive_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(receive_error_node->Run(EVENT), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Expand_Process_Error) {
+TEST_F(NodeRunTest, Stream_Expand_Process_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_process_error_node = Add_Expand_Process_Error_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(12);
@@ -2664,6 +2640,9 @@ TEST_F(NodeRunTest, DISABLED_Stream_Expand_Process_Error) {
   EXPECT_EQ(expand_process_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_process_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_process_error_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(expand_process_error_node->Run(EVENT), STATUS_SUCCESS);
+  auto pass_queue = simple_pass_node->GetInputPort("In_1")->GetQueue();
+  CheckQueueHasDataError(pass_queue, 18);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(receive_error_node->Run(EVENT), STATUS_SUCCESS);
@@ -2671,11 +2650,11 @@ TEST_F(NodeRunTest, DISABLED_Stream_Expand_Process_Error) {
   EXPECT_EQ(receive_error_node->Run(EVENT), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Expand_Recieve_Invisible_Error) {
+TEST_F(NodeRunTest, Stream_Expand_Recieve_Invisible_Error) {
   auto start_node = Add_Error_Start_Node();
   auto expand_process_node = Add_Expand_Process_Node(0);
   auto simple_pass_node = Add_Simple_Pass_Node(0);
-  auto receive_error_node = Add_Collapse_Recieve_Error_Node(1);
+  auto receive_error_node = Add_Collapse_Recieve_Error_Node(1, false);
 
   start_node->SetName("start_node");
   expand_process_node->SetName("expand_process_node");
@@ -2697,15 +2676,15 @@ TEST_F(NodeRunTest, DISABLED_Stream_Expand_Recieve_Invisible_Error) {
   EXPECT_EQ(expand_process_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   auto recv_queue = receive_error_node->GetInputPort("In_1")->GetQueue();
-  CheckQueueHasDataError(recv_queue, 1);
+  CheckQueueHasDataError(recv_queue, 2);
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Expand_Recieve_Visible_Error) {
+TEST_F(NodeRunTest, Stream_Expand_Recieve_Visible_Error) {
   auto start_node = Add_Error_Start_Node();
   auto expand_process_node = Add_Expand_Process_Node(1);
-  auto simple_pass_node = Add_Simple_Pass_Node(1);
-  auto receive_error_node = Add_Collapse_Recieve_Error_Node(1);
+  auto simple_pass_node = Add_Simple_Pass_Node(0);
+  auto receive_error_node = Add_Collapse_Recieve_Error_Node(1, false);
 
   start_node->SetName("start_node");
   expand_process_node->SetName("expand_process_node");
@@ -2725,9 +2704,10 @@ TEST_F(NodeRunTest, DISABLED_Stream_Expand_Recieve_Visible_Error) {
 
   EXPECT_EQ(start_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(expand_process_node->Run(DATA), STATUS_SUCCESS);
+  EXPECT_EQ(expand_process_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   auto recv_queue = receive_error_node->GetInputPort("In_1")->GetQueue();
-  CheckQueueNotHasDataError(recv_queue);
+  CheckQueueHasDataError(recv_queue, 3);
   EXPECT_EQ(receive_error_node->Run(DATA), STATUS_SUCCESS);
 }
 
@@ -2737,7 +2717,7 @@ TEST_F(NodeRunTest, DISABLED_Stream_Expand_Recieve_Event_Error) {
       std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>();
   BuildDataEventStart(input_map_1, device_);
 
-  auto stream_start_node = Add_Stream_Start_Node(2);
+  auto stream_start_node = Add_Stream_Start_Node({1, 2, 1});
 
   ConfigurationBuilder builder;
   auto simple_stream_node_cfg = builder.Build();
@@ -2770,11 +2750,11 @@ TEST_F(NodeRunTest, DISABLED_Stream_Expand_Recieve_Event_Error) {
   EXPECT_EQ(simple_stream_node->Run(DATA), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Expand_Send_Error) {
+TEST_F(NodeRunTest, Stream_Expand_Send_Error) {
   auto stream_info_node = Add_Stream_Normal_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 0});
   auto simple_pass_node = Add_Simple_Pass_Node(10);
-  auto simple_error_node = Add_Stream_Datapre_Error_Node();
+  auto simple_error_node = Add_Stream_Datapre_Error_Node({1, 0, 0});
 
   stream_info_node->SetName("stream_info_node");
   stream_start_node->SetName("stream_start_node");
@@ -2801,52 +2781,7 @@ TEST_F(NodeRunTest, DISABLED_Stream_Expand_Send_Error) {
   EXPECT_EQ(stream_start_node->Run(EVENT), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Collapse_DataGroupPre_Error) {
-  auto start_node = Add_Normal_Start_Node();
-  auto expand_node = Add_Expand_Process_Node(1);
-  auto simple_pass_node = Add_Simple_Pass_Node(4);
-  auto collapse_error_node = Add_Collapse_Datagrouppre_Error_Node();
-  auto receive_node = Add_Stream_Process_Node({0, 0, 0});
-
-  start_node->SetName("start_node");
-  expand_node->SetName("expand_node");
-  simple_pass_node->SetName("simple_pass_node");
-  collapse_error_node->SetName("collapse_error_node");
-  receive_node->SetName("receive_error_node");
-
-  EXPECT_EQ(start_node->GetOutputPort("Out_1")->ConnectPort(
-                expand_node->GetInputPort("In_1")),
-            true);
-  EXPECT_EQ(expand_node->GetOutputPort("Out_1")->ConnectPort(
-                simple_pass_node->GetInputPort("In_1")),
-            true);
-  EXPECT_EQ(simple_pass_node->GetOutputPort("Out_1")->ConnectPort(
-                collapse_error_node->GetInputPort("In_1")),
-            true);
-  EXPECT_EQ(collapse_error_node->GetOutputPort("Out_1")->ConnectPort(
-                receive_node->GetInputPort("In_1")),
-            true);
-
-  EXPECT_EQ(start_node->Run(DATA), STATUS_SUCCESS);
-  EXPECT_EQ(expand_node->Run(DATA), STATUS_SUCCESS);
-  EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
-  EXPECT_EQ(collapse_error_node->Run(DATA), STATUS_SUCCESS);
-  EXPECT_EQ(collapse_error_node->Run(EVENT), STATUS_SUCCESS);
-  EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
-  EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
-  EXPECT_EQ(collapse_error_node->Run(DATA), STATUS_SUCCESS);
-  EXPECT_EQ(collapse_error_node->Run(EVENT), STATUS_SUCCESS);
-  EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
-  EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
-  EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
-  EXPECT_EQ(collapse_error_node->Run(DATA), STATUS_SUCCESS);
-  EXPECT_EQ(collapse_error_node->Run(EVENT), STATUS_SUCCESS);
-
-  auto queue = receive_node->GetInputPort("In_1")->GetQueue();
-  CheckQueueHasDataError(queue, 3);
-}
-
-TEST_F(NodeRunTest, DISABLED_Collapse_DataPre_Error) {
+TEST_F(NodeRunTest, Collapse_DataPre_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_node = Add_Expand_Process_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(16);
@@ -2883,28 +2818,16 @@ TEST_F(NodeRunTest, DISABLED_Collapse_DataPre_Error) {
   EXPECT_EQ(collapse_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_error_node->Run(EVENT), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_EQ(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 4);
-  for (uint32_t i = 0; i < 4; i++) {
-    EXPECT_TRUE(error_buffer_vector[i]->HasError());
-  }
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueHasDataError(receive_queue, 4);
 }
 
-TEST_F(NodeRunTest, DISABLED_Collapse_Process_Error) {
+TEST_F(NodeRunTest, Collapse_Process_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_node = Add_Expand_Process_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(16);
@@ -2941,6 +2864,7 @@ TEST_F(NodeRunTest, DISABLED_Collapse_Process_Error) {
   EXPECT_EQ(collapse_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_error_node->Run(EVENT), STATUS_SUCCESS);
@@ -2948,25 +2872,25 @@ TEST_F(NodeRunTest, DISABLED_Collapse_Process_Error) {
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
   std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
   receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
+  uint64_t error_buffer_size{0};
   for (auto& buffer : error_buffer_vector) {
     if (buffer->HasError()) {
-      error = buffer->GetError();
+      ++error_buffer_size;
     }
   }
-  EXPECT_EQ(error_buffer_vector.size(), 4);
+  EXPECT_EQ(error_buffer_size, 4);
   for (uint32_t i = 0; i < 4; i++) {
     EXPECT_TRUE(error_buffer_vector[i]->HasError());
   }
   receive_queue->PushBatch(&error_buffer_vector);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Collapse_Send_Error) {
+TEST_F(NodeRunTest, Stream_Collapse_Send_Error) {
   auto start_node = Add_Normal_Start_Node();
-  auto expand_node = Add_Expand_Process_Node(2);
-  auto simple_pass_node = Add_Simple_Pass_Node(8);
-  auto collapse_node = Add_Collapse_Process_Node(2);
-  auto stream_error_node = Add_Stream_Datapre_Error_Node();
+  auto expand_node = Add_Expand_Process_Node(4);
+  auto simple_pass_node = Add_Simple_Pass_Node(16);
+  auto collapse_node = Add_Collapse_Process_Node(4);
+  auto stream_error_node = Add_Stream_Datapre_Error_Node({1, 0, 0});
 
   start_node->SetName("start_node");
   expand_node->SetName("expand_node");
@@ -2990,6 +2914,8 @@ TEST_F(NodeRunTest, DISABLED_Stream_Collapse_Send_Error) {
   EXPECT_EQ(start_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(expand_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
+  auto collapse_queue = collapse_node->GetInputPort("In_1")->GetQueue();
+  CheckQueueNotHasDataError(collapse_queue);
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(stream_error_node->Run(DATA), STATUS_SUCCESS);
@@ -2998,13 +2924,15 @@ TEST_F(NodeRunTest, DISABLED_Stream_Collapse_Send_Error) {
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(expand_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
+  CheckQueueNotHasDataError(collapse_queue);
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(EVENT), STATUS_SUCCESS);
 }
 
-TEST_F(NodeRunTest, DISABLED_Stream_Collapse_Visible_Recv_Error) {
+TEST_F(NodeRunTest, Stream_Collapse_Visible_Recv_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_error_node = Add_Expand_Process_Error_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(12);
@@ -3041,26 +2969,14 @@ TEST_F(NodeRunTest, DISABLED_Stream_Collapse_Visible_Recv_Error) {
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(expand_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_error_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(expand_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(EVENT), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_NE(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 4);
-  for (uint32_t i = 0; i < 4; i++) {
-    EXPECT_FALSE(error_buffer_vector[i]->HasError());
-  }
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueNotHasDataError(receive_queue);
 }
 
 TEST_F(NodeRunTest, DISABLED_Stream_Collapse_Invisible_Recv_Error) {
@@ -3099,28 +3015,17 @@ TEST_F(NodeRunTest, DISABLED_Stream_Collapse_Invisible_Recv_Error) {
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(expand_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(expand_error_node->Run(EVENT), STATUS_SUCCESS);
+  EXPECT_EQ(expand_error_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(EVENT), STATUS_SUCCESS);
   EXPECT_EQ(collapse_node->Run(EVENT), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_EQ(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 4);
-  EXPECT_FALSE(error_buffer_vector[0]->HasError());
-  EXPECT_TRUE(error_buffer_vector[1]->HasError());
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueHasDataError(receive_queue, 5);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Collapse_DataPre_Error) {
+TEST_F(NodeRunTest, Normal_Collapse_DataPre_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_node = Add_Normal_Expand_Process_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(16);
@@ -3152,23 +3057,10 @@ TEST_F(NodeRunTest, DISABLED_Normal_Collapse_DataPre_Error) {
   EXPECT_EQ(collapse_error_node->Run(DATA), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_NE(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 4);
-  for (uint32_t i = 0; i < 4; i++) {
-    EXPECT_TRUE(error_buffer_vector[i]->HasError());
-  }
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueHasDataError(receive_queue, 5);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Collapse_Process_Error) {
+TEST_F(NodeRunTest, Normal_Collapse_Process_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_node = Add_Normal_Expand_Process_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(16);
@@ -3200,27 +3092,14 @@ TEST_F(NodeRunTest, DISABLED_Normal_Collapse_Process_Error) {
   EXPECT_EQ(collapse_error_node->Run(DATA), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_NE(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 4);
-  for (uint32_t i = 0; i < 4; i++) {
-    EXPECT_TRUE(error_buffer_vector[i]->HasError());
-  }
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueHasDataError(receive_queue, 5);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Collapse_Visible_Recv_Error) {
+TEST_F(NodeRunTest, Normal_Collapse_Visible_Recv_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_error_node = Add_Normal_Expand_Process_Error_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(12);
-  auto collapse_node = Add_Normal_Collapse_Process_Node(4, false);
+  auto collapse_node = Add_Normal_Collapse_Process_Node({4, 4, 4}, false);
   auto receive_node = Add_Stream_Process_Node({0, 0, 0});
 
   start_node->SetName("start_node");
@@ -3249,27 +3128,14 @@ TEST_F(NodeRunTest, DISABLED_Normal_Collapse_Visible_Recv_Error) {
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_EQ(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 4);
-  for (uint32_t i = 0; i < 4; i++) {
-    EXPECT_FALSE(error_buffer_vector[i]->HasError());
-  }
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueNotHasDataError(receive_queue);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Collapse_Invisible_Recv_Error) {
+TEST_F(NodeRunTest, Normal_Collapse_Invisible_Recv_Error) {
   auto start_node = Add_Normal_Start_Node();
   auto expand_error_node = Add_Normal_Expand_Process_Error_Node(4);
   auto simple_pass_node = Add_Simple_Pass_Node(12);
-  auto collapse_node = Add_Normal_Collapse_Process_Node(3, false);
+  auto collapse_node = Add_Normal_Collapse_Process_Node({4, 3, 4}, false);
   auto receive_node = Add_Stream_Process_Node({0, 0, 0});
 
   start_node->SetName("start_node");
@@ -3294,30 +3160,20 @@ TEST_F(NodeRunTest, DISABLED_Normal_Collapse_Invisible_Recv_Error) {
   EXPECT_EQ(start_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(expand_error_node->Run(DATA), STATUS_SUCCESS);
   EXPECT_EQ(simple_pass_node->Run(DATA), STATUS_SUCCESS);
+  auto collapse_queue = collapse_node->GetInputPort("In_1")->GetQueue();
+  CheckQueueHasDataError(collapse_queue, 18);
   EXPECT_EQ(collapse_node->Run(DATA), STATUS_SUCCESS);
 
   auto receive_queue = receive_node->GetInputPort("In_1")->GetQueue();
-  std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
-  receive_queue->PopBatch(&error_buffer_vector);
-  std::shared_ptr<FlowUnitError> error;
-  for (auto& buffer : error_buffer_vector) {
-    if (buffer->HasError()) {
-      error = buffer->GetError();
-    }
-  }
-  EXPECT_NE(error, nullptr);
-  EXPECT_EQ(error_buffer_vector.size(), 4);
-  EXPECT_FALSE(error_buffer_vector[0]->HasError());
-  EXPECT_TRUE(error_buffer_vector[3]->HasError());
-  receive_queue->PushBatch(&error_buffer_vector);
+  CheckQueueHasDataError(receive_queue, 5);
 }
 
-TEST_F(NodeRunTest, DISABLED_Normal_Collapse_Send_Error) {
+TEST_F(NodeRunTest, Normal_Collapse_Send_Error) {
   auto start_node = Add_Stream_Normal_Info_2_Node();
   auto expand_node = Add_Normal_Expand_Start_Node(3);
   auto simple_pass_node = Add_Simple_Pass_Node(15);
-  auto collapse_node = Add_Normal_Collapse_Process_Node(2, true);
-  auto stream_error_node = Add_Stream_Datapre_Error_Node();
+  auto collapse_node = Add_Normal_Collapse_Process_Node({2}, true);
+  auto stream_error_node = Add_Stream_Datapre_Error_Node({1, 0, 0});
 
   start_node->SetName("start_node");
   expand_node->SetName("expand_node");
@@ -3351,7 +3207,7 @@ TEST_F(NodeRunTest, DISABLED_Normal_Collapse_Send_Error) {
 TEST_F(NodeRunTest, Completion_Unfinish_Normal_Data) {
   ConfigurationBuilder builder;
   auto stream_info_node = Add_Stream_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 1});
 
   auto stream_tail_filter_node_cfg = builder.Build();
   stream_tail_filter_node_cfg->SetProperty<uint32_t>("batch_size", 5);
@@ -3394,7 +3250,7 @@ TEST_F(NodeRunTest, Completion_Unfinish_Normal_Data) {
 TEST_F(NodeRunTest, Completion_Unfinish_Stream_Data) {
   ConfigurationBuilder builder;
   auto stream_info_node = Add_Stream_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 1});
 
   auto stream_tail_filter_node_cfg = builder.Build();
   stream_tail_filter_node_cfg->SetProperty<uint32_t>("batch_size", 5);
@@ -3440,7 +3296,7 @@ TEST_F(NodeRunTest, Completion_Unfinish_Stream_Data) {
 TEST_F(NodeRunTest, Completion_Unfinish_Expand_Collapse_Data) {
   ConfigurationBuilder builder;
   auto stream_info_node = Add_Stream_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 1});
 
   auto stream_tail_filter_node_cfg = builder.Build();
   stream_tail_filter_node_cfg->SetProperty<uint32_t>("batch_size", 10);
@@ -3493,7 +3349,7 @@ TEST_F(NodeRunTest, Completion_Unfinish_Expand_Collapse_Data) {
 TEST_F(NodeRunTest, Completion_Unfinish_Condition_Data) {
   ConfigurationBuilder builder;
   auto stream_info_node = Add_Stream_Info_Node();
-  auto stream_start_node = Add_Stream_Start_Node(3);
+  auto stream_start_node = Add_Stream_Start_Node({1, 3, 1});
 
   auto stream_tail_filter_node_cfg = builder.Build();
   stream_tail_filter_node_cfg->SetProperty<uint32_t>("batch_size", 10);

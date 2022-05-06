@@ -256,7 +256,8 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
 
     EXPECT_EQ(output_1->Size(), output_2->Size());
     for (size_t i = 0; i < output_1->Size(); ++i) {
-      if ((idx * (idx + 1) / 2 + i) % 2 == 0) {
+      if ((idx * (idx + 1) / 2 + i) % 2 == 0 &&
+          (idx * (idx + 1) / 2 + i) != 10) {
         if (output_1->At(i)->HasError()) {
           EXPECT_EQ(output_1->ConstBufferData(i), nullptr);
           ++check_data;
@@ -271,8 +272,11 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
           continue;
         }
         EXPECT_NE(output_2->At(i), nullptr);
-        auto data = (int*)output_2->ConstBufferData(i);
-        EXPECT_EQ(*data, check_data++);
+        if (!output_2->At(i)->HasError()) {
+          auto data = (int*)output_2->ConstBufferData(i);
+          EXPECT_EQ(*data, check_data);
+        }
+        ++check_data;
       }
     }
 

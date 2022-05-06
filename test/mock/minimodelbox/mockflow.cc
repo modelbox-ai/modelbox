@@ -1803,6 +1803,7 @@ void MockFlow::Register_Stream_Start_Flowunit() {
   auto process_func =
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    MBLOG_INFO << "stream_start process";
     auto output_bufs = data_ctx->Output("Out_1");
     auto now_index = *(
         std::static_pointer_cast<int>(data_ctx->GetPrivate("now_index")).get());
@@ -2377,6 +2378,7 @@ Status Expand_Process_Error(std::shared_ptr<DataContext> data_ctx,
   auto input_count = input_bufs_1->At(0)->GetBytes() / sizeof(int);
 
   if (input_data[0] == 4) {
+    MBLOG_ERROR << "expand process return invalid.";
     return modelbox::STATUS_INVALID;
   } else {
     for (uint32_t i = 0; i < input_count; i++) {
@@ -2411,19 +2413,20 @@ void MockFlow::Register_Expand_Process_Error_Flowunit() {
 
 Status Expand_Process(std::shared_ptr<DataContext> data_ctx,
                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
-  if (data_ctx->HasError()) {
+  auto input_buffer = data_ctx->Input("In_1")->At(0);
+  if (input_buffer->HasError()) {
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto buffer_ptr = std::make_shared<Buffer>();
-    buffer_ptr->SetError(data_ctx->GetError());
+    buffer_ptr->SetError(input_buffer->GetErrorMsg(),
+                         input_buffer->GetErrorCode());
     output_bufs_1->PushBack(buffer_ptr);
     return modelbox::STATUS_OK;
   }
-  auto input_bufs_1 = data_ctx->Input("In_1");
   auto output_bufs_1 = data_ctx->Output("Out_1");
   auto device = mock_flowunit->GetBindDevice();
 
-  auto input_data = (int*)(input_bufs_1->At(0)->ConstData());
-  auto input_count = input_bufs_1->At(0)->GetBytes() / sizeof(int);
+  auto input_data = (int*)(input_buffer->ConstData());
+  auto input_count = input_buffer->GetBytes() / sizeof(int);
 
   for (uint32_t i = 0; i < input_count; i++) {
     auto buffer_ptr = std::make_shared<Buffer>(device);
@@ -2455,26 +2458,17 @@ void MockFlow::Register_Expand_Process_Flowunit() {
 
 Status Simple_Pass(std::shared_ptr<DataContext> data_ctx,
                    std::shared_ptr<MockFlowUnit> mock_flowunit) {
-  if (data_ctx->HasError()) {
-    auto output_bufs_1 = data_ctx->Output("Out_1");
-    auto device = mock_flowunit->GetBindDevice();
-    auto buffer_ptr = std::make_shared<Buffer>(device);
-    buffer_ptr->Build(1 * sizeof(int));
-    buffer_ptr->SetError(data_ctx->GetError());
-    output_bufs_1->PushBack(buffer_ptr);
-    return modelbox::STATUS_OK;
-  }
   auto input_bufs_1 = data_ctx->Input("In_1");
   auto output_bufs_1 = data_ctx->Output("Out_1");
   auto device = mock_flowunit->GetBindDevice();
   for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
     auto input_buffer = (*input_bufs_1)[i];
     if (input_buffer->HasError()) {
-      auto error = input_buffer->GetError();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      buffer_ptr->SetError(input_buffer->GetError());
+      buffer_ptr->SetError(input_buffer->GetErrorMsg(), input_buffer->GetErrorCode());
       output_bufs_1->PushBack(buffer_ptr);
+      MBLOG_INFO << "simple pass recive error buffer, return valid buffer";
     } else {
       output_bufs_1->PushBack(input_buffer);
     }
@@ -2518,6 +2512,7 @@ void MockFlow::Register_Simple_Error_Flowunit() {
     auto device = mock_flowunit->GetBindDevice();
     auto input_data = (int*)(*input_bufs_1)[0]->ConstData();
     if (input_data[0] < 2) {
+      MBLOG_ERROR << "return invalid";
       return modelbox::STATUS_INVALID;
     } else {
       for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
@@ -2618,8 +2613,9 @@ void MockFlow::Register_Error_End_Normal_Flowunit() {
   auto process_func =
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    MBLOG_INFO << "error_end_normal process";
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "error_end process" << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "error_end process has error.";
     }
     return modelbox::STATUS_OK;
   };
@@ -2637,7 +2633,7 @@ void MockFlow::Register_Error_End_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "error_end process" << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "error_end process has error.";
     }
     return modelbox::STATUS_OK;
   };
@@ -2655,8 +2651,7 @@ void MockFlow::Register_Stream_Process_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "stream_process process "
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "stream_process process has error.";
     }
 
     auto output_bufs_1 = data_ctx->Output("Out_1");
@@ -2673,8 +2668,7 @@ void MockFlow::Register_Stream_Process_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "stream_process DataPre "
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "stream_process DataPre has error.";
     }
 
     return modelbox::STATUS_OK;
@@ -2684,8 +2678,7 @@ void MockFlow::Register_Stream_Process_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "stream_process DataPost "
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "stream_process DataPost has error";
     }
     return modelbox::STATUS_OK;
   };
@@ -2707,8 +2700,7 @@ void MockFlow::Register_Collapse_Recieve_Error_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "collapse_recieve_error DataGroupPre recive error"
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "collapse_recieve_error DataGroupPre recive error.";
     }
     return modelbox::STATUS_OK;
   };
@@ -2717,8 +2709,7 @@ void MockFlow::Register_Collapse_Recieve_Error_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "collapse_recieve_error DataPre recive error"
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "collapse_recieve_error DataPre recive error.";
     }
     return modelbox::STATUS_OK;
   };
@@ -2727,8 +2718,7 @@ void MockFlow::Register_Collapse_Recieve_Error_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "collapse_recieve_error Process recive error"
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "collapse_recieve_error Process recive error";
     } else {
       auto input_bufs_1 = data_ctx->Input("In_1");
     }
@@ -2753,8 +2743,7 @@ void MockFlow::Register_Normal_Collapse_Recieve_Error_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "collapse_recieve_error DataGroupPre recive error"
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "collapse_recieve_error DataGroupPre recive error.";
     }
     return modelbox::STATUS_OK;
   };
@@ -2763,8 +2752,7 @@ void MockFlow::Register_Normal_Collapse_Recieve_Error_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "collapse_recieve_error DataPre recive error"
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "collapse_recieve_error DataPre recive error.";
     }
     return modelbox::STATUS_OK;
   };
@@ -2773,8 +2761,7 @@ void MockFlow::Register_Normal_Collapse_Recieve_Error_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
-      MBLOG_INFO << "collapse_recieve_error Process recive error"
-                 << data_ctx->GetError()->GetDesc();
+      MBLOG_INFO << "collapse_recieve_error Process recive error.";
     } else {
       auto input_bufs_1 = data_ctx->Input("In_1");
     }
@@ -2851,6 +2838,7 @@ void MockFlow::Register_Collapse_Datapre_Error_Flowunit() {
   auto data_pre_func =
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+    MBLOG_INFO << "collapse_datapre_error";
     return modelbox::STATUS_INVALID;
   };
 
@@ -2881,8 +2869,7 @@ Status Collapse_Process(std::shared_ptr<DataContext> data_ctx,
                         std::shared_ptr<MockFlowUnit> mock_flowunit) {
   auto device = mock_flowunit->GetBindDevice();
   if (data_ctx->HasError()) {
-    auto error = data_ctx->GetError();
-    MBLOG_INFO << "normal_collapse_process error" << error->GetDesc();
+    MBLOG_INFO << "collapse_process recive error buffer, return valid buffer.";
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto buffer_ptr = std::make_shared<Buffer>(device);
     buffer_ptr->Build(1 * sizeof(int));
@@ -2890,6 +2877,7 @@ Status Collapse_Process(std::shared_ptr<DataContext> data_ctx,
     output_data[0] = 0;
     output_bufs_1->PushBack(buffer_ptr);
   } else {
+    MBLOG_INFO << "collapse_process recive valid buffer, return error buffer.";
     auto input_bufs = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto buffer_ptr = std::make_shared<Buffer>(device);
@@ -2898,6 +2886,11 @@ Status Collapse_Process(std::shared_ptr<DataContext> data_ctx,
     output_data[0] = 0;
 
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
+      auto input_buffer = input_bufs->At(i);
+      if (input_buffer->HasError()) {
+        buffer_ptr->SetError(input_buffer->GetErrorMsg(), input_buffer->GetErrorCode());
+        break;
+      }
       auto input_data = (int*)(*input_bufs)[i]->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       output_data[0] += input_data[0];

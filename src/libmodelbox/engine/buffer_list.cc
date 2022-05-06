@@ -507,6 +507,17 @@ Status BufferList::MoveAllBufferToTargetDevice() {
   return modelbox::STATUS_OK;
 }
 
+void BufferList::SetError(const std::string& error_code,
+                          const std::string& error_msg) {
+  if (buffer_list_.empty()) {
+    return;
+  }
+
+  for (auto &buffer : buffer_list_) {
+    buffer->SetError(error_code, error_msg);
+  }
+}
+
 Status BufferList::EmplaceBack(void* device_data, size_t data_size,
                                DeleteFunction func) {
   if (!dev_mem_) {

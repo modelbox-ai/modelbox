@@ -29,24 +29,22 @@ class MnistResponseFlowUnit(modelbox.FlowUnit):
         in_data = data_context.input("in_data")
         out_data = data_context.output("out_data")
 
-        if data_context.has_error():
-            exception = data_context.get_error()
-            exception_desc = exception.get_description()
-            result = {
-                "error_msg": str(exception_desc)
-            }
-            result_str = (json.dumps(result) + chr(0)).encode('utf-8').strip()
-            add_buffer = modelbox.Buffer(self.get_bind_device(), result_str)
-            out_data.push_back(add_buffer)
-        else:
-            for buffer in in_data:
+        for buffer in in_data:
+            result_str = ''
+            if buffer.has_error():
+                error_msg = buffer.get_error_msg()
+                result = {
+                    "error_msg": str(error_msg)
+                }
+            else:
                 max_index = np.argmax(buffer.as_object())
                 result = {
                     "predict_result": str(max_index)
                 }
-                result_str = (json.dumps(result) + chr(0)).encode('utf-8').strip()
-                add_buffer = modelbox.Buffer(self.get_bind_device(), result_str)
-                out_data.push_back(add_buffer)
+
+            result_str = (json.dumps(result) + chr(0)).encode('utf-8').strip()
+            add_buffer = modelbox.Buffer(self.get_bind_device(), result_str)
+            out_data.push_back(add_buffer)
 
         return modelbox.Status.StatusCode.STATUS_SUCCESS
 

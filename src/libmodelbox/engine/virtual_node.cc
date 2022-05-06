@@ -216,7 +216,7 @@ Status OutputVirtualNode::Run(RunType type) {
         }
 
         if (data->HasError()) {
-          last_error = data->GetError();
+          last_error = std::make_shared<FlowUnitError>(data->GetErrorMsg());
         }
 
         valid_output.push_back(data);
@@ -265,7 +265,7 @@ SessionUnmatchCache::SessionUnmatchCache(
 Status SessionUnmatchCache::CacheBuffer(const std::string& port_name,
                                         std::shared_ptr<Buffer> buffer) {
   if (buffer->HasError()) {
-    last_error_ = buffer->GetError();
+    last_error_ = std::make_shared<FlowUnitError>(buffer->GetErrorMsg());
   }
 
   auto buffer_index = BufferManageView::GetIndexInfo(buffer);

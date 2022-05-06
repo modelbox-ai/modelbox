@@ -263,6 +263,14 @@ class BufferList {
    */
   Status MoveAllBufferToTargetDevice();
 
+  /**
+   * @brief Set error
+   * @param error_code buffer error code
+   * @param error_msg buffer error message
+   * @return buffer reference
+   */
+  void SetError(const std::string &error_code, const std::string &error_msg);
+
  public:
   /**
    * @brief push current device data to buffer list.

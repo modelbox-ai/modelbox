@@ -125,13 +125,7 @@ std::shared_ptr<Configuration> ExternalDataImpl::GetSessionConfig() {
   return ctx->GetConfig();
 }
 
-bool FlowUnitDataContext::HasError() {
-  if (error_ == nullptr) {
-    return false;
-  }
-
-  return true;
-}
+bool FlowUnitDataContext::HasError() { return input_valid_has_error_buffer_; }
 
 FlowUnitDataContext::~FlowUnitDataContext() {
   for (auto &callback : destroy_callback_list_) {
@@ -161,10 +155,14 @@ void FlowUnitDataContext::WriteInputData(
 void FlowUnitDataContext::SetCurrentInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {
   cur_input_ = stream_data_map;
+  std::set<size_t> error_index_set;
+  std::set<size_t> valid_index_set;
   for (auto &port_data_item : *cur_input_) {
     auto &port_name = port_data_item.first;
     auto &data_list = port_data_item.second;
+    size_t index = 0;
     for (auto &buffer : data_list) {
+      ++index;
       auto index_info = BufferManageView::GetIndexInfo(buffer);
       if (index_info->IsPlaceholder()) {
         cur_input_placeholder_[port_name].push_back(buffer);
@@ -174,20 +172,56 @@ void FlowUnitDataContext::SetCurrentInputData(
       if (index_info->IsEndFlag()) {
         end_flag_received_ = true;
         if (index_info->GetIndex() == 0) {  // empty stream
-          is_empty_stream = true;
+          is_empty_stream_ = true;
         }
         input_stream_max_buffer_count_ = index_info->GetIndex() + 1;
         cur_input_end_flag_[port_name].push_back(buffer);
         continue;
       }
 
-      auto error = buffer->GetError();
-      if (buffer->GetError() != nullptr) {
-        error_ = error;  // error will record during this process
+      // select skip error buffer index
+      auto data_error = BufferManageView::GetError(buffer);
+      if (data_error != nullptr) {
+        if (!IsDataErrorVisible() ||
+            data_error->GetErrorDeepth() <
+                index_info->GetInheritInfo()->GetDeepth()) {
+          error_index_set.insert(index);
+          continue;
+        }
+        input_valid_has_error_buffer_ = true;
       }
 
-      cur_input_valid_data_[port_name].push_back(buffer);
+      // select valid buffer index
+      valid_index_set.insert(index);
     }
+  }
+
+  // push each port error/valid buffer
+  for (auto &port_data_item : *cur_input_) {
+    auto &port_name = port_data_item.first;
+    auto &data_list = port_data_item.second;
+    size_t index = 0;
+    for (auto &buffer : data_list) {
+      ++index;
+      if (error_index_set.find(index) != error_index_set.end()) {
+        cur_input_error_[port_name].push_back(buffer);
+      } else if (valid_index_set.find(index) != valid_index_set.end()) {
+        cur_input_valid_data_[port_name].push_back(buffer);
+      }
+    }
+  }
+
+  // datapre error skip process
+  if (is_datapre_error_) {
+    cur_input_valid_data_.clear();
+    cur_input_error_.clear();
+    cur_input_placeholder_.clear();
+  }
+
+  // collapse has error skip collapse
+  if (!cur_input_error_.empty() &&
+      node_->GetOutputType() == FlowOutputType::COLLAPSE) {
+    cur_input_valid_data_.clear();
   }
 
   bool has_no_data = cur_input_valid_data_.empty() ||
@@ -246,10 +280,6 @@ void FlowUnitDataContext::SetEvent(std::shared_ptr<FlowUnitEvent> event) {
 
 std::shared_ptr<FlowUnitEvent> FlowUnitDataContext::Event() {
   return user_event_;
-}
-
-std::shared_ptr<FlowUnitError> FlowUnitDataContext::GetError() {
-  return error_;
 }
 
 void FlowUnitDataContext::SetPrivate(const std::string &key,
@@ -417,18 +447,20 @@ void FlowUnitDataContext::ClearData() {
   cur_input_valid_data_.clear();
   cur_input_placeholder_.clear();
   cur_input_end_flag_.clear();
+  cur_input_error_.clear();
 
   cur_output_valid_data_.clear();
   cur_output_placeholder_.clear();
+  cur_output_error_.clear();
   cur_output_.clear();
 
   user_event_ = nullptr;
-  error_ = nullptr;
 
   input_has_stream_start_ = false;
   input_has_stream_end_ = false;
+  input_valid_has_error_buffer_ = false;
 
-  is_empty_stream = false;
+  is_empty_stream_ = false;
   is_skippable_ = false;
 }
 
@@ -437,9 +469,18 @@ void FlowUnitDataContext::SetSkippable(bool skippable) {
   is_skippable_ = skippable;
 }
 
+void FlowUnitDataContext::SetDataPreError(bool is_error) {
+  is_datapre_error_ = is_error;
+}
+
 // after flowunit process
 Status FlowUnitDataContext::PostProcess() {
   auto ret = GenerateOutputPlaceholder();
+  if (!ret) {
+    return ret;
+  }
+
+  ret = GenerateOutputError();
   if (!ret) {
     return ret;
   }
@@ -472,6 +513,12 @@ Status FlowUnitDataContext::GenerateOutputPlaceholder() {
   return STATUS_OK;
 }
 
+Status FlowUnitDataContext::GenerateOutputError() {
+  FillErrorOutput(false, "", "", true);
+
+  return STATUS_OK;
+}
+
 Status FlowUnitDataContext::AppendEndFlag() {
   if (!NeedStreamEndFlag()) {
     return STATUS_OK;
@@ -498,6 +545,10 @@ Status FlowUnitDataContext::AppendEndFlag() {
   if (end_flag_parent->empty()) {
     // expand empty buffer
     end_flag_parent = &cur_input_placeholder_;
+  }
+  if (end_flag_parent->empty()) {
+    // expand error buffer
+    end_flag_parent = &cur_input_error_;
   }
   if (end_flag_parent->empty()) {
     // no available input buffer
@@ -576,50 +627,76 @@ void FlowUnitDataContext::FillPlaceholderOutput(bool from_valid_input,
   }
 }
 
-void FlowUnitDataContext::FillErrorOutput(std::shared_ptr<FlowUnitError> error,
+void FlowUnitDataContext::FillErrorOutput(bool from_valid,
+                                          const std::string &error_code,
+                                          const std::string &error_msg,
                                           bool same_with_input_num) {
-  if (cur_input_valid_data_.empty()) {
+  auto cur_parent = &cur_input_error_;
+  if (from_valid) {
+    cur_parent = &cur_input_valid_data_;
+  }
+  if (cur_parent->empty()) {
     // input for this process is empty, error might be last process
     return;
   }
 
-  bool is_condition = node_->GetConditionType() != ConditionType::NONE;
-  bool first_port = true;
-  cur_output_valid_data_.clear();
-  auto input_num = cur_input_valid_data_.begin()->second.size();
+  auto first_input_port = cur_parent->begin()->second;
+  if (first_input_port.empty()) {
+    return;
+  }
+  auto input_num = first_input_port.size();
   size_t output_num = 1;
   if (same_with_input_num) {
     output_num = input_num;
   }
 
+  bool is_condition = node_->GetConditionType() != ConditionType::NONE;
+  bool first_port = true;
+
   std::vector<std::shared_ptr<BufferProcessInfo>> process_info_list;
   BufferManageView::GenProcessInfo<std::vector<std::shared_ptr<Buffer>>>(
-      cur_input_valid_data_, input_num,
+      *cur_parent, input_num,
       [](const std::vector<std::shared_ptr<Buffer>> &container, size_t idx) {
         return container[idx];
       },
       process_info_list, !same_with_input_num);
 
-  for (auto &port_name : node_->GetOutputNames()) {
-    std::vector<std::shared_ptr<Buffer>> buffer_vector;
-    if (is_condition & !first_port) {
-      buffer_vector.resize(output_num, nullptr);
-      auto buffer_list = std::make_shared<BufferList>(buffer_vector);
-      cur_output_valid_data_[port_name] = buffer_list;
+  // get error code, error msg
+  std::vector<std::shared_ptr<DataError>> error_list;
+  error_list.reserve(output_num);
+  for (size_t i = 0; i < output_num; ++i) {
+    if (from_valid) {
+      error_list.push_back(std::make_shared<DataError>(error_code, error_msg));
       continue;
     }
 
-    buffer_vector.reserve(output_num);
+    for (auto &input_port_name : node_->GetInputNames()) {
+      auto &input_port_data_list = (*cur_parent)[input_port_name];
+      if (input_port_data_list[i]->HasError()) {
+        error_list.push_back(
+            BufferManageView::GetError(input_port_data_list[i]));
+        break;
+      }
+    }
+  }
+
+  for (auto &port_name : node_->GetOutputNames()) {
+    auto &port_data_list = cur_output_error_[port_name];
+    if (is_condition && !first_port) {
+      port_data_list.resize(port_data_list.size() + output_num, nullptr);
+      continue;
+    }
+
+    port_data_list.reserve(port_data_list.size() + output_num);
     for (size_t i = 0; i < output_num; ++i) {
       auto buffer = std::make_shared<Buffer>();
-      buffer->SetError(error);
+      BufferManageView::SetError(buffer, error_list[i]);
       auto index_info = BufferManageView::GetIndexInfo(buffer);
       index_info->SetProcessInfo(process_info_list[i]);
-      buffer_vector.push_back(buffer);
+      port_data_list.push_back(buffer);
     }
+
     first_port = false;
-    auto buffer_list = std::make_shared<BufferList>(buffer_vector);
-    cur_output_valid_data_[port_name] = buffer_list;
   }
 }
 
@@ -654,24 +731,32 @@ Status FlowUnitDataContext::GenerateOutput() {
       valid_data_list = std::make_shared<BufferList>();
     }
     auto &placeholder_data_list = cur_output_placeholder_[port_name];
-    auto &port_data_list = cur_output_[port_name];
-    port_data_list.resize(valid_data_list->Size() +
-                          placeholder_data_list.size());
+    auto &error_data_list = cur_output_error_[port_name];
+
+    BufferPtrList valid_placholder_data_list;
+    valid_placholder_data_list.resize(valid_data_list->Size() +
+                                      placeholder_data_list.size());
+
     // merge buffer by input index
-    std::merge(
-        valid_data_list->begin(), valid_data_list->end(),
-        placeholder_data_list.begin(), placeholder_data_list.end(),
-        port_data_list.begin(),
-        [](std::shared_ptr<Buffer> b1, std::shared_ptr<Buffer> b2) {
-          if (b1 == nullptr) {
-            // condition output, will be removed in node stream manage
-            return true;
-          }
-          auto parent_index_info1 = BufferManageView::GetFirstParentBuffer(b1);
-          auto parent_index_info2 = BufferManageView::GetFirstParentBuffer(b2);
-          return parent_index_info1->GetIndex() <
-                 parent_index_info2->GetIndex();
-        });
+    auto compare = [](std::shared_ptr<Buffer> b1, std::shared_ptr<Buffer> b2) {
+      if (b1 == nullptr) {
+        // condition output, will be removed in node stream manage
+        return true;
+      }
+      auto parent_index_info1 = BufferManageView::GetFirstParentBuffer(b1);
+      auto parent_index_info2 = BufferManageView::GetFirstParentBuffer(b2);
+      return parent_index_info1->GetIndex() < parent_index_info2->GetIndex();
+    };
+    std::merge(valid_data_list->begin(), valid_data_list->end(),
+               placeholder_data_list.begin(), placeholder_data_list.end(),
+               valid_placholder_data_list.begin(), compare);
+
+    auto &port_data_list = cur_output_[port_name];
+    port_data_list.resize(valid_placholder_data_list.size() +
+                          error_data_list.size());
+    std::merge(valid_placholder_data_list.begin(),
+               valid_placholder_data_list.end(), error_data_list.begin(),
+               error_data_list.end(), port_data_list.begin(), compare);
   }
   return STATUS_OK;
 }
@@ -692,6 +777,14 @@ Status FlowUnitDataContext::UpdateOutputIndexInfo() {
       auto first_input_port = cur_node_process_info->GetParentBuffers().begin();
       auto first_buffer_info_in_port = first_input_port->second.front();
       UpdateBufferIndexInfo(cur_buffer_index_info, first_buffer_info_in_port);
+
+      // new throw error buffer, set current deepth
+      auto data_error = BufferManageView::GetError(buffer);
+      if (data_error != nullptr &&
+          cur_buffer_index_info->GetInheritInfo() != nullptr) {
+        auto deepth = cur_buffer_index_info->GetInheritInfo()->GetDeepth();
+        data_error->SetErrorDeepth(deepth);
+      }
     }
   }
   return STATUS_OK;
@@ -749,17 +842,11 @@ void FlowUnitDataContext::NotifySessionClose() {
   }
 }
 
-void FlowUnitDataContext::DealWithDataError() {
-  DealWithProcessError(GetError());
-}
-
-void FlowUnitDataContext::DealWithDataPreError(
-    std::shared_ptr<FlowUnitError> error) {}
-
-void FlowUnitDataContext::DealWithProcessError(
-    std::shared_ptr<FlowUnitError> error) {
-  FillErrorOutput(error);
-  process_status_ = STATUS_SUCCESS;
+void FlowUnitDataContext::DealWithDataPreError(const std::string &error_code,
+                                               const std::string &error_msg) {
+  FillErrorOutput(true, error_code, error_msg, false);
+  SetDataPreError(true);
+  SetSkippable(true);
 }
 
 bool FlowUnitDataContext::IsFinished() { return is_finished_; }
@@ -869,11 +956,7 @@ std::shared_ptr<BufferList> ExecutorDataContext::External() {
   return data_->GetExternalDataForUser(EXTERNAL_PORT_NAME);
 }
 
-bool ExecutorDataContext::HasError() { return origin_ctx_->HasError(); };
-
-std::shared_ptr<FlowUnitError> ExecutorDataContext::GetError() {
-  return origin_ctx_->GetError();
-};
+bool ExecutorDataContext::HasError() { return origin_ctx_->HasError(); }
 
 std::shared_ptr<FlowUnitEvent> ExecutorDataContext::Event() {
   return origin_ctx_->Event();
@@ -1043,18 +1126,18 @@ StreamFlowUnitDataContext::StreamFlowUnitDataContext(
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 bool StreamFlowUnitDataContext::IsDataPre() {
-  return input_has_stream_start_ && !is_empty_stream;
+  return input_has_stream_start_ && !is_empty_stream_;
 }
 
 bool StreamFlowUnitDataContext::IsDataPost() {
-  return end_flag_received_ && !is_empty_stream && !IsContinueProcess();
+  return end_flag_received_ && !is_empty_stream_ && !IsContinueProcess();
 }
-
-void StreamFlowUnitDataContext::DealWithDataPreError(
-    std::shared_ptr<FlowUnitError> error) {}
 
 void StreamFlowUnitDataContext::UpdateProcessState() {
   is_finished_ = end_flag_received_ && !IsContinueProcess();
+  if (is_finished_) {
+    is_datapre_error_ = false;
+  }
 }
 
 bool StreamFlowUnitDataContext::NeedStreamEndFlag() {
@@ -1084,12 +1167,12 @@ NormalExpandFlowUnitDataContext::NormalExpandFlowUnitDataContext(
     Node *node, MatchKey *data_ctx_match_key, std::shared_ptr<Session> session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
-void NormalExpandFlowUnitDataContext::DealWithDataPreError(
-    std::shared_ptr<FlowUnitError> error) {}
-
 void NormalExpandFlowUnitDataContext::UpdateProcessState() {
   // each buffer in stream has one data ctx, finish after buffer expand end
   is_finished_ = !IsContinueProcess();
+  if (is_finished_) {
+    is_datapre_error_ = false;
+  }
 }
 
 bool NormalExpandFlowUnitDataContext::NeedStreamEndFlag() {
@@ -1203,11 +1286,11 @@ void StreamExpandFlowUnitDataContext::ExpandNextBuffer() {
 }
 
 bool StreamExpandFlowUnitDataContext::IsDataPre() {
-  return input_has_stream_start_ && !is_empty_stream;
+  return input_has_stream_start_ && !is_empty_stream_;
 }
 
 bool StreamExpandFlowUnitDataContext::IsDataPost() {
-  return end_flag_received_ && !is_empty_stream && !IsContinueProcess();
+  return end_flag_received_ && !is_empty_stream_ && !IsContinueProcess();
 }
 
 std::shared_ptr<FlowUnitInnerEvent>
@@ -1245,14 +1328,14 @@ StreamExpandFlowUnitDataContext::GenerateSendEvent() {
   return expand_event;
 }
 
-void StreamExpandFlowUnitDataContext::DealWithDataPreError(
-    std::shared_ptr<FlowUnitError> error) {}
-
 void StreamExpandFlowUnitDataContext::UpdateProcessState() {
   is_finished_ = end_flag_received_ && !IsContinueProcess();
   if (!IsContinueProcess() && cur_expand_buffer_index_received_) {
     ++cur_expand_buffer_index_;
     cur_expand_buffer_index_received_ = false;
+  }
+  if (is_finished_) {
+    is_datapre_error_ = false;
   }
 }
 
@@ -1276,28 +1359,24 @@ NormalCollapseFlowUnitDataContext::NormalCollapseFlowUnitDataContext(
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 bool NormalCollapseFlowUnitDataContext::IsDataPre() {
-  return input_has_stream_start_ && !is_empty_stream;
+  return input_has_stream_start_ && !is_empty_stream_;
 }
 
 bool NormalCollapseFlowUnitDataContext::IsDataPost() {
-  return input_has_stream_end_ && !is_empty_stream;
+  return input_has_stream_end_ && !is_empty_stream_;
 }
-
-void NormalCollapseFlowUnitDataContext::DealWithProcessError(
-    std::shared_ptr<FlowUnitError> error) {
-  if (output_buffer_for_current_stream_ == 0 && input_has_stream_end_) {
-    // no valid data generated, will generate an error buffer
-    FillErrorOutput(error, false);
-  }
-  process_status_ = STATUS_SUCCESS;
-};
-
-void NormalCollapseFlowUnitDataContext::DealWithDataPreError(
-    std::shared_ptr<FlowUnitError> error){};
 
 void NormalCollapseFlowUnitDataContext::UpdateProcessState() {
   is_finished_ = end_flag_received_;
+  if (input_has_stream_end_) {
+    is_datapre_error_ = false;
+  }
 };
+
+Status NormalCollapseFlowUnitDataContext::GenerateOutputError() {
+  FillErrorOutput(false, "", "", true);
+  return STATUS_OK;
+}
 
 bool NormalCollapseFlowUnitDataContext::NeedStreamEndFlag() {
   if (!input_has_stream_end_) {
@@ -1329,6 +1408,14 @@ Status NormalCollapseFlowUnitDataContext::CheckOutputData() {
   }
 
   return STATUS_OK;
+}
+
+Status NormalCollapseFlowUnitDataContext::GenerateOutput() {
+  if (output_buffer_for_current_stream_ >= 1 && !cur_output_error_.empty()) {
+    cur_output_error_.clear();
+  }
+
+  return FlowUnitDataContext::GenerateOutput();
 }
 
 Status NormalCollapseFlowUnitDataContext::GenerateOutputPlaceholder() {
@@ -1409,11 +1496,11 @@ void StreamCollapseFlowUnitDataContext::CollapseNextStream() {
 }
 
 bool StreamCollapseFlowUnitDataContext::IsDataPre() {
-  return input_has_stream_start_ && !is_empty_stream;
+  return input_has_stream_start_ && !is_empty_stream_;
 }
 
 bool StreamCollapseFlowUnitDataContext::IsDataPost() {
-  return input_has_stream_end_ && !is_empty_stream;
+  return input_has_stream_end_ && !is_empty_stream_;
 }
 
 std::shared_ptr<FlowUnitInnerEvent>
@@ -1428,19 +1515,6 @@ StreamCollapseFlowUnitDataContext::GenerateSendEvent() {
   return nullptr;
 }
 
-void StreamCollapseFlowUnitDataContext::DealWithDataPreError(
-    std::shared_ptr<FlowUnitError> error) {}
-
-void StreamCollapseFlowUnitDataContext::DealWithProcessError(
-    std::shared_ptr<FlowUnitError> error) {
-  if (output_buffer_for_current_stream_ == 0 && input_has_stream_end_) {
-    // no valid data generated before error happen, and stream will end at this
-    // process, we need generate an error buffer
-    FillErrorOutput(error, false);
-  }
-  process_status_ = STATUS_SUCCESS;
-}
-
 void StreamCollapseFlowUnitDataContext::UpdateProcessState() {
   if (!input_has_stream_end_) {
     return;
@@ -1448,16 +1522,22 @@ void StreamCollapseFlowUnitDataContext::UpdateProcessState() {
 
   // last stream collapse over, process next stream, reset stream state
   ++current_collapse_order_;
-  is_empty_stream = false;
+  is_empty_stream_ = false;
   end_flag_received_ = false;
   input_stream_cur_buffer_count_ = 0;
   input_stream_max_buffer_count_ = 0;
   output_buffer_for_current_stream_ = 0;
+  is_datapre_error_ = false;
 
   // test ctx finish
   if (input_is_expand_from_end_buffer_) {
     is_finished_ = true;  // this is last packet to collapse
   }
+}
+
+Status StreamCollapseFlowUnitDataContext::GenerateOutputError() {
+  FillErrorOutput(false, "", "", true);
+  return STATUS_OK;
 }
 
 bool StreamCollapseFlowUnitDataContext::NeedStreamEndFlag() {
@@ -1490,6 +1570,14 @@ Status StreamCollapseFlowUnitDataContext::CheckOutputData() {
   }
 
   return STATUS_OK;
+}
+
+Status StreamCollapseFlowUnitDataContext::GenerateOutput() {
+  if (output_buffer_for_current_stream_ >= 1 && !cur_output_error_.empty()) {
+    cur_output_error_.clear();
+  }
+
+  return FlowUnitDataContext::GenerateOutput();
 }
 
 Status StreamCollapseFlowUnitDataContext::GenerateOutputPlaceholder() {

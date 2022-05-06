@@ -89,8 +89,7 @@ class FlowUnitGroup {
 
   void StopTrace(std::shared_ptr<TraceSlice> &slice);
 
-  void PreProcess(FUExecContextList &exec_ctx_list,
-                  FUExecContextList &err_exec_ctx_list);
+  void PreProcess(FUExecContextList &exec_ctx_list);
 
   Status Process(FUExecContextList &exec_ctx_list);
 
