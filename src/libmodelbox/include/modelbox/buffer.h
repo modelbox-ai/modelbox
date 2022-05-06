@@ -48,16 +48,8 @@ class BufferMeta {
   BufferMeta(const BufferMeta& other);
   virtual ~BufferMeta();
 
-  /**
-   * @brief Save current flowuint error to buffer
-   * @param e flowunit error
-   * @return reference of current buffer meta
-   */
-  BufferMeta& SetError(const std::shared_ptr<FlowUnitError>& e);
   BufferMeta& SetStreamMetaContent(const std::string& key,
                                    const std::shared_ptr<void>& content);
-
-  const std::shared_ptr<FlowUnitError>& GetError() const;
 
   /**
    * @brief Copy meta from anoter buffer meta
@@ -114,7 +106,6 @@ class BufferMeta {
 
  private:
   Collection custom_meta_;
-  std::shared_ptr<FlowUnitError> error_;
 };
 
 /**
@@ -208,16 +199,24 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
   /**
    * @brief Save error
-   * @param error flowuint error
+   * @param error_code buffer error code
+   * @param error_msg buffer error message
    * @return buffer reference
    */
-  virtual Buffer& SetError(const std::shared_ptr<FlowUnitError>& error);
+  virtual Buffer& SetError(const std::string& error_code,
+                           const std::string& error_msg);
 
   /**
-   * @brief Get flowunit error
-   * @return flowunit error
+   * @brief Get buffer error code
+   * @return error code
    */
-  virtual const std::shared_ptr<FlowUnitError>& GetError() const;
+  virtual std::string GetErrorCode() const;
+
+  /**
+   * @brief Get buffer error message
+   * @return error message
+   */
+  virtual std::string GetErrorMsg() const;
 
   /**
    * @brief Get buffer size in bytes
@@ -395,6 +394,8 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
   /// @brief Buffer index info in stream
   std::shared_ptr<BufferIndexInfo> index_info_;
+
+  std::shared_ptr<DataError> data_error_;
 
   int priority_{0};
 };

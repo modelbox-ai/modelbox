@@ -30,6 +30,7 @@ class Stream;
 class BufferIndexInfo;
 class Node;
 class Buffer;
+class DataError;
 
 /**
  * @brief define all process for buffer
@@ -161,6 +162,12 @@ class BufferManageView {
   static void SetPriority(const std::shared_ptr<Buffer> &buffer, int priority);
 
   static int GetPriority(const std::shared_ptr<Buffer> &buffer);
+
+  static void SetError(const std::shared_ptr<Buffer> &buffer,
+                       const std::shared_ptr<DataError> &data_error);
+
+  static std::shared_ptr<DataError> GetError(
+      const std::shared_ptr<Buffer> &buffer);
 
   /**
    * @brief record the direct input where this buffer comes from

@@ -35,6 +35,30 @@ class FlowUnitError {
   Status error_status_;
 };
 
+class DataError {
+ public:
+  DataError(const std::string &error_code, const std::string &error_msg);
+
+  virtual ~DataError() {};
+
+  std::string GetErrorCode();
+
+  std::string GetErrorMsg();
+
+  size_t GetErrorDeepth();
+
+  void SetErrorDeepth(size_t error_deepth);
+
+ private:
+  bool new_error_{false};
+
+  std::string error_msg_;
+
+  std::string error_code_;
+
+  size_t error_deepth_{0};
+};
+
 }  // namespace modelbox
 
 #endif  // MODELBOX_ERROR_H_

@@ -20,18 +20,9 @@
 
 namespace modelbox {
 
-BufferMeta::BufferMeta() : error_(nullptr) {}
+BufferMeta::BufferMeta() {}
 
 BufferMeta::~BufferMeta(){};
-
-BufferMeta& BufferMeta::SetError(const std::shared_ptr<FlowUnitError>& e) {
-  error_ = e;
-  return *this;
-}
-
-const std::shared_ptr<FlowUnitError>& BufferMeta::GetError() const {
-  return error_;
-}
 
 Status BufferMeta::CopyMeta(const std::shared_ptr<BufferMeta> buf_meta,
                             bool is_override) {
@@ -46,17 +37,11 @@ Status BufferMeta::CopyMeta(const std::shared_ptr<BufferMeta> buf_meta,
 
 BufferMeta& BufferMeta::operator=(const BufferMeta& other) {
   custom_meta_ = other.custom_meta_;
-  error_ = other.error_;
   return *this;
 }
 
 BufferMeta& BufferMeta::DeepCopy(const BufferMeta& other) {
   custom_meta_ = other.custom_meta_;
-  error_ = nullptr;
-  if (other.error_) {
-    error_ = std::make_shared<FlowUnitError>(*(other.error_));
-  }
-
   return *this;
 }
 
@@ -86,6 +71,7 @@ Buffer::Buffer(const Buffer& other) : Buffer() {
   delayed_copy_dest_mem_flags_ = other.delayed_copy_dest_mem_flags_;
   type_ = other.type_;
   dev_mem_flags_ = other.dev_mem_flags_;
+  data_error_ = other.data_error_;
 }
 
 Status Buffer::Build(size_t size) {
@@ -190,15 +176,28 @@ Status Buffer::SetBufferMutable(bool is_mutable) {
   return dev_mem_->SetContentMutable(is_mutable);
 }
 
-Buffer& Buffer::SetError(const std::shared_ptr<FlowUnitError>& error) {
-  meta_->SetError(error);
+Buffer& Buffer::SetError(const std::string& error_code,
+                         const std::string& error_msg) {
+  data_error_ = std::make_shared<DataError>(error_code, error_msg);
+
   dev_mem_ = nullptr;
   return *this;
 }
 
-bool Buffer::HasError() const { return nullptr != meta_->GetError(); }
-const std::shared_ptr<FlowUnitError>& Buffer::GetError() const {
-  return meta_->GetError();
+bool Buffer::HasError() const { return data_error_ != nullptr; }
+
+std::string Buffer::GetErrorCode() const {
+  if (data_error_ == nullptr) {
+    return "";
+  }
+  return data_error_->GetErrorCode();
+}
+
+std::string Buffer::GetErrorMsg() const {
+  if (data_error_ == nullptr) {
+    return "";
+  }
+  return data_error_->GetErrorMsg();
 }
 
 size_t Buffer::GetBytes() const { return dev_mem_ ? dev_mem_->GetSize() : 0; }

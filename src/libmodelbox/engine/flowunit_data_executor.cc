@@ -239,6 +239,51 @@ void FlowUnitExecData::SetupUserInput() {
   }
 }
 
+Status FlowUnitExecData::CheckStatus(bool one_to_one, bool data_in_one_port) {
+  if (status_ == STATUS_OK || status_ == STATUS_CONTINUE ||
+      status_ == STATUS_SHUTDOWN || status_ == STATUS_STOP) {
+    return STATUS_OK;
+  }
+  MBLOG_INFO << "flowunit " << fu_->GetFlowUnitDesc()->GetFlowUnitName()
+             << " process return: " << status_;
+
+  auto in_count = GetInBufferNum();
+  if (in_count == 0) {
+    in_count = GetExtBufferNum();
+  }
+
+  size_t out_count = in_count;
+  if (!one_to_one || out_count == 0) {
+    out_count = 1;
+  }
+
+  FillErrorOutput(out_count, data_in_one_port);
+  status_ = STATUS_OK;
+
+  return STATUS_OK;
+}
+
+void FlowUnitExecData::FillErrorOutput(size_t out_count,
+                                       bool data_in_one_port) {
+  bool first_port = true;
+  for (auto &out_item : *out_data_) {
+    auto &port_data_list = out_item.second;
+    port_data_list->Reset();
+
+    if (data_in_one_port && !first_port) {
+      continue;
+    }
+    for (size_t i = 0; i < out_count; ++i) {
+      auto buffer = std::make_shared<Buffer>();
+      buffer->SetError(
+          fu_->GetFlowUnitDesc()->GetFlowUnitName() + ".ProcessError",
+          status_.Errormsg());
+      port_data_list->PushBack(buffer);
+    }
+    first_port = false;
+  }
+}
+
 Status FlowUnitExecData::SetupUserOutput(bool one_to_one,
                                          bool data_in_one_port) {
   if (status_ != STATUS_OK && status_ != STATUS_CONTINUE) {
@@ -541,6 +586,20 @@ Status FlowUnitExecDataMapper::CheckOutputNumEqualInput(
   if (in_num != out_num) {
     return {STATUS_FAULT,
             "Output number must equals input number in normal flowunit"};
+  }
+
+  return STATUS_OK;
+}
+
+Status FlowUnitExecDataMapper::CheckStatus(bool one_to_one,
+                                           bool data_in_one_port) {
+  for (auto &mapped_ctx_data : mapped_data_list_) {
+    for (auto &mapped_batch_data : mapped_ctx_data) {
+      auto ret = mapped_batch_data->CheckStatus(one_to_one, data_in_one_port);
+      if (!ret) {
+        return ret;
+      }
+    }
   }
 
   return STATUS_OK;
@@ -974,6 +1033,18 @@ Status FlowUnitExecDataView::CheckOutputDataNumber(bool data_in_one_port) {
   return STATUS_OK;
 }
 
+Status FlowUnitExecDataView::CheckStatus(bool one_to_one,
+                                         bool data_in_one_port) {
+  for (auto &mapper_item : mapper_of_flowunit_) {
+    auto &mapper = mapper_item.second;
+    auto ret = mapper->CheckStatus(one_to_one, data_in_one_port);
+    if (!ret) {
+      return ret;
+    }
+  }
+  return STATUS_OK;
+}
+
 Status FlowUnitExecDataView::SetupUserOutput(bool one_to_one,
                                              bool data_in_one_port) {
   for (auto &mapper_item : mapper_of_flowunit_) {
@@ -1225,17 +1296,23 @@ Status FlowUnitDataExecutor::SaveExecuteOutput(
     }
   }
 
+  bool one_to_one =
+      node->GetFlowType() == NORMAL && node->GetOutputType() == ORIGIN;
+  auto ret = exec_view.CheckStatus(one_to_one, data_in_one_port);
+  if (!ret) {
+    MBLOG_ERROR << "check data context status failed, err " << ret;
+    return STATUS_FAULT;
+  }
+
   if (node_has_output) {
-    auto ret = exec_view.SetupUserOutput(
-        node->GetFlowType() == NORMAL && node->GetOutputType() == ORIGIN,
-        data_in_one_port);
+    ret = exec_view.SetupUserOutput(one_to_one, data_in_one_port);
     if (!ret) {
       MBLOG_ERROR << "save buffer inherit info failed, err " << ret;
       return STATUS_FAULT;
     }
   }
 
-  auto ret = exec_view.SaveOutputToExecCtx();
+  ret = exec_view.SaveOutputToExecCtx();
   if (!ret) {
     MBLOG_ERROR << "setup failed, err " << ret;
     return ret;

@@ -109,8 +109,12 @@ class FlowUnitExecData {
 
   Status SetupUserOutput(bool one_to_one, bool data_in_one_port);
 
+  Status CheckStatus(bool one_to_one, bool data_in_one_port);
+
  private:
   void MakeCopyForUserOutput();
+
+  void FillErrorOutput(size_t out_count, bool data_in_one_port);
 
   Status SaveProcessOneToOne(
       std::shared_ptr<modelbox::BufferListMap> parent_data, size_t data_count,
@@ -158,6 +162,8 @@ class FlowUnitExecDataMapper {
 
   Status CheckOutputDataNumber(bool data_in_one_port);
 
+  Status CheckStatus(bool one_to_one, bool data_in_one_port);
+  
   Status SetupUserOutput(bool one_to_one, bool data_in_one_port);
 
   Status SaveDataToExecCtx();
@@ -231,6 +237,8 @@ class FlowUnitExecDataView {
   const BatchedFUExecDataCtxList &GetFlowUnitProcessData(FlowUnit *flowunit);
 
   Status CheckOutputDataNumber(bool data_in_one_port);
+
+  Status CheckStatus(bool one_to_one, bool data_in_one_port);
 
   Status SetupUserOutput(bool one_to_one, bool data_in_one_port);
 

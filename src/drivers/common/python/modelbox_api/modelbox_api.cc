@@ -655,7 +655,8 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
                     })
                .def("has_error", &modelbox::Buffer::HasError)
                .def("set_error", &modelbox::Buffer::SetError)
-               .def("get_error", &modelbox::Buffer::GetError)
+               .def("get_error_code", &modelbox::Buffer::GetErrorCode)
+               .def("get_error_msg", &modelbox::Buffer::GetErrorMsg)
                .def("get_bytes", &modelbox::Buffer::GetBytes)
                .def("copy_meta",
                     [](Buffer &buffer, Buffer &other) {
@@ -720,6 +721,7 @@ void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
                PythonBufferSet(*buffer, key, obj);
              }
            })
+      .def("set_error", &modelbox::BufferList::SetError)
       .def("copy_meta", &modelbox::BufferList::CopyMeta)
       .def("__len__", [](const modelbox::BufferList &bl) { return bl.Size(); })
       .def("__iter__",
@@ -869,7 +871,6 @@ void ModelboxPyApiSetUpDataContext(pybind11::module &m) {
       .def("external", &modelbox::DataContext::External)
       .def("event", &modelbox::DataContext::Event)
       .def("has_error", &modelbox::DataContext::HasError)
-      .def("get_error", &modelbox::DataContext::GetError)
       .def("send_event", &modelbox::DataContext::SendEvent)
       .def("set_private_string",
            [](DataContext &ctx, const std::string &key,

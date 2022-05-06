@@ -87,7 +87,7 @@ TEST_F(BufferTest, MutableData) {
     EXPECT_EQ(buffer_data[i], data[i]);
   }
 
-  buffer.SetError(std::make_shared<FlowUnitError>("exception test"));
+  buffer.SetError("BufferTest.ProcessError", "exception test");
 
   auto buffer_data2 = (int *)buffer.MutableData();
   EXPECT_EQ(nullptr, buffer_data2);
@@ -98,7 +98,7 @@ TEST_F(BufferTest, SetException) {
   Buffer buffer;
   EXPECT_FALSE(buffer.HasError());
 
-  buffer.SetError(std::make_shared<FlowUnitError>("exception test"));
+  buffer.SetError("BufferTest.ProcessError", "exception test");
   EXPECT_TRUE(buffer.HasError());
 }
 

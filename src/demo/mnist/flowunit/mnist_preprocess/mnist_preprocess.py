@@ -49,8 +49,11 @@ class MnistPreprocess(modelbox.FlowUnit):
                 add_buffer = modelbox.Buffer(self.get_bind_device(), infer_data)
                 out_data.push_back(add_buffer)
             else:
-                print("wrong key of request_body")
-                return modelbox.Status.StatusCode.STATUS_FAULT
+                error_msg = "wrong key of request_body"
+                modelbox.error(error_msg)
+                add_buffer = modelbox.Buffer(self.get_bind_device(), "")
+                add_buffer.set_error("MnistPreprocess.BadRequest", error_msg)
+                out_data.push_back(add_buffer)
 
         return modelbox.Status.StatusCode.STATUS_SUCCESS
 

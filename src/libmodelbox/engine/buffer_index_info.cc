@@ -144,4 +144,14 @@ int BufferManageView::GetPriority(const std::shared_ptr<Buffer> &buffer) {
   return buffer->GetPriority();
 }
 
+void BufferManageView::SetError(const std::shared_ptr<Buffer> &buffer,
+              const std::shared_ptr<DataError> &data_error) {
+  buffer->data_error_ = data_error;
+}
+
+std::shared_ptr<DataError> BufferManageView::GetError(
+    const std::shared_ptr<Buffer> &buffer) {
+  return buffer->data_error_;
+}
+
 }  // namespace modelbox

@@ -80,8 +80,7 @@ void FlowUnitGroup::StopTrace(std::shared_ptr<TraceSlice> &slice) {
   }
 }
 
-void FlowUnitGroup::PreProcess(FUExecContextList &exec_ctx_list,
-                               FUExecContextList &err_exec_ctx_list) {
+void FlowUnitGroup::PreProcess(FUExecContextList &exec_ctx_list) {
   auto exec_ctx_iter = exec_ctx_list.begin();
   while (exec_ctx_iter != exec_ctx_list.end()) {
     auto exec_ctx = *exec_ctx_iter;
@@ -95,21 +94,9 @@ void FlowUnitGroup::PreProcess(FUExecContextList &exec_ctx_list,
       if (status != STATUS_SUCCESS) {
         MBLOG_INFO << "flowunit " << unit_name_
                    << " data pre return: " << status;
-        auto error = std::make_shared<FlowUnitError>(this->unit_name_,
-                                                     "DataPre", status);
-        data_ctx->DealWithDataPreError(error);
-        exec_ctx_iter = exec_ctx_list.erase(exec_ctx_iter);
-        err_exec_ctx_list.push_back(exec_ctx);
-        continue;
+        auto error_msg = status.Errormsg();
+        data_ctx->DealWithDataPreError(unit_name_ + ".DataPreError", error_msg);
       }
-    }
-
-    // error buffer only affect process
-    if (data_ctx->HasError() && !data_ctx->IsDataErrorVisible()) {
-      data_ctx->DealWithDataError();
-      exec_ctx_iter = exec_ctx_list.erase(exec_ctx_iter);
-      err_exec_ctx_list.push_back(exec_ctx);
-      continue;
     }
 
     ++exec_ctx_iter;
@@ -151,13 +138,6 @@ Status FlowUnitGroup::PostProcess(FUExecContextList &exec_ctx_list) {
   while (exec_ctx_iter != exec_ctx_list.end()) {
     auto exec_ctx = *exec_ctx_iter;
     const auto &data_ctx = exec_ctx->GetDataCtx();
-    if (data_ctx->IsErrorStatus()) {
-      MBLOG_INFO << "flowunit " << unit_name_
-                 << " process return: " << data_ctx->GetStatus();
-      auto error = std::make_shared<FlowUnitError>(this->unit_name_, "Process",
-                                                   data_ctx->GetStatus());
-      data_ctx->DealWithProcessError(error);
-    }
 
     status = data_ctx->PostProcess();
     if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
@@ -218,21 +198,16 @@ FUExecContextList FlowUnitGroup::CreateExecCtx(
 
 Status FlowUnitGroup::Run(
     std::list<std::shared_ptr<FlowUnitDataContext>> &data_ctx_list) {
-  FUExecContextList err_exec_ctx_list;
   Status status = STATUS_OK;
   Status ret_status = STATUS_OK;
   auto exec_ctx_list = CreateExecCtx(data_ctx_list);
   try {
-    PreProcess(exec_ctx_list, err_exec_ctx_list);
+    PreProcess(exec_ctx_list);
 
     status = Process(exec_ctx_list);
     if (status == STATUS_STOP || status == STATUS_SHUTDOWN) {
       ret_status = status;
       return ret_status;
-    }
-
-    for (auto &err_ctx : err_exec_ctx_list) {
-      exec_ctx_list.push_back(err_ctx);
     }
 
     status = PostProcess(exec_ctx_list);

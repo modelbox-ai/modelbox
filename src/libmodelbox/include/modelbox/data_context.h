@@ -110,8 +110,6 @@ class DataContext {
 
   virtual bool HasError() = 0;
 
-  virtual std::shared_ptr<FlowUnitError> GetError() = 0;
-
   virtual void SendEvent(std::shared_ptr<FlowUnitEvent> event) = 0;
 
   virtual void SetPrivate(const std::string &key,
@@ -159,8 +157,6 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   std::shared_ptr<FlowUnitEvent> Event() override;
 
   bool HasError() override;
-
-  std::shared_ptr<FlowUnitError> GetError() override;
 
   void SetPrivate(const std::string &key,
                   std::shared_ptr<void> private_content) override;
@@ -223,6 +219,8 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
   void SetSkippable(bool skippable);
 
+  void SetDataPreError(bool is_error);
+
   /**
    * @brief call after flowunit process
    **/
@@ -244,9 +242,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   virtual bool IsDataPre() { return false; }
   virtual bool IsDataPost() { return false; }
 
-  virtual void DealWithDataError();
-  virtual void DealWithDataPreError(std::shared_ptr<FlowUnitError> error);
-  virtual void DealWithProcessError(std::shared_ptr<FlowUnitError> error);
+  virtual void DealWithDataPreError(const std::string &error_code, const std::string &error_msg);
 
   /**
    * @brief call after flowunit group run
@@ -267,6 +263,8 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
   virtual Status GenerateOutputPlaceholder();
 
+  virtual Status GenerateOutputError();
+
   virtual Status GenerateOutput();
 
   virtual Status AppendEndFlag();
@@ -276,7 +274,8 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   void FillPlaceholderOutput(bool from_valid_input = false,
                              bool same_with_input_num = true);
 
-  void FillErrorOutput(std::shared_ptr<FlowUnitError> error,
+  void FillErrorOutput(bool from_valid, const std::string &error_msg,
+                       const std::string &error_code,
                        bool same_with_input_num = true);
 
   bool HasValidOutput();
@@ -305,11 +304,15 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   PortDataMap cur_input_placeholder_;
   // end for one stream, empty buffer
   PortDataMap cur_input_end_flag_;
+  // error buffer
+  PortDataMap cur_input_error_;
   // flowunit output
   std::unordered_map<std::string, std::shared_ptr<BufferList>>
       cur_output_valid_data_;
   // empty for drop, empty for condition
   PortDataMap cur_output_placeholder_;
+  // error buffer
+  PortDataMap cur_output_error_;
   // total output
   PortDataMap cur_output_;
 
@@ -320,11 +323,12 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   bool is_finished_{false};  // will not process this data ctx again
 
   // state for stream
-  bool is_empty_stream{false};  // end_flag is first buffer of stream
+  bool is_empty_stream_{false};  // end_flag is first buffer of stream
   bool end_flag_received_{false};
   size_t input_stream_max_buffer_count_{0};
   size_t input_stream_cur_buffer_count_{0};
   bool end_flag_generated_{false};
+  bool is_datapre_error_{false};
 
   // state for single run
   bool is_skippable_{false};  // no data
@@ -334,8 +338,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
   bool input_has_stream_start_{false};
   bool input_has_stream_end_{false};
-
-  std::shared_ptr<FlowUnitError> error_;
+  bool input_valid_has_error_buffer_{false};
 
  private:
   void InitStatistic();
@@ -409,8 +412,6 @@ class StreamFlowUnitDataContext : public FlowUnitDataContext {
   bool IsDataPre() override;
   bool IsDataPost() override;
 
-  void DealWithDataPreError(std::shared_ptr<FlowUnitError> error) override;
-
   void UpdateProcessState() override;
 
  protected:
@@ -429,8 +430,6 @@ class NormalExpandFlowUnitDataContext : public FlowUnitDataContext {
                                   std::shared_ptr<Session> session);
 
   virtual ~NormalExpandFlowUnitDataContext() = default;
-
-  void DealWithDataPreError(std::shared_ptr<FlowUnitError> error) override;
 
   void UpdateProcessState() override;
 
@@ -456,8 +455,6 @@ class StreamExpandFlowUnitDataContext : public FlowUnitDataContext {
   bool IsDataPost() override;
 
   std::shared_ptr<FlowUnitInnerEvent> GenerateSendEvent() override;
-
-  void DealWithDataPreError(std::shared_ptr<FlowUnitError> error) override;
 
   void UpdateProcessState() override;
 
@@ -494,10 +491,9 @@ class NormalCollapseFlowUnitDataContext : public FlowUnitDataContext {
   bool IsDataPre() override;
   bool IsDataPost() override;
 
-  void DealWithDataPreError(std::shared_ptr<FlowUnitError> error) override;
-  void DealWithProcessError(std::shared_ptr<FlowUnitError> error) override;
-
   void UpdateProcessState() override;
+
+  Status GenerateOutputError() override;
 
  protected:
   bool SkipInheritInputToMatchNode() override { return true; };
@@ -507,6 +503,8 @@ class NormalCollapseFlowUnitDataContext : public FlowUnitDataContext {
   bool NeedStreamEndFlag() override;
 
   Status CheckOutputData() override;
+
+  Status GenerateOutput() override;
 
   void UpdateBufferIndexInfo(
       std::shared_ptr<BufferIndexInfo> cur_buffer,
@@ -535,10 +533,9 @@ class StreamCollapseFlowUnitDataContext : public FlowUnitDataContext {
 
   std::shared_ptr<FlowUnitInnerEvent> GenerateSendEvent() override;
 
-  void DealWithDataPreError(std::shared_ptr<FlowUnitError> error) override;
-  void DealWithProcessError(std::shared_ptr<FlowUnitError> error) override;
-
   void UpdateProcessState() override;
+
+  Status GenerateOutputError() override;
 
  protected:
   void UpdateInputInfo() override;
@@ -550,6 +547,8 @@ class StreamCollapseFlowUnitDataContext : public FlowUnitDataContext {
   bool NeedStreamEndFlag() override;
 
   Status CheckOutputData() override;
+
+  Status GenerateOutput() override;
 
   void UpdateBufferIndexInfo(
       std::shared_ptr<BufferIndexInfo> cur_buffer,
@@ -584,8 +583,6 @@ class ExecutorDataContext : public DataContext {
   virtual std::shared_ptr<BufferList> External() override;
 
   virtual bool HasError() override;
-
-  virtual std::shared_ptr<FlowUnitError> GetError() override;
 
   virtual std::shared_ptr<FlowUnitEvent> Event() override;
 
