@@ -65,6 +65,12 @@ class BufferList {
    */
   BufferList(const std::vector<std::shared_ptr<Buffer>>& buffer_vector);
 
+  /**
+   * @brief BufferList from other BufferList
+   * @param other BufferList
+   */
+  BufferList(const BufferList& other);
+
   virtual ~BufferList() = default;
 
   /**

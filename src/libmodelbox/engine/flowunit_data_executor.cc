@@ -111,14 +111,13 @@ std::shared_ptr<BufferListMap> FlowUnitExecData::GetInData() {
   return in_data_;
 }
 
-std::shared_ptr<BufferList> FlowUnitExecData::GetInData(
-    const std::string &name) {
-  if (!HasInData(name)) {
-    return nullptr;
-  }
+std::shared_ptr<BufferListMap> FlowUnitExecData::GetInDataForUser() {
+  return in_data_for_user_;
+}
 
-  // avoid user change input buffer list content
-  return std::make_shared<BufferList>(*(in_data_->at(name)));
+std::shared_ptr<BufferList> FlowUnitExecData::GetInDataForUser(
+    const std::string &name) {
+  return HasInData(name) ? in_data_for_user_->at(name) : nullptr;
 }
 
 void FlowUnitExecData::SetInData(
@@ -163,9 +162,13 @@ std::shared_ptr<BufferListMap> FlowUnitExecData::GetExternalData() {
   return ext_data_;
 }
 
-std::shared_ptr<BufferList> FlowUnitExecData::GetExternalData(
+std::shared_ptr<BufferListMap> FlowUnitExecData::GetExternalDataForUser() {
+  return ext_data_for_user_;
+}
+
+std::shared_ptr<BufferList> FlowUnitExecData::GetExternalDataForUser(
     const std::string &name) {
-  return HasExternData(name) ? ext_data_->at(name) : nullptr;
+  return HasExternData(name) ? ext_data_for_user_->at(name) : nullptr;
 }
 
 size_t FlowUnitExecData::GetInBufferNum() {
@@ -219,22 +222,32 @@ bool FlowUnitExecData::HasExternData(const std::string &name) const {
   return ext_data_->find(name) != ext_data_->end();
 }
 
-void FlowUnitExecData::FreezeData() {
+void FlowUnitExecData::SetupUserInput() {
+  // freeze data and make copy to avoid user modify origin input
+  in_data_for_user_ = std::make_shared<BufferListMap>();
   for (auto &in_item : *in_data_) {
-    in_item.second->SetMutable(false);
+    auto in_buffer_list_copy = std::make_shared<BufferList>(*in_item.second);
+    in_buffer_list_copy->SetMutable(false);
+    (*in_data_for_user_)[in_item.first] = in_buffer_list_copy;
   }
 
+  ext_data_for_user_ = std::make_shared<BufferListMap>();
   for (auto &ext_item : *ext_data_) {
-    ext_item.second->SetMutable(false);
+    auto ext_buffer_list_copy = std::make_shared<BufferList>(*ext_item.second);
+    ext_buffer_list_copy->SetMutable(false);
+    (*ext_data_for_user_)[ext_item.first] = ext_buffer_list_copy;
   }
 }
 
-Status FlowUnitExecData::SaveProcessInfo(bool one_to_one,
+Status FlowUnitExecData::SetupUserOutput(bool one_to_one,
                                          bool data_in_one_port) {
   if (status_ != STATUS_OK && status_ != STATUS_CONTINUE) {
     // process error, no need to save inherit info
     return STATUS_OK;
   }
+
+  // avoid user push same buffer as multi output
+  MakeCopyForUserOutput();
 
   auto in_count = GetInBufferNum();
   auto parent_data = in_data_;
@@ -253,6 +266,20 @@ Status FlowUnitExecData::SaveProcessInfo(bool one_to_one,
   }
 
   return SaveProcessNToM(parent_data);
+}
+
+void FlowUnitExecData::MakeCopyForUserOutput() {
+  auto output = std::make_shared<BufferListMap>();
+  for (auto &out_item : *out_data_) {
+    auto output_buffer_list_copy =
+        std::make_shared<BufferList>(*out_item.second);
+    (*output)[out_item.first] = output_buffer_list_copy;
+    for (auto &buffer : *output_buffer_list_copy) {
+      buffer->ClearDelayedCopyDestinationInfo();
+    }
+  }
+
+  out_data_ = output;
 }
 
 Status FlowUnitExecData::SaveProcessOneToOne(
@@ -414,10 +441,10 @@ Status FlowUnitExecDataMapper::MoveDataToTargetDevice(
   return STATUS_SUCCESS;
 }
 
-void FlowUnitExecDataMapper::FreezeData() {
+void FlowUnitExecDataMapper::SetupUserInput() {
   for (auto &data_batch : mapped_data_list_) {
     for (auto &data : data_batch) {
-      data->FreezeData();
+      data->SetupUserInput();
     }
   }
 }
@@ -519,12 +546,12 @@ Status FlowUnitExecDataMapper::CheckOutputNumEqualInput(
   return STATUS_OK;
 }
 
-Status FlowUnitExecDataMapper::SaveProcessInfo(bool one_to_one,
+Status FlowUnitExecDataMapper::SetupUserOutput(bool one_to_one,
                                                bool data_in_one_port) {
   for (auto &mapped_ctx_data : mapped_data_list_) {
     for (auto &mapped_batch_data : mapped_ctx_data) {
       auto ret =
-          mapped_batch_data->SaveProcessInfo(one_to_one, data_in_one_port);
+          mapped_batch_data->SetupUserOutput(one_to_one, data_in_one_port);
       if (!ret) {
         return ret;
       }
@@ -892,7 +919,7 @@ Status FlowUnitExecDataView::DataLoadTask(
     return ret;
   }
 
-  exec_data_mapper->FreezeData();
+  exec_data_mapper->SetupUserInput();
   std::lock_guard<std::mutex> lock(data_of_flowunit_lock_);
   data_of_flowunit_[flowunit] = exec_data_mapper->GetBatchedExecDataCtxList();
   return STATUS_OK;
@@ -947,11 +974,11 @@ Status FlowUnitExecDataView::CheckOutputDataNumber(bool data_in_one_port) {
   return STATUS_OK;
 }
 
-Status FlowUnitExecDataView::SaveProcessInfo(bool one_to_one,
+Status FlowUnitExecDataView::SetupUserOutput(bool one_to_one,
                                              bool data_in_one_port) {
   for (auto &mapper_item : mapper_of_flowunit_) {
     auto &mapper = mapper_item.second;
-    auto ret = mapper->SaveProcessInfo(one_to_one, data_in_one_port);
+    auto ret = mapper->SetupUserOutput(one_to_one, data_in_one_port);
     if (!ret) {
       return ret;
     }
@@ -1199,7 +1226,7 @@ Status FlowUnitDataExecutor::SaveExecuteOutput(
   }
 
   if (node_has_output) {
-    auto ret = exec_view.SaveProcessInfo(
+    auto ret = exec_view.SetupUserOutput(
         node->GetFlowType() == NORMAL && node->GetOutputType() == ORIGIN,
         data_in_one_port);
     if (!ret) {

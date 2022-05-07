@@ -71,7 +71,9 @@ class FlowUnitExecData {
 
   std::shared_ptr<BufferListMap> GetInData();
 
-  std::shared_ptr<BufferList> GetInData(const std::string &name);
+  std::shared_ptr<BufferListMap> GetInDataForUser();
+
+  std::shared_ptr<BufferList> GetInDataForUser(const std::string &name);
 
   std::shared_ptr<BufferListMap> GetOutData();
 
@@ -83,7 +85,9 @@ class FlowUnitExecData {
 
   std::shared_ptr<BufferListMap> GetExternalData();
 
-  std::shared_ptr<BufferList> GetExternalData(const std::string &name);
+  std::shared_ptr<BufferListMap> GetExternalDataForUser();
+
+  std::shared_ptr<BufferList> GetExternalDataForUser(const std::string &name);
 
   size_t GetInBufferNum();
 
@@ -101,11 +105,13 @@ class FlowUnitExecData {
 
   bool HasExternData(const std::string &name) const;
 
-  void FreezeData();
+  void SetupUserInput();
 
-  Status SaveProcessInfo(bool one_to_one, bool data_in_one_port);
+  Status SetupUserOutput(bool one_to_one, bool data_in_one_port);
 
  private:
+  void MakeCopyForUserOutput();
+
   Status SaveProcessOneToOne(
       std::shared_ptr<modelbox::BufferListMap> parent_data, size_t data_count,
       bool data_in_one_port);
@@ -114,12 +120,14 @@ class FlowUnitExecData {
 
   std::shared_ptr<FlowUnit> fu_;
   std::shared_ptr<BufferListMap> in_data_;
+  std::shared_ptr<BufferListMap> in_data_for_user_;
   std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
       in_data_cache_;
   std::shared_ptr<BufferListMap> out_data_;
   std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
       out_data_cache_;
   std::shared_ptr<BufferListMap> ext_data_;
+  std::shared_ptr<BufferListMap> ext_data_for_user_;
   Status status_{STATUS_OK};
 };
 
@@ -144,13 +152,13 @@ class FlowUnitExecDataMapper {
 
   Status MoveToTargetDevice(bool need_contiguous);
 
-  void FreezeData();
+  void SetupUserInput();
 
   BatchedFUExecDataCtxList GetBatchedExecDataCtxList();
 
   Status CheckOutputDataNumber(bool data_in_one_port);
 
-  Status SaveProcessInfo(bool one_to_one, bool data_in_one_port);
+  Status SetupUserOutput(bool one_to_one, bool data_in_one_port);
 
   Status SaveDataToExecCtx();
 
@@ -224,7 +232,7 @@ class FlowUnitExecDataView {
 
   Status CheckOutputDataNumber(bool data_in_one_port);
 
-  Status SaveProcessInfo(bool one_to_one, bool data_in_one_port);
+  Status SetupUserOutput(bool one_to_one, bool data_in_one_port);
 
   Status SaveOutputToExecCtx();
 

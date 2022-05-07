@@ -849,7 +849,7 @@ ExecutorDataContext::ExecutorDataContext(
 
 std::shared_ptr<BufferList> ExecutorDataContext::Input(
     const std::string &port) const {
-  return data_->GetInData(port);
+  return data_->GetInDataForUser(port);
 }
 
 std::shared_ptr<BufferList> ExecutorDataContext::Output(
@@ -858,7 +858,7 @@ std::shared_ptr<BufferList> ExecutorDataContext::Output(
 }
 
 std::shared_ptr<BufferListMap> ExecutorDataContext::Input() const {
-  return data_->GetInData();
+  return data_->GetInDataForUser();
 }
 
 std::shared_ptr<BufferListMap> ExecutorDataContext::Output() {
@@ -866,7 +866,7 @@ std::shared_ptr<BufferListMap> ExecutorDataContext::Output() {
 }
 
 std::shared_ptr<BufferList> ExecutorDataContext::External() {
-  return data_->GetExternalData(EXTERNAL_PORT_NAME);
+  return data_->GetExternalDataForUser(EXTERNAL_PORT_NAME);
 }
 
 bool ExecutorDataContext::HasError() { return origin_ctx_->HasError(); };

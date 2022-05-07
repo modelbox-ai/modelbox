@@ -203,7 +203,7 @@ Status ExternalDataMapImpl::Recv(OutputBufferList& map_buffer_list,
       }
 
       for (auto& buffer : *port_data_list) {
-        buffer_list->PushBack(buffer);
+        buffer_list->PushBack(buffer->Copy());
       }
     }
   }
