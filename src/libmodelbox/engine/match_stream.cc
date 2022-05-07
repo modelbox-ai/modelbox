@@ -317,16 +317,21 @@ Status InputMatchStreamManager::LoadData(
     return STATUS_OK;
   }
 
+  bool has_read_data = false;
   for (auto& data_port : data_ports) {
     auto& port_name = data_port->GetName();
     auto read_count = GetReadCount(port_name);
     if (read_count == 0) {
       // too much cache for this port, stop read this port
+      data_port->SetActiveState(false);
       continue;
     }
 
     std::vector<std::shared_ptr<Buffer>> buffer_list;
     data_port->Recv(buffer_list, read_count);
+    if (!buffer_list.empty()) {
+      has_read_data = true;
+    }
     auto backward_level = port_inherit_backward_level_[port_name];
     for (auto& buffer : buffer_list) {
       if (drop_filter && drop_filter(buffer)) {
@@ -337,6 +342,13 @@ Status InputMatchStreamManager::LoadData(
       if (!ret) {
         return {STATUS_FAULT, "port " + port_name + " match stream failed"};
       }
+    }
+  }
+
+  if (has_read_data) {
+    // cache changed, we need activate all port to trigger node run
+    for (auto& port : data_ports) {
+      port->SetActiveState(true);
     }
   }
 
@@ -459,12 +471,16 @@ bool InputMatchStreamManager::InitInheritBackwardLevel(
     std::vector<std::shared_ptr<InPort>>& data_ports) {
   size_t min_deepth = SIZE_MAX;
   std::unordered_map<std::string, size_t> port_inherit_deepth_map;
+  auto all_port_has_data = true;
+  std::vector<std::shared_ptr<InPort>> valid_ports;
+  valid_ports.reserve(data_ports.size());
   for (auto& port : data_ports) {
     std::shared_ptr<Buffer> first_buffer;
     auto get_result = port->GetQueue()->Front(&first_buffer);
     if (!get_result) {
-      // not all port has data, can not test match releationship
-      return false;
+      // this port has no data, can not test match releationship
+      all_port_has_data = false;
+      continue;
     }
 
     auto buffer_index = BufferManageView::GetIndexInfo(first_buffer);
@@ -473,6 +489,18 @@ bool InputMatchStreamManager::InitInheritBackwardLevel(
     auto deepth = inherit_info->GetDeepth();
     min_deepth = std::min(min_deepth, deepth);
     port_inherit_deepth_map[port->GetName()] = deepth;
+
+    valid_ports.push_back(port);
+  }
+
+  if (!all_port_has_data) {
+    // we need supress the valid port, only invalid port has data can trigger
+    // this node run
+    for (auto& valid_port : valid_ports) {
+      valid_port->SetActiveState(false);
+    }
+
+    return false;
   }
 
   // all match to min deepth
