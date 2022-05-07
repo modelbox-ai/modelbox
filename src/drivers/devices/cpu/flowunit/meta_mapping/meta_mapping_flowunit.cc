@@ -179,7 +179,6 @@ modelbox::Status MetaMappingFlowUnit::Process(
   auto output_buffer_list = ctx->Output(OUTPUT_DATA);
   for (auto &buffer : *input_buffer_list) {
     output_buffer_list->PushBack(buffer);
-    buffer = output_buffer_list->Back();
     modelbox::Any *src_val = nullptr;
     bool exist = false;
     std::tie(src_val, exist) = buffer->Get(src_meta_name_);

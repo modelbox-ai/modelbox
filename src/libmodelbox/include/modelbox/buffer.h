@@ -370,6 +370,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
   template <typename QueueType, typename Compare>
   friend class NotifyPort;
   friend class BufferManageView;
+  friend class FlowUnitExecData;
 
   void SetPriority(int priority);
 

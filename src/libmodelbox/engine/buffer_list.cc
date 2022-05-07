@@ -38,6 +38,22 @@ BufferList::BufferList(
   buffer_list_.assign(buffer_vector.begin(), buffer_vector.end());
 }
 
+BufferList::BufferList(const BufferList& other) {
+  buffer_list_.clear();
+  is_contiguous_ = other.is_contiguous_;
+  dev_mem_ = other.dev_mem_;
+  dev_mem_flags_ = other.dev_mem_flags_;
+  buffer_list_.reserve(other.buffer_list_.size());
+  for (auto& buffer : other) {
+    if (buffer == nullptr) {
+      buffer_list_.push_back(nullptr);
+      continue;
+    }
+
+    buffer_list_.push_back(buffer->Copy());
+  }
+}
+
 void BufferList::Copy(
     const std::vector<std::shared_ptr<Buffer>>& buffer_vector) {
   buffer_list_.assign(buffer_vector.begin(), buffer_vector.end());
@@ -91,9 +107,7 @@ const std::shared_ptr<Buffer>& BufferList::operator[](size_t pos) const {
 }
 
 void BufferList::PushBack(const std::shared_ptr<Buffer>& buf) {
-  // ensure each buffer container is unique
-  buf->ClearDelayedCopyDestinationInfo();
-  buffer_list_.push_back(buf->Copy());
+  buffer_list_.push_back(buf);
   SetNoContiguous();
 }
 
