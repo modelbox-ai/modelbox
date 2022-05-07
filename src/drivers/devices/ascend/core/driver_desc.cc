@@ -17,11 +17,13 @@
 
 #include "modelbox/device/ascend/device_ascend.h"
 #include "modelbox/base/driver_api_helper.h"
+#include "modelbox/device/ascend/device_acl_module.h"
 
 #include <stdio.h>
 #include <memory>
 
 std::shared_ptr<modelbox::Timer> kDeviceTimer;
+std::shared_ptr<Acl> kAcl;
 
 modelbox::Timer *GetTimer() { return kDeviceTimer.get(); }
 
@@ -36,11 +38,15 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetType(modelbox::DEVICE_TYPE);
   desc->SetName(modelbox::DEVICE_DRIVER_NAME);
   desc->SetDescription(modelbox::DEVICE_DRIVER_DESCRIPTION);
-
+  //desc->SetNodelete(true);
   return;
 }
 
 modelbox::Status DriverInit() {
+  if (kAcl == nullptr) {
+    kAcl = std::make_shared<Acl>();
+  }
+
   if (kDeviceTimer != nullptr) {
     return modelbox::STATUS_OK;
   } 

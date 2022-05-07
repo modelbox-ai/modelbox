@@ -29,11 +29,9 @@ const size_t SIZE_MB = 1024 * 1024;
 
 namespace modelbox {
 Ascend::Ascend(const std::shared_ptr<DeviceMemoryManager> &mem_mgr)
-    : Device(mem_mgr) {
-  aclInit(nullptr);
-}
+    : Device(mem_mgr) {}
 
-Ascend::~Ascend() { aclFinalize(); }
+Ascend::~Ascend() {}
 
 const std::string Ascend::GetType() const { return DEVICE_TYPE; }
 
