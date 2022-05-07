@@ -91,27 +91,20 @@ modelbox::Status MindSporeInference::CheckMindSporeInfo(
     const std::vector<std::string> &type_list) {
   if (tensor_list.size() != name_list.size() ||
       tensor_list.size() != type_list.size()) {
-    auto err_msg = "model input size " + std::to_string(tensor_list.size()) +
-                   " does not match for config file input name or type size " +
+    auto err_msg = "model port size " + std::to_string(tensor_list.size()) +
+                   " does not match for config file port name or type size " +
                    std::to_string(name_list.size());
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_BADCONF, err_msg};
   }
 
   for (size_t i = 0; i < tensor_list.size(); ++i) {
-    std::string name(tensor_list[i].Name());
-    if (name != name_list[i]) {
-      auto err_msg = "model input name " + name +
-                     " does not match for config file input name " +
-                     name_list[i];
-      MBLOG_ERROR << err_msg;
-      return {modelbox::STATUS_BADCONF, err_msg};
-    }
-
+    MBLOG_INFO << "node port name: " << name_list[i]
+               << ", model port name: " << tensor_list[i].Name();
     auto type = tensor_list[i].DataType();
     if (data_type_map[type] != type_list[i]) {
-      auto err_msg = "model input name " + data_type_map[type] +
-                     " does not match for config file input name " +
+      auto err_msg = "model port name " + data_type_map[type] +
+                     " does not match for config file port name " +
                      type_list[i];
       MBLOG_ERROR << err_msg;
       return {modelbox::STATUS_BADCONF, err_msg};
@@ -221,6 +214,7 @@ modelbox::Status MindSporeInference::Init(
   }
 
   batch_size_ = size;
+  io_list_ = io_list;
   return modelbox::STATUS_OK;
 }
 
@@ -230,8 +224,9 @@ modelbox::Status MindSporeInference::Infer(
   std::vector<mindspore::MSTensor> ms_inputs;
   for (size_t i = 0; i < input_tensor.size(); ++i) {
     auto name = input_tensor[i].Name();
-    auto input_buffer_list = data_ctx->Input(name);
-    MBLOG_DEBUG << "input_buffer_list: " << name
+    auto portname = io_list_.input_name_list[i];
+    auto input_buffer_list = data_ctx->Input(portname);
+    MBLOG_DEBUG << "input_buffer_list: " << portname << ", model port: " << name
                 << ", size: " << input_buffer_list->Size();
     ms_inputs.emplace_back(
         name, input_tensor[i].DataType(), input_tensor[i].Shape(),
@@ -255,14 +250,15 @@ modelbox::Status MindSporeInference::Infer(
 
   auto output_tensor = model_->GetOutputs();
   for (size_t i = 0; i < output_tensor.size(); ++i) {
-    auto output_buffer_list = data_ctx->Output(output_tensor[i].Name());
+    auto portname = io_list_.output_name_list[i];
+    auto output_buffer_list = data_ctx->Output(portname);
     MBLOG_DEBUG << "output_tensor[i].DataSize(): "
                 << output_tensor[i].DataSize() << ", "
                 << "output_tensor[i].ElementNum(): "
                 << output_tensor[i].ElementNum();
     if (output_tensor[i].Shape()[0] == 0) {
       auto err_msg =
-          "output_tensor " + output_tensor[i].Name() + " first dim is zero";
+          "output_tensor " + portname + " first dim is zero";
       MBLOG_ERROR << err_msg;
       return {modelbox::STATUS_FAULT, err_msg};
     }

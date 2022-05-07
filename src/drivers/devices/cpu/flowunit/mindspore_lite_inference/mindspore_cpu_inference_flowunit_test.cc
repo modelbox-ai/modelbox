@@ -94,9 +94,9 @@ TEST_F(InferenceMindSporeCPUFlowUnitTest, RunUnit) {
           mindspore_inference[type=flowunit, flowunit=mindspore_inference, device=cpu, deviceid=0, batch_size=2]
           check_ms_infer_result[type=flowunit, flowunit=check_ms_infer_result, device=cpu, deviceid=0, batch_size=2]  
                                   
-          prepare_ms_infer_data:out1 -> mindspore_inference:x_
-          prepare_ms_infer_data:out2 -> mindspore_inference:y_
-          mindspore_inference:"Default/Add-op3"-> check_ms_infer_result:in
+          prepare_ms_infer_data:out1 -> mindspore_inference:input1
+          prepare_ms_infer_data:out2 -> mindspore_inference:input2
+          mindspore_inference:output1 -> check_ms_infer_result:in
         }'''
     format = "graphviz"
   )";
@@ -116,9 +116,9 @@ TEST_F(InferenceMindSporeCPUFlowUnitTest, RunUnitEncrypt) {
           mindspore_inference[type=flowunit, flowunit=mindspore_inference_encrypt, device=cpu, deviceid=0, batch_size=2]
           check_ms_infer_result[type=flowunit, flowunit=check_ms_infer_result, device=cpu, deviceid=0, batch_size=2]  
                                   
-          prepare_ms_infer_data:out1 -> mindspore_inference:x_
-          prepare_ms_infer_data:out2 -> mindspore_inference:y_
-          mindspore_inference:"Default/Add-op3" -> check_ms_infer_result:in
+          prepare_ms_infer_data:out1 -> mindspore_inference:input1
+          prepare_ms_infer_data:out2 -> mindspore_inference:input2
+          mindspore_inference:output1 -> check_ms_infer_result:in
         }'''
     format = "graphviz"
   )";

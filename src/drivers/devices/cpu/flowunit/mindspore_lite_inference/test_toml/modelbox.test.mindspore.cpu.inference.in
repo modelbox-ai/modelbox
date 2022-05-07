@@ -12,16 +12,16 @@ input_format = "NCHW"
 
 [input]
 [input.input1]
-name = "x_"
+name = "input1"
 type = "float"
 device = "cpu"
 
 [input.input2]
-name = "y_"
+name = "input2"
 type = "float"
 device = "cpu"
 
 [output]
 [output.output1]
-name = "Default/Add-op3"
+name = "output1"
 type = "float"
