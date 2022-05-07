@@ -14,7 +14,7 @@
 # See the License for the specific language 
 
 CURRDIR=$(pwd)
-VERSION="1.6.1"
+VERSION="1.7.0"
 TRAIN_VER="r1.6"
 
 get_package_archname() {

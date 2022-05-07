@@ -87,7 +87,7 @@ case $1 in
 
 		kill -TERM "$PID"
 		if [ $? -ne 0 ]; then
-			echo "Stop modelbox-manager service failed."
+			echo "stop modelbox-manager service failed."
 			exit 1;
 		fi
 
@@ -105,7 +105,7 @@ case $1 in
 			sleep .5
 		done
 		rm -f "$PIDFILE"
-		echo "Stop modelbox-manager service success."
+		echo "stop modelbox-manager service success."
 		;;
 	restart)
 		"$0" stop && sleep 1 && "$0" start

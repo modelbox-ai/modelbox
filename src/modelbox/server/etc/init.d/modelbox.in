@@ -86,7 +86,7 @@ case $1 in
 
 		kill -TERM "$PID"
 		if [ $? -ne 0 ]; then
-			echo "Stop modelbox service failed."
+			echo "stop modelbox service failed."
 			exit 1;
 		fi
 
@@ -103,7 +103,7 @@ case $1 in
 			LOOP=$((LOOP+1))
 			sleep .5
 		done
-		echo "Stop modelbox service success."
+		echo "stop modelbox service success."
 		;;
 	restart)
 		"$0" stop && sleep 1 && "$0" start

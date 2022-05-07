@@ -15,16 +15,16 @@ passwd = "ToT+qoCsXk6r49CowwSVM2rqJmU0y279CIlnqzaBfRdMbYaYF5lp2pwhbiZ4/L5lhr4LJu
 
 [input]
 [input.input1]
-name = "x_"
+name = "input1"
 type = "float"
 device = "cpu"
 
 [input.input2]
-name = "y_"
+name = "input2"
 type = "float"
 device = "cpu"
 
 [output]
 [output.output1]
-name = "Default/Add-op3"
+name = "output1"
 type = "float"

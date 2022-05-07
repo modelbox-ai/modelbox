@@ -311,7 +311,7 @@ showhelp() {
     echo " -h            show this help message."
     echo ""
     echo "addition options"
-    echo " --home        home directory, default is \$HOME/modelbox"
+    echo " --home        home directory, default is \$HOME/modelbox-service"
 }
 
 main() {

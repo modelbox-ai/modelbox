@@ -53,6 +53,7 @@ class MindSporeInference {
   std::shared_ptr<mindspore::Model> model_{nullptr};
   std::shared_ptr<mindspore::Context> context_{nullptr};
   int64_t batch_size_{0};
+  struct MindSporeIOList io_list_;
 };
 
 #endif
