@@ -123,7 +123,7 @@ modelbox::Status HTTPServerAsync::Open(
 
   HttpRequestLimiter::max_request_ = opts->GetUint64("max_requests", 1000);
   std::atomic_init(&HttpRequestLimiter::request_count_, (size_t)0);
-  keep_alive_time_out_sec_ = opts->GetUint64("alive_time_out_sec", 200);
+  keep_alive_time_out_sec_ = opts->GetUint64("keepalive_timeout_sec", 200);
 
   std::string key;
   std::string enpass;
@@ -236,6 +236,9 @@ MODELBOX_FLOWUNIT(HTTPServerAsync, desc) {
                                                   "http server listen URL."));
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "max_requests", "integer", true, "1000", "max http request."));
+  desc.AddFlowUnitOption(
+      modelbox::FlowUnitOption("keepalive_timeout_sec", "integer", false, "200",
+                               "keep-alive timeout time(sec)"));
   desc.AddFlowUnitOption(
       modelbox::FlowUnitOption("cert", "string", false, "", "cert file path"));
   desc.AddFlowUnitOption(
