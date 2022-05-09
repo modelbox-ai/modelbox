@@ -19,5 +19,20 @@
 TARGE_DIR=$1
 EXAMPLE_DIR=$2
 DEMO_DIR=$3
+DEMO_SRC_DIR=$4
 
-exit 0
+main() {
+    cp ${DEMO_SRC_DIR}/mnist/graph/*.tar.gz ${TARGE_DIR}/src/graph/
+    if [ $? -ne 0 ]; then
+        echo "copy image failed."
+        return 1
+    fi
+
+    cp ${DEMO_SRC_DIR}/mnist/graph/*.py ${TARGE_DIR}/src/graph/
+    if [ $? -ne 0 ]; then
+        echo "copy test script failed."
+        return 1
+    fi
+}
+
+main
