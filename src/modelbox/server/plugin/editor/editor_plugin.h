@@ -43,6 +43,8 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
                           httplib::Response &response);
   void HandlerUIGet(const httplib::Request &request,
                     httplib::Response &response);
+  void HanderBasicInfoGet(const httplib::Request &request,
+                    httplib::Response &response);
   void SendFile(const std::string &file_name, httplib::Response &response);
   void HandlerFlowUnitInfoPut(const httplib::Request &request,
                               httplib::Response &response);

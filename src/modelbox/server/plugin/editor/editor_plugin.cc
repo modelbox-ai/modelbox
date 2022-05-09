@@ -16,6 +16,7 @@
 #include "editor_plugin.h"
 
 #include <modelbox/base/popen.h>
+#include <pwd.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 
@@ -42,6 +43,7 @@ constexpr const char* DEFAULT_MODELBOX_TEMPLATE_CMD = "modelbox-tool template";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
+const std::string basic_info = "/editor/basic-info";
 const std::string demo_url = "/editor/demo";
 const std::string save_graph_url = "/editor/graph";
 const std::string flowunit_create_url = "/editor/flowunit/create";
@@ -124,45 +126,40 @@ std::shared_ptr<Plugin> CreatePlugin() {
 }
 
 void ModelboxEditorPlugin::RegistHandlers() {
-  listener_->Register(UI_url, HttpMethods::GET,
-                      std::bind(&ModelboxEditorPlugin::HandlerUIGet, this,
-                                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(
-      flowunit_info_url, HttpMethods::PUT,
-      std::bind(&ModelboxEditorPlugin::HandlerFlowUnitInfoPut, this,
-                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(
-      flowunit_info_url, HttpMethods::GET,
-      std::bind(&ModelboxEditorPlugin::HandlerFlowUnitInfoGet, this,
-                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(demo_url, HttpMethods::GET,
-                      std::bind(&ModelboxEditorPlugin::HandlerDemoGet, this,
-                                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(project_url, HttpMethods::GET,
-                      std::bind(&ModelboxEditorPlugin::HandlerProjectGet, this,
-                                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(
-      project_template_url, HttpMethods::GET,
-      std::bind(&ModelboxEditorPlugin::HandlerProjectTemplateListGet, this,
-                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(
-      project_list_url, HttpMethods::GET,
-      std::bind(&ModelboxEditorPlugin::HandlerProjectListGet, this,
-                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(
-      project_create_url, HttpMethods::PUT,
-      std::bind(&ModelboxEditorPlugin::HandlerProjectCreate, this,
-                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(
-      flowunit_create_url, HttpMethods::PUT,
-      std::bind(&ModelboxEditorPlugin::HandlerFlowUnitCreate, this,
-                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(save_graph_url, HttpMethods::PUT,
-                      std::bind(&ModelboxEditorPlugin::HandlerSaveGraph, this,
-                                std::placeholders::_1, std::placeholders::_2));
-  listener_->Register(pass_encode_url, HttpMethods::PUT,
-                      std::bind(&ModelboxEditorPlugin::HandlerPassEncode, this,
-                                std::placeholders::_1, std::placeholders::_2));
+  struct Handler_Map {
+    const std::string path;
+    const HttpMethod method;
+    void (ModelboxEditorPlugin::*func)(const httplib::Request& request,
+                                       httplib::Response& response);
+  };
+  Handler_Map handler_list[] = {
+      {UI_url, HttpMethods::GET, &ModelboxEditorPlugin::HandlerUIGet},
+      {basic_info, HttpMethods::GET, &ModelboxEditorPlugin::HanderBasicInfoGet},
+      {flowunit_info_url, HttpMethods::PUT,
+       &ModelboxEditorPlugin::HandlerFlowUnitInfoPut},
+      {flowunit_info_url, HttpMethods::GET,
+       &ModelboxEditorPlugin::HandlerFlowUnitInfoGet},
+      {demo_url, HttpMethods::GET, &ModelboxEditorPlugin::HandlerDemoGet},
+      {project_url, HttpMethods::GET, &ModelboxEditorPlugin::HandlerProjectGet},
+      {project_template_url, HttpMethods::GET,
+       &ModelboxEditorPlugin::HandlerProjectTemplateListGet},
+      {project_list_url, HttpMethods::GET,
+       &ModelboxEditorPlugin::HandlerProjectListGet},
+      {project_create_url, HttpMethods::PUT,
+       &ModelboxEditorPlugin::HandlerProjectCreate},
+      {flowunit_create_url, HttpMethods::PUT,
+       &ModelboxEditorPlugin::HandlerFlowUnitCreate},
+      {save_graph_url, HttpMethods::PUT,
+       &ModelboxEditorPlugin::HandlerSaveGraph},
+      {pass_encode_url, HttpMethods::PUT,
+       &ModelboxEditorPlugin::HandlerPassEncode},
+  };
+
+  for (const auto& hander : handler_list) {
+    listener_->Register(hander.path, hander.method,
+                        std::bind(hander.func, this, std::placeholders::_1,
+                                  std::placeholders::_2));
+  }
 }
 
 std::string ModelboxEditorPlugin::ResultMsg(const std::string& code,
@@ -846,6 +843,37 @@ modelbox::Status ModelboxEditorPlugin::GraphFileToJson(const std::string& file,
   return modelbox::STATUS_OK;
 }
 
+void ModelboxEditorPlugin::HanderBasicInfoGet(const httplib::Request& request,
+                                              httplib::Response& response) {
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
+  nlohmann::json response_json;
+  struct passwd pwd;
+  struct passwd* result;
+  std::vector<char> buff;
+  buff.resize(sysconf(_SC_GETPW_R_SIZE_MAX));
+  getpwuid_r(getuid(), &pwd, buff.data(), buff.size(), &result);
+  if (result == nullptr) {
+    rspret = {modelbox::STATUS_FAULT,
+              "Get pw info failed, " + modelbox::StrError(errno)};
+    return;
+  }
+
+  response_json["user"] = result->pw_name;
+  response_json["home-dir"] = result->pw_dir;
+
+  AddSafeHeader(response);
+  response.status = HttpStatusCodes::OK;
+  response.set_content(response_json.dump(), JSON);
+  return;
+}
+
 void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
                                               httplib::Response& response) {
   std::vector<std::string> dirs;
@@ -1098,7 +1126,8 @@ bool ModelboxEditorPlugin::ParseConfig(
   template_cmd_ = config->GetString("editor.test.template_cmd",
                                     DEFAULT_MODELBOX_TEMPLATE_CMD);
   template_cmd_env_ = config->GetString("editor.test.template_cmd_env", "");
-  template_dir_ = config->GetString("editor.template_dir", DEFAULT_PROJECT_TEMPLATE_DIR);
+  template_dir_ =
+      config->GetString("editor.template_dir", DEFAULT_PROJECT_TEMPLATE_DIR);
   acl_white_list_ = config->GetStrings("acl.allow");
   return true;
 }
