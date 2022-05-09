@@ -80,3 +80,12 @@ void HandleUnSupportMethod(web::http::http_request request) {
   response.headers().add(U("Allow"), GetSupportedMethods());
   request.reply(response);
 }
+
+void HandleHealthCheck(web::http::http_request request) {
+  auto health_value = web::json::value::object();
+  health_value["status"] = web::json::value(200);
+  health_value["message"] = web::json::value::string("success");
+  auto resp_body = health_value.serialize();
+  auto resp_status = web::http::status_codes::OK;
+  SafeReply(request, resp_status, resp_body);
+}

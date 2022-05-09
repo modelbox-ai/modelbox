@@ -25,6 +25,11 @@ HTTPServerAsync::HTTPServerAsync(){};
 HTTPServerAsync::~HTTPServerAsync(){};
 
 modelbox::Status HTTPServerAsync::HandleFunc(web::http::http_request request) {
+  if (request.request_uri().to_string() == "/health") {
+    HandleHealthCheck(request);
+    return modelbox::STATUS_OK;
+  }
+
   RequestInfo request_info;
   request_info.method = request.method();
   request_info.uri = request.request_uri().to_string();
@@ -115,8 +120,10 @@ modelbox::Status HTTPServerAsync::Open(
     request_url_ = "http://127.0.0.1:8080";
     MBLOG_WARN << "endpoint not set, use default endpoint: " << request_url_;
   }
+
   HttpRequestLimiter::max_request_ = opts->GetUint64("max_requests", 1000);
   std::atomic_init(&HttpRequestLimiter::request_count_, (size_t)0);
+  keep_alive_time_out_sec_ = opts->GetUint64("alive_time_out_sec", 200);
 
   std::string key;
   std::string enpass;
@@ -143,7 +150,7 @@ modelbox::Status HTTPServerAsync::Open(
   }
 
   web::http::experimental::listener::http_listener_config server_config;
-  server_config.set_timeout(std::chrono::seconds(60));
+  server_config.set_timeout(std::chrono::seconds(keep_alive_time_out_sec_));
   if (cert.length() > 0 && key.length() > 0) {
     server_config.set_ssl_context_callback(
         [cert, key, enpass, keypass](boost::asio::ssl::context &ctx) {

@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-
 #include <errno.h>
 #include <securec.h>
 
-#include "modelbox/base/crypto.h"
 #include "common/mock_cert.h"
 #include "driver_flow_test.h"
+#include "modelbox/base/crypto.h"
 #define _TURN_OFF_PLATFORM_STRING
 #include "cpprest/http_client.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-#define REQUEST_URL "https://localhost:54321"
+constexpr const char* REQUEST_URL_HTTPS = "https://localhost:54321";
+constexpr const char* REQUEST_URL_HTTP = "http://localhost:54321";
 
 using ::testing::_;
 
@@ -64,9 +64,9 @@ Status HttpServerSyncFlowUnitTest::AddMockFlowUnit() {
 
       std::string request_url;
       input_buf->At(0)->Get("endpoint", request_url);
-      EXPECT_EQ(REQUEST_URL, request_url);
+      EXPECT_EQ(REQUEST_URL_HTTPS, request_url);
 
-      auto input_data = static_cast<const char *>(input_buf->ConstBufferData(0));
+      auto input_data = static_cast<const char*>(input_buf->ConstBufferData(0));
       std::string request_body(input_data, input_buf->At(0)->GetBytes());
       const utf8string& response_body = "response_body: " + request_body;
       auto size = response_body.size();
@@ -121,11 +121,64 @@ Status HttpServerSyncFlowUnitTest::AddMockFlowUnit() {
         mock_desc, mock_funcitons->GenerateCreateFunc(), TEST_DRIVER_DIR);
   }
 
+  {
+    auto mock_desc =
+        GenerateFlowunitDesc("receive_health_post_unit", {"In_1"}, {"Out_1"});
+    auto process_func =
+        [=](std::shared_ptr<DataContext> op_ctx,
+            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      auto input_buf = op_ctx->Input("In_1");
+      auto output_buf = op_ctx->Output("Out_1");
+
+      std::string request_url;
+      input_buf->At(0)->Get("endpoint", request_url);
+      EXPECT_EQ(REQUEST_URL_HTTP, request_url);
+
+      auto input_data = static_cast<const char*>(input_buf->ConstBufferData(0));
+      std::string request_body(input_data, input_buf->At(0)->GetBytes());
+      const utf8string& response_body = "response_body: " + request_body;
+      auto size = response_body.size();
+      std::vector<std::size_t> shape = {size};
+      output_buf->Build(shape);
+      memcpy_s(output_buf->MutableBufferData(0), size, response_body.data(),
+               size);
+
+      std::string uri;
+      input_buf->At(0)->Get("uri", uri);
+      std::string method;
+      input_buf->At(0)->Get("method", method);
+
+      std::string health_uri{"/health"};
+      std::string body;
+      if (method == "PUT") {
+        EXPECT_EQ(body, request_body);
+        EXPECT_EQ(health_uri, uri);
+      } else if (method == "POST") {
+        EXPECT_EQ(body, request_body);
+        EXPECT_EQ(health_uri, uri);
+      } else if (method == "GET") {
+        EXPECT_EQ(body, request_body);
+        EXPECT_EQ(health_uri, uri);
+      } else if (method == "DELETE") {
+        EXPECT_EQ(body, request_body);
+        EXPECT_EQ(health_uri, uri);
+      } else {
+        MBLOG_ERROR << "unsupported method";
+      }
+      return modelbox::STATUS_OK;
+    };
+    auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+    mock_funcitons->RegisterProcessFunc(process_func);
+    driver_flow_->AddFlowUnitDesc(
+        mock_desc, mock_funcitons->GenerateCreateFunc(), TEST_DRIVER_DIR);
+  }
+
   return STATUS_OK;
 }
 
 void PutRequestSync(web::http::uri uri,
-                    web::http::client::http_client_config client_config) {
+                    web::http::client::http_client_config client_config,
+                    const std::string& request_uri) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_put;
@@ -133,7 +186,7 @@ void PutRequestSync(web::http::uri uri,
   headers_put.add(_XPLATSTR("Accept"), _XPLATSTR("text/plain"));
   web::http::http_request msg_put;
   msg_put.set_method(web::http::methods::PUT);
-  msg_put.set_request_uri(_XPLATSTR("/restdemo_put"));
+  msg_put.set_request_uri(_XPLATSTR(request_uri));
   msg_put.headers() = headers_put;
   auto putvalue = web::json::value::object();
   putvalue["param"] = web::json::value::string(
@@ -157,7 +210,8 @@ void PutRequestSync(web::http::uri uri,
 }
 
 void PostRequestSync(web::http::uri uri,
-                     web::http::client::http_client_config client_config) {
+                     web::http::client::http_client_config client_config,
+                     const std::string& request_uri) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_post;
@@ -165,7 +219,7 @@ void PostRequestSync(web::http::uri uri,
   headers_post.add(_XPLATSTR("Accept"), _XPLATSTR("text/plain"));
   web::http::http_request msg_post;
   msg_post.set_method(web::http::methods::POST);
-  msg_post.set_request_uri(_XPLATSTR("/restdemo_post"));
+  msg_post.set_request_uri(_XPLATSTR(request_uri));
   msg_post.headers() = headers_post;
   auto postvalue = web::json::value::object();
   postvalue["param"] = web::json::value::string(
@@ -190,7 +244,8 @@ void PostRequestSync(web::http::uri uri,
 }
 
 void GetRequestSync(web::http::uri uri,
-                    web::http::client::http_client_config client_config) {
+                    web::http::client::http_client_config client_config,
+                    const std::string& request_uri) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_get;
@@ -198,7 +253,7 @@ void GetRequestSync(web::http::uri uri,
   headers_get.add(_XPLATSTR("Accept"), _XPLATSTR("text/plain"));
   web::http::http_request msg_get;
   msg_get.set_method(web::http::methods::GET);
-  msg_get.set_request_uri(_XPLATSTR("/restdemo_get"));
+  msg_get.set_request_uri(_XPLATSTR(request_uri));
   msg_get.headers() = headers_get;
   try {
     web::http::http_response resp_get = client.request(msg_get).get();
@@ -214,8 +269,37 @@ void GetRequestSync(web::http::uri uri,
   }
 }
 
+void HealthCheckRequesSync(web::http::uri uri,
+                           web::http::client::http_client_config client_config,
+                           const std::string& request_uri,
+                           const web::http::method& method) {
+  web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
+                                        client_config);
+  web::http::http_headers headers_get;
+  headers_get.add(_XPLATSTR("Accept"), _XPLATSTR("application/json"));
+  headers_get.add(_XPLATSTR("Accept"), _XPLATSTR("text/plain"));
+  web::http::http_request msg;
+  msg.set_method(method);
+  msg.set_request_uri(_XPLATSTR(request_uri));
+  msg.headers() = headers_get;
+  auto value = web::json::value::object();
+  value["status"] = web::json::value(200);
+  value["message"] =
+      web::json::value::string("success");
+  msg.set_body(value);
+  try {
+    web::http::http_response resp_get = client.request(msg).get();
+    EXPECT_EQ(resp_get.status_code(), web::http::status_codes::OK);
+    EXPECT_EQ(value.serialize(), resp_get.extract_string().get());
+  } catch (std::exception const& e) {
+    MBLOG_ERROR << e.what();
+    ASSERT_TRUE(false);
+  }
+}
+
 void DelRequestSync(web::http::uri uri,
-                    web::http::client::http_client_config client_config) {
+                    web::http::client::http_client_config client_config,
+                    const std::string& request_uri) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_del;
@@ -223,7 +307,7 @@ void DelRequestSync(web::http::uri uri,
   headers_del.add(_XPLATSTR("Accept"), _XPLATSTR("text/plain"));
   web::http::http_request msg_del;
   msg_del.set_method(web::http::methods::DEL);
-  msg_del.set_request_uri(_XPLATSTR("/restdemo_del"));
+  msg_del.set_request_uri(_XPLATSTR(request_uri));
   msg_del.headers() = headers_del;
   auto delvalue = web::json::value::array();
   delvalue[0] = web::json::value::string("image_id");
@@ -259,18 +343,19 @@ TEST_F(HttpServerSyncFlowUnitTest, InitUnit) {
     remove(cert_file_path.c_str());
   };
 
-  std::string toml_content = R"(
+  std::string toml_content =
+      R"(
     [driver]
     skip-default=true
-    dir=[")" + test_lib_dir + "\"]\n    " +
-                             R"([graph]
+    dir=[")" +
+      test_lib_dir + "\"]\n    " +
+      R"([graph]
     graphconf = '''digraph demo {                                                                          
           httpserver_sync_receive[type=flowunit, flowunit=httpserver_sync_receive, device=cpu, deviceid=0, label="<out_request_info>", endpoint=")" +
-                             std::string(REQUEST_URL) + R"(", cert=")" +
-                             cert_file_path + R"(", key=")" + key_file_path +
-                             R"(", passwd=")" + encrypt_passwd +
-                             R"(", key_pass=")" + passwd_key +
-                             R"(", max_requests=10, time_out_ms=5000]
+      std::string(REQUEST_URL_HTTPS) + R"(", cert=")" + cert_file_path +
+      R"(", key=")" + key_file_path + R"(", passwd=")" + encrypt_passwd +
+      R"(", key_pass=")" + passwd_key +
+      R"(", max_requests=1000, time_out_ms=5000, alive_time_out_sec=10]
           receive_post_unit[type=flowunit, flowunit=receive_post_unit, device=cpu, deviceid=0, label="<In_1> | <Out_1>"] 
           httpserver_sync_reply[type=flowunit, flowunit=httpserver_sync_reply, device=cpu, deviceid=0, label="<In_1>"]        
           httpserver_sync_receive:out_request_info -> receive_post_unit:In_1   
@@ -283,7 +368,7 @@ TEST_F(HttpServerSyncFlowUnitTest, InitUnit) {
   auto driver_flow = GetDriverFlow();
   driver_flow->BuildAndRun("InitUnit", toml_content, -1);
 
-  web::http::uri uri = web::http::uri(_XPLATSTR(REQUEST_URL));
+  web::http::uri uri = web::http::uri(_XPLATSTR(REQUEST_URL_HTTPS));
   web::http::client::http_client_config client_config;
   client_config.set_timeout(utility::seconds(60));
   client_config.set_ssl_context_callback([&](boost::asio::ssl::context& ctx) {
@@ -292,10 +377,60 @@ TEST_F(HttpServerSyncFlowUnitTest, InitUnit) {
 
   std::vector<std::thread> threads;
   for (int i = 0; i < 5; ++i) {
-    threads.push_back(std::thread(PutRequestSync, uri, client_config));
-    threads.push_back(std::thread(DelRequestSync, uri, client_config));
-    threads.push_back(std::thread(PostRequestSync, uri, client_config));
-    threads.push_back(std::thread(GetRequestSync, uri, client_config));
+    threads.push_back(
+        std::thread(PutRequestSync, uri, client_config, "/restdemo_put"));
+    threads.push_back(
+        std::thread(DelRequestSync, uri, client_config, "/restdemo_del"));
+    threads.push_back(
+        std::thread(PostRequestSync, uri, client_config, "/restdemo_post"));
+    threads.push_back(
+        std::thread(GetRequestSync, uri, client_config, "/restdemo_get"));
+  }
+  for (auto& th : threads) {
+    th.join();
+  }
+}
+
+TEST_F(HttpServerSyncFlowUnitTest, HealthCheck) {
+  const std::string test_lib_dir = TEST_DRIVER_DIR;
+  std::string toml_content =
+      R"(
+    [driver]
+    skip-default=true
+    dir=[")" +
+      test_lib_dir + "\"]\n    " +
+      R"([graph]
+    graphconf = '''digraph demo {                                                                          
+          httpserver_sync_receive[type=flowunit, flowunit=httpserver_sync_receive, device=cpu, deviceid=0, label="<out_request_info>", endpoint=")" +
+      std::string(REQUEST_URL_HTTP) +
+      R"(", max_requests=10, time_out_ms=5000, alive_time_out_sec=10]
+          receive_post_unit[type=flowunit, flowunit=receive_health_post_unit, device=cpu, deviceid=0, label="<In_1> | <Out_1>"] 
+          httpserver_sync_reply[type=flowunit, flowunit=httpserver_sync_reply, device=cpu, deviceid=0, label="<In_1>"]        
+          httpserver_sync_receive:out_request_info -> receive_post_unit:In_1   
+          receive_post_unit:Out_1 -> httpserver_sync_reply:in_reply_info                                                      
+        }'''
+    format = "graphviz"
+  )";
+
+  MBLOG_INFO << toml_content;
+  auto driver_flow = GetDriverFlow();
+  driver_flow->BuildAndRun("InitUnit", toml_content, -1);
+
+  web::http::uri uri = web::http::uri(_XPLATSTR(REQUEST_URL_HTTP));
+  web::http::client::http_client_config client_config;
+  client_config.set_timeout(utility::seconds(60));
+
+  std::vector<std::thread> threads;
+  std::string health_uri = "/health";
+  for (int i = 0; i < 5; ++i) {
+    threads.push_back(std::thread(HealthCheckRequesSync, uri, client_config,
+                                  health_uri, web::http::methods::GET));
+    threads.push_back(std::thread(HealthCheckRequesSync, uri, client_config,
+                                  health_uri, web::http::methods::PUT));
+    threads.push_back(std::thread(HealthCheckRequesSync, uri, client_config,
+                                  health_uri, web::http::methods::POST));
+    threads.push_back(std::thread(HealthCheckRequesSync, uri, client_config,
+                                  health_uri, web::http::methods::DEL));
   }
   for (auto& th : threads) {
     th.join();

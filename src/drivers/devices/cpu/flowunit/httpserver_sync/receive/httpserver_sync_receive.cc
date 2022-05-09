@@ -27,6 +27,11 @@ HTTPServerReceiveSync::~HTTPServerReceiveSync(){};
 
 modelbox::Status HTTPServerReceiveSync::HandleFunc(
     web::http::http_request request) {
+  if (request.request_uri().to_string() == "/health") {
+    HandleHealthCheck(request);
+    return modelbox::STATUS_OK;
+  }
+
   {
     std::lock_guard<std::mutex> lock(request_mutex_);
     if (*sum_cnt_ > max_requests_) {
@@ -188,7 +193,7 @@ modelbox::Status HTTPServerReceiveSync::Open(
   }
 
   web::http::experimental::listener::http_listener_config server_config;
-  server_config.set_timeout(std::chrono::seconds(60));
+  server_config.set_timeout(std::chrono::seconds(keep_alive_time_out_sec_));
   if (cert.length() > 0 && key.length() > 0) {
     server_config.set_ssl_context_callback(
         [cert, key, enpass, keypass](boost::asio::ssl::context &ctx) {

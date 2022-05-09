@@ -35,6 +35,8 @@ utility::string_t GetSupportedMethods();
 
 void HandleUnSupportMethod(web::http::http_request request);
 
+void HandleHealthCheck(web::http::http_request request);
+
 class HttpRequestLimiter {
   public:
    HttpRequestLimiter(HttpRequestLimiter &&) = delete;
