@@ -206,6 +206,12 @@ httplib::Response EditorTemplateListGet(MockServer &server) {
   return server.DoRequest(request);
 }
 
+httplib::Response EditorBasicInfoGet(MockServer &server) {
+  HttpRequest request(HttpMethods::GET,
+                      server.GetServerURL() + "/editor/basic-info");
+  return server.DoRequest(request);
+}
+
 httplib::Response EditorQueryProject(MockServer &server,
                                      const std::string &path) {
   HttpRequest request(HttpMethods::GET,
@@ -575,6 +581,22 @@ TEST_F(ModelboxServerTest, TemplateListGet) {
       MODELBOX_TEMPLATE_BIN_DIR + std::string("/project"), "desc.toml", &files);
   auto result = nlohmann::json::parse(response.body);
   EXPECT_EQ(files.size(), result["project_template_list"].size());
+}
+
+
+TEST_F(ModelboxServerTest, BasicInfoGet) {
+  MockServer server;
+  auto conf = std::make_shared<Configuration>();
+
+  auto ret = server.Init(conf);
+  if (ret == STATUS_NOTSUPPORT) {
+    GTEST_SKIP();
+  }
+  server.Start();
+  sleep(1);
+  auto response = EditorBasicInfoGet(server);
+  MBLOG_INFO << response.body.c_str();
+  EXPECT_EQ(response.status, HttpStatusCodes::OK);
 }
 
 TEST_F(ModelboxServerTest, ServerLoadConfig) {

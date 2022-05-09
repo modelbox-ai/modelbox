@@ -527,6 +527,7 @@ Status HttpListener::Register(const std::string &path, const HttpMethod &method,
                           httplib::Response &response) {
     if (enable_acl_ && !acl_.IsMatch(request.remote_addr)) {
       response.status = HttpStatusCodes::FORBIDDEN;
+      response.body = "Access Denied";
       AddSafeHeader(response);
       return;
     }
