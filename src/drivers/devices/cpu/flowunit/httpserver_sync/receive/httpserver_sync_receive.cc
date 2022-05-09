@@ -168,6 +168,7 @@ modelbox::Status HTTPServerReceiveSync::Open(
   }
   max_requests_ = opts->GetUint64("max_requests", 1000);
   time_out_ms_ = opts->GetUint64("time_out_ms", 5000);
+  keep_alive_time_out_sec_ = opts->GetUint64("keepalive_timeout_sec", 200);
   std::string key;
   std::string enpass;
   std::string keypass;
@@ -279,6 +280,9 @@ MODELBOX_FLOWUNIT(HTTPServerReceiveSync, desc) {
                                                   "http server listen URL."));
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "max_requests", "integer", false, "1000", "max http request."));
+  desc.AddFlowUnitOption(
+      modelbox::FlowUnitOption("keepalive_timeout_sec", "integer", false, "200",
+                               "keep-alive timeout time(sec)"));
   desc.AddFlowUnitOption(
       modelbox::FlowUnitOption("time_out", "integer", false, "100",
                                "max http request timeout. measured in 100ms"));

@@ -355,7 +355,7 @@ TEST_F(HttpServerSyncFlowUnitTest, InitUnit) {
       std::string(REQUEST_URL_HTTPS) + R"(", cert=")" + cert_file_path +
       R"(", key=")" + key_file_path + R"(", passwd=")" + encrypt_passwd +
       R"(", key_pass=")" + passwd_key +
-      R"(", max_requests=1000, time_out_ms=5000, alive_time_out_sec=10]
+      R"(", max_requests=1000, time_out_ms=5000, keepalive_timeout_sec=10]
           receive_post_unit[type=flowunit, flowunit=receive_post_unit, device=cpu, deviceid=0, label="<In_1> | <Out_1>"] 
           httpserver_sync_reply[type=flowunit, flowunit=httpserver_sync_reply, device=cpu, deviceid=0, label="<In_1>"]        
           httpserver_sync_receive:out_request_info -> receive_post_unit:In_1   
@@ -403,7 +403,7 @@ TEST_F(HttpServerSyncFlowUnitTest, HealthCheck) {
     graphconf = '''digraph demo {                                                                          
           httpserver_sync_receive[type=flowunit, flowunit=httpserver_sync_receive, device=cpu, deviceid=0, label="<out_request_info>", endpoint=")" +
       std::string(REQUEST_URL_HTTP) +
-      R"(", max_requests=10, time_out_ms=5000, alive_time_out_sec=10]
+      R"(", max_requests=10, time_out_ms=5000, keepalive_timeout_sec=10]
           receive_post_unit[type=flowunit, flowunit=receive_health_post_unit, device=cpu, deviceid=0, label="<In_1> | <Out_1>"] 
           httpserver_sync_reply[type=flowunit, flowunit=httpserver_sync_reply, device=cpu, deviceid=0, label="<In_1>"]        
           httpserver_sync_receive:out_request_info -> receive_post_unit:In_1   
