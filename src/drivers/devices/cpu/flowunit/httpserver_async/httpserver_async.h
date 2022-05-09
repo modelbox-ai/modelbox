@@ -62,6 +62,7 @@ class HTTPServerAsync : public modelbox::FlowUnit {
 
  private:
   std::shared_ptr<web::http::experimental::listener::http_listener> listener_;
+  uint64_t keep_alive_time_out_sec_{200};
   std::string request_url_;
 };
 

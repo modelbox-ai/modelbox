@@ -33,7 +33,8 @@ constexpr const char *FLOWUNIT_DESC_RECEIVE =
     "\t\tField Name: headers,     Type: map<string,string>\n"
     "\t\tField Name: endpoint,    Type: string\n"
     "\t  The the output port buffer data type is char * .\n"
-    "\t@Constraint: The flowuint 'httpserver_sync_receive' must be used pair with 'httpserver_sync_reply'.";
+    "\t@Constraint: The flowuint 'httpserver_sync_receive' must be used pair "
+    "with 'httpserver_sync_reply'.";
 ;
 
 struct RequestInfo {
@@ -89,6 +90,7 @@ class HTTPServerReceiveSync : public modelbox::FlowUnit {
   std::string request_url_;
   uint64_t max_requests_{1000};
   uint64_t time_out_ms_{5000};
+  uint64_t keep_alive_time_out_sec_{200};
   std::mutex request_mutex_;
   modelbox::Timer timer_;
 };
