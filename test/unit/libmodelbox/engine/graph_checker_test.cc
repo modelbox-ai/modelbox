@@ -1165,6 +1165,115 @@ TEST_F(GraphCheckerTest, ConditionMatch_SinglePortLinkMultiPortThroughNode) {
   TestGraph(conf_file_value, STATUS_OK);
 }
 
+TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoCondition) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          begin[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
+          a[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          b[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          c[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          d[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          e[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          f[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          end[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0]
+
+          begin:Out_1 -> a:In_1
+          a:Out_1 -> b:In_1
+          b:Out_1 -> c:In_1
+          b:Out_2 -> d:In_1
+          c:Out_1 -> d:In_1
+          d:Out_1 -> e:In_1
+          d:Out_2 -> f:In_1
+          e:Out_1 -> f:In_1
+          f:Out_1 -> end:In_1
+          a:Out_2 -> end:In_1
+        }
+      )";
+
+  TestGraph(conf_file_value, STATUS_OK);
+}
+
+TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoExpand) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          begin[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
+          a[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          b[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          c[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          d[type=flowunit, flowunit=expand_1_2, device=cpu, deviceid=0]
+          e[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          f[type=flowunit, flowunit=collapse_2_1, device=cpu, deviceid=0]
+          end[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0]
+
+          begin:Out_1 -> a:In_1
+          a:Out_1 -> b:In_1
+          b:Out_1 -> c:In_1
+          b:Out_2 -> d:In_1
+          c:Out_1 -> d:In_1
+          d:Out_1 -> e:In_1
+          d:Out_2 -> f:In_1
+          e:Out_1 -> f:In_2
+          f:Out_1 -> end:In_1
+          a:Out_2 -> end:In_1
+        }
+      )";
+
+  TestGraph(conf_file_value, STATUS_OK);
+}
+
+TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoCollapse) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          begin[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
+          a[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          aa[type=flowunit, flowunit=expand_1_1, device=cpu, deviceid=0]
+          b[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          c[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          d[type=flowunit, flowunit=collapse_1_1, device=cpu, deviceid=0]
+          e[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          end[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0]
+
+          begin:Out_1 -> a:In_1
+          a:Out_1 -> aa:In_1
+          aa:Out_1 -> b:In_1
+          b:Out_1 -> c:In_1
+          b:Out_2 -> d:In_1
+          c:Out_1 -> d:In_1
+          d:Out_1 -> e:In_1
+          e:Out_1 -> end:In_1
+          a:Out_2 -> end:In_1
+        }
+      )";
+
+  TestGraph(conf_file_value, STATUS_OK);
+}
+
+TEST_F(GraphCheckerTest, MultiNotMatch_MultiExpandSingleCollapseInBranch) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          begin[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
+          a[type=flowunit, flowunit=test_1_2, device=cpu, deviceid=0]
+          b[type=flowunit, flowunit=expand_1_1, device=cpu, deviceid=0]
+          c[type=flowunit, flowunit=expand_1_1, device=cpu, deviceid=0]
+          d[type=flowunit, flowunit=collapse_1_1, device=cpu, deviceid=0]
+          e[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0]
+
+          begin:Out_1 -> a:In_1
+          a:Out_1 -> b:In_1
+          a:Out_2 -> c:In_1
+          b:Out_1 -> d:In_1
+          c:Out_1 -> d:In_1
+          d:Out_1 -> e:In_1
+        }
+      )";
+
+  TestGraph(conf_file_value, STATUS_BADCONF);
+}
+
 TEST_F(GraphCheckerTest, Bicycle) {
   auto conf_file_value =
       R"(
@@ -1242,7 +1351,7 @@ TEST_F(GraphCheckerTest, Bicycle) {
   TestGraph(conf_file_value, STATUS_OK);
 }
 
-TEST_F(GraphCheckerTest, park) {
+TEST_F(GraphCheckerTest, Park) {
   auto conf_file_value =
       R"(
         digraph demo {
@@ -1273,6 +1382,97 @@ TEST_F(GraphCheckerTest, park) {
           i:Out_1 -> j:In_1
           b:Out_1 -> j:In_2
           j:Out_1 -> k:In_1
+        }
+      )";
+
+  TestGraph(conf_file_value, STATUS_OK);
+}
+
+TEST_F(GraphCheckerTest, Road) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
+          b[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          c[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          d[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          e[type=flowunit, flowunit=test_1_3, device=cpu, deviceid=0]
+          f[type=flowunit, flowunit=test_3_1, device=cpu, deviceid=0]
+          g[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          h[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          i[type=flowunit, flowunit=expand_1_2, device=cpu, deviceid=0]
+          j[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          k[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          l[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          m[type=flowunit, flowunit=collapse_1_1, device=cpu, deviceid=0]
+          n[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          o[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          p[type=flowunit, flowunit=expand_1_2, device=cpu, deviceid=0]
+          q[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          r[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          s[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          t[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          u[type=flowunit, flowunit=collapse_1_1, device=cpu, deviceid=0]
+          v[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          w[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          x[type=flowunit, flowunit=expand_1_2, device=cpu, deviceid=0]
+          y[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          z[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          aa[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          bb[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          cc[type=flowunit, flowunit=collapse_1_1, device=cpu, deviceid=0]
+          dd[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          ee[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          ff[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          gg[type=flowunit, flowunit=test_1_0, device=cpu, deviceid=0]
+
+
+          a:Out_1 -> b:In_1
+          b:Out_1 -> c:In_1
+          c:Out_1 -> d:In_1
+          d:Out_1 -> e:In_1
+          e:Out_1 -> f:In_1
+          e:Out_2 -> f:In_2
+          e:Out_3 -> f:In_3
+          f:Out_1 -> g:In_1
+          c:Out_1 -> g:In_2
+          g:Out_1 -> h:In_1
+          h:Out_1 -> i:In_1
+          h:Out_1 -> n:In_1
+          h:Out_2 -> o:In_1
+          i:Out_1 -> j:In_1
+          i:Out_2 -> j:In_2
+          j:Out_1 -> k:In_1
+          k:Out_1 -> l:In_1
+          l:Out_1 -> m:In_1
+          m:Out_1 -> n:In_2
+          n:Out_1 -> o:In_1
+          o:Out_1 -> p:In_1
+          o:Out_1 -> v:In_1
+          o:Out_2 -> w:In_1
+          p:Out_1 -> q:In_1
+          p:Out_2 -> q:In_2
+          q:Out_1 -> r:In_1
+          r:Out_1 -> s:In_1
+          p:Out_2 -> t:In_1
+          s:Out_1 -> t:In_2
+          t:Out_1 -> u:In_1
+          u:Out_1 -> v:In_2
+          v:Out_1 -> w:In_1
+          w:Out_1 -> x:In_1
+          w:Out_1 -> dd:In_1
+          w:Out_2 -> ee:In_1
+          x:Out_1 -> y:In_1
+          x:Out_2 -> y:In_2
+          y:Out_1 -> z:In_1
+          z:Out_1 -> aa:In_1
+          aa:Out_1 -> bb:In_1
+          bb:Out_1 -> cc:In_1
+          cc:Out_1 -> dd:In_2
+          dd:Out_1 -> ee:In_1
+          b:Out_2 -> ff:In_1
+          ee:Out_1 -> ff:In_1
+          ff:Out_1 -> gg:In_1
         }
       )";
 
