@@ -38,7 +38,7 @@ def DisplayImage(image_path):
     width, height = img.size
     aspect_ratio = height/width
     new_width = 32
-    new_height = aspect_ratio * new_width * 0.50
+    new_height = aspect_ratio * new_width * 0.45
     img = img.resize((new_width, int(new_height)))
 
     # convert image to greyscale format

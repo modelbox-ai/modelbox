@@ -123,7 +123,11 @@ download_package() {
 }
 
 setup_export_code() {
-        echo "
+    if grep "^export(net.*)" ${TRAIN_FILE}; then
+        return;
+    fi
+    
+    echo "
 from mindspore import export, load_checkpoint, load_param_into_net
 import glob
 

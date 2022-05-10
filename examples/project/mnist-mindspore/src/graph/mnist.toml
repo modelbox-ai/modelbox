@@ -1,5 +1,5 @@
 [driver]
-dir = ["@APPLICATION_PATH@"]
+dir = ["@APPLICATION_PATH@/flowunit"]
 [profile]
 profile=false
 trace=false
