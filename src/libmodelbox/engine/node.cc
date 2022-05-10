@@ -39,7 +39,8 @@ namespace modelbox {
   return nullptr;
 
 #define DEFAULT_QUEUE_SIZE 32
-#define DEFAULT_QUEUE_EVENT 8192  // should be large enough
+#define DEFAULT_EXTERNAL_QUEUE_SIZE 1024  // should be large enough
+#define DEFAULT_QUEUE_EVENT 8192          // should be large enough
 
 Status NodeBase::Init(const std::set<std::string>& input_port_names,
                       const std::set<std::string>& output_port_names,
@@ -77,7 +78,7 @@ Status NodeBase::InitPorts(const std::set<std::string>& input_port_names,
   // create default external port if node has no input port
   if (input_port_names.empty()) {
     auto extern_queue_size =
-        config_->GetUint64("queue_size_external", queue_size_);
+        config_->GetUint64("queue_size_external", DEFAULT_EXTERNAL_QUEUE_SIZE);
     if (extern_queue_size == 0) {
       MBLOG_ERROR << "queue_size_external config is zero";
       return STATUS_INVALID;
