@@ -101,7 +101,8 @@ class OverHierarchyCheck {
       const std::unordered_map<std::string, std::string> &graph_match_map,
       const std::unordered_map<std::string,
                                std::unordered_map<std::string, std::string>>
-          &graph_single_port_match_map);
+          &graph_single_port_match_map,
+      const std::unordered_map<std::string, std::string> &end_if_map);
 
  private:
   void InitFirstNode(std::shared_ptr<Node> node);
@@ -118,8 +119,9 @@ class OverHierarchyCheck {
       const std::vector<std::shared_ptr<OutPort>> &output_ports,
       const std::unordered_map<std::string, std::string> &graph_match_map,
       const std::unordered_map<std::string,
-                             std::unordered_map<std::string, std::string>>
-        &graph_single_port_match_map);
+                               std::unordered_map<std::string, std::string>>
+          &graph_single_port_match_map,
+      const std::unordered_map<std::string, std::string> &end_if_map);
   std::shared_ptr<NodeBase> FindLoopLinkNode(std::shared_ptr<Node> node);
   void SetOutPortColor(std::shared_ptr<Node> node,
                        const std::vector<std::shared_ptr<OutPort>> &out_ports,
@@ -130,6 +132,9 @@ class OverHierarchyCheck {
       const std::unordered_map<std::string,
                                std::unordered_map<std::string, std::string>>
           &graph_single_port_match_map);
+  bool CheckEndIfNode(
+      std::shared_ptr<Node> node,
+      const std::unordered_map<std::string, std::string> &end_if_map);
 
  private:
   std::unordered_map<std::string, std::shared_ptr<NodeBase>> all_nodes_;
@@ -188,6 +193,7 @@ class GraphChecker {
   std::map<std::string, NodeStreamConnection> node_stream_connection_map_;
   std::unordered_map<std::string, std::unordered_map<std::string, std::string>>
       graph_single_port_match_map_;
+  std::unordered_map<std::string, std::string> end_if_map_;
   size_t expands_{0};
 };
 

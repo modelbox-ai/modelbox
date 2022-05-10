@@ -362,13 +362,41 @@ std::shared_ptr<NodeBase> OverHierarchyCheck::FindLoopLinkNode(
   return res;
 }
 
+bool OverHierarchyCheck::CheckEndIfNode(
+    std::shared_ptr<Node> node,
+    const std::unordered_map<std::string, std::string> &end_if_map) {
+  auto name = node->GetName();
+  if (end_if_map.find(name) == end_if_map.end()) {
+    return false;
+  }
+
+  auto input_ports = node->GetInputPorts();
+  for (auto &input_port : input_ports) {
+    if (input_port->GetConnectedPortNumber() == 1) {
+      return false;
+    }
+  }
+
+  auto match_node = CastNode(all_nodes_[end_if_map.at(name)]);
+  if (match_node == nullptr) {
+    return false;
+  }
+
+  if (match_node->GetConditionType() != ConditionType::IF_ELSE) {
+    return false;
+  }
+
+  return true;
+}
+
 void OverHierarchyCheck::GetColorMap(
     std::shared_ptr<Node> node,
     const std::vector<std::shared_ptr<OutPort>> &output_ports,
     const std::unordered_map<std::string, std::string> &graph_match_map,
     const std::unordered_map<std::string,
                              std::unordered_map<std::string, std::string>>
-        &graph_single_port_match_map) {
+        &graph_single_port_match_map,
+    const std::unordered_map<std::string, std::string> &end_if_map) {
   std::string node_name = node->GetName();
   std::vector<int> new_color;
   auto input_ports = node->GetInputPorts();
@@ -385,6 +413,10 @@ void OverHierarchyCheck::GetColorMap(
   new_color.assign(input_color.begin(), input_color.end());
   if (node->GetConditionType() == ConditionType::IF_ELSE ||
       node->GetOutputType() == FlowOutputType::EXPAND) {
+    if (CheckEndIfNode(node, end_if_map)) {
+      new_color.pop_back();
+    }
+
     ++max_color_;
     new_color.push_back(max_color_);
     SetOutPortColor(node, output_ports, new_color);
@@ -392,6 +424,10 @@ void OverHierarchyCheck::GetColorMap(
   }
 
   if (node->GetOutputType() == FlowOutputType::COLLAPSE) {
+    if (CheckEndIfNode(node, end_if_map)) {
+      new_color.pop_back();
+    }
+
     new_color.pop_back();
     SetOutPortColor(node, output_ports, new_color);
     return;
@@ -485,7 +521,8 @@ void OverHierarchyCheck::GetColorMap(
     return;
   }
 
-  auto condition_match_real_node = CastNode(all_nodes_.at(condition_match_node));
+  auto condition_match_real_node =
+      CastNode(all_nodes_.at(condition_match_node));
   if (condition_match_real_node != nullptr &&
       condition_match_real_node->GetConditionType() == ConditionType::IF_ELSE) {
     new_color.pop_back();
@@ -514,7 +551,8 @@ Status OverHierarchyCheck::Check(
     const std::unordered_map<std::string, std::string> &graph_match_map,
     const std::unordered_map<std::string,
                              std::unordered_map<std::string, std::string>>
-        &graph_single_port_match_map) {
+        &graph_single_port_match_map,
+    const std::unordered_map<std::string, std::string> &end_if_map) {
   Status status{STATUS_OK};
   for (auto &start_node : start_nodes_) {
     auto real_node = CastNode(start_node);
@@ -544,7 +582,7 @@ Status OverHierarchyCheck::Check(
 
       auto output_ports = node->GetOutputPorts();
       GetColorMap(node, output_ports, graph_match_map,
-                  graph_single_port_match_map);
+                  graph_single_port_match_map, end_if_map);
 
       for (auto &output_port : output_ports) {
         std::shared_ptr<IndexPort> index_output_port =
@@ -975,6 +1013,7 @@ Status GraphChecker::CheckNodeMatch(
   // multi branch match at one node
   if (single_match_result.size() == 1) {
     graph_match_map_[node_name] = single_match_result[0].node_name;
+    end_if_map_[node_name] = single_match_result[0].node_name;
     return status;
   }
 
@@ -1026,7 +1065,8 @@ Status GraphChecker::CheckNodeMatch(
 }
 
 Status GraphChecker::CheckOverHierarchyMatch() {
-  return ovc_->Check(graph_match_map_, graph_single_port_match_map_);
+  return ovc_->Check(graph_match_map_, graph_single_port_match_map_,
+                     end_if_map_);
 }
 
 void GraphChecker::FindNearestNeighborMatchExpand(const std::string &node,
