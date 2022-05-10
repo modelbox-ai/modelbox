@@ -15,11 +15,22 @@
 
 cmake_minimum_required(VERSION 3.10)
  
-set(UNIT_NAME "example")
+set(UNIT_NAME "mnist_infer")
 
-file(GLOB UNIT_SRC *.*)
-list(REMOVE_ITEM UNIT_SRC "CMakeLists.txt")
+file(GLOB_RECURSE UNIT_SRC *.*)
+exclude_files_from_dir_in_list(UNIT_SRC "${UNIT_SRC}" "${CMAKE_CURRENT_LIST_DIR}/mnist-train/")
+file(GLOB_RECURSE CMAKELISTS_FILE "CMakeLists.txt")
+list(REMOVE_ITEM UNIT_SRC ${CMAKELISTS_FILE})
+group_files(UNIT_SRC UNIT_CONF .*.toml ${UNIT_SRC})
+list(APPEND UNIT_TOML_JSON ${UNIT_CONF})
+group_files(UNIT_SRC UNIT_CONF .*.json ${UNIT_SRC})
+list(APPEND UNIT_TOML_JSON ${UNIT_CONF})
 
 install(FILES ${UNIT_SRC}
         COMPONENT ${UNIT_COMPONENT}
+        DESTINATION ${RELEASE_PACKAGE_DIR_MODEL}/${UNIT_NAME})
+
+install(FILES ${UNIT_TOML_JSON}
+        COMPONENT ${UNIT_COMPONENT}
+        PERMISSIONS OWNER_READ
         DESTINATION ${RELEASE_PACKAGE_DIR_MODEL}/${UNIT_NAME})

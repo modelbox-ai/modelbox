@@ -16,19 +16,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-TARGE_DIR=$1
+TARGET_DIR=$1
 EXAMPLE_DIR=$2
 DEMO_DIR=$3
 DEMO_SRC_DIR=$4
 
 main() {
-    cp ${DEMO_SRC_DIR}/mnist/graph/*.tar.gz ${TARGE_DIR}/src/graph/
+    for flowdir in ${TARGET_DIR}/src/flowunit/* ; do
+        if [ ! -d "${flowdir}" ]; then
+            continue;
+        fi
+
+        if [ -f "${flowdir}/CMakeLists.txt" ]; then
+            continue;
+        fi
+
+        cp ${EXAMPLE_DIR}/flowunit/python/CMakeLists.txt ${flowdir}/CMakeLists.txt
+        if [ $? -ne 0 ]; then
+            echo "copy cmake to template failed."
+            return 1
+        fi
+        
+        sed -i "s/example/$(basename ${flowdir})/g" ${flowdir}/CMakeLists.txt
+        if [ $? -ne 0 ]; then
+            echo "change cmakefile name failed."
+            return 1
+        fi
+    done
+
+    cp ${EXAMPLE_DIR}/project/base/src/graph/CMakeLists.txt ${TARGET_DIR}/src/graph/CMakeLists.txt
+    if [ $? -ne 0 ]; then
+        echo "copy cmake to graph failed."
+        return 1
+    fi
+
+    cp ${DEMO_SRC_DIR}/mnist/graph/*.tar.gz ${TARGET_DIR}/src/graph/
     if [ $? -ne 0 ]; then
         echo "copy image failed."
         return 1
     fi
 
-    cp ${DEMO_SRC_DIR}/mnist/graph/*.py ${TARGE_DIR}/src/graph/
+    cp ${DEMO_SRC_DIR}/mnist/graph/*.py ${TARGET_DIR}/src/graph/
     if [ $? -ne 0 ]; then
         echo "copy test script failed."
         return 1
@@ -36,3 +64,4 @@ main() {
 }
 
 main
+
