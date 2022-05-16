@@ -73,8 +73,8 @@ modelbox::Status ImageRotateGpuFlowUnit::GetStream(
 MODELBOX_FLOWUNIT(ImageRotateGpuFlowUnit, desc) {
   desc.SetFlowUnitName(FLOWUNIT_NAME);
   desc.SetFlowUnitGroupType("Image");
-  desc.AddFlowUnitInput({"in_origin_image"});
-  desc.AddFlowUnitOutput({"out_rotate_image"});
+  desc.AddFlowUnitInput({"in_image"});
+  desc.AddFlowUnitOutput({"out_image"});
 
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "rotate_angle", "int", false, "0", "the image rotate image"));
