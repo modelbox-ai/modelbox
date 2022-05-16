@@ -31,8 +31,9 @@ TEST_F(ImageRotateFlowUnitTest, CpuRotateTest) {
           test_0_1_rotate[type=flowunit, flowunit=test_0_1_rotate, device=cpu, deviceid=0, label="<out_1>"]
           image_rotate[type=flowunit, flowunit=image_rotate, device=cpu, deviceid=0, label="<in_encoded_image> | <out_image>", batch_size=3]
           test_1_0_rotate[type=flowunit, flowunit=test_1_0_rotate, device=cpu, deviceid=0, label="<in_1>",batch_size=3]                                
-          test_0_1_rotate:out_1 -> image_rotate:in_origin_image 
-          image_rotate:out_rotate_image -> test_1_0_rotate:in_1                                                                      
+          test_0_1_rotate:out_1 -> image_rotate:in_image 
+          test_0_1_rotate:out_1 -> test_1_0_rotate:in_origin                                                                      
+          image_rotate:out_image -> test_1_0_rotate:in_rotate
         }'''
     format = "graphviz"
   )";

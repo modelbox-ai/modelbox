@@ -103,7 +103,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
   }
 
   {
-    auto mock_desc = GenerateFlowunitDesc("test_1_0_rotate", {"in_1"}, {});
+    auto mock_desc = GenerateFlowunitDesc("test_1_0_rotate", {"in_origin", "in_rotate"}, {});
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(16);
 
@@ -111,24 +111,25 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
         [=](std::shared_ptr<DataContext> data_ctx,
             std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
       MBLOG_INFO << "test_1_0_rotate process";
-      auto input_buf = data_ctx->Input("in_1");
+      auto origin_buf = data_ctx->Input("in_origin");
+      auto rotate_buf = data_ctx->Input("in_rotate");
       int32_t width;
       int32_t height;
       int32_t channels;
       int32_t rotate_angle;
 
-      for (size_t i = 0; i < input_buf->Size(); ++i) {
-        input_buf->At(i)->Get("width", width);
-        input_buf->At(i)->Get("height", height);
-        input_buf->At(i)->Get("channel", channels);
-        input_buf->At(i)->Get("rotate_angle", rotate_angle);
+      for (size_t i = 0; i < rotate_buf->Size(); ++i) {
+        rotate_buf->At(i)->Get("width", width);
+        rotate_buf->At(i)->Get("height", height);
+        rotate_buf->At(i)->Get("channel", channels);
+        origin_buf->At(i)->Get("rotate_angle", rotate_angle);
         auto input_data =
-            static_cast<const uchar*>(input_buf->ConstBufferData(i));
+            static_cast<const uchar*>(rotate_buf->ConstBufferData(i));
 
         cv::Mat img_data(cv::Size(width, height), CV_8UC3);
         auto ret =
             memcpy_s(img_data.data, img_data.total() * img_data.elemSize(),
-                     input_data, input_buf->At(i)->GetBytes());
+                     input_data, rotate_buf->At(i)->GetBytes());
         if (ret != EOK) {
           MBLOG_ERROR << "Cpu memcpy failed, ret " << ret;
           return modelbox::STATUS_FAULT;
