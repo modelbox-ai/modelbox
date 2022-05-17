@@ -86,9 +86,6 @@ Status OutPort::Init() {
 }
 
 Status OutPort::Send(std::vector<std::shared_ptr<Buffer>>& buffers) {
-  std::vector<std::vector<std::shared_ptr<Buffer>>> buffer_vectors(
-      connected_input_ports_.size(), buffers);
-  size_t idx = 0;
   bool loop;
   auto real_node = std::dynamic_pointer_cast<Node>(GetNode());
   LoopType loop_type{NOT_LOOP};
@@ -100,7 +97,14 @@ Status OutPort::Send(std::vector<std::shared_ptr<Buffer>>& buffers) {
     loop = false;
     auto queue = input_port->GetQueue();
     auto priority = input_port->GetPriority();
-    for (auto& buffer : buffer_vectors[idx]) {
+    std::vector<std::shared_ptr<Buffer>> port_buffers;
+    port_buffers.reserve(buffers.size());
+    for (auto& origin_buffer : buffers) {
+      auto buffer = origin_buffer->Copy();
+      BufferManageView::SetIndexInfo(
+          buffer, BufferManageView::GetIndexInfo(origin_buffer));
+      BufferManageView::SetPriority(buffer, real_node->GetPriority());
+      port_buffers.push_back(buffer);
       // only loop flowunit itself in the loop structure
       auto buffer_priority = BufferManageView::GetPriority(buffer);
       if (loop_type == LOOP) {
@@ -117,23 +121,21 @@ Status OutPort::Send(std::vector<std::shared_ptr<Buffer>>& buffers) {
       loop = true;
     }
 
-    while (buffer_vectors[idx].size() > 0) {
+    while (port_buffers.size() > 0) {
       if (loop_type == LOOP || loop) {
-        if (queue->PushBatchForce(&buffer_vectors[idx], false, 0) == 0) {
+        if (queue->PushBatchForce(&port_buffers, false, 0) == 0) {
           break;
         }
       } else {
-        if (0 == queue->PushBatchForce(&buffer_vectors[idx], true, 0)) {
+        if (0 == queue->PushBatchForce(&port_buffers, true, 0)) {
           break;
         }
       }
 
-      if (buffer_vectors[idx].size() > 0) {
+      if (port_buffers.size() > 0) {
         input_port->NotifyPushEvent();
       }
     }
-
-    idx++;
   }
 
   for (auto& input_port : connected_input_ports_) {
