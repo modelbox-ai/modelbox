@@ -1374,7 +1374,7 @@ void NormalCollapseFlowUnitDataContext::UpdateProcessState() {
 };
 
 Status NormalCollapseFlowUnitDataContext::GenerateOutputError() {
-  FillErrorOutput(false, "", "", true);
+  FillErrorOutput(false, "", "", false);
   return STATUS_OK;
 }
 
@@ -1536,7 +1536,7 @@ void StreamCollapseFlowUnitDataContext::UpdateProcessState() {
 }
 
 Status StreamCollapseFlowUnitDataContext::GenerateOutputError() {
-  FillErrorOutput(false, "", "", true);
+  FillErrorOutput(false, "", "", false);
   return STATUS_OK;
 }
 

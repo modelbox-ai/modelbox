@@ -54,15 +54,19 @@ class DataContextTest : public testing::Test {
   virtual void TearDown(){};
 
   std::shared_ptr<PortDataMap> BuildData(size_t data_count, bool has_end,
-                                         bool expand_from_end = false) {
+                                         bool expand_from_end = false,
+                                         std::set<size_t> error_index = {}) {
     if (expand_from_end) {
       data_count = 1;
     }
     auto data = std::make_shared<PortDataMap>();
     for (auto& port_name : in_port_names_) {
       auto& port_data_list = (*data)[port_name];
-      for (size_t i = 1; i <= data_count; ++i) {
+      for (size_t i = 0; i < data_count; ++i) {
         auto buffer = std::make_shared<Buffer>();
+        if (error_index.find(i) != error_index.end()) {
+          buffer->SetError("DataContext.InputError", "InputErrorMsg");
+        }
         auto index = BufferManageView::GetIndexInfo(buffer);
         auto inherit_info = std::make_shared<BufferInheritInfo>();
         inherit_info->SetType(BufferProcessType::EXPAND);
@@ -79,7 +83,7 @@ class DataContextTest : public testing::Test {
         }
         index->SetInheritInfo(inherit_info);
         port_data_list.push_back(buffer);
-        if (i == data_count && has_end) {
+        if (i == (data_count - 1) && has_end) {
           index->MarkAsEndFlag();
         }
       }
@@ -89,7 +93,8 @@ class DataContextTest : public testing::Test {
   }
 
   void ProcessData(FlowUnitDataContext* data_ctx, BufferProcessType type,
-                   size_t expect_input_count, size_t output_count) {
+                   size_t expect_input_count, size_t output_count,
+                   std::set<size_t> error_index = {}) {
     auto process_info = std::make_shared<BufferProcessInfo>();
     process_info->SetType(type);
 
@@ -111,9 +116,24 @@ class DataContextTest : public testing::Test {
       (*output_map)[output_name] = output_list;
       for (size_t i = 0; i < output_count; ++i) {
         auto buffer = std::make_shared<Buffer>();
+        if (error_index.find(i) != error_index.end()) {
+          buffer->SetError("DataContext.ProcessDataError", "ProcessErrorMsg");
+        }
         output_list->PushBack(buffer);
         auto index = BufferManageView::GetIndexInfo(output_list->Back());
         index->SetProcessInfo(process_info);
+      }
+    }
+  }
+
+  void CheckPortDataError(BufferPtrList port_data_list, size_t data_count,
+                          std::set<size_t> error_index = {}) {
+    ASSERT_EQ(port_data_list.size(), data_count);
+    for (size_t i = 0; i < port_data_list.size(); ++i) {
+      if (error_index.find(i) != error_index.end()) {
+        EXPECT_TRUE(port_data_list[i]->HasError());
+      } else {
+        EXPECT_FALSE(port_data_list[i]->HasError());
       }
     }
   }
@@ -1082,6 +1102,364 @@ TEST_F(DataContextTest, StreamCollapseTest) {
   out_index = BufferManageView::GetIndexInfo(out_data.begin()->second.front());
   EXPECT_TRUE(out_index->IsEndFlag());
   EXPECT_EQ(out_index->GetIndex(), 1);
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, StreamRecvError_Visible) {
+  node_->SetFlowType(FlowType::STREAM);
+  node_->SetExceptionVisible(true);
+  std::set<size_t> error_index{2, 3};
+  auto data = BuildData(10, true, false, error_index);
+
+  StreamFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  // recv data
+  data_ctx.WriteInputData(data);
+  EXPECT_TRUE(data_ctx.HasError());
+  auto port_data_list = data_ctx.GetInputs().begin()->second;
+  CheckPortDataError(port_data_list, 9, error_index);
+
+  EXPECT_TRUE(data_ctx.IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx.IsSkippable());
+  ProcessData(&data_ctx, BufferProcessType::ORIGIN, 9, 9);
+
+  data_ctx.SetStatus(STATUS_SUCCESS);
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_TRUE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 10);
+  auto out_index =
+      BufferManageView::GetIndexInfo(out_data.begin()->second.back());
+  EXPECT_TRUE(out_index->IsEndFlag());
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, StreamRecvError_InVisible) {
+  node_->SetFlowType(FlowType::STREAM);
+  node_->SetExceptionVisible(false);
+  auto data = BuildData(10, true, false, {2, 3});
+
+  StreamFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  data_ctx.WriteInputData(data);
+  EXPECT_FALSE(data_ctx.HasError());
+  auto port_data_list = data_ctx.GetInputs().begin()->second;
+  CheckPortDataError(port_data_list, 7);
+
+  EXPECT_TRUE(data_ctx.IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx.IsSkippable());
+  ProcessData(&data_ctx, BufferProcessType::ORIGIN, 7, 7);
+
+  data_ctx.SetStatus(STATUS_SUCCESS);
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_TRUE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 10, {7, 8});
+  auto out_index =
+      BufferManageView::GetIndexInfo(out_data.begin()->second.back());
+  EXPECT_TRUE(out_index->IsEndFlag());
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, Normal_ProcessError) {
+  node_->SetFlowType(FlowType::NORMAL);
+  auto data = BuildData(10, true);
+
+  NormalFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  /* recv data */
+  // write data
+  data_ctx.WriteInputData(data);
+  EXPECT_FALSE(data_ctx.IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx.IsSkippable());
+  std::set<size_t> error_index{4, 5, 6};
+  ProcessData(&data_ctx, BufferProcessType::ORIGIN, 9, 9, error_index);
+
+  data_ctx.SetStatus(STATUS_SUCCESS);
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_FALSE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  auto port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 10, error_index);
+  auto out_index =
+      BufferManageView::GetIndexInfo(out_data.begin()->second.back());
+  EXPECT_TRUE(out_index->IsEndFlag());
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, Stream_DataPreError) {
+  node_->SetFlowType(FlowType::STREAM);
+  auto data = BuildData(10, false);
+
+  StreamFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  /* recv data */
+  // write data
+  data_ctx.WriteInputData(data);
+  EXPECT_TRUE(data_ctx.IsDataPre());
+  data_ctx.DealWithDataPreError("DataContext.DataPreError", "DataPreErrorMsg");
+  // process
+  ASSERT_TRUE(data_ctx.IsSkippable());
+
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_FALSE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  auto port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 1, {0});
+  data_ctx.ClearData();
+  ASSERT_FALSE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+
+  /* 2. recv end flag */
+  // write data
+  data = BuildData(1, true);
+  data_ctx.WriteInputData(data);
+  EXPECT_FALSE(data_ctx.IsDataPre());
+  // process
+  ASSERT_TRUE(data_ctx.IsSkippable());
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_TRUE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  out_data.clear();
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 1);
+  auto out_index =
+      BufferManageView::GetIndexInfo(out_data.begin()->second.back());
+  EXPECT_TRUE(out_index->IsEndFlag());
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, Stream_ProcessError) {
+  node_->SetFlowType(FlowType::STREAM);
+  auto data = BuildData(10, true);
+
+  StreamFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  /* recv data */
+  // write data
+  data_ctx.WriteInputData(data);
+  EXPECT_TRUE(data_ctx.IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx.IsSkippable());
+  std::set<size_t> error_index{2, 3};
+  ProcessData(&data_ctx, BufferProcessType::ORIGIN, 9, 6, error_index);
+  data_ctx.SetStatus(STATUS_SUCCESS);
+
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_TRUE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  auto port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 7, error_index);
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, NormalExpand_ProcessError) {
+  node_->SetFlowType(FlowType::NORMAL);
+  node_->SetOutputType(FlowOutputType::EXPAND);
+
+  NormalExpandFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  // write data
+  auto data = BuildData(1, false);
+  data_ctx.WriteInputData(data);
+  EXPECT_FALSE(data_ctx.IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx.IsSkippable());
+
+  std::set<size_t> error_index{2, 3};
+  ProcessData(&data_ctx, BufferProcessType::EXPAND, 1, 5, error_index);
+  data_ctx.SetStatus(STATUS_SUCCESS);
+
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_FALSE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  auto port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 6, error_index);
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, StreamExpand_ProcessError) {
+  node_->SetFlowType(FlowType::STREAM);
+  node_->SetOutputType(FlowOutputType::EXPAND);
+
+  StreamExpandFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  // write data
+  auto data = BuildData(1, false);
+  data_ctx.WriteInputData(data);
+  EXPECT_TRUE(data_ctx.IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx.IsSkippable());
+
+  std::set<size_t> error_index{2, 3};
+  ProcessData(&data_ctx, BufferProcessType::EXPAND, 1, 5, error_index);
+  data_ctx.SetStatus(STATUS_SUCCESS);
+
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_FALSE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  auto port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 6, error_index);
+  data_ctx.ClearData();
+  ASSERT_FALSE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, CollapseRecvError_Visible) {
+  node_->SetFlowType(FlowType::NORMAL);
+  node_->SetOutputType(FlowOutputType::COLLAPSE);
+  node_->SetExceptionVisible(true);
+
+  NormalCollapseFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  // recv data
+  std::set<size_t> error_index{2, 3};
+  auto data = BuildData(10, true, false, error_index);
+  // write data
+  data_ctx.WriteInputData(data);  
+  EXPECT_TRUE(data_ctx.HasError());
+  auto port_data_list = data_ctx.GetInputs().begin()->second;
+  CheckPortDataError(port_data_list, 9, error_index);
+  
+  EXPECT_TRUE(data_ctx.IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx.IsSkippable());
+  ProcessData(&data_ctx, BufferProcessType::COLLAPSE, 9, 1);
+
+  data_ctx.SetStatus(STATUS_SUCCESS);
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_TRUE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 1);
+  auto out_index =
+      BufferManageView::GetIndexInfo(out_data.begin()->second.back());
+  EXPECT_FALSE(out_index->IsEndFlag());
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, CollapseRecvError_InVisible) {
+  node_->SetFlowType(FlowType::NORMAL);
+  node_->SetOutputType(FlowOutputType::COLLAPSE);
+  node_->SetExceptionVisible(false);
+
+  NormalCollapseFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  // recv data
+  std::set<size_t> error_index{2, 3};
+  auto data = BuildData(10, true, false, error_index);
+  // write data
+  data_ctx.WriteInputData(data);    
+  EXPECT_FALSE(data_ctx.HasError());
+  EXPECT_TRUE(data_ctx.GetInputs().empty());
+  EXPECT_TRUE(data_ctx.IsDataPre());
+  // process
+  ASSERT_TRUE(data_ctx.IsSkippable());
+
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_TRUE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  auto port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 1, {0});
+  auto out_index =
+      BufferManageView::GetIndexInfo(out_data.begin()->second.back());
+  EXPECT_FALSE(out_index->IsEndFlag());
+  data_ctx.ClearData();
+  ASSERT_TRUE(data_ctx.IsFinished());
+  ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
+}
+
+TEST_F(DataContextTest, StreamCollapse_ProcessError) {
+  node_->SetFlowType(FlowType::NORMAL);
+  node_->SetOutputType(FlowOutputType::COLLAPSE);
+
+  NormalCollapseFlowUnitDataContext data_ctx(node_.get(), nullptr, session_);
+  // recv data
+  auto data = BuildData(10, true);
+  // write data
+  data_ctx.WriteInputData(data);
+  
+  EXPECT_TRUE(data_ctx.IsDataPre());
+  // process
+  ASSERT_FALSE(data_ctx.IsSkippable());
+  std::set<size_t> error_index{0};
+  ProcessData(&data_ctx, BufferProcessType::COLLAPSE, 9, 1, error_index);
+
+  data_ctx.SetStatus(STATUS_SUCCESS);
+  // post process
+  data_ctx.PostProcess();
+  EXPECT_TRUE(data_ctx.IsDataPost());
+  data_ctx.UpdateProcessState();
+  // check output and clear
+  PortDataMap out_data;
+  data_ctx.PopOutputData(out_data);
+  ASSERT_EQ(out_data.size(), 1);
+  auto port_data_list = out_data.begin()->second;
+  CheckPortDataError(port_data_list, 1, error_index);
+  auto out_index =
+      BufferManageView::GetIndexInfo(out_data.begin()->second.back());
+  EXPECT_FALSE(out_index->IsEndFlag());
   data_ctx.ClearData();
   ASSERT_TRUE(data_ctx.IsFinished());
   ASSERT_EQ(data_ctx.GetStatus(), STATUS_SUCCESS);
