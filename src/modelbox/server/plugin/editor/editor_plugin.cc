@@ -52,6 +52,7 @@ const std::string project_template_url = "/editor/project/template";
 const std::string project_list_url = "/editor/project/list";
 const std::string project_create_url = "/editor/project/create";
 const std::string pass_encode_url = "/editor/password/encode";
+const std::string postman_url = "/editor/postman";
 
 const char* HTTP_GRAPH_FORMAT_JSON = "json";
 const char* HTTP_GRAPH_FORMAT_TOML = "toml";
@@ -153,6 +154,7 @@ void ModelboxEditorPlugin::RegistHandlers() {
        &ModelboxEditorPlugin::HandlerSaveGraph},
       {pass_encode_url, HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerPassEncode},
+      {postman_url, HttpMethods::POST, &ModelboxEditorPlugin::HandlerPostman},
   };
 
   for (const auto& hander : handler_list) {
@@ -1083,6 +1085,90 @@ void ModelboxEditorPlugin::HandlerPassEncode(const httplib::Request& request,
   response.set_content(response_json.dump(), JSON);
 
   return;
+}
+
+void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
+                                          httplib::Response& response) {
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
+  try {
+    std::string method;
+    std::string url;
+    bool hasbody = false;
+    bool hasheader = false;
+    nlohmann::json rheader;
+    nlohmann::json rbody;
+    modelbox::HttpMethod hmethod;
+
+    auto body = nlohmann::json::parse(request.body);
+    if (body.find("method") != body.end()) {
+      method = body["method"].get<std::string>();
+    } else {
+      rspret = {STATUS_FAULT, "Get body failed."};
+      return;
+    }
+
+    if (body.find("url") != body.end()) {
+      url = body["url"].get<std::string>();
+    } else {
+      rspret = {STATUS_FAULT, "Get url failed."};
+      return;
+    }
+
+    if (body.find("header") != body.end()) {
+      rheader = nlohmann::json::parse(body["header"].get<std::string>());
+      hasheader = true;
+    }
+
+    if (body.find("body") != body.end()) {
+      rbody = nlohmann::json::parse(body["body"].get<std::string>());
+      hasbody = true;
+    }
+
+    if (method == "POST") {
+      hmethod = HttpMethods::POST;
+    } else if (method == "GET") {
+      hmethod = HttpMethods::GET;
+    } else if (method == "DELETE") {
+      hmethod = HttpMethods::DELETE;
+    } else if (method == "PUT") {
+      hmethod = HttpMethods::PUT;
+    }
+
+    HttpRequest hrequest(hmethod, url);
+
+    if (hasbody) {
+      hrequest.SetBody(rbody);
+    }
+
+    if (hasheader) {
+      hrequest.SetHeaders(rheader);
+    }
+
+    auto ret = SendHttpRequest(hrequest);
+    if (ret !=modelbox::STATUS_SUCCESS){
+      SetUpResponse(response, ret);
+      return;
+    }
+
+    auto test_response = hrequest.GetResponse();
+    AddSafeHeader(response);
+    response.status = test_response.status;
+    response.body = test_response.body;
+
+  } catch (const std::exception& e) {
+    std::string errmsg = "internal error when debugging";
+    errmsg += e.what();
+    MBLOG_ERROR << errmsg;
+    rspret = {STATUS_FAULT, errmsg};
+    return;
+  }
 }
 
 bool ModelboxEditorPlugin::Start() {
