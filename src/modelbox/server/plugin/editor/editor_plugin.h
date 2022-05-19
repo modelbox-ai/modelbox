@@ -44,7 +44,7 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   void HandlerUIGet(const httplib::Request &request,
                     httplib::Response &response);
   void HanderBasicInfoGet(const httplib::Request &request,
-                    httplib::Response &response);
+                          httplib::Response &response);
   void SendFile(const std::string &file_name, httplib::Response &response);
   void HandlerFlowUnitInfoPut(const httplib::Request &request,
                               httplib::Response &response);
@@ -60,13 +60,15 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   void HandlerProjectCreate(const httplib::Request &request,
                             httplib::Response &response);
   void HandlerProjectTemplateListGet(const httplib::Request &request,
-                            httplib::Response &response);
+                                     httplib::Response &response);
   void HandlerProjectGet(const httplib::Request &request,
                          httplib::Response &response);
   void HandlerProjectListGet(const httplib::Request &request,
                              httplib::Response &response);
   void HandlerSaveGraph(const httplib::Request &request,
                         httplib::Response &response);
+  void HandlerPostman(const httplib::Request &request,
+                      httplib::Response &response);
   bool GetHtmlFile(const std::string &in_file, std::string *out_file,
                    std::string *redirect_file);
   modelbox::Status GraphFileToJson(const std::string &file,
