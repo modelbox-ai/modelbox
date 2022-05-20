@@ -43,7 +43,7 @@ constexpr const char *FLOWUNIT_DESC =
     "\t  the output buffer data type is char *. \n"
     "\t@Constraint: the field value range of this flowunit "
     "support: 'source_type': "
-    "[obs, vcn, vis, resetful, url]. This flowunit is usually followed by "
+    "[obs, vcn, vis, restful, url]. This flowunit is usually followed by "
     "'video_demuxer'.";
 constexpr const char *INPUT_DATA_SOURCE_CFG = "in_data";
 constexpr const char *INPUT_META_SOURCE_TYPE = "source_type";

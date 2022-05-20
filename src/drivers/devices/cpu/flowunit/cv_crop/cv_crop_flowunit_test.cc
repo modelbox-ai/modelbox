@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "cv_crop_flowunit.h"
 
 #include <securec.h>
@@ -25,17 +24,16 @@
 #include <random>
 #include <thread>
 
-#include "modelbox/base/log.h"
-#include "modelbox/base/utils.h"
-#include "modelbox/buffer.h"
 #include "driver_flow_test.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "modelbox/base/log.h"
+#include "modelbox/base/utils.h"
+#include "modelbox/buffer.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
 using ::testing::_;
-
 namespace modelbox {
 class CVCropFlowUnitTest : public testing::Test {
  public:
@@ -58,6 +56,10 @@ class CVCropFlowUnitTest : public testing::Test {
 std::shared_ptr<MockFlow> CVCropFlowUnitTest::GetDriverFlow() {
   return driver_flow_;
 }
+
+typedef struct RoiBox {
+  int32_t x, y, w, h;
+} RoiBox;
 
 Status CVCropFlowUnitTest::AddMockFlowUnit() {
   {

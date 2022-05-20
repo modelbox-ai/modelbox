@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_ASCEND_CROP_H_
 #define MODELBOX_FLOWUNIT_ASCEND_CROP_H_
 
@@ -66,8 +65,8 @@ class CropFlowUnit : public modelbox::AscendFlowUnit {
 
   modelbox::Status Close();
 
-  modelbox::Status AscendProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                               aclrtStream stream);
+  modelbox::Status AscendProcess(
+      std::shared_ptr<modelbox::DataContext> data_ctx, aclrtStream stream);
 
  private:
   modelbox::Status PrepareOutput(
@@ -75,26 +74,31 @@ class CropFlowUnit : public modelbox::AscendFlowUnit {
       std::shared_ptr<modelbox::BufferList> &output_img_buffer_list);
 
   modelbox::Status ProcessOneImg(std::shared_ptr<modelbox::Buffer> &in_image,
-                               std::shared_ptr<modelbox::Buffer> &in_box,
-                               std::shared_ptr<modelbox::Buffer> &out_image,
-                               aclrtStream stream);
+                                 std::shared_ptr<modelbox::Buffer> &in_box,
+                                 std::shared_ptr<modelbox::Buffer> &out_image,
+                                 aclrtStream stream);
 
-  modelbox::Status GetInputDesc(const std::shared_ptr<modelbox::Buffer> &in_image,
-                              std::shared_ptr<acldvppPicDesc> &in_img_desc);
+  modelbox::Status GetInputDesc(
+      const std::shared_ptr<modelbox::Buffer> &in_image,
+      std::shared_ptr<acldvppPicDesc> &in_img_desc);
 
-  modelbox::Status GetOutputDesc(const std::shared_ptr<modelbox::Buffer> &in_box,
-                               const std::shared_ptr<modelbox::Buffer> &out_image,
-                               std::shared_ptr<acldvppPicDesc> &out_img_desc);
+  modelbox::Status GetOutputDesc(
+      const std::shared_ptr<modelbox::Buffer> &in_box,
+      const std::shared_ptr<modelbox::Buffer> &out_image,
+      std::shared_ptr<acldvppPicDesc> &out_img_desc);
 
   modelbox::Status GetRoiCfg(const std::shared_ptr<modelbox::Buffer> &in_box,
-                           std::shared_ptr<acldvppRoiConfig> &roi_cfg);
+                             std::shared_ptr<acldvppRoiConfig> &roi_cfg);
 
   modelbox::Status Crop(std::shared_ptr<acldvppChannelDesc> &chan_desc,
-                      std::shared_ptr<acldvppPicDesc> &in_img_desc,
-                      std::shared_ptr<acldvppPicDesc> &out_img_desc,
-                      std::shared_ptr<acldvppRoiConfig> &roi_cfg,
-                      std::shared_ptr<modelbox::Buffer> &out_image,
-                      aclrtStream stream);
+                        std::shared_ptr<acldvppPicDesc> &in_img_desc,
+                        std::shared_ptr<acldvppPicDesc> &out_img_desc,
+                        std::shared_ptr<acldvppRoiConfig> &roi_cfg,
+                        std::shared_ptr<modelbox::Buffer> &out_image,
+                        aclrtStream stream);
+  modelbox::Status CheckInputParamVaild(
+      std::shared_ptr<modelbox::Buffer> &in_image,
+      std::shared_ptr<modelbox::Buffer> &in_box);
 };
 
 #endif  // MODELBOX_FLOWUNIT_ASCEND_CROP_H_

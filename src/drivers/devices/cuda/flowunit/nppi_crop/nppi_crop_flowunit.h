@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_NPPI_CROP_GPU_H_
 #define MODELBOX_FLOWUNIT_NPPI_CROP_GPU_H_
 
@@ -27,6 +26,7 @@
 
 #include <typeinfo>
 
+#include "image_process.h"
 #include "modelbox/device/cuda/device_cuda.h"
 
 constexpr const char *FLOWUNIT_NAME = "crop";
@@ -60,10 +60,7 @@ typedef struct {
   int32_t channel;
 } ImageSize;
 
-typedef struct RoiBox {
-  int32_t x, y, width, height;
-} RoiBox;
-
+using namespace imageprocess;
 class NppiCropFlowUnit : public modelbox::CudaFlowUnit {
  public:
   NppiCropFlowUnit();
@@ -75,17 +72,16 @@ class NppiCropFlowUnit : public modelbox::CudaFlowUnit {
   modelbox::Status Close() override { return modelbox::STATUS_OK; };
 
   modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                             cudaStream_t stream) override;
+                               cudaStream_t stream) override;
 
  private:
   modelbox::Status NppiCrop_u8_c3r(const u_char *pSrcData, ImageSize srcSize,
-                                 u_char *pDstData, RoiBox dstSize);
+                                   u_char *pDstData, RoiBox dstSize);
 
   modelbox::Status ProcessOneImage(
       std::shared_ptr<modelbox::BufferList> &input_buffer_list,
       std::shared_ptr<modelbox::BufferList> &input_box_bufs,
       std::shared_ptr<modelbox::BufferList> &output_buffer_list, int index);
-
 };
 
 #endif  // MODELBOX_FLOWUNIT_NPPI_CROP_GPU_H_

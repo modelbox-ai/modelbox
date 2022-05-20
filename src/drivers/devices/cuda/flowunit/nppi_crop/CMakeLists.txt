@@ -34,6 +34,7 @@ include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})
 include_directories(${LIBMODELBOX_DEVICE_CUDA_INCLUDE})
 include_directories(${CUDA_INCLUDE_DIRS})
+include_directories(${MODELBOX_COMMON_IMAGE_PROCESS_INCLUDE})
 
 set(MODELBOX_UNIT_SHARED libmodelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}-shared)
 set(MODELBOX_UNIT_SOURCE_INCLUDE ${CMAKE_CURRENT_LIST_DIR})
@@ -53,7 +54,7 @@ target_link_libraries(${MODELBOX_UNIT_SHARED} dl)
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_DEVICE_CUDA_SHARED})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_SHARED})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${CUDA_nppidei_LIBRARY})
-
+target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_COMMON_IMAGE_PROCESS_LIBRARY})
 set_target_properties(${MODELBOX_UNIT_SHARED} PROPERTIES OUTPUT_NAME "modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}")
 
 install(TARGETS ${MODELBOX_UNIT_SHARED}

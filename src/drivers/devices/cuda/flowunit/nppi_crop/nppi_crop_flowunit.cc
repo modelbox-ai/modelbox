@@ -72,10 +72,9 @@ modelbox::Status NppiCropFlowUnit::CudaProcess(
       continue;
     }
 
-    MBLOG_DEBUG << "crop bbox : " << bbox->x << " " << bbox->y << " "
-                << bbox->width << " " << bbox->height;
-    shape_vector.push_back((bbox->width) * (bbox->height) * channel *
-                           sizeof(u_char));
+    MBLOG_DEBUG << "crop bbox : " << bbox->x << " " << bbox->y << " " << bbox->w
+                << " " << bbox->h;
+    shape_vector.push_back((bbox->w) * (bbox->h) * channel * sizeof(u_char));
   }
 
   output_bufs->Build(shape_vector);
@@ -145,9 +144,13 @@ modelbox::Status NppiCropFlowUnit::ProcessOneImage(
     return modelbox::STATUS_NODATA;
   }
 
+  if (!CheckRoiBoxVaild(bbox, src_size.width, src_size.height)) {
+    return {modelbox::STATUS_FAULT, "roi box param is invaild !"};
+  }
+
   RoiBox dst_size;
-  dst_size.width = bbox->width;
-  dst_size.height = bbox->height;
+  dst_size.w = bbox->w;
+  dst_size.h = bbox->h;
   dst_size.x = bbox->x;
   dst_size.y = bbox->y;
 
@@ -164,15 +167,15 @@ modelbox::Status NppiCropFlowUnit::ProcessOneImage(
   }
 
   auto output_buffer = output_buffer_list->At(index);
-  output_buffer->Set("width", dst_size.width);
-  output_buffer->Set("height", dst_size.height);
-  output_buffer->Set("width_stride", dst_size.width * 3);
-  output_buffer->Set("height_stride", dst_size.height);
+  output_buffer->Set("width", dst_size.w);
+  output_buffer->Set("height", dst_size.h);
+  output_buffer->Set("width_stride", dst_size.w * 3);
+  output_buffer->Set("height_stride", dst_size.h);
   output_buffer->Set("channel", src_size.channel);
   output_buffer->Set("pix_fmt", pix_fmt);
   output_buffer->Set("type", modelbox::ModelBoxDataType::MODELBOX_UINT8);
-  output_buffer->Set("shape", std::vector<size_t>{(size_t)dst_size.height,
-                                                  (size_t)dst_size.width, 3});
+  output_buffer->Set(
+      "shape", std::vector<size_t>{(size_t)dst_size.h, (size_t)dst_size.w, 3});
   output_buffer->Set("layout", std::string("hwc"));
 
   return modelbox::STATUS_OK;
@@ -190,12 +193,12 @@ modelbox::Status NppiCropFlowUnit::NppiCrop_u8_c3r(const u_char *p_src_data,
   Npp8u *p_dst = p_dst_data;
 
   NppiSize dst_npp_size;
-  dst_npp_size.width = dst_size.width;
-  dst_npp_size.height = dst_size.height;
+  dst_npp_size.width = dst_size.w;
+  dst_npp_size.height = dst_size.h;
 
   NppStatus status =
       nppiCopy_8u_C3R(p_src, src_size.width * sizeof(u_char) * 3, p_dst,
-                      dst_size.width * sizeof(u_char) * 3, dst_npp_size);
+                      dst_size.w * sizeof(u_char) * 3, dst_npp_size);
   if (NPP_SUCCESS != status) {
     MBLOG_ERROR << "nppi error code " << status;
     std::string errMsg = "cuda Crop failed, error code " +

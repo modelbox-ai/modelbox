@@ -48,13 +48,10 @@ constexpr const char *FLOWUNIT_DESC =
     "\t  it contain the following meta fields: \n"
     "\t\tField Name: type,          Type: ModelBoxDataType::MODELBOX_UINT8\n"
     "\t@Constraint: The field value range of this flowunit support: 'pix_fmt': "
-    "[rgb_packed,bgr_packed], 'layout': [hwc]. One image can only be cropped with one "
+    "[rgb_packed,bgr_packed], 'layout': [hwc]. One image can only be cropped "
+    "with one "
     "rectangle and output one crop image.";
 const int RGB_CHANNLES = 3;
-
-typedef struct RoiBox {
-  int32_t x, y, w, h;
-} RoiBox;
 
 class CVCropFlowUnit : public modelbox::FlowUnit {
  public:

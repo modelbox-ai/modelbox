@@ -266,8 +266,8 @@ MODELBOX_FLOWUNIT(PaddingFlowUnit, desc) {
   desc.SetDescription(FLOWUNIT_DESC);
 
   desc.AddFlowUnitOption(
-      modelbox::FlowUnitOption("width", "int", true, "0", "Output img width"));
-  desc.AddFlowUnitOption(modelbox::FlowUnitOption("height", "int", true, "0",
+      modelbox::FlowUnitOption("image_width", "int", true, "0", "Output img width"));
+  desc.AddFlowUnitOption(modelbox::FlowUnitOption("image_height", "int", true, "0",
                                                   "Output img height"));
   std::map<std::string, std::string> vertical_align_list{
       {"top", "top"}, {"center", "center"}, {"bottom", "bottom"}};
