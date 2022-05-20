@@ -1156,7 +1156,6 @@ void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
       SetUpResponse(response, ret);
       return;
     }
-
     auto test_response = hrequest.GetResponse();
     AddSafeHeader(response);
     response.status = test_response.status;
