@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_IMAGE_PROCESS_COMMON_H_
 #define MODELBOX_FLOWUNIT_IMAGE_PROCESS_COMMON_H_
 
@@ -35,12 +34,9 @@
 
 namespace imageprocess {
 
-typedef struct BoxInt32 {
-  int32_t x;
-  int32_t y;
-  int32_t w;
-  int32_t h;
-} BoxInt32;
+typedef struct RoiBox {
+  int32_t x, y, w, h;
+} RoiBox;
 
 class ImageShape {
  public:
@@ -85,6 +81,9 @@ modelbox::Status CheckImageStride(const std::string &pix_fmt,
                                   int32_t expect_w_align,
                                   int32_t img_height_stride,
                                   int32_t expect_h_align, size_t img_size);
+
+bool CheckRoiBoxVaild(const RoiBox *bbox, int32_t image_width,
+                                    int32_t image_height);
 
 #ifdef ACL_ENABLE
 

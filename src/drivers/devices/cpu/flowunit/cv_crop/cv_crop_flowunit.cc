@@ -15,10 +15,13 @@
  */
 
 #include "cv_crop_flowunit.h"
+
 #include <securec.h>
+
+#include "image_process.h"
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
-
+using namespace imageprocess;
 CVCropFlowUnit::CVCropFlowUnit(){};
 CVCropFlowUnit::~CVCropFlowUnit(){};
 
@@ -95,15 +98,17 @@ modelbox::Status CVCropFlowUnit::Process(
 
     channel = RGB_CHANNLES;
 
+    auto bbox = static_cast<const RoiBox *>(input_box_bufs->ConstBufferData(i));
+    if (!CheckRoiBoxVaild(bbox, width, height)) {
+      return {modelbox::STATUS_FAULT, "roi box param is invaild !"};
+    }
+
+    MBLOG_DEBUG << "crop bbox :  " << bbox->x << " " << bbox->y << " "
+                << bbox->w << " " << bbox->h;
     void *input_data = const_cast<void *>(input_img_bufs->ConstBufferData(i));
     cv::Mat img_data(cv::Size(width, height), CV_8UC3, input_data);
     MBLOG_DEBUG << "ori image : cols " << img_data.cols << " rows "
                 << img_data.rows << " channel " << img_data.channels();
-
-    auto bbox = static_cast<const RoiBox *>(input_box_bufs->ConstBufferData(i));
-
-    MBLOG_DEBUG << "crop bbox :  " << bbox->x << " " << bbox->y << " "
-                << bbox->w << " " << bbox->h;
 
     cv::Rect my_roi(bbox->x, bbox->y, bbox->w, bbox->h);
     cv::Mat cropped;

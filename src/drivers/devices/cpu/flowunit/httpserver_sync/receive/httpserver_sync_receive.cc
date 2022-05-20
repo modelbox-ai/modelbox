@@ -284,8 +284,8 @@ MODELBOX_FLOWUNIT(HTTPServerReceiveSync, desc) {
       modelbox::FlowUnitOption("keepalive_timeout_sec", "integer", false, "200",
                                "keep-alive timeout time(sec)"));
   desc.AddFlowUnitOption(
-      modelbox::FlowUnitOption("time_out", "integer", false, "100",
-                               "max http request timeout. measured in 100ms"));
+      modelbox::FlowUnitOption("time_out_ms", "integer", false, "5000",
+                               "max http request timeout. "));
   desc.AddFlowUnitOption(
       modelbox::FlowUnitOption("cert", "string", false, "", "cert file path"));
   desc.AddFlowUnitOption(

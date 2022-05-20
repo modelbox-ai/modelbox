@@ -177,6 +177,19 @@ modelbox::Status CheckImageStride(const std::string &pix_fmt,
   return modelbox::STATUS_OK;
 }
 
+bool CheckRoiBoxVaild(const RoiBox *bbox, int32_t image_width,
+                      int32_t image_height) {
+  if (bbox->x < 0 || bbox->y < 0 || bbox->w < 0 || bbox->h < 0 ||
+      bbox->x + bbox->w > image_width || bbox->y + bbox->h > image_height) {
+    MBLOG_ERROR << "crop bbox roi is invaild: x:" << bbox->x << " y:" << bbox->y
+                << " w:" << bbox->w << " h:" << bbox->h
+                << ", image width: " << image_width
+                << ", image height:" << image_height;
+    return false;
+  }
+  return true;
+}
+
 #ifdef ACL_ENABLE
 
 modelbox::Status InitDvppChannel(

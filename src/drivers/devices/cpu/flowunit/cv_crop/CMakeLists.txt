@@ -36,6 +36,7 @@ include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})
 include_directories(${LIBMODELBOX_DEVICE_CPU_INCLUDE})
 include_directories(${OPENCV_INCLUDE_DIR})
+include_directories(${MODELBOX_COMMON_IMAGE_PROCESS_INCLUDE})
 
 set(MODELBOX_UNIT_SHARED modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}-shared)
 set(MODELBOX_UNIT_SOURCE_INCLUDE ${CMAKE_CURRENT_LIST_DIR})
@@ -55,7 +56,9 @@ target_link_libraries(${MODELBOX_UNIT_SHARED} pthread)
 target_link_libraries(${MODELBOX_UNIT_SHARED} rt)
 target_link_libraries(${MODELBOX_UNIT_SHARED} dl)
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_UNIT_LINK_LIBRARY})
+target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_COMMON_IMAGE_PROCESS_LIBRARY})
 set_target_properties(${MODELBOX_UNIT_SHARED} PROPERTIES OUTPUT_NAME "modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}")
+
 
 install(TARGETS ${MODELBOX_UNIT_SHARED} 
     COMPONENT cpu-device-flowunit
