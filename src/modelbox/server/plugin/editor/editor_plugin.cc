@@ -196,7 +196,6 @@ void ModelboxEditorPlugin::SetUpResponse(httplib::Response& response,
   }
 
   AddSafeHeader(response);
-  response.status = HttpStatusCodes::BAD_REQUEST;
   response.set_content(ResultMsg(status), JSON);
 
   return;
@@ -1093,7 +1092,6 @@ void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
 
   Defer {
     if (!rspret) {
-      MBLOG_INFO << "defer" << rspret.Code();
       SetUpResponse(response, rspret);
     }
   };
@@ -1110,10 +1108,16 @@ void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
     auto body = nlohmann::json::parse(request.body);
     if (body.find("method") != body.end()) {
       method = body["method"].get<std::string>();
+    } else {
+      rspret = {STATUS_FAULT, "Get method failed."};
+      return;
     }
 
     if (body.find("url") != body.end()) {
       url = body["url"].get<std::string>();
+    } else {
+      rspret = {STATUS_FAULT, "Get url failed."};
+      return;
     }
 
     if (body.find("header") != body.end()) {
@@ -1146,12 +1150,24 @@ void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
       hrequest.SetHeaders(rheader);
     }
 
-    SendHttpRequest(hrequest);
-    
+    rspret = SendHttpRequest(hrequest);
+    if (rspret != modelbox::STATUS_SUCCESS) {
+      return;
+    }
     auto test_response = hrequest.GetResponse();
     AddSafeHeader(response);
-    response.status = test_response.status;
-    response.body = test_response.body;
+
+    nlohmann::json response_json;
+    nlohmann::json test_response_json;
+
+    test_response_json["status"] = test_response.status;
+    test_response_json["body"] = test_response.body;
+    test_response_json["headers"] = test_response.headers;
+
+    response_json["body"] = test_response_json;
+
+    response.status = HttpStatusCodes::OK;
+    response.set_content(response_json.dump(), JSON);
 
   } catch (const std::exception& e) {
     std::string errmsg = "internal error when debugging";
