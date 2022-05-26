@@ -7,14 +7,6 @@ dir=""
 [flow]
 name = "MNIST"
 desc = "MNIST detection for image"
-[restapi]
-method = "POST"
-path = "/v1/mnist_test"
-requestbody = '''
-{
-  "image_base64": ""
-}
-'''
 [graph]
 format = "graphviz"
 graphconf = '''digraph mnist_sample {

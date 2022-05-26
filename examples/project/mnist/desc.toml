@@ -1,2 +1,11 @@
 name = "mnist"
 desc = "A mnist example project template for modelbox"
+
+[restapi]
+method = "POST"
+path = "http://0.0.0.0:8190/v1/mnist_test"
+requestbody = '''
+{
+  "image_base64": ""
+}
+'''
