@@ -109,8 +109,6 @@ class SessionUnmatchCache {
 
   Status PopCache(OutputBufferList& output_buffer_list);
 
-  bool AllPortStreamEnd();
-
  private:
   std::unordered_map<std::string, std::map<std::shared_ptr<Stream>,
                                            std::vector<std::shared_ptr<Buffer>>,
@@ -118,8 +116,6 @@ class SessionUnmatchCache {
       port_streams_map_;
 
   std::shared_ptr<FlowUnitError> last_error_;
-
-  std::unordered_map<std::string, bool> port_end_flag_map_;
 };
 
 class OutputUnmatchVirtualNode : public Node {
