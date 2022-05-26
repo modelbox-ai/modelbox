@@ -5,7 +5,7 @@ ModelBox is an AI application development framework featuring device-edge-cloud 
 ## ModelBox Highlights
 
 1. **Easy to develop**  
-   Simplified orchestration and development of inference applications via a graphical interface, modularized functions, rich component libraries, and multi-language support (C++, Python, and Java).
+   Simplified orchestration and development of inference applications via a graphical interface, modularized functions, rich component libraries, and multi-language support (C++, Python).
 
 1. **Easy to integrate**  
    Easy to integrate different components on the cloud.
@@ -14,7 +14,7 @@ ModelBox is an AI application development framework featuring device-edge-cloud 
    Parallel pipeline execution, intelligent scheduling of compute capacities, fine-grained resource management and scheduling, and higher efficiency.
 
 1. **Heterogeneous software and hardware**  
-   Support for heterogeneous compute resources, including CPU, ARM, GPU, and NPU, higher resource utilization.
+   Support for heterogeneous compute resources, including CPU, GPU and NPU, higher resource utilization.
 
 1. **All-scenario**  
    Able to process various types of data, such as video, voice, text, and NLP; service-oriented; easy to customize and integrate; and seamless data exchange across the cloud, edge, and devices.
