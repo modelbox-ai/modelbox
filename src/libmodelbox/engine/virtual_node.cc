@@ -257,9 +257,6 @@ std::shared_ptr<Device> OutputVirtualNode::GetDevice() {
 
 SessionUnmatchCache::SessionUnmatchCache(
     const std::set<std::string>& port_names) {
-  for (auto& name : port_names) {
-    port_end_flag_map_[name] = false;
-  }
 }
 
 Status SessionUnmatchCache::CacheBuffer(const std::string& port_name,
@@ -274,20 +271,6 @@ Status SessionUnmatchCache::CacheBuffer(const std::string& port_name,
   auto& port_streams = port_streams_map_[port_name];
   auto stream = buffer_index->GetStream();
   port_streams[stream].push_back(buffer);
-
-  // check port end
-  if (!buffer_index->IsEndFlag()) {
-    return STATUS_OK;
-  }
-
-  auto cur_level_buffer = buffer_index;
-  while (cur_level_buffer->GetInheritInfo()->GetDeepth() != 0) {
-    cur_level_buffer = cur_level_buffer->GetInheritInfo()->GetInheritFrom();
-  }
-
-  if (cur_level_buffer->IsEndFlag()) {
-    port_end_flag_map_[port_name] = true;
-  }
 
   return STATUS_OK;
 }
@@ -332,16 +315,6 @@ Status SessionUnmatchCache::PopCache(OutputBufferList& output_buffer_list) {
   }
 
   return STATUS_CONTINUE;
-}
-
-bool SessionUnmatchCache::AllPortStreamEnd() {
-  for (auto& port_end_flag : port_end_flag_map_) {
-    if (!port_end_flag.second) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 OutputUnmatchVirtualNode::OutputUnmatchVirtualNode(
@@ -400,14 +373,9 @@ Status OutputUnmatchVirtualNode::Run(RunType type) {
       }
     }
 
-    if (cache->AllPortStreamEnd() || session->IsAbort()) {
-      MBLOG_INFO << "session " << session->GetSessionCtx()->GetSessionId()
-                 << ", processed over";
-      iter = session_cache_map_.erase(iter);
-    } else {
-      ++iter;
-    }
+    iter = session_cache_map_.erase(iter);
   }
+
   return STATUS_SUCCESS;
 }
 
