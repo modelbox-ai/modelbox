@@ -1,2 +1,11 @@
 name = "helloworld"
 desc = "A helloworld REST API service example project template for modelbox"
+
+[restapi]
+method = "POST"
+path = "http://0.0.0.0:7770/v1/hello_world"
+requestbody = '''
+{
+  "msg": "hello modelbox"
+}
+'''

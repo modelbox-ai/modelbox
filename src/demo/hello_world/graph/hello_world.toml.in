@@ -5,14 +5,6 @@ dir = [
 [flow]
 name = "HelloWorld"
 desc = "A hello world REST API service demo."
-[restapi]
-method = "POST"
-path = "/v1/hello_world"
-requestbody = '''
-{
-  "msg": "hello modelbox"
-}
-'''
 [graph]
 format = "graphviz"
 graphconf = '''digraph hello_world_diagraph {
