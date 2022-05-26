@@ -27,6 +27,8 @@ endfunction (exclude_files_from_dir_in_list)
 
 function (group_source_test_files source test test_pattern filelist)
   set(list_var "${ARGN}")
+  string(REPLACE "." "\\.*" test_pattern ${test_pattern})
+  string(REPLACE "*" ".*" test_pattern ${test_pattern})
   foreach (ITR ${filelist} ${list_var})
     if ("${ITR}" MATCHES "(.*)${test_pattern}(.*)")                   
       list (APPEND test_list ${ITR})                 

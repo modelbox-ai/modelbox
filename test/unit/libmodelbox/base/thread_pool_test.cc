@@ -144,7 +144,7 @@ TEST_F(ThreadPoolTest, KeepAlive) {
   int max_thread_size = 10;
   modelbox::ThreadPool pool(thread_size, max_thread_size, 1, -1);
   std::vector<std::future<int>> future_queue;
-  for (size_t i = 0; i < 2000; i++) {
+  for (size_t i = 0; i < 20000; i++) {
     auto fut = pool.Submit(compute, i, i);
     future_queue.push_back(std::move(fut));
   }
