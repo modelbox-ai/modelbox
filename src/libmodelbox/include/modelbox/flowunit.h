@@ -264,7 +264,7 @@ class FlowUnitDesc {
         condition_type_(NONE),
         loop_type_(NOT_LOOP),
         is_stream_same_count_(false),
-        is_collapse_all_(false),
+        is_collapse_all_(true),
         is_exception_visible_(false),
         is_input_contiguous_{true},
         is_resource_nice_{true},
@@ -302,6 +302,8 @@ class FlowUnitDesc {
   const ConditionType GetConditionType() { return condition_type_; };
 
   const FlowOutputType GetOutputType() { return output_type_; };
+
+  bool IsUserSetFlowType() { return is_user_set_flow_type_; }
 
   const FlowType GetFlowType() { return flow_type_; };
 
@@ -387,7 +389,10 @@ class FlowUnitDesc {
 
   void SetOutputType(FlowOutputType output_type) { output_type_ = output_type; }
 
-  void SetFlowType(FlowType flow_type) { flow_type_ = flow_type; }
+  void SetFlowType(FlowType flow_type) {
+    is_user_set_flow_type_ = true;
+    flow_type_ = flow_type;
+  }
 
   void SetStreamSameCount(bool is_stream_same_count) {
     if (flow_type_ == STREAM) {
@@ -440,6 +445,7 @@ class FlowUnitDesc {
  protected:
   FlowOutputType output_type_;
 
+  bool is_user_set_flow_type_{false};
   FlowType flow_type_;
 
   ConditionType condition_type_;
