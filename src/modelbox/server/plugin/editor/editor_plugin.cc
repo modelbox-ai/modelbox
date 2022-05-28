@@ -346,7 +346,7 @@ modelbox::Status ModelboxEditorPlugin::SaveGraph(
       return {ret, "convert json failed"};
     }
 
-    std::string graphfile = path + "/src/graph/" + graph_name;
+    std::string graphfile = path + "/src/graph/" + graph_name + ".toml";
     std::ofstream out(graphfile, std::ios::trunc);
     if (out.fail()) {
       return {modelbox::STATUS_FAULT, std::string("save graph file failed, ") +
