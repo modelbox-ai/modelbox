@@ -292,32 +292,8 @@ modelbox::Status VirtualInferenceFlowUnitFactory::FillBaseInfo(
 void VirtualInferenceFlowUnitFactory::FillFlowUnitType(
     std::shared_ptr<modelbox::Configuration> &config,
     std::shared_ptr<VirtualInferenceFlowUnitDesc> &flowunit_desc) {
-  if (config->GetBool("base.stream", false)) {
-    flowunit_desc->SetFlowType(STREAM);
-  } else {
-    flowunit_desc->SetFlowType(NORMAL);
-  }
-
+  flowunit_desc->SetFlowType(NORMAL);
   flowunit_desc->SetOutputType(ORIGIN);
-
-  if (config->GetBool("base.collapse", false)) {
-    flowunit_desc->SetOutputType(COLLAPSE);
-  }
-
-  if (config->GetBool("base.collapse", false)) {
-    flowunit_desc->SetOutputType(COLLAPSE);
-    flowunit_desc->SetCollapseAll(config->GetBool("base.collapse_all", false));
-  }
-
-  if (config->GetBool("base.expand", false)) {
-    flowunit_desc->SetOutputType(EXPAND);
-  }
-
-  if (config->GetBool("base.condition", false)) {
-    flowunit_desc->SetConditionType(IF_ELSE);
-  } else {
-    flowunit_desc->SetConditionType(NONE);
-  }
 }
 
 std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>

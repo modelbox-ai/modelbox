@@ -282,6 +282,8 @@ class Node : public NodeBase {
 
   virtual Status InitNodeProperties();
 
+  void UpdatePropConstrain(std::shared_ptr<FlowUnitDesc> flowunit_desc);
+
   std::shared_ptr<ExternalData> CreateExternalData(
       std::shared_ptr<Device> device);
 

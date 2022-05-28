@@ -309,7 +309,7 @@ void VirtualJavaFlowUnitFactory::FillFlowUnitType(
   auto is_collapse = config->GetBool("base.collapse", false);
   if (is_collapse) {
     flowunit_desc->SetOutputType(COLLAPSE);
-    auto is_collapse_all = config->GetBool("base.collapse_all", false);
+    auto is_collapse_all = config->GetBool("base.collapse_all", true);
     flowunit_desc->SetCollapseAll(is_collapse_all);
   }
 

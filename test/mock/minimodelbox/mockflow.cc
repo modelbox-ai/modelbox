@@ -38,6 +38,7 @@ std::shared_ptr<FlowUnitDesc> GenerateFlowunitDesc(
   for (auto output : outputs) {
     mock_flowunit_desc->AddFlowUnitOutput(modelbox::FlowUnitOutput(output));
   }
+  mock_flowunit_desc->SetFlowType(FlowType::NORMAL);
   return mock_flowunit_desc;
 }
 
@@ -2028,6 +2029,7 @@ void MockFlow::Register_Stream_End_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("stream_end", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
   mock_desc->SetOutputType(COLLAPSE);
+  mock_desc->SetCollapseAll(false);
 
   auto process_func =
       [=](std::shared_ptr<DataContext> data_ctx,

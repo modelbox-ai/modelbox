@@ -53,11 +53,3 @@ class ExampleFlowUnit(modelbox.FlowUnit):
     def data_post(self, data_context):
         # After streaming data ends
         return modelbox.Status()
-
-    def data_group_pre(self, data_context):
-        # Before all streaming data starts
-        return modelbox.Status()
-
-    def data_group_post(self, data_context):
-        # After all streaming data ends
-        return modelbox.Status()

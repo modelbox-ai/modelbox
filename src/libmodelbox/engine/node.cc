@@ -234,6 +234,7 @@ Status Node::Init(const std::set<std::string>& input_port_names,
 }
 
 Status Node::InitNodeProperties() {
+  // read flowunit desc
   auto flowunit_desc = flowunit_group_->GetExecutorUnit()->GetFlowUnitDesc();
 
   SetExceptionVisible(flowunit_desc->IsExceptionVisible());
@@ -247,29 +248,64 @@ Status Node::InitNodeProperties() {
   input_match_stream_mgr_->SetInputStreamGatherAll(
       GetOutputType() == COLLAPSE && flowunit_desc->IsCollapseAll());
 
-  // constrain
+  // update constrain
+  UpdatePropConstrain(flowunit_desc);
+
+  // Set input & output stream options
   if (GetFlowType() == STREAM || GetOutputType() == COLLAPSE) {
     input_match_stream_mgr_->SetInputBufferInOrder(true);
   }
 
-  if (GetOutputType() != FlowOutputType::ORIGIN) {
-    SetConditionType(ConditionType::NONE);
-    SetLoopType(LoopType::NOT_LOOP);
-  }
-
   if (GetConditionType() != ConditionType::NONE) {
-    SetFlowType(NORMAL);
-    SetLoopType(LoopType::NOT_LOOP);
     input_match_stream_mgr_->SetInputBufferInOrder(true);
   }
 
   if (GetLoopType() != LoopType::NOT_LOOP) {
-    SetFlowType(NORMAL);
     input_match_stream_mgr_->SetInputStreamGatherAll(true);
   }
 
   output_match_stream_mgr_->SetNeedNewIndex(NeedNewIndex());
   return STATUS_OK;
+}
+
+void Node::UpdatePropConstrain(std::shared_ptr<FlowUnitDesc> flowunit_desc) {
+  /**
+   * constrain, Take effect by order
+   * 1. expand: default normal
+   * 2. collapse: default normal
+   * 3. condition: only normal
+   * 4. loop: only normal
+   * 5. origin: default stream
+   **/
+  // constrain expand & collapse, not recommand to set flow type when use expand
+  // & collapse
+  auto output_type = GetOutputType();
+  if (output_type != FlowOutputType::ORIGIN) {
+    SetConditionType(ConditionType::NONE);
+    SetLoopType(LoopType::NOT_LOOP);
+    if (!flowunit_desc->IsUserSetFlowType()) {
+      SetFlowType(FlowType::NORMAL);
+    }
+    return;
+  }
+
+  // constrain condition
+  if (GetConditionType() != ConditionType::NONE) {
+    SetFlowType(NORMAL);
+    SetLoopType(LoopType::NOT_LOOP);
+    return;
+  }
+
+  // constrain loop
+  if (GetLoopType() != LoopType::NOT_LOOP) {
+    SetFlowType(NORMAL);
+    return;
+  }
+
+  // constrain origin
+  if (!flowunit_desc->IsUserSetFlowType()) {
+    SetFlowType(FlowType::STREAM);
+  }
 }
 
 void Node::SetFlowUnitInfo(const std::string& flowunit_name,
