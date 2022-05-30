@@ -25,12 +25,8 @@ main() {
         if [ ! -d "${flowdir}" ]; then
             continue;
         fi
-
-        if [ -f "${flowdir}/CMakeLists.txt" ]; then
-            continue;
-        fi
         
-        cp ${EXAMPLE_DIR}/flowunit/python/CMakeLists.txt ${flowdir}/CMakeLists.txt
+        cp ${EXAMPLE_DIR}/flowunit/python/CMakeLists.txt ${flowdir}/CMakeLists.txt -f
         if [ $? -ne 0 ]; then
             echo "copy cmake to template failed."
             return 1

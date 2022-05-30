@@ -21,12 +21,6 @@ description = "yolox postprocess"
 entry = "yolox_post@YoloXPost"
 type = "python"
 
-stream = true
-condition = false
-collapse = false
-collapse_all = false
-expend = false
-
 [config]
 net_h = 288
 net_w = 512

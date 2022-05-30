@@ -18,20 +18,23 @@
 
 TARGET_DIR=$1
 EXAMPLE_DIR=$2
-DEMO_DIR=$3
+DEMO_SRC_DIR=$3
+DEMO_THIRD_FILE_DIR=$4
+
+BASE_PATH=$(cd `dirname $0`; pwd)
 
 main() {
     for flowdir in ${TARGET_DIR}/src/flowunit/* ; do
         if [ ! -d "${flowdir}" ]; then
             continue;
         fi
-
-        cp ${EXAMPLE_DIR}/flowunit/python/CMakeLists.txt ${flowdir}/CMakeLists.txt -f
+        
+        cp ${EXAMPLE_DIR}/flowunit/python/CMakeLists.txt ${flowdir}/CMakeLists.txt
         if [ $? -ne 0 ]; then
             echo "copy cmake to template failed."
             return 1
         fi
-
+        
         sed -i "s/example/$(basename ${flowdir})/g" ${flowdir}/CMakeLists.txt
         if [ $? -ne 0 ]; then
             echo "change cmakefile name failed."
@@ -39,14 +42,20 @@ main() {
         fi
     done
 
+    cp $BASE_PATH/download_emotion_files.sh ${TARGET_DIR}/download_emotion_files.sh
+    if [ $? -ne 0 ]; then
+        echo "copy download shell to flowunit failed."
+        return 1
+    fi
+
     cp ${EXAMPLE_DIR}/project/base/src/graph/CMakeLists.txt ${TARGET_DIR}/src/graph/CMakeLists.txt
     if [ $? -ne 0 ]; then
         echo "copy cmake to graph failed."
         return 1
     fi
 
-    mv ${TARGET_DIR}/src/graph/hello_world.toml.in ${TARGET_DIR}/src/graph/hello_world.toml
-    sed -i "s#@DEMO_HELLO_WORLD_FLOWUNIT_DIR@#@APPLICATION_PATH@/flowunit#g" ${TARGET_DIR}/src/graph/hello_world.toml
+    mv ${TARGET_DIR}/src/graph/emotion_detection.toml.in ${TARGET_DIR}/src/graph/emotion_detection.toml
+    sed -i "s#@DEMO_EMOTION_DETECTION_FLOWUNIT_DIR@#@APPLICATION_PATH@/flowunit#g" ${TARGET_DIR}/src/graph/emotion_detection.toml
     if [ $? -ne 0 ]; then
         echo "change graph path failed."
         return 1

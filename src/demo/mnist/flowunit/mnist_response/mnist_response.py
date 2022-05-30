@@ -56,9 +56,3 @@ class MnistResponseFlowUnit(modelbox.FlowUnit):
 
     def data_post(self, data_context):
         return modelbox.Status()
-
-    def data_group_pre(self, data_context):
-        return modelbox.Status()
-
-    def data_group_post(self, data_context):
-        return modelbox.Status()

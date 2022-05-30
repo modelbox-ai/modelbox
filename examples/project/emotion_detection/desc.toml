@@ -1,0 +1,11 @@
+name = "emotion_detection"
+desc = "A emotion detection example project template for modelbox"
+
+[guide]
+guide = '''
+
+# 使用指导
+
+需要执行工程根目录下download_emotion_files.sh下载torch模型。
+
+'''
