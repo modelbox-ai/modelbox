@@ -21,8 +21,6 @@ description = "custom resize"
 entry = "custom_resize@CustomResize"
 type = "python"
 
-stream = false
-
 [config]
 max_edge = 320
 

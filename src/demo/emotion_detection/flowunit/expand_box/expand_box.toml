@@ -21,7 +21,6 @@ description = "expand each box to emotion detection"
 entry = "expand_box@ExpandBox"
 type = "python"
 
-stream = false
 expand = true
 
 [input]

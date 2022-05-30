@@ -21,9 +21,7 @@ description = "collapse all face emotion"
 entry = "collapse_emotion@CollapseEmotion"
 type = "python"
 
-stream = false
 collapse = true
-collapse_all = true
 
 [input]
 [input.input1]

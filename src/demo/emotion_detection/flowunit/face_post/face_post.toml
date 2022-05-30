@@ -21,7 +21,6 @@ description = "face detection postprocess"
 entry = "face_post@FacePost"
 type = "python"
 
-stream = false
 condition = true
 
 [config]
