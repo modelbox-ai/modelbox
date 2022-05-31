@@ -1187,4 +1187,18 @@ void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m) {
            });
 }
 
+void ModelBoxPyApiSetUpSolution(pybind11::module &m) {
+  py::class_<modelbox::Solution, std::shared_ptr<modelbox::Solution>>(
+      m, "Solution")
+      .def(py::init<const std::string> ())
+      .def("set_solution_dir", &modelbox::Solution::SetSolutionDir,
+           py::call_guard<py::gil_scoped_release>())
+      .def("get_solution_dir", &modelbox::Solution::GetSolutionDir,
+           py::call_guard<py::gil_scoped_release>())
+      .def("get_solution_name", &modelbox::Solution::GetSolutionName,
+           py::call_guard<py::gil_scoped_release>())
+      .def("set_args", &modelbox::Solution::SetArgs,
+           py::call_guard<py::gil_scoped_release>());
+}
+
 }  // namespace modelbox
