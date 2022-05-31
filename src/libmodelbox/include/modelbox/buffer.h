@@ -201,9 +201,8 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @brief Save error
    * @param error_code buffer error code
    * @param error_msg buffer error message
-   * @return buffer reference
    */
-  virtual Buffer& SetError(const std::string& error_code,
+  virtual void SetError(const std::string& error_code,
                            const std::string& error_msg);
 
   /**

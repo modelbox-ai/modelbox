@@ -176,12 +176,11 @@ Status Buffer::SetBufferMutable(bool is_mutable) {
   return dev_mem_->SetContentMutable(is_mutable);
 }
 
-Buffer& Buffer::SetError(const std::string& error_code,
+void Buffer::SetError(const std::string& error_code,
                          const std::string& error_msg) {
   data_error_ = std::make_shared<DataError>(error_code, error_msg);
 
   dev_mem_ = nullptr;
-  return *this;
 }
 
 bool Buffer::HasError() const { return data_error_ != nullptr; }
