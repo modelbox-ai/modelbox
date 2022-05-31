@@ -157,6 +157,10 @@ void SetUpFlow(pybind11::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def("init",
            static_cast<modelbox::Status (modelbox::Flow::*)(
+               const Solution &solution)>(&modelbox::Flow::Init),
+           py::call_guard<py::gil_scoped_release>())
+      .def("init",
+           static_cast<modelbox::Status (modelbox::Flow::*)(
                const std::shared_ptr<FlowGraphDesc> &)>(&modelbox::Flow::Init),
            py::keep_alive<1, 2>(), py::call_guard<py::gil_scoped_release>())
       .def("build", &modelbox::Flow::Build,
@@ -190,6 +194,7 @@ PYBIND11_MODULE(_modelbox, m) {
   ModelboxPyApiSetUpDataHandler(m);
   ModelboxPyApiSetUpNodeDesc(m);
   ModelboxPyApiSetUpFlowGraphDesc(m);
+  ModelBoxPyApiSetUpSolution(m);
 
 #ifdef VERSION_INFO
   m.attr("__version__") = VERSION_INFO;
