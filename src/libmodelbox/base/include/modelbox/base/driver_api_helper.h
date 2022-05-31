@@ -35,7 +35,7 @@ class DriverPlugin {
 
   std::function<modelbox::Status()> GetInit() { return init_func_; }
 
-  DriverPlugin &Exit(std::function<modelbox::Status()> func) {
+  DriverPlugin &Exit(std::function<void()> func) {
     fini_func_ = func;
     return *this;
   }
