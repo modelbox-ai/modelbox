@@ -56,17 +56,18 @@ modelbox::Status ImageRotateGpuFlowUnit::GetStream(
     std::shared_ptr<modelbox::CudaStream> &stream) {
   auto input_cuda_mem = std::dynamic_pointer_cast<modelbox::CudaMemory>(
       input_buffer->GetDeviceMemory());
-  stream = input_cuda_mem->GetBindStream();
+  auto in_stream = input_cuda_mem->GetBindStream();
   // bind same stream
   auto output_cuda_mem = std::dynamic_pointer_cast<modelbox::CudaMemory>(
       output_buffer->GetDeviceMemory());
-  auto status = output_cuda_mem->BindStream(stream);
+  auto status = output_cuda_mem->BindStream(in_stream);
   if (status != modelbox::STATUS_OK) {
     auto err_msg = "bind stream failed, " + status.WrapErrormsgs();
     MBLOG_WARN << err_msg;
     return status;
   }
 
+  stream = output_cuda_mem->GetBindStream();
   return modelbox::STATUS_OK;
 }
 
