@@ -25,19 +25,24 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 
+MODELBOX_ROOT=$(cd $(dirname $0)/../../ && pwd)
+if [ "$MODELBOX_ROOT" = "/" ]; then
+	MODELBOX_ROOT=""
+fi
+
 # this env may changed by script, do not modify
 CUSTOM_ENV_FILE=""
-
-MODELBOX_MANAGER=@CMAKE_INSTALL_FULL_BINDIR@/modelbox-manager
 
 if [ -f "$CUSTOM_ENV_FILE" ]; then
 	. $CUSTOM_ENV_FILE
 else
-	. @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager-opts
-	PIDDIR=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager
-	PIDFILE=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.pid
-	KEYFILE=/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.key
+	. ${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager-opts
+	PIDDIR=${MODELBOX_ROOT}/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager
+	PIDFILE=${MODELBOX_ROOT}/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.pid
+	KEYFILE=${MODELBOX_ROOT}/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.key
 fi
+
+MODELBOX_MANAGER=${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_BINDIR@/modelbox-manager
 
 test -x $MODELBOX_MANAGER || exit 5
 

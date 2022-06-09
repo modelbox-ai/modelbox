@@ -33,8 +33,8 @@
 
 #include <iostream>
 
-#include "modelbox/common/control_msg.h"
 #include "modelbox/common/config.h"
+#include "modelbox/common/control_msg.h"
 #include "securec.h"
 
 namespace modelbox {
@@ -89,7 +89,8 @@ modelbox::Status ToolCommandServer::InitClient(const std::string &connect_url) {
   struct stat stat_buf;
   if (stat(connect_url.c_str(), &stat_buf) < 0) {
     auto errmsg = "cannot access control file: " + connect_url +
-                  ", error: " + modelbox::StrError(errno) + ". Maybe server is down, or try -h for help";
+                  ", error: " + modelbox::StrError(errno) +
+                  ". Maybe server is down, or try -h for help";
     std::cout << errmsg << std::endl;
     return {modelbox::STATUS_PERMIT};
   }
@@ -125,7 +126,8 @@ modelbox::Status ToolCommandServer::InitClient(const std::string &connect_url) {
   }
   auto ss = chmod(client_sockaddr.sun_path, 0660);
   if (ss != 0) {
-    MBLOG_ERROR << "ss chmod client ret: " << ss << ", " << modelbox::StrError(errno);
+    MBLOG_ERROR << "ss chmod client ret: " << ss << ", "
+                << modelbox::StrError(errno);
   }
 
   unused = chown(client_sockaddr.sun_path, -1, stat_buf.st_gid);
@@ -286,12 +288,14 @@ modelbox::Status ToolCommandServer::GetSockFile(const std::string &conf_file,
   return modelbox::STATUS_OK;
 #else
   std::shared_ptr<Configuration> config;
-  if (conf_file.empty()) {
-    config = LoadSubConfig(DEFAULT_MODELBOX_CONF);
-  } else {
-    config = LoadSubConfig(conf_file);
+  std::string confile_file_path = DEFAULT_MODELBOX_CONF;
+  if (conf_file.length() > 0) {
+    confile_file_path = conf_file;
   }
 
+  confile_file_path = modelbox_full_path(confile_file_path);
+
+  config = LoadSubConfig(confile_file_path);
   if (config == nullptr) {
     std::cout << "conf file is invalid." << std::endl;
     return modelbox::STATUS_INVALID;
@@ -303,6 +307,7 @@ modelbox::Status ToolCommandServer::GetSockFile(const std::string &conf_file,
   }
 
   connect_url = config->GetString("control.listen");
+  connect_url = modelbox_full_path(connect_url);
   if (connect_url.empty()) {
     std::cout << "control listen sock get failed." << std::endl;
     return modelbox::STATUS_BADCONF;

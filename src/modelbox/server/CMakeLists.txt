@@ -69,6 +69,10 @@ if (NOT MODELBOX_CONFIG_FILE_NAME)
     set(MODELBOX_CONFIG_FILE_NAME "modelbox.conf")
 endif()
 
+if (STANDALONE)
+    set_target_properties(modelbox-server PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+endif()
+
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/modelbox-opts ${CMAKE_CURRENT_BINARY_DIR}/etc/modelbox-opts @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/init.d/modelbox.in ${CMAKE_CURRENT_BINARY_DIR}/etc/init.d/modelbox @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/modelbox.conf.in ${CMAKE_CURRENT_BINARY_DIR}/etc/${MODELBOX_CONFIG_FILE_NAME} @ONLY)
@@ -80,6 +84,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/misc/modelbox-server-cmd.json.in ${CMAK
 add_dependencies(modelbox-server ${LIBMODELBOX_SHARED})
 
 set_target_properties(modelbox-server PROPERTIES OUTPUT_NAME "modelbox")
+
 
 install(TARGETS modelbox-server 
     COMPONENT server

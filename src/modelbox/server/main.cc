@@ -59,6 +59,7 @@ static bool kForground = false;
 enum MODELBOX_SERVER_ARG {
   MODELBOX_SERVER_ARG_CHECKPORT,
   MODELBOX_SERVER_ARG_GETCONF,
+  MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT,
 };
 
 static int option_flag = 0;
@@ -66,6 +67,7 @@ static struct option options[] = {
     /* internal command for develop mode */
     {"check-port", 1, &option_flag, MODELBOX_SERVER_ARG_CHECKPORT},
     {"get-conf-value", 1, &option_flag, MODELBOX_SERVER_ARG_GETCONF},
+    {"get-modelbox-root", 0, &option_flag, MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT},
     {0, 0, 0, 0},
 };
 
@@ -149,6 +151,8 @@ int modelbox_init_log(void) {
     kVerbose = true;
   }
 
+  log_path = modelbox_full_path(log_path);
+
   if (logger->Init(log_path, log_size, log_num, kVerbose) == false) {
     fprintf(stderr, "init logger failed.\n");
     return 1;
@@ -173,6 +177,17 @@ int modelbox_init(void) {
 
   if (modelbox_init_log()) {
     return 1;
+  }
+
+  /* if in standalone mode */
+  if (modelbox_root_dir().length() > 0) {
+    std::string default_scanpath = modelbox_full_path(
+        std::string(MODELBOX_ROOT_VAR) + MODELBOX_DEFAULT_DRIVER_PATH);
+    modelbox::Drivers::SetDefaultScanPath(default_scanpath);
+
+    std::string default_driver_info_path = modelbox_full_path(
+        std::string(MODELBOX_ROOT_VAR) + "/var/run/modelbox-driver-info");
+    modelbox::Drivers::SetDefaultInfoPath(default_driver_info_path);
   }
 
   return 0;
@@ -305,13 +320,17 @@ int main(int argc, char *argv[])
         case MODELBOX_SERVER_ARG_GETCONF:
           get_conf_key = optarg;
           break;
+        case MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT:
+          printf("%s\n", modelbox_root_dir().c_str());
+          return 0;
+          break;
         default:
           printf("Try %s -h for more information.\n", argv[0]);
           return 1;
           break;
       }
       case 'p':
-        pidfile = optarg;
+        pidfile = modelbox_full_path(optarg);
         break;
       case 'V':
         kVerbose = true;
@@ -323,7 +342,7 @@ int main(int argc, char *argv[])
         showhelp();
         return 1;
       case 'c':
-        kConfigPath = optarg;
+        kConfigPath = modelbox_full_path(optarg);
         break;
       case 'n':
         keep_name = optarg;
@@ -332,7 +351,7 @@ int main(int argc, char *argv[])
         keep_time = atoi(optarg);
         break;
       case 'K':
-        key_file = optarg;
+        key_file = modelbox_full_path(optarg);
         break;
       case 'v':
         printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());

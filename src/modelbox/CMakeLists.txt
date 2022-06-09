@@ -22,6 +22,10 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
 endif()
 
+if (STANDALONE)
+    set(MODELBOX_ROOT_VAR "\${MODELBOX_ROOT}")
+endif()
+
 add_subdirectory(common)
 add_subdirectory(manager)
 add_subdirectory(server)

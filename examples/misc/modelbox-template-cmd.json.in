@@ -2,9 +2,9 @@
     "cmd-list": [
         {
             "name": "template",
-            "exec": "@MODELBOX_TOOLS_PATH@/template",
+            "exec": "@MODELBOX_ROOT_VAR@@MODELBOX_TOOLS_PATH@/template",
             "desc": "create project from template",
-            "help-cmd": "@MODELBOX_TOOLS_PATH@/template --help"
+            "help-cmd": "@MODELBOX_ROOT_VAR@@MODELBOX_TOOLS_PATH@/template --help"
         }
     ]
 }

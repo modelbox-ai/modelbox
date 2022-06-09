@@ -23,6 +23,7 @@
 
 #include "modelbox/base/log.h"
 #include "modelbox/base/utils.h"
+#include "modelbox/common/utils.h"
 
 using namespace modelbox;
 
@@ -138,6 +139,9 @@ bool ModelboxPlugin::ParseConfig(
   default_application_path_ = config->GetString("server.application_root");
   oneshot_flow_path_ = default_flow_path_ + "/oneshot";
 
+  default_flow_path_ = modelbox_full_path(default_flow_path_);
+  default_application_path_ = modelbox_full_path(default_application_path_);
+  oneshot_flow_path_ = modelbox_full_path(oneshot_flow_path_);
   return true;
 }
 

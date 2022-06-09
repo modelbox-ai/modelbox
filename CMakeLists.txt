@@ -56,7 +56,9 @@ include(CPackComponent)
 include(ProjectEnvVars)
 include(JavaJDK)
 
-PKG_GET_VARIABLE(SYSTEMDSYSTEMUNITDIR systemd systemdsystemunitdir)
+if (NOT STANDALONE)
+    PKG_GET_VARIABLE(SYSTEMDSYSTEMUNITDIR systemd systemdsystemunitdir)
+endif()
 
 set(LICENSE_FILE ${CMAKE_CURRENT_LIST_DIR}/LICENSE)
 set(README_FILE ${CMAKE_CURRENT_LIST_DIR}/README.md)

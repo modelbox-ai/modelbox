@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MODELBOX_TEMPLATE_PATH="${MODELBOX_TEMPLATE_PATH:-/usr/local/share/modelbox/project-template}"
+MODELBOX_TEMPLATE_PATH="${MODELBOX_TEMPLATE_PATH:-${MODELBOX_ROOT}/usr/local/share/modelbox/project-template}"
 DEFAULT_PROJECT_PATH="$HOME/modelbox-project"
-APPLICATION_PATH="/opt/modelbox/application"
+APPLICATION_PATH="${MODELBOX_ROOT}/opt/modelbox/application"
 
 showhelp() {
 	echo "usage $(basename $0) [OPTIONS]"

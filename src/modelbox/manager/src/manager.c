@@ -284,7 +284,7 @@ static void _manager_default_conf_file(char *path, int max_len) {
   return;
 }
 
-int manager_init(char *conf_file, char *name) {
+int manager_init(const char *conf_file, char *name) {
   char log_file[PATH_MAX];
   char default_conf_file[PATH_MAX] = {0};
 
@@ -341,12 +341,14 @@ int manager_init(char *conf_file, char *name) {
     }
   }
 
+
   if (manager_load_conf(conf_file) != 0) {
     fprintf(stderr, "load master config file %s failed.\n", conf_file);
     return -1;
   }
 
-  if (tlog_init(conf_log_file, conf_log_size, conf_log_num, 0, 0) != 0) {
+  if (tlog_init(get_modelbox_full_path(conf_log_file), conf_log_size,
+                conf_log_num, 0, 0) != 0) {
     fprintf(stderr, "init master log failed.\n");
     return -1;
   }
@@ -373,22 +375,22 @@ int main(int argc, char *argv[])
 {
   int is_forground = 0;
   int opt;
-  char *conf_file = NULL;
+  char conf_file[PATH_MAX] = {0};
   char *name = NULL;
 
   while ((opt = getopt(argc, argv, "fvhc:n:p:k:")) != -1) {
     switch (opt) {
       case 'c':
-        conf_file = optarg;
+        strncpy(conf_file, get_modelbox_full_path(optarg), sizeof(conf_file));
         break;
       case 'n':
         name = optarg;
         break;
       case 'p':
-        strncpy(pid_file_path, optarg, sizeof(pid_file_path));
+        strncpy(pid_file_path, get_modelbox_full_path(optarg), sizeof(pid_file_path));
         break;
       case 'k':
-        strncpy(key_file_path, optarg, sizeof(key_file_path));
+        strncpy(key_file_path, get_modelbox_full_path(optarg), sizeof(key_file_path));
         break;
       case 'f':
         is_forground = 1;
@@ -413,6 +415,7 @@ int main(int argc, char *argv[])
   signal(SIGPIPE, SIG_IGN);
   signal(SIGHUP, manager_sighup);
   g_reload_config = 0;
+
 
   if (manager_init(conf_file, name) != 0) {
     fprintf(stderr, "master init failed.\n");

@@ -32,7 +32,6 @@ constexpr const char *DRIVER_CLASS_VIRTUAL = "DRIVER-VIRTUAL";
 constexpr const char *DRIVER_CLASS_INFERENCE = "DRIVER-INFERENCE";
 constexpr const char *DRIVER_TYPE_VIRTUAL = "virtual";
 constexpr const char *DEFAULT_SCAN_INFO = "/tmp/modelbox-driver-info";
-constexpr const char *DEFAULT_LD_CACHE = "/etc/ld.so.cache";
 
 class Driver;
 class DriverFactory {
@@ -199,6 +198,21 @@ class Drivers {
       : drivers_scan_result_info_(std::make_shared<DriversScanResultInfo>()){};
   virtual ~Drivers(){};
 
+  /**
+   * @brief Set default scan path
+   * 
+   * @param path 
+   */
+  static void SetDefaultScanPath(const std::string &path);
+
+  /**
+   * @brief Set default driver info ;ath
+   * 
+   * @param path 
+   */
+  static void SetDefaultInfoPath(const std::string &path);
+
+
   Status Initialize(std::shared_ptr<Configuration> config);
   Status Scan();
   void Clear();
@@ -242,6 +256,8 @@ class Drivers {
   std::vector<std::string> driver_dirs_;
   std::shared_ptr<DriversScanResultInfo> drivers_scan_result_info_;
   uint64_t last_modify_time_sum_{0};
+  static std::string default_scan_path_;
+  static std::string default_driver_info_path_;
 };
 
 }  // namespace modelbox

@@ -35,7 +35,8 @@
 using namespace modelbox;
 
 #define TMP_BUFF_LEN_32 32
-#define MODELBOX_TOOL_LOG_PATH "/var/log/modelbox/modelbox-tool.log"
+#define MODELBOX_TOOL_LOG_PATH \
+  "${MODELBOX_ROOT}/var/log/modelbox/modelbox-tool.log"
 
 extern char *program_invocation_name;
 extern char *program_invocation_short_name;
@@ -164,6 +165,17 @@ int modelbox_tool_init(void) {
     return 1;
   }
 
+  /* if in standalone mode */
+  if (modelbox_root_dir().length() > 0) {
+    std::string default_scanpath = modelbox_full_path(
+        std::string(MODELBOX_ROOT_VAR) + MODELBOX_DEFAULT_DRIVER_PATH);
+    modelbox::Drivers::SetDefaultScanPath(default_scanpath);
+
+    std::string default_driver_info_path = modelbox_full_path(
+        std::string(MODELBOX_ROOT_VAR) + "/var/run/modelbox-driver-info");
+    modelbox::Drivers::SetDefaultInfoPath(default_driver_info_path);
+  }
+
   return 0;
 }
 
@@ -193,7 +205,7 @@ int modelbox_tool_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
-  kLogFile = MODELBOX_TOOL_LOG_PATH;
+  kLogFile = modelbox_full_path(MODELBOX_TOOL_LOG_PATH);
   int cmdtype = 0;
 
   modelbox::ExternalCommandLoader::Load();
@@ -206,7 +218,7 @@ int main(int argc, char *argv[])
       kLogLevel = optarg;
       break;
     case MODELBOX_TOOL_COMMAND_LOG_PATH:
-      kLogFile = optarg;
+      kLogFile = modelbox_full_path(optarg);
       break;
     case MODELBOX_TOOL_COMMAND_HELP:
       showhelp();

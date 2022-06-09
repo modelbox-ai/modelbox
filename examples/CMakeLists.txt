@@ -34,6 +34,10 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
 endif()
 
+if (STANDALONE)
+    set(MODELBOX_ROOT_VAR "\${MODELBOX_ROOT}")
+endif()
+
 set(MODELBOX_TEMPLATE_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/modelbox/project-template")
 set(MODELBOX_EXAMPLE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 

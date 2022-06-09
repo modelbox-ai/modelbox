@@ -110,6 +110,7 @@ modelbox::Status Server::GetPluginList() {
   MBLOG_INFO << "plugin list:";
   for (auto path : plugin_path_list) {
     MBLOG_INFO << " " << path;
+    path = modelbox_full_path(path);
     auto plugin = ServerPlugin::MakePlugin(path);
     plugins_.push_back(plugin);
   }

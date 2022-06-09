@@ -35,11 +35,13 @@
 
 using namespace modelbox;
 
-const std::string DEFAULT_WEB_ROOT = "/usr/local/share/modelbox/www";
+const std::string DEFAULT_WEB_ROOT =
+    "${MODELBOX_ROOT}/usr/local/share/modelbox/www";
 const std::string DEFAULT_PROJECT_TEMPLATE_DIR =
-    "/usr/local/share/modelbox/project-template";
+    "${MODELBOX_ROOT}/usr/local/share/modelbox/project-template";
 const std::string DEFAULT_DEMO_ROOT_DIR = MODELBOX_DEMO_PATH;
-constexpr const char* DEFAULT_MODELBOX_TEMPLATE_CMD = "modelbox-tool template";
+constexpr const char* DEFAULT_MODELBOX_TEMPLATE_CMD =
+    "${MODELBOX_ROOT}/usr/local/bin/modelbox-tool template";
 
 const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
@@ -1222,5 +1224,11 @@ bool ModelboxEditorPlugin::ParseConfig(
   template_dir_ =
       config->GetString("editor.template_dir", DEFAULT_PROJECT_TEMPLATE_DIR);
   acl_white_list_ = config->GetStrings("acl.allow");
+
+  web_root_ = modelbox_full_path(web_root_);
+  demo_path_ = modelbox_full_path(demo_path_);
+  template_dir_ = modelbox_full_path(template_dir_);
+  template_cmd_ = modelbox_full_path(template_cmd_);
+
   return true;
 }

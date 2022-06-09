@@ -27,6 +27,23 @@
 
 namespace modelbox {
 
+constexpr const char *MODELBOX_ROOT_VAR = "${MODELBOX_ROOT}";
+
+/**
+ * @brief Get current modelbox standalone directory
+ * @return standalone root dir
+ */
+const std::string &modelbox_root_dir(void);
+
+
+/**
+ * @brief Get modelbox full path
+ * 
+ * @param path 
+ * @return std::string 
+ */
+std::string modelbox_full_path(const std::string &path);
+
 /**
  * @brief Create pid file of current process
  * @param pid_file path of pid file

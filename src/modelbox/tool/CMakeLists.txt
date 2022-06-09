@@ -47,6 +47,10 @@ add_dependencies(modelbox-tool ${LIBMODELBOX_SHARED})
 set(PYTHON_DEBUG_BIN ${CMAKE_CURRENT_LIST_DIR}/bin/modelbox-python-debug)
 set_target_properties(modelbox-tool PROPERTIES OUTPUT_NAME "modelbox-tool")
 
+if (STANDALONE)
+    set_target_properties(modelbox-tool PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+endif()
+
 install(TARGETS modelbox-tool
     COMPONENT libmodelbox
     RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}

@@ -26,7 +26,7 @@
 namespace modelbox {
 
 constexpr const char *SERVER_DESC = "Server commands";
-constexpr const char *DEFAULT_MODELBOX_CONF = "/usr/local/etc/modelbox/modelbox.conf";
+constexpr const char *DEFAULT_MODELBOX_CONF = "${MODELBOX_ROOT}/usr/local/etc/modelbox/modelbox.conf";
 
 class ToolCommandServer : public ToolCommand {
  public:

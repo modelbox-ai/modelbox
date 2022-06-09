@@ -499,6 +499,19 @@ std::string PathCanonicalize(const std::string &path,
   return resolve_path;
 }
 
+void StringReplaceAll(std::string &str, const std::string &from,
+                      const std::string &to) {
+  size_t start_pos = 0;
+  if (from.empty()) {
+    return;
+  }
+  
+  while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+    str.replace(start_pos, from.length(), to);
+    start_pos += to.length();
+  }
+}
+
 Status HardeningSSL(SSL_CTX *ctx) {
   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
