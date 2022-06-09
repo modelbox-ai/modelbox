@@ -15,7 +15,7 @@
  */
 
 #include "manager_conf.h"
-
+#include "util.h"
 #include <string.h>
 
 #include "conf.h"
@@ -79,7 +79,7 @@ int manager_load_app(void *item, int argc, char *argv[]) {
         conf_app->check_alive = 1;
         break;
       case 'p':
-        strncpy(conf_app->pidfile, optarg, PATH_MAX);
+        strncpy(conf_app->pidfile, get_modelbox_full_path(optarg), PATH_MAX);
         break;
       default:
         break;
@@ -88,7 +88,7 @@ int manager_load_app(void *item, int argc, char *argv[]) {
 
   for (i = optind; i < argc; i++) {
     strncat(conf_app->cmd, " ", PATH_MAX);
-    strncat(conf_app->cmd, argv[i], PATH_MAX);
+    strncat(conf_app->cmd, get_modelbox_full_path(argv[i]), PATH_MAX);
   }
 
   if (strlen(conf_app->name) <= 0 || strlen(conf_app->cmd) <= 0) {
@@ -132,7 +132,7 @@ int manager_load_conf(const char *conf_file) {
     return -1;
   }
 
-  strncpy(g_conf_file, conf_file, sizeof(g_conf_file));
+  strncpy(g_conf_file, get_modelbox_full_path(conf_file), sizeof(g_conf_file));
 
   return load_conf(conf_parse_map, g_conf_file);
 }

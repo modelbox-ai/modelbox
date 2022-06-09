@@ -53,7 +53,8 @@ modelbox::Status Control::Init(
     return modelbox::STATUS_OK;
   }
 
-  listen_path_ = config->GetString("control.listen", CONTROL_UNIX_PATH);
+  listen_path_ = modelbox_full_path(
+      config->GetString("control.listen", CONTROL_UNIX_PATH));
 
   struct sockaddr_un server_sockaddr;
   int fd = socket(AF_UNIX, SOCK_DGRAM, 0);

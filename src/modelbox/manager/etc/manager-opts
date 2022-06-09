@@ -14,5 +14,10 @@
 # limitations under the License.
 
 
+MODELBOX_ROOT=$(cd $(dirname $0)/../../ && pwd)
+if [ "$MODELBOX_ROOT" = "/" ]; then
+	MODELBOX_ROOT=""
+fi
+
 # modelbox server opts
-MODELBOX_MANAGER_OPTS="-c @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager.conf"
+MODELBOX_MANAGER_OPTS="-c ${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager.conf"

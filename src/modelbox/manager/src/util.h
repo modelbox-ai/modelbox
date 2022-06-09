@@ -31,6 +31,11 @@ void close_all_fd(void);
 /* 获取当前进程的路径 */
 int get_prog_path(char *path, int max_len);
 
+const char *get_modelbox_root_path(void);
+
+/* 获取完整的路径，非线程安全 */
+const char *get_modelbox_full_path(const char *path);
+
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */

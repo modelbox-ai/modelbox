@@ -22,7 +22,7 @@
 #include <memory>
 #include <string>
 
-#define DEFAULT_SLOTION_PATH "/usr/local/share/modelbox/solutions/graphs"
+#define DEFAULT_SOLUTION_PATH "/usr/local/share/modelbox/solutions/graphs"
 
 namespace modelbox {
 
@@ -39,7 +39,7 @@ class Solution {
 
  private:
   std::string solution_name_;
-  std::string solution_dir_{DEFAULT_SLOTION_PATH};
+  std::string solution_dir_{DEFAULT_SOLUTION_PATH};
   std::map<std::string, std::string> args_;
 };
 

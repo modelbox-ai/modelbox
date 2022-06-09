@@ -272,6 +272,16 @@ std::vector<std::string> StringSplit(const std::string &s,
                                      const char delimiter);
 
 /**
+ * @brief Replace string
+ *
+ * @param str string to replace
+ * @param from replace from
+ * @param to output replaced string
+ */
+void StringReplaceAll(std::string &str, const std::string &from,
+                      const std::string &to);
+
+/**
  * @brief Get current call stack trace
  * @param skip skip frame number
  * @param maxdepth max call stack depth

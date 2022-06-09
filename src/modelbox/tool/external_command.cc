@@ -65,7 +65,7 @@ int ExternalCommandKey::Run(int argc, char *argv[]) {
   }
 
   modelbox::Popen p;
-  p.Open(cmd, timeout_, "");
+  p.Open(cmd, timeout_, "", "MODELBOX_ROOT=" + modelbox_root_dir());
   int ret = p.Close();
   return WEXITSTATUS(ret);
 }
@@ -83,6 +83,7 @@ std::string ExternalCommandKey::GetCommandName() {
 std::string ExternalCommandKey::GetCommandDesc() { return desc_; }
 
 Status ExternalCommandLoader::LoadCmds(const std::string &cmd_json_file) {
+  auto full_path = modelbox_full_path(cmd_json_file);
   std::ifstream infile(cmd_json_file);
   if (infile.fail()) {
     std::cerr << "read file " << cmd_json_file << " failed, "
@@ -106,6 +107,9 @@ Status ExternalCommandLoader::LoadCmds(const std::string &cmd_json_file) {
         timeout = cmd["timeout"].get<int>();
       }
       auto help_cmd = cmd["help-cmd"].get<std::string>();
+
+      exec = modelbox_full_path(exec);
+      help_cmd = modelbox_full_path(help_cmd);
 
       auto ext_cmd = std::make_shared<ExternalCommandKey>();
       ext_cmd->SetExecuteCmd(exec);
@@ -131,7 +135,8 @@ Status ExternalCommandLoader::LoadCmds(const std::string &cmd_json_file) {
 
 Status ExternalCommandLoader::Load(const std::string &path) {
   std::vector<std::string> files;
-  auto ret = modelbox::ListFiles(path, "*.json", &files, LIST_FILES_FILE);
+  std::string full_path = modelbox_full_path(path);
+  auto ret = modelbox::ListFiles(full_path, "*.json", &files, LIST_FILES_FILE);
   if (!ret) {
     return ret;
   }

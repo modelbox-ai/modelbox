@@ -37,6 +37,8 @@
 
 namespace modelbox {
 
+constexpr const char *DEFAULT_LD_CACHE = "/etc/ld.so.cache";
+
 Driver::Driver(){};
 
 Driver::~Driver() {
@@ -44,6 +46,10 @@ Driver::~Driver() {
     Abort("factory reference count is not zero");
   }
 }
+
+
+std::string Drivers::default_scan_path_ = MODELBOX_DEFAULT_DRIVER_PATH;
+std::string Drivers::default_driver_info_path_ = DEFAULT_SCAN_INFO;
 
 static std::shared_ptr<DriverHandler> handler =
     std::make_shared<DriverHandler>();
@@ -435,7 +441,7 @@ Status Drivers::Initialize(std::shared_ptr<Configuration> config) {
 
   driver_dirs_ = config_->GetStrings(DRIVER_DIR);
   if (config_->GetBool(DRIVER_SKIP_DEFAULT, false) == false) {
-    driver_dirs_.push_back(MODELBOX_DEFAULT_DRIVER_PATH);
+    driver_dirs_.push_back(default_scan_path_);
   }
 
   MBLOG_DEBUG << "search Path:";
@@ -563,9 +569,9 @@ Status Drivers::GatherScanInfo(const std::string &scan_path) {
 void Drivers::FillCheckInfo(std::string &file_check_node,
                             std::unordered_map<std::string, bool> &file_map,
                             int64_t &ld_cache_time) {
-  std::ifstream scan_info(DEFAULT_SCAN_INFO);
+  std::ifstream scan_info(default_driver_info_path_);
   if (!scan_info.is_open()) {
-    MBLOG_ERROR << "open " << DEFAULT_SCAN_INFO << " failed.";
+    MBLOG_ERROR << "open " << default_driver_info_path_ << " failed.";
     return;
   }
 
@@ -575,7 +581,7 @@ void Drivers::FillCheckInfo(std::string &file_check_node,
                    std::istreambuf_iterator<char>());
     dump_json = nlohmann::json::parse(ss);
   } catch (const std::exception &e) {
-    MBLOG_ERROR << "filee check info parse " << DEFAULT_SCAN_INFO
+    MBLOG_ERROR << "filee check info parse " << default_driver_info_path_
                 << " failed, err: " << e.what();
     return;
   }
@@ -593,8 +599,8 @@ void Drivers::FillCheckInfo(std::string &file_check_node,
 
 bool Drivers::CheckPathAndMagicCode() {
   struct stat buffer;
-  if (stat(DEFAULT_SCAN_INFO, &buffer) == -1) {
-    MBLOG_DEBUG << DEFAULT_SCAN_INFO << " does not exist.";
+  if (stat(default_driver_info_path_.c_str(), &buffer) == -1) {
+    MBLOG_DEBUG << default_driver_info_path_ << " does not exist.";
     return false;
   }
 
@@ -680,7 +686,7 @@ Status Drivers::InnerScan() {
 
   auto check_code = GenerateKey(last_modify_time_sum_);
 
-  ret = WriteScanInfo(DEFAULT_SCAN_INFO, check_code);
+  ret = WriteScanInfo(default_driver_info_path_, check_code);
   if (ret != STATUS_OK) {
     auto err_msg = "write scan info failed";
     MBLOG_ERROR << err_msg;
@@ -739,14 +745,14 @@ Status Drivers::Scan() {
     }
   }
 
-  status = GatherScanInfo(DEFAULT_SCAN_INFO);
+  status = GatherScanInfo(default_driver_info_path_);
   if (status != STATUS_OK) {
     auto err_msg = "gather scan info failed";
     MBLOG_ERROR << err_msg;
     return {STATUS_FAULT, err_msg};
   }
 
-  PrintScanResults(DEFAULT_SCAN_INFO);
+  PrintScanResults(default_driver_info_path_);
   MBLOG_INFO << "begin scan virtual drivers";
   status = VirtualDriverScan();
   MBLOG_INFO << "end scan virtual drivers";
@@ -991,6 +997,14 @@ bool Drivers::DriversContains(
   }
 
   return false;
+}
+
+void Drivers::SetDefaultScanPath(const std::string &path) {
+  default_scan_path_ = path;
+}
+
+void Drivers::SetDefaultInfoPath(const std::string &path) {
+  default_driver_info_path_ = path;
 }
 
 }  // namespace modelbox

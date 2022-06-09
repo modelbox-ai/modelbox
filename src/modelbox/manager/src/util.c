@@ -88,3 +88,79 @@ int get_prog_path(char *path, int max_len) {
 
   return 0;
 }
+
+const char *get_modelbox_root_path(void) {
+  static char root_path[PATH_MAX] = {0};
+  static int is_init = false;
+
+  if (is_init) {
+    return root_path;
+  }
+
+  is_init = 1;
+  char prog_path[PATH_MAX] = {0};
+  char path_tmp[PATH_MAX];
+  
+  if (get_prog_path(prog_path, PATH_MAX) != 0) {
+    return root_path;
+  }
+
+  snprintf_s(path_tmp, PATH_MAX, PATH_MAX, "%s/../../../", prog_path);
+  if (realpath(path_tmp, root_path) == NULL) {
+    return root_path;
+  }
+
+  if (root_path[0] == '/' && root_path[1] == '\0') {
+    root_path[0] = '\0';
+  }
+
+  return root_path;
+}
+
+static char *string_replace(const char *in, char *out, int out_max,
+                            const char *from, const char *to) {
+  char *needle;
+  size_t from_len = strnlen(from, PATH_MAX);
+  size_t to_len = strnlen(to, PATH_MAX);
+  size_t resoffset = 0;
+  int ret = 0;
+
+  while ((needle = strstr(in, from)) && out_max - resoffset > 0) {
+    ret = memcpy_s(out + resoffset, out_max - resoffset, in, needle - in);
+    if (ret != 0) {
+      return NULL;
+    }
+    resoffset += needle - in;
+
+    in = needle + from_len;
+    ret = strncpy_s(out + resoffset, out_max - resoffset, to, to_len);
+    if (ret != 0) {
+      return NULL;
+    }
+
+    resoffset += to_len;
+  }
+
+  if (out_max - resoffset <= 0) {
+    return NULL;
+  }
+
+  ret = strncpy_s(out + resoffset, out_max - resoffset, in, out_max);
+  if (ret != 0) {
+    return NULL;
+  }
+
+  return out;
+}
+
+const char *get_modelbox_full_path(const char *path) {
+  const char *root_path = get_modelbox_root_path();
+  static char full_path[PATH_MAX * 4] = {0};
+  full_path[0] = '\0';
+  if (string_replace(path, full_path, PATH_MAX * 4, "${MODELBOX_ROOT}",
+                     root_path) == NULL) {
+    return NULL;
+  }
+
+  return full_path;
+}

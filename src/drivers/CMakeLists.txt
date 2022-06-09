@@ -22,6 +22,10 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
 endif()
 
+if (STANDALONE)
+    set(CMAKE_INSTALL_RPATH $ORIGIN)
+endif()
+
 add_subdirectory(common)
 add_subdirectory(virtual)
 add_subdirectory(inference_engine)

@@ -2,12 +2,12 @@
 loglevel INFO
 
 # log file path
-logfile /var/log/modelbox/manager.log
+logfile @MODELBOX_ROOT_VAR@/var/log/modelbox/manager.log
 
 #
-# app -name "appname" -pidfile "/run/app.pid" -keep-check -- run command list here
+# app -name "appname" -pidfile "@MODELBOX_ROOT_VAR@/run/app.pid" -keep-check -- run command list here
 #
-app -name "modelbox" -pidfile "/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid" -- @CMAKE_INSTALL_FULL_BINDIR@/modelbox -c @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox.conf -p /@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid -n modelbox
+app -name "modelbox" -pidfile "@MODELBOX_ROOT_VAR@/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid" -- @MODELBOX_ROOT_VAR@/etc/init.d/modelbox start
 
 #
 #

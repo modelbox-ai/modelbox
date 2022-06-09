@@ -48,7 +48,7 @@ class ExternalCommandKey : public ToolCommand {
   int timeout_{-1};
 };
 
-constexpr const char *EXTERNAL_TOOLS_PATH = "/usr/local/share/modelbox/tools";
+constexpr const char *EXTERNAL_TOOLS_PATH = "${MODELBOX_ROOT}/usr/local/share/modelbox/tools";
 
 class ExternalCommandLoader {
  public:

@@ -23,6 +23,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <mutex>
+
 #include "modelbox/base/utils.h"
 #include "securec.h"
 
@@ -31,6 +33,39 @@ namespace modelbox {
 #define TMP_BUFF_LEN_32 32
 
 static int kPidFileFd = -1;
+
+std::once_flag root_dir_flag;
+
+const std::string &modelbox_root_dir(void) {
+  static std::string rootdir;
+
+  std::call_once(root_dir_flag, []() {
+    char buff[PATH_MAX] = {0};
+    int len;
+
+    len = readlink("/proc/self/exe", buff, sizeof(buff) - 1);
+    if (len < 0) {
+      rootdir = "";
+      return;
+    }
+
+    buff[len] = {0};
+    rootdir = modelbox::GetDirName(buff);
+    rootdir = rootdir + "../../../../";
+    rootdir = PathCanonicalize(rootdir);
+    if (rootdir == "/") {
+      rootdir = "";
+    }
+  });
+
+  return rootdir;
+}
+
+std::string modelbox_full_path(const std::string &path) {
+  std::string fullpath = path;
+  modelbox::StringReplaceAll(fullpath, MODELBOX_ROOT_VAR, modelbox_root_dir());
+  return fullpath;
+}
 
 int modelbox_create_pid(const char *pid_file) {
   int fd = -1;
@@ -80,8 +115,7 @@ int modelbox_create_pid(const char *pid_file) {
   }
 
   if (write(fd, buff, strnlen(buff, TMP_BUFF_LEN_32)) < 0) {
-    fprintf(stderr, "write pid to file failed, %s.\n",
-            StrError(errno).c_str());
+    fprintf(stderr, "write pid to file failed, %s.\n", StrError(errno).c_str());
     goto errout;
   }
 

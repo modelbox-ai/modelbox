@@ -15,11 +15,12 @@
 # limitations under the License.
 
 
-MODELBOX_DEV_FILE="/usr/local/share/modelbox/misc/modelbox-template.conf"
+MODELBOX_DEV_FILE="${MODELBOX_ROOT}/usr/local/share/modelbox/misc/modelbox-template.conf"
 MODELBOX_USER_HOME="$HOME/modelbox-service"
 
-MODELBOX_SYS_FLOW_DIR="/usr/local/etc/modelbox/graph/"
+MODELBOX_SYS_FLOW_DIR="${MODELBOX_ROOT}/usr/local/etc/modelbox/graph/"
 MODELBOX_DEFAULT_PORT="1104"
+MODELBOX_BIN="${MODELBOX_ROOT}/usr/local/bin/modelbox"
 
 setup_env() {
     MODELBOX_FLOW_DIR="$MODELBOX_USER_HOME/graph"
@@ -46,6 +47,7 @@ setup_env() {
 
 debug_mode_info() {
     echo "Debug ModelBox Info:"
+    [ ! -z "${MODELBOX_ROOT}" ] && echo "  Modelbox Root:   ${MODELBOX_ROOT}"
     echo "  Home:            $MODELBOX_USER_HOME"
     echo "  Config:          $MODELBOX_USER_CONF_FILE"
     echo "  Log:             $MODELBOX_LOG_DIR"
@@ -59,17 +61,17 @@ debug_mode_info() {
 checkportbind() {
     IP=$1
     PORT=$2
-    modelbox --check-port $IP:$PORT
+    ${MODELBOX_ROOT}/usr/local/bin/modelbox --check-port $IP:$PORT
     return $?
 }
 
 setup_init_script() {
-    if [ ! -f "/etc/init.d/modelbox" ]; then
-        echo "/etc/init.d/modelbox not exists, please reinstall modelbox server"
+    if [ ! -f "${MODELBOX_ROOT}/etc/init.d/modelbox" ]; then
+        echo "${MODELBOX_ROOT}/etc/init.d/modelbox not exists, please reinstall modelbox server"
         return 1
     fi
     
-    cp /etc/init.d/modelbox $MODELBOX_RUN_SCRIPT
+    cp ${MODELBOX_ROOT}/etc/init.d/modelbox $MODELBOX_RUN_SCRIPT
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -80,7 +82,7 @@ setup_init_script() {
         return 1
     fi
 
-    cp /etc/init.d/modelbox-manager $MODELBOX_MANAGER_RUN_SCRIPT
+    cp ${MODELBOX_ROOT}/etc/init.d/modelbox-manager $MODELBOX_MANAGER_RUN_SCRIPT
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -95,10 +97,12 @@ setup_init_script() {
 }
 
 setup_debug_env() {
+    echo "MODELBOX_ROOT=${MODELBOX_ROOT}" >> $MODELBOX_USER_OPT
     echo "PIDDIR=$MODELBOX_PID_DIR" >> $MODELBOX_USER_OPT
     echo "PIDFILE=$MODELBOX_PID_FILE" >> $MODELBOX_USER_OPT
     echo "MODELBOX_OPTS=\"-c $MODELBOX_USER_CONF_FILE\"" >> $MODELBOX_USER_OPT
 
+    echo "MODELBOX_ROOT=${MODELBOX_ROOT}" >> $MODELBOX_MANAGER_USER_OPT
     echo "PIDDIR=$MODELBOX_PID_DIR" >> $MODELBOX_MANAGER_USER_OPT
     echo "PIDFILE=$MODELBOX_MANAGER_PID_FILE" >> $MODELBOX_MANAGER_USER_OPT
     echo "KEYFILE=$MODELBOX_MANAGER_KEY_FILE" >> $MODELBOX_MANAGER_USER_OPT
@@ -165,7 +169,7 @@ For more details on security, please refer to the manual.
     appcmd="app -name \"modelbox\""
     appcmd="$appcmd -pidfile ${MODELBOX_PID_FILE}"
     appcmd="$appcmd --"
-    appcmd="$appcmd modelbox -c ${MODELBOX_USER_CONF_FILE} -p ${MODELBOX_PID_FILE} -n modelbox"
+    appcmd="$appcmd ${MODELBOX_BIN} -c ${MODELBOX_USER_CONF_FILE} -p ${MODELBOX_PID_FILE} -n modelbox"
     echo "$appcmd" >> ${MODELBOX_MANAGER_USER_CONF_FILE}
 
 
@@ -230,17 +234,6 @@ change_user() {
     mkdir -p "$CONF_DIR"
 }
 
-restart_sys_modelbox() {
-    systemctl restart modelbox
-    if [ $? -eq 0 ]; then
-        return 
-    fi
-
-    /etc/init/modelbox restart
-
-    return $?
-}
-
 restart_modelbox() {
     $MODELBOX_RUN_SCRIPT restart 2>&1 > /dev/null
 }
@@ -255,8 +248,8 @@ develop_status() {
         return 1
     fi
 
-    MODELBOX_USER_SERVER_IP="`modelbox -c $MODELBOX_USER_CONF_FILE --get-conf-value server.ip`"
-    MODELBOX_USER_SERVER_PORT="`modelbox -c $MODELBOX_USER_CONF_FILE --get-conf-value server.port`"
+    MODELBOX_USER_SERVER_IP="`${MODELBOX_BIN} -c $MODELBOX_USER_CONF_FILE --get-conf-value server.ip`"
+    MODELBOX_USER_SERVER_PORT="`${MODELBOX_BIN} -c $MODELBOX_USER_CONF_FILE --get-conf-value server.port`"
 
     debug_mode_info
     MSG=`$MODELBOX_RUN_SCRIPT status 2>/dev/null`
@@ -278,30 +271,6 @@ setup_develop_mode() {
     $MODELBOX_RUN_SCRIPT status
     $MODELBOX_MANAGER_RUN_SCRIPT restart  2>&1 > /dev/null
     $MODELBOX_MANAGER_RUN_SCRIPT status
-}
-
-install_modelbox_server() {
-    if [ "$EUID" -ne 0 ]; then 
-        echo "Please run as root"  
-        return 1
-    fi
-
-    echo "install modelbox"
-
-    cp $MODELBOX_FLOW_DIR/*.toml $MODELBOX_SYS_FLOW_DIR/ -av
-    if [ $? -ne 0 ]; then
-        echo "Install graph failed."
-        return 1
-    fi
-
-
-    restart_sys_modelbox
-    if [ $? -ne 0 ]; then
-        echo "restart sys modelbox failed."
-        return 1
-    fi
-
-    return $?
 }
 
 showhelp() {

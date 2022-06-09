@@ -78,6 +78,10 @@ set_target_properties(libmodelbox-shared PROPERTIES OUTPUT_NAME "modelbox")
 configure_file(${CMAKE_CURRENT_LIST_DIR}/libmodelbox.pc.in ${CMAKE_CURRENT_BINARY_DIR}/libmodelbox.pc @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/config.h.in ${LIBMODELBOX_CONFIG_INCLUDE}/modelbox/base/config.h @ONLY)
 
+if (STANDALONE)
+    set(CMAKE_INSTALL_RPATH $ORIGIN)
+endif()
+
 install(TARGETS libmodelbox-shared 
     COMPONENT libmodelbox
     RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}

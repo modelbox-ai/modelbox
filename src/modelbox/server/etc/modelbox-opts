@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+MODELBOX_ROOT=$(cd $(dirname $0)/../../ && pwd)
+if [ "$MODELBOX_ROOT" = "/" ]; then
+	MODELBOX_ROOT=""
+fi
+
+# custom env variable here
 
 # modelbox server opts
-MODELBOX_OPTS="-c @CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox.conf"
+MODELBOX_OPTS="-c ${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox.conf"

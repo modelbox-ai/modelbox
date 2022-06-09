@@ -50,6 +50,10 @@ if (NOT MODELBOX_MANAGER_CONFIG_FILE_NAME)
     set(MODELBOX_MANAGER_CONFIG_FILE_NAME "manager.conf")
 endif()
 
+if (STANDALONE)
+    set_target_properties(modelbox-manager PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+endif()
+
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/manager-opts ${CMAKE_CURRENT_BINARY_DIR}/etc/manager-opts @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/init.d/modelbox-manager.in ${CMAKE_CURRENT_BINARY_DIR}/etc/init.d/modelbox-manager @ONLY)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/etc/manager.conf.in ${CMAKE_CURRENT_BINARY_DIR}/etc/${MODELBOX_MANAGER_CONFIG_FILE_NAME} @ONLY)

@@ -1,17 +1,17 @@
 [server]
 ip = "127.0.0.1"
 port = "1104"
-flow_path = "@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/graph"
+flow_path = "@MODELBOX_ROOT_VAR@@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/graph"
 
 [plugin]
 files = [
-    "@CMAKE_INSTALL_FULL_LIBDIR@/modelbox-plugin.so",
-    "@CMAKE_INSTALL_FULL_LIBDIR@/modelbox-plugin-editor.so"
+    "@MODELBOX_ROOT_VAR@@CMAKE_INSTALL_FULL_LIBDIR@/modelbox-plugin.so",
+    "@MODELBOX_ROOT_VAR@@CMAKE_INSTALL_FULL_LIBDIR@/modelbox-plugin-editor.so"
 ]
 
 [control]
 enable = true
-listen = "/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.sock"
+listen = "@MODELBOX_ROOT_VAR@/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.sock"
 
 [acl]
 allow = [
@@ -23,8 +23,8 @@ allow = [
 enable = true
 # ip = "127.0.0.1"
 # port = "1104"
-root = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/www"
-demo_root = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/demo"
+root = "@MODELBOX_ROOT_VAR@@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/www"
+demo_root = "@MODELBOX_ROOT_VAR@@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/demo"
 
 [log]
 # log level, DEBUG, INFO, NOTICE, WARN, ERROR, FATAL, OFF
@@ -34,4 +34,4 @@ demo_root = "@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/demo"
 # num = 32
 
 # log file path
-path = "/var/log/modelbox/modelbox.log"
+path = "@MODELBOX_ROOT_VAR@/var/log/modelbox/modelbox.log"

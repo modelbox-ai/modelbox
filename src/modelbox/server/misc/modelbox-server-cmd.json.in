@@ -2,9 +2,9 @@
     "cmd-list": [
         {
             "name": "develop",
-            "exec": "@MODELBOX_TOOLS_PATH@/develop",
+            "exec": "@MODELBOX_ROOT_VAR@@MODELBOX_TOOLS_PATH@/develop",
             "desc": "Setup develop enviroment",
-            "help-cmd": "@MODELBOX_TOOLS_PATH@/develop --help"
+            "help-cmd": "@MODELBOX_ROOT_VAR@@MODELBOX_TOOLS_PATH@/develop --help"
         }
     ]
 }

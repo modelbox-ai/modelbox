@@ -20,6 +20,7 @@ include (CheckFunctionExists)
 check_function_exists(dladdr HAVE_DLADDR)
 check_function_exists(nanosleep HAVE_NANOSLEEP)
 
+option(STANDALONE "build standalone modelbox" OFF)
 option(PYTHONE_DISABLED "Disable build python" OFF)
 option(WITH_SECURE_C "include libsecurec.so" ON)
 option(WITH_ALL_DEMO "build with all demo with large model file" OFF)
