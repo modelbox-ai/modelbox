@@ -83,20 +83,20 @@ Status Flow::Init(const Solution& solution) {
   return Init(graph_path);
 }
 
-Status Flow::Init(const std::shared_ptr<FlowGraphDesc>& graph_desc) {
-  auto gcgraph = graph_desc->GetGCGraph();
-  if (nullptr == gcgraph) {
-    MBLOG_ERROR << "there is no valid graph in desc";
-    return STATUS_FAULT;
+Status Flow::Init(const std::shared_ptr<FlowGraphDesc>& flow_graph_desc) {
+  auto status = flow_graph_desc->GetStatus();
+  if (status != STATUS_OK) {
+    MBLOG_ERROR << "graph desc has error, ret " << status;
+    return status;
   }
 
   graph_ = std::make_shared<Graph>();
-  config_ = graph_desc->GetConfig();
+  config_ = flow_graph_desc->GetConfig();
   profiler_ = std::make_shared<Profiler>(device_mgr_, config_);
 
-  device_mgr_ = graph_desc->GetDeviceManager();
-  flowunit_mgr_ = graph_desc->GetFlowUnitManager();
-  gcgraph_ = graph_desc->GetGCGraph();
+  device_mgr_ = flow_graph_desc->GetDeviceManager();
+  flowunit_mgr_ = flow_graph_desc->GetFlowUnitManager();
+  gcgraph_ = flow_graph_desc->GetGCGraph();
 
   auto ret = profiler_->Init();
   if (!ret) {
@@ -109,6 +109,21 @@ Status Flow::Init(const std::shared_ptr<FlowGraphDesc>& graph_desc) {
     MBLOG_ERROR << "Initial graph failed, " << ret.WrapErrormsgs();
     return {ret, "Initial graph failed."};
   }
+
+  return STATUS_OK;
+}
+
+Status Flow::StartRun() {
+  auto ret = Build();
+  if (!ret) {
+    return ret;
+  }
+
+  ret = RunAsync();
+  if (!ret) {
+    return ret;
+  }
+
   return STATUS_OK;
 }
 

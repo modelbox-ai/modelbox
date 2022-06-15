@@ -17,179 +17,244 @@
 #ifndef FLOW_GRAPH_DESC_H_
 #define FLOW_GRAPH_DESC_H_
 
-#include <queue>
+#include <functional>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "flow_node_desc.h"
-#include "node.h"
-#include "modelbox/base/error_info.h"
-#include "scheduler.h"
+#include "modelbox/base/configuration.h"
+#include "modelbox/base/graph_manager.h"
+
 namespace modelbox {
 
-using ConfigNodeMap =
-    std::map<std::map<std::string, std::string>, std::shared_ptr<NodeBase>>;
+/**
+ * @brief Flow configuration
+ **/
+class FlowConfig {
+  friend class FlowGraphDesc;
 
+ public:
+  FlowConfig();
 
+  /**
+   * @brief set graph scope queue size
+   * @param queue_size for node input cache
+   */
+  void SetQueueSize(size_t queue_size);
+
+  /**
+   * @brief set graph scope batch size
+   * @param batch_size for node process batch
+   **/
+  void SetBatchSize(size_t batch_size);
+
+  /**
+   * @brief set custom drivers scan directory
+   * @param drivers_dir_list Dir list to scan custom drivers
+   **/
+  void SetDriversDir(const std::vector<std::string> &drivers_dir_list);
+
+  /**
+   * @brief skip modelbox default drivers
+   * @param is_skip True if skip modelbox default drivers
+   **/
+  void SetSkipDefaultDrivers(bool is_skip);
+
+ private:
+  std::shared_ptr<Configuration> content_;
+};
 
 /**
- * @brief API mode interface
- * */
+ * @brief To describe a graph in api mode
+ **/
 class FlowGraphDesc {
+  friend class Flow;
+
  public:
   FlowGraphDesc();
+
   virtual ~FlowGraphDesc();
 
   /**
-   * @brief  init global config
-   * @param config  global configuration
-   * @return return result code
-   */
-  Status Init(std::shared_ptr<Configuration> &config);
-
-  /**
-   * @brief link a node to existing graph with name and config
-   * @param name flowunit name
-   * @param config flowunit config
-   * @param data input data
-   * @return NodeDesc bind to current node
-   */
-  std::shared_ptr<NodeDesc> AddNode(
-      const std::string &name, std::map<std::string, std::string> config,
-      const std::shared_ptr<NodeDesc> &data = nullptr);
-
-  /**
-   * @brief link a node to existing graph with name and config
-   * @param name flowunit name
-   * @param config flowunit config
-   * @param data input data map
-   * @return process result
-   */
-  std::shared_ptr<NodeDesc> AddNode(
-      const std::string &name, std::map<std::string, std::string> config,
-      const std::map<std::string, std::shared_ptr<NodeDesc>> &data);
-
-  /**
-   * @brief link a node to existing graph with name and process callback
-   * @param callback process callback
-   * @param inports inport names
-   * @param outports outport names
-   * @param data input port and node info
-   * @return process result
-   */
-  std::shared_ptr<NodeDesc> AddNode(
-      std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
-      std::vector<std::string> inports, std::vector<std::string> outports,
-      const std::shared_ptr<NodeDesc> &data = nullptr);
-
-  std::shared_ptr<NodeDesc> AddNode(
-      std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
-      std::vector<std::string> inports, std::vector<std::string> outports,
-      const std::map<std::string, std::shared_ptr<NodeDesc>> &buffers);
-
-  /**
-   * @brief bind input node to a inport of the node. port name can be ignored if
-   * node has only one input port.
-   * @param node NodeDesc bind for the node
-   * @param port_name inport name of the node
-   * @return NodeDesc bind the input node
+   * @brief call first, will load drivers to complete graph
+   * @return Status
    **/
-  std::shared_ptr<NodeDesc> BindInput(
-      std::shared_ptr<NodeDesc> &node,
-      const std::string port_name = "__default__inport__");
+  Status Init();
 
   /**
-   * @brief bind output node to a outport of the node.port name can be ignored
-   * if node has only one out port.
-   * @param node NodeDesc bind for the node
-   * @param port_name outport name of the node
-   * @return NodeDesc bind the output node
+   * @brief call first, will load drivers to complete graph
+   * @param config for flow init
+   * @return Status
    **/
-  std::shared_ptr<NodeDesc> BindOutput(
-      std::shared_ptr<NodeDesc> &node,
-      const std::string port_name = "__default__outport__");
+  Status Init(std::shared_ptr<FlowConfig> config);
 
-  void Close();
-  void ShutDown();
-  Status Run();
-  Status Wait(int64_t timeout);
+  /**
+   * @brief add input port for flow
+   * @param input_name input port name
+   * @return a node in graph
+   **/
+  std::shared_ptr<FlowNodeDesc> AddInput(const std::string &input_name);
+
+  /**
+   * @brief add output port for flow
+   * @param output_name output port name
+   * @param source_node_port node output port connect to this output port
+   **/
+  void AddOutput(const std::string &output_name,
+                 std::shared_ptr<FlowPortDesc> source_node_port);
+
+  /**
+   * @brief add output port for flow
+   * @param output_name output port name
+   * @param source_node output port [0] of node will connect to this output port
+   **/
+  void AddOutput(const std::string &output_name,
+                 std::shared_ptr<FlowNodeDesc> source_node);
+
+  /**
+   * @brief add node for flow
+   * @param flowunit_name flowunit name, like resize, crop
+   * @param device choose flowunit implementation
+   * @param config flowunit configuration
+   * @param source_node_ports node output ports connect to this node input ports
+   * @return a node in graph
+   **/
+  std::shared_ptr<FlowNodeDesc> AddNode(
+      const std::string &flowunit_name, const std::string &device,
+      const std::vector<std::string> &config,
+      const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+          &source_node_ports);
+
+  /**
+   * @brief add node for flow
+   * @param flowunit_name flowunit name, like resize, crop
+   * @param device choose flowunit implementation
+   * @param config flowunit configuration
+   * @param source_node output port [0] of node will connect to this output port
+   * @return a node in graph
+   **/
+  std::shared_ptr<FlowNodeDesc> AddNode(
+      const std::string &flowunit_name, const std::string &device,
+      const std::vector<std::string> &config,
+      std::shared_ptr<FlowNodeDesc> source_node);
+
+  /**
+   * @brief add node for flow
+   * @param flowunit_name flowunit name, like resize, crop
+   * @param device choose flowunit implementation
+   * @param source_node_ports node output ports connect to this node input ports
+   * @return a node in graph
+   **/
+  std::shared_ptr<FlowNodeDesc> AddNode(
+      const std::string &flowunit_name, const std::string &device,
+      const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+          &source_node_ports);
+
+  /**
+   * @brief add node for flow
+   * @param flowunit_name flowunit name, like resize, crop
+   * @param device choose flowunit implementation
+   * @param source_node output port [0] of node will connect to this output port
+   * @return a node in graph
+   **/
+  std::shared_ptr<FlowNodeDesc> AddNode(
+      const std::string &flowunit_name, const std::string &device,
+      std::shared_ptr<FlowNodeDesc> source_node);
+
+  /**
+   * @brief add node for flow
+   * @param flowunit_name flowunit name, like resize, crop
+   * @param device choose flowunit implementation
+   * @param config flowunit configuration
+   * @return a node in graph
+   **/
+  std::shared_ptr<FlowNodeDesc> AddNode(
+      const std::string &flowunit_name, const std::string &device = "cpu",
+      const std::vector<std::string> &config = {});
+
+  /**
+   * @brief add function node for flow
+   * @param func func to insert as node
+   * @param input_name_list define input port for node
+   * @param output_name_list define output port for node
+   * @param source_node_ports node output ports connect to this node input ports
+   * @return a node in graph
+   **/
+  std::shared_ptr<FlowNodeDesc> AddFunction(
+      const std::function<Status(std::shared_ptr<DataContext>)> &func,
+      const std::vector<std::string> &input_name_list,
+      const std::vector<std::string> &output_name_list,
+      const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+          &source_node_ports);
+
+  /**
+   * @brief add function node for flow
+   * @param func func to insert as node
+   * @param input_name_list define input port for node
+   * @param output_name_list define output port for node
+   * @param source_node output port [0] of node will connect to this output port
+   * @return a node in graph
+   **/
+  std::shared_ptr<FlowNodeDesc> AddFunction(
+      const std::function<Status(std::shared_ptr<DataContext>)> &func,
+      const std::vector<std::string> &input_name_list,
+      const std::vector<std::string> &output_name_list,
+      std::shared_ptr<FlowNodeDesc> source_node);
+
+  /**
+   * @brief get graph build status
+   * @return Status of graph build
+   **/
+  Status GetStatus();
+
+ private:
+  bool is_init_{false};
+  std::unordered_map<std::string, size_t> node_name_idx_map_;
+  size_t function_node_idx_{0};
+  std::unordered_map<std::string, size_t> model_node_idx_map_;
+  std::list<std::shared_ptr<FlowNodeDesc>> node_desc_list_;
+  Status build_status_{STATUS_FAULT};
+
+ private:
+  std::shared_ptr<Configuration> GetConfig();
 
   std::shared_ptr<GCGraph> GetGCGraph();
+
+  std::shared_ptr<Drivers> GetDrivers();
+
   std::shared_ptr<DeviceManager> GetDeviceManager();
+
   std::shared_ptr<FlowUnitManager> GetFlowUnitManager();
-  std::shared_ptr<Configuration> GetConfig();
-  /**
-   * @brief get error info from graph
-   * @return error information
-   */
-  std::shared_ptr<ErrorInfo> GetErrorInfo() { return error_info_; }
 
- private:
-  void SetConfig(std::string &, std::string &);
-  Status AddCallBackFactory(
-      const std::string unit_name, const std::set<std::string> input_ports,
-      const std::set<std::string> output_ports,
-      std::function<StatusCode(std::shared_ptr<DataContext>)> &callback);
-  Status AddToGCGraph(const std::string name, std::set<std::string> inputs,
-                      std::set<std::string> outputs,
-                      const std::map<std::string, std::string> &config,
-                      const std::shared_ptr<NodeDesc> &data_handler);
-
-  Status CheckBuffer(const std::shared_ptr<FlowUnitDesc> &desc,
-                     const std::shared_ptr<NodeDesc> &data);
-
-  std::shared_ptr<FlowUnitDesc> GetFlowunitDesc(
-      const std::string &name,
-      const std::map<std::string, std::string> &config);
-
-  std::shared_ptr<GCNode> CreateGCNode(
-      const std::string name, std::set<std::string> input_ports,
-      std::set<std::string> out_ports,
-      const std::map<std::string, std::string> &config,
-      const std::shared_ptr<NodeDesc> &data_handler);
-
-  Status InsertGraphEdge(std::shared_ptr<GCGraph> &root_graph,
-                         std::shared_ptr<GCNode> &input_node,
-                         std::string &input_port,
-                         std::shared_ptr<GCNode> &output_node,
-                         std::string &output_port);
-
-
-  Status RunGraph(std::shared_ptr<NodeDesc> &data_handler);
-  void BindDataHanlder(std::shared_ptr<NodeDesc> &data_handler,
-                       std::shared_ptr<GCNode> &gcnode);
-  Status CheckInputPort(const std::shared_ptr<FlowUnitDesc> &flowunit_desc,
-                        const std::shared_ptr<NodeDesc> &data_handler);
- 
-  Status CheckInputFlowUnit(const std::string &,
-                            std::map<std::string, std::string> &,
-                            const std::shared_ptr<NodeDesc> &,
-                            const std::shared_ptr<FlowUnitDesc> &);
-  std::shared_ptr<NodeDesc> ExecuteStreamNode(
-      const std::shared_ptr<FlowUnitDesc> &,
-      const std::shared_ptr<NodeDesc> &,
-      std::map<std::string, std::string> &);
-
-
-
- private:
-  friend class NodeDesc;
   std::shared_ptr<Configuration> config_;
   std::shared_ptr<Drivers> drivers_;
   std::shared_ptr<DeviceManager> device_mgr_;
   std::shared_ptr<FlowUnitManager> flowunit_mgr_;
-  std::shared_ptr<Scheduler> scheduler_;
-  std::shared_ptr<Profiler> profiler_;
-  std::unordered_map<std::string, std::string> global_config_map_;
-  std::set<std::shared_ptr<NodeBase>> stream_nodes_;
-  std::map<std::string, ConfigNodeMap> nodes_config_;
-  std::shared_ptr<ErrorInfo> error_info_;
-  std::vector<std::shared_ptr<NodeDesc>> node_handlers_;
-  std::shared_ptr<GCGraph> gcgraph_;
 
-  std::shared_ptr<Graph> graph_;
-  std::shared_ptr<ExternalDataMap> externdata_map_;
-  int node_sequence_{0};
-  bool closed_{false};
+ private:
+  void AddOutput(const std::string &output_name, const std::string &device,
+                 std::shared_ptr<FlowPortDesc> source_node_port);
+
+  bool FormatInputLinks(
+      const std::string &flowunit_name,
+      std::shared_ptr<FlowUnitDesc> flowunit_desc,
+      const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+          &origin_source_node_ports,
+      std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+          &format_source_node_ports);
+
+  void GenGCNodes(std::shared_ptr<GCGraph> gcgraph);
+
+  void GenGCEdges(std::shared_ptr<GCGraph> gcgraph);
+
+  bool CheckInputLinks(
+      const std::vector<std::string> &defined_ports,
+      const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+          &input_links);
 };
 
 }  // namespace modelbox
 
-#endif
+#endif  // FLOW_GRAPH_DESC_H_

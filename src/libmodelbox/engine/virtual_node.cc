@@ -105,6 +105,7 @@ OutputVirtualNode::OutputVirtualNode(
   queue_size_ = -1;
   priority_ = 0;
   device_mgr_ = device_manager;
+  target_device_ = device_mgr_->GetDevice(device_name, device_id);
 }
 
 OutputVirtualNode::~OutputVirtualNode() {}
@@ -125,6 +126,11 @@ Status OutputVirtualNode::Init(const std::set<std::string>& input_port_names,
       std::make_shared<InputMatchStreamManager>(name_, queue_size_, port_count);
   input_match_stream_mgr_->SetInputBufferInOrder(true);
   input_match_stream_mgr_->SetInputStreamGatherAll(false);
+
+  if (config->GetString("device") == device_name_) {
+    need_move_to_device_ = true;
+  }
+
   return STATUS_SUCCESS;
 }
 
@@ -219,6 +225,9 @@ Status OutputVirtualNode::Run(RunType type) {
           last_error = std::make_shared<FlowUnitError>(data->GetErrorMsg());
         }
 
+        if (need_move_to_device_ && data->GetDevice() != target_device_) {
+          data = data->CopyTo(target_device_);
+        }
         valid_output.push_back(data);
       }
 
@@ -256,7 +265,11 @@ std::shared_ptr<Device> OutputVirtualNode::GetDevice() {
 }
 
 SessionUnmatchCache::SessionUnmatchCache(
-    const std::set<std::string>& port_names) {
+    const std::set<std::string>& port_names) {}
+
+void SessionUnmatchCache::SetTargetDevice(
+    std::shared_ptr<Device> target_device) {
+  target_device_ = target_device;
 }
 
 Status SessionUnmatchCache::CacheBuffer(const std::string& port_name,
@@ -303,6 +316,11 @@ Status SessionUnmatchCache::PopCache(OutputBufferList& output_buffer_list) {
         continue;
       }
 
+      if (target_device_ != nullptr && buffer->GetDevice() != target_device_) {
+        valid_data_list.push_back(buffer->CopyTo(target_device_));
+        continue;
+      }
+
       valid_data_list.push_back(buffer);
     }
     output_buffer_list[port_name] =
@@ -324,6 +342,7 @@ OutputUnmatchVirtualNode::OutputUnmatchVirtualNode(
   queue_size_ = -1;
   priority_ = 0;
   device_mgr_ = device_manager;
+  target_device_ = device_mgr_->GetDevice(device_name, device_id);
 }
 
 OutputUnmatchVirtualNode::~OutputUnmatchVirtualNode() {}
@@ -332,6 +351,10 @@ Status OutputUnmatchVirtualNode::Init(
     const std::set<std::string>& input_port_names,
     const std::set<std::string>& output_port_names,
     std::shared_ptr<Configuration> config) {
+  if (config->GetString("device") == device_name_) {
+    need_move_to_device_ = true;
+  }
+
   return NodeBase::Init(input_port_names, output_port_names, config);
 }
 
@@ -352,6 +375,9 @@ Status OutputUnmatchVirtualNode::Run(RunType type) {
       if (cache_item == session_cache_map_.end()) {
         session_cache = std::make_shared<SessionUnmatchCache>(GetInputNames());
         session_cache_map_[session] = session_cache;
+        if (need_move_to_device_) {
+          session_cache->SetTargetDevice(target_device_);
+        }
       } else {
         session_cache = cache_item->second;
       }

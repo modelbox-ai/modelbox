@@ -15,68 +15,83 @@
  */
 
 #include "modelbox/flow_node_desc.h"
-#include "modelbox/modelbox_engine.h"
 
 namespace modelbox {
 
-NodeDesc::NodeDesc() {}
+FlowNodeDesc::FlowNodeDesc(const std::string &node_name)
+    : node_name_(node_name) {}
 
-NodeDesc::~NodeDesc() {
+FlowNodeDesc::~FlowNodeDesc() {}
+
+void FlowNodeDesc::SetNodeName(const std::string &node_name) {
+  node_name_ = node_name;
 }
 
-NodeDescType NodeDesc::GetNodeType() { return data_handler_type_; }
+std::string FlowNodeDesc::GetNodeName() { return node_name_; }
 
-void NodeDesc::SetNodeType(const NodeDescType &type) {
-  data_handler_type_ = type;
+std::shared_ptr<FlowPortDesc> FlowNodeDesc::operator[](
+    const std::string &output_name) {
+  for (auto &port_name : output_port_name_list_) {
+    if (port_name == output_name) {
+      return std::make_shared<FlowPortDesc>(node_name_, output_name);
+    }
+  }
+
+  MBLOG_ERROR << "node " << node_name_ << " does not have output port "
+              << output_name;
+  return nullptr;
 }
 
-void NodeDesc::SetNodeName(const std::string &name) { node_name_ = name; }
-
-std::string NodeDesc::GetNodeName() { return node_name_; }
-
-std::set<std::string> NodeDesc::GetPortNames() { return port_names_; }
-
-std::shared_ptr<NodeDesc> NodeDesc::GetNodeDesc(const std::string &key) {
-  if (port_names_.find(key) == port_names_.end()) {
-    MBLOG_ERROR << "faild find port name: " << key
-                << " in node: " << node_name_;
+std::shared_ptr<FlowPortDesc> FlowNodeDesc::operator[](size_t port_idx) {
+  if (output_port_name_list_.size() <= port_idx) {
+    MBLOG_ERROR << "node " << node_name_ << " output number is "
+                << output_port_name_list_.size() << ",  index " << port_idx
+                << " is out of range";
     return nullptr;
   }
 
-  auto data = std::make_shared<NodeDesc>();
-  data->SetNodeName(node_name_);
-
-  std::set<std::string> ports = {key};
-  data->SetPortNames(ports);
-  return data;
+  return std::make_shared<FlowPortDesc>(node_name_,
+                                        output_port_name_list_[port_idx]);
 }
 
-Status NodeDesc::SetNodeDesc(
-    const std::map<std::string, std::shared_ptr<NodeDesc>> &data_map) {
-  for (auto &iter : data_map) {
-    auto ports = iter.second->GetPortNames();
-    if (ports.size() != 1) {
-      std::string err_msg = "input data handler has one more ports";
-      return {STATUS_FAULT, err_msg};
-    }
+void FlowNodeDesc::SetNodeType(const std::string &type) { type_ = type; }
 
-    auto in_port_name = iter.first;
-    auto temp_data = iter.second;
-    auto node_name = temp_data->GetNodeName();
-    auto out_port_name = *(ports.begin());
-    port_to_port_[in_port_name] = out_port_name;
-    port_to_node_[in_port_name] = node_name;
+void FlowNodeDesc::SetFlowUnitName(const std::string &flowunit_name) {
+  flowunit_name_ = flowunit_name;
+}
+
+void FlowNodeDesc::SetDevice(const std::string &device) { device_ = device; }
+
+void FlowNodeDesc::SetConfig(const std::vector<std::string> &config) {
+  config_ = config;
+}
+
+std::vector<std::string> FlowNodeDesc::GetNodeConfig() {
+  auto node_config = config_;
+  node_config.push_back("type=" + type_);
+  if (type_ == GRAPH_NODE_FLOWUNIT) {
+    node_config.push_back("flowunit=" + flowunit_name_);
   }
-  return STATUS_SUCCESS;
+  node_config.push_back("device=" + device_);
+  return node_config;
 }
 
-std::shared_ptr<NodeDesc> NodeDesc::operator[](const std::string &port_name) {
-  return GetNodeDesc(port_name);
+void FlowNodeDesc::SetOutputPortNames(
+    const std::vector<std::string> &output_port_name_list) {
+  output_port_name_list_ = output_port_name_list;
 }
 
-Status NodeDesc::SetPortNames(std::set<std::string> &port_names) {
-  port_names_ = port_names;
-  return STATUS_OK;
+void FlowNodeDesc::SetInputLinks(
+    const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+        &source_node_ports) {
+  source_node_ports_ = source_node_ports;
 }
+
+const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+    &FlowNodeDesc::GetInputLinks() {
+  return source_node_ports_;
+}
+
+void FlowNodeDesc::Clear() { source_node_ports_.clear(); }
 
 }  // namespace modelbox

@@ -15,6 +15,7 @@
  */
 
 #include <opencv2/opencv.hpp>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "mock_driver_ctl.h"
@@ -26,125 +27,88 @@
 
 namespace modelbox {
 class FlowGraphTest : public testing::Test {
- public:
-  FlowGraphTest() {}
-
  protected:
-  std::shared_ptr<Flow> flow;
-  virtual void SetUp(){
+  void SetUp() override {
+    auto flow_cfg = std::make_shared<FlowConfig>();
+    flow_cfg->SetQueueSize(32);
+    flow_cfg->SetBatchSize(8);
+    flow_cfg->SetSkipDefaultDrivers(true);
+    flow_cfg->SetDriversDir({TEST_DRIVER_DIR});
+    graph_desc_ = std::make_shared<FlowGraphDesc>();
+    graph_desc_->Init(flow_cfg);
+  }
 
-  };
-
-  virtual void TearDown(){
-
-  };
+  std::shared_ptr<FlowGraphDesc> graph_desc_;
 };
 
-std::shared_ptr<FlowGraphDesc> CreateGraphDesc() {
-  auto graph_desc = std::make_shared<FlowGraphDesc>();
-  return graph_desc;
-}
-
-TEST_F(FlowGraphTest, StreamTest) {
-  auto graph_desc = CreateGraphDesc();
-  auto builder = std::make_shared<ConfigurationBuilder>();
-  auto config = builder->Build();
-  config->SetProperty("graph.queue_size", "32");
-  config->SetProperty("graph.queue_size_external", "1000");
-  config->SetProperty("graph.batch_size", "16");
-  config->SetProperty("drivers.skip-default", "true");
-  config->SetProperty("drivers.dir", TEST_DRIVER_DIR);
-  graph_desc->Init(config);
+TEST_F(FlowGraphTest, AddNodeTest) {
   auto source_url =
       std::string(TEST_ASSETS) + "/video/jpeg_5s_480x320_24fps_yuv444_8bit.mp4";
 
-  std::map<std::string, std::string> demuxer_config;
-
-  demuxer_config.emplace("device", "cpu");
-  demuxer_config.emplace("deviceid", "0");
-
-  auto video_demuxer = graph_desc->AddNode("video_demuxer", {}, nullptr);
-  auto input = graph_desc->BindInput(video_demuxer);
-  auto output = graph_desc->BindOutput(video_demuxer);
+  auto input = graph_desc_->AddInput("input1");
+  auto video_demuxer = graph_desc_->AddNode("video_demuxer", "cpu", input);
+  graph_desc_->AddOutput("output1", video_demuxer);
 
   auto flow = std::make_shared<Flow>();
-  flow->Init(graph_desc);
-  flow->Build();
-  flow->RunAsync();
+  flow->Init(graph_desc_);
+  flow->StartRun();
+
   auto data_map = flow->CreateExternalDataMap();
   auto data_simple = std::make_shared<ExternalDataSimple>(data_map);
-  data_simple->PushData(input->GetNodeName(), source_url.data(),
-                        source_url.size());
+  data_simple->PushData("input1", source_url.data(), source_url.size());
 
   std::shared_ptr<void> data = nullptr;
   size_t data_len = 0;
-  auto status =
-      data_simple->GetResult(output->GetNodeName(), data, data_len, 1000);
+  auto status = data_simple->GetResult("output1", data, data_len, 1000);
   EXPECT_EQ(status, STATUS_SUCCESS);
   EXPECT_GT(data_len, 1000);
 }
-TEST_F(FlowGraphTest, ResizeTest) {
-  auto graph_desc = CreateGraphDesc();
-  auto builder = std::make_shared<ConfigurationBuilder>();
-  auto config = builder->Build();
-  config->SetProperty("drivers.dir", TEST_DRIVER_DIR);
-  graph_desc->Init(config);
 
-  auto resize_output = graph_desc->AddNode(
-      "resize", {{"width", "256"}, {"height", "256"}}, nullptr);
+TEST_F(FlowGraphTest, AddFuncTest) {
+  auto input1 = graph_desc_->AddInput("input1");
+  auto process_func = [](std::shared_ptr<DataContext> data_context) -> Status {
+    auto input = data_context->Input("in_1");
+    auto in_data = (const uint8_t *)(input->ConstBufferData(0));
 
-  auto callback = [](std::shared_ptr<DataContext> data_context) -> Status {
-    auto input = data_context->Input("In_1");
-    auto output = data_context->Output("Out_1");
-    int data_size = input->At(0)->GetBytes();
+    auto output = data_context->Output("out_1");
     auto buffer = input->At(0);
-    output->Build({(unsigned long)data_size});
-    memcpy_s(output->At(0)->MutableData(), data_size, buffer->ConstData(),
-             data_size);
+    output->Build({buffer->GetBytes()});
+    auto data_ptr = (uint8_t *)(output->MutableBufferData(0));
+    for (uint8_t i = 0; i < 10; ++i) {
+      data_ptr[i] = in_data[i] + 1;
+    }
+    output->At(0)->Set("test_meta", "test_meta");
     return STATUS_SUCCESS;
   };
-
-  auto data_handler = std::make_shared<NodeDesc>();
-  data_handler->SetNodeDesc(
-      {{"In_1", resize_output->GetNodeDesc("out_image")}});
-  auto process_output =
-      graph_desc->AddNode(callback, {"In_1"}, {"Out_1"}, data_handler);
-  auto input = graph_desc->BindInput(resize_output);
-  auto output = graph_desc->BindOutput(process_output);
+  auto func_node =
+      graph_desc_->AddFunction(process_func, {"in_1"}, {"out_1"}, input1);
+  graph_desc_->AddOutput("output1", func_node);
 
   auto flow = std::make_shared<Flow>();
-  flow->Init(graph_desc);
-  flow->Build();
-  flow->RunAsync();
-  auto data_map = flow->CreateExternalDataMap();
-  auto data_simple = std::make_shared<ExternalDataSimple>(data_map);
-  std::string gimg_path = std::string(TEST_ASSETS) + "/test.jpg";
-  cv::Mat gimg_data = cv::imread(gimg_path.c_str());
+  flow->Init(graph_desc_);
+  flow->StartRun();
 
-  long unsigned int gcols = gimg_data.cols;
-  long unsigned int grows = gimg_data.rows;
-  long unsigned int gchannels = gimg_data.channels();
-  long unsigned int data_size = gimg_data.cols * gimg_data.rows * 3;
+  auto data_map = flow->CreateExternalDataMap();
 
   auto bufferlist = data_map->CreateBufferList();
-  bufferlist->Build({data_size});
+  bufferlist->Build({10});
   auto buffer = bufferlist->At(0);
-  auto buffer_data = buffer->MutableData();
-  if (data_size > 0) {
-    memcpy_s(buffer_data, data_size, gimg_data.data, data_size);
+  auto buffer_data = (uint8_t *)(buffer->MutableData());
+  for (uint8_t i = 0; i < 10; ++i) {
+    buffer_data[i] = i;
   }
-  buffer->Set("width", (int)gcols);
-  buffer->Set("height", (int)grows);
-  buffer->Set("channel", (int)gchannels);
-  auto status = data_map->Send(input->GetNodeName(), bufferlist);
-
-  std::shared_ptr<void> data;
-  size_t data_len = 0;
-  status = data_simple->GetResult(output->GetNodeName(), data, data_len);
-  cv::Mat img_data(cv::Size(256, 256), CV_8UC3);
-  memcpy_s(img_data.data, img_data.total() * img_data.elemSize(), data.get(),
-           data_len);
-  EXPECT_EQ(status, STATUS_SUCCESS);
+  data_map->Send("input1", bufferlist);
+  OutputBufferList output;
+  data_map->Recv(output);
+  ASSERT_EQ(output["output1"]->Size(), 1);
+  auto out_buffer = output["output1"]->At(0);
+  std::string meta;
+  out_buffer->Get("test_meta", meta);
+  EXPECT_EQ(meta, "test_meta");
+  auto data = (const uint8_t *)(out_buffer->ConstData());
+  for (uint8_t i = 0; i < 10; ++i) {
+    EXPECT_EQ(data[i], i + 1);
+  }
 }
 
 }  // namespace modelbox

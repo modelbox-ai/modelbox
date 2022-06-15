@@ -108,15 +108,16 @@ void SetUpFlow(pybind11::module &m) {
            py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
       .def("send", &modelbox::ExternalDataMap::Send,
            py::call_guard<py::gil_scoped_release>())
-      .def("recv",
-           [](modelbox::ExternalDataMap &ext,
-              std::shared_ptr<ExtOutputBufferList> &out_data)
-               -> modelbox::Status {
-             auto &map_data = out_data->GetOutputBufferList();
-             auto status = ext.Recv(map_data);
-             return status;
-           },
-           py::keep_alive<2, 1>(), py::call_guard<py::gil_scoped_release>())
+      .def(
+          "recv",
+          [](modelbox::ExternalDataMap &ext,
+             std::shared_ptr<ExtOutputBufferList> &out_data)
+              -> modelbox::Status {
+            auto &map_data = out_data->GetOutputBufferList();
+            auto status = ext.Recv(map_data);
+            return status;
+          },
+          py::keep_alive<2, 1>(), py::call_guard<py::gil_scoped_release>())
       .def("close", &modelbox::ExternalDataMap::Close,
            py::call_guard<py::gil_scoped_release>())
       .def("shutdown", &modelbox::ExternalDataMap::Shutdown,
@@ -175,7 +176,9 @@ void SetUpFlow(pybind11::module &m) {
       .def("stop", &modelbox::Flow::Stop,
            py::call_guard<py::gil_scoped_release>())
       .def("create_external_data_map", &modelbox::Flow::CreateExternalDataMap,
-           py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>());
+           py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
+      .def("start_run", &modelbox::Flow::StartRun,
+           py::call_guard<py::gil_scoped_release>());
 }
 
 PYBIND11_MODULE(_modelbox, m) {
@@ -192,8 +195,10 @@ PYBIND11_MODULE(_modelbox, m) {
   ModelboxPyApiSetUpGeneric(m);
   ModelboxPyApiSetUpEngine(m);
   ModelboxPyApiSetUpDataHandler(m);
-  ModelboxPyApiSetUpNodeDesc(m);
+  ModelboxPyApiSetUpFlowConfig(m);
   ModelboxPyApiSetUpFlowGraphDesc(m);
+  ModelboxPyApiSetUpFlowNodeDesc(m);
+  ModelboxPyApiSetUpFlowPortDesc(m);
   ModelBoxPyApiSetUpSolution(m);
 
 #ifdef VERSION_INFO

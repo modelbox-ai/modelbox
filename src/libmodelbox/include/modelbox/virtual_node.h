@@ -96,11 +96,16 @@ class OutputVirtualNode : public Node {
   std::shared_ptr<DeviceManager> device_mgr_;
   std::string device_name_;
   std::string device_id_;
+
+  std::shared_ptr<Device> target_device_;
+  bool need_move_to_device_{false};
 };
 
 class SessionUnmatchCache {
  public:
   SessionUnmatchCache(const std::set<std::string>& port_names);
+
+  void SetTargetDevice(std::shared_ptr<Device> target_device);
 
   Status CacheBuffer(const std::string& port_name,
                      std::shared_ptr<Buffer> buffer);
@@ -110,6 +115,8 @@ class SessionUnmatchCache {
   Status PopCache(OutputBufferList& output_buffer_list);
 
  private:
+  std::shared_ptr<Device> target_device_;
+
   std::unordered_map<std::string, std::map<std::shared_ptr<Stream>,
                                            std::vector<std::shared_ptr<Buffer>>,
                                            StreamPtrOrderCmp>>
@@ -150,6 +157,10 @@ class OutputUnmatchVirtualNode : public Node {
   std::shared_ptr<DeviceManager> device_mgr_;
   std::string device_name_;
   std::string device_id_;
+
+  std::shared_ptr<Device> target_device_;
+  bool need_move_to_device_{false};
+
   std::unordered_map<std::shared_ptr<Session>,
                      std::shared_ptr<SessionUnmatchCache>>
       session_cache_map_;

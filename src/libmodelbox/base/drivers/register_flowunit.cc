@@ -30,11 +30,11 @@ Status RegisterFlowUnit::Open(const std::shared_ptr<Configuration> &config) {
 Status RegisterFlowUnit::Close() { return STATUS_OK; }
 
 void RegisterFlowUnit::SetCallBack(
-    std::function<StatusCode(std::shared_ptr<DataContext>)> callback) {
+    std::function<Status(std::shared_ptr<DataContext>)> callback) {
   callback_ = callback;
 }
 
-std::function<StatusCode(std::shared_ptr<DataContext>)>
+std::function<Status(std::shared_ptr<DataContext>)>
 RegisterFlowUnit::GetCallBack() {
   return callback_;
 }
@@ -48,9 +48,9 @@ Status RegisterFlowUnit::Process(std::shared_ptr<DataContext> data_context) {
 }
 
 RegisterFlowUnitFactory::RegisterFlowUnitFactory(
-    const std::string unit_name, std::set<std::string> inputs,
-    std::set<std::string> outputs,
-    std::function<StatusCode(std::shared_ptr<DataContext>)> &callback)
+    const std::string &unit_name, const std::vector<std::string> &inputs,
+    const std::vector<std::string> &outputs,
+    const std::function<Status(std::shared_ptr<DataContext>)> &callback)
     : unit_name_(unit_name),
       input_ports_(inputs),
       output_ports_(outputs),
@@ -85,12 +85,12 @@ Status RegisterFlowUnitFactory::Init() {
   SetDriver(driver);
 
   desc->SetFlowUnitName(unit_name_);
-  for (auto &iter : input_ports_) {
-    desc->AddFlowUnitInput(FlowUnitInput(iter, "cpu"));
+  for (auto &port_name : input_ports_) {
+    desc->AddFlowUnitInput(FlowUnitInput(port_name, "cpu"));
   }
 
-  for (auto &iter : output_ports_) {
-    desc->AddFlowUnitOutput(FlowUnitOutput(iter, "cpu"));
+  for (auto &port_name : output_ports_) {
+    desc->AddFlowUnitOutput(FlowUnitOutput(port_name));
   }
   desc->SetVirtualType(VIRTUAL_TYPE);
   desc_map_.emplace(unit_name_, desc);
