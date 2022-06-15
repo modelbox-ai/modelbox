@@ -97,6 +97,12 @@ class Flow {
   Status Init(const std::shared_ptr<FlowGraphDesc>& flow_graph_desc);
 
   /**
+   * @brief return until flow running
+   * @return start result.
+   */
+  Status StartRun();
+
+  /**
    * @brief Build graph
    * @return build result.
    */

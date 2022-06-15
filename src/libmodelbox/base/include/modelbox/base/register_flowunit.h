@@ -35,22 +35,22 @@ class RegisterFlowUnit : public FlowUnit {
   Status Process(std::shared_ptr<DataContext> data_context);
 
   void SetCallBack(
-      std::function<StatusCode(std::shared_ptr<DataContext>)> callback);
+      std::function<Status(std::shared_ptr<DataContext>)> callback);
 
-  std::function<StatusCode(std::shared_ptr<DataContext>)> GetCallBack();
+  std::function<Status(std::shared_ptr<DataContext>)> GetCallBack();
 
  private:
   std::string name_;
-  std::function<StatusCode(std::shared_ptr<DataContext>)> callback_{nullptr};
+  std::function<Status(std::shared_ptr<DataContext>)> callback_{nullptr};
 };
 
 class RegisterFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   RegisterFlowUnitFactory() = default;
   RegisterFlowUnitFactory(
-      const std::string unit_name, const std::set<std::string> inputs,
-      const std::set<std::string> outputs,
-      std::function<StatusCode(std::shared_ptr<DataContext>)> &callback);
+      const std::string &unit_name, const std::vector<std::string> &inputs,
+      const std::vector<std::string> &outputs,
+      const std::function<Status(std::shared_ptr<DataContext>)> &callback);
   virtual ~RegisterFlowUnitFactory() = default;
 
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
@@ -65,9 +65,9 @@ class RegisterFlowUnitFactory : public modelbox::FlowUnitFactory {
  private:
   Status Init();
   std::string unit_name_;
-  std::set<std::string> input_ports_;
-  std::set<std::string> output_ports_;
-  std::function<StatusCode(std::shared_ptr<DataContext>)> callback_;
+  std::vector<std::string> input_ports_;
+  std::vector<std::string> output_ports_;
+  std::function<Status(std::shared_ptr<DataContext>)> callback_;
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> desc_map_;
 };
 

@@ -1041,68 +1041,6 @@ void ModelboxPyApiSetUpEngine(pybind11::module &m) {
            py::keep_alive<0, 1>());
 }
 
-void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
-  py::class_<modelbox::FlowGraphDesc, std::shared_ptr<modelbox::FlowGraphDesc>>(
-      m, "FlowGraphDesc")
-      .def(py::init<>())
-      .def("init",
-           [](FlowGraphDesc &env,
-              std::shared_ptr<modelbox::Configuration> &config) {
-             return env.Init(config);
-           },
-           py::call_guard<py::gil_scoped_release>())
-      .def("init",
-           [](FlowGraphDesc &env,
-              std::unordered_map<std::string, std::string> &config) {
-             auto configuration = std::make_shared<modelbox::Configuration>();
-             for (auto &iter : config) {
-               configuration->SetProperty(iter.first, iter.second);
-             }
-             return env.Init(configuration);
-           },
-           py::call_guard<py::gil_scoped_release>())
-
-      .def("bindinput", &modelbox::FlowGraphDesc::BindInput,
-           py::call_guard<py::gil_scoped_release>())
-      .def("bindoutput", &modelbox::FlowGraphDesc::BindOutput,
-           py::call_guard<py::gil_scoped_release>())
-      .def("addnode",
-           [](FlowGraphDesc &env, const std::string &name,
-              std::map<std::string, std::string> &config,
-              std::map<std::string, std::shared_ptr<NodeDesc>> &data) {
-             py::gil_scoped_release release;
-             return env.AddNode(name, config, data);
-           },
-           py::keep_alive<0, 1>())
-      .def("addnode",
-           [](FlowGraphDesc &env, const std::string &name,
-              std::map<std::string, std::string> &config,
-              std::shared_ptr<NodeDesc> &data) {
-             py::gil_scoped_release release;
-             return env.AddNode(name, config, data);
-           },
-           py::keep_alive<0, 1>())
-      .def("addnode",
-           [](FlowGraphDesc &env,
-              std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
-              std::vector<std::string> inputs, std::vector<std::string> outputs,
-              std::shared_ptr<NodeDesc> datahandler) {
-             py::gil_scoped_release release;
-             return env.AddNode(callback, inputs, outputs, datahandler);
-           },
-           py::keep_alive<0, 1>())
-      .def("addnode",
-           [](FlowGraphDesc &env,
-              std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
-              std::vector<std::string> inputs, std::vector<std::string> outputs,
-              std::map<std::string, std::shared_ptr<NodeDesc>> &data) {
-             py::gil_scoped_release release;
-
-             return env.AddNode(callback, inputs, outputs, data);
-           },
-           py::keep_alive<0, 1>());
-}
-
 void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
   py::class_<modelbox::DataHandler, std::shared_ptr<modelbox::DataHandler>>(
       m, "DataHandler")
@@ -1151,14 +1089,144 @@ void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
            py::call_guard<py::gil_scoped_release>());
 }
 
-void ModelboxPyApiSetUpNodeDesc(pybind11::module &m) {
-  py::class_<modelbox::NodeDesc, std::shared_ptr<modelbox::NodeDesc>>(
-      m, "NodeDesc")
+void ModelboxPyApiSetUpFlowConfig(pybind11::module &m) {
+  py::class_<modelbox::FlowConfig, std::shared_ptr<modelbox::FlowConfig>>(
+      m, "FlowConfig")
       .def(py::init<>())
-      .def("get_nodedesc", &modelbox::NodeDesc::GetNodeDesc,
+      .def("set_queue_size", &modelbox::FlowConfig::SetQueueSize)
+      .def("set_batch_size", &modelbox::FlowConfig::SetBatchSize)
+      .def("set_drivers_dir", &modelbox::FlowConfig::SetDriversDir)
+      .def("set_skip_default_drivers",
+           &modelbox::FlowConfig::SetSkipDefaultDrivers);
+}
+
+void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
+  py::class_<modelbox::FlowGraphDesc, std::shared_ptr<modelbox::FlowGraphDesc>>(
+      m, "FlowGraphDesc")
+      .def(py::init<>())
+      .def(
+          "init", [](FlowGraphDesc &self) { return self.Init(); },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "init",
+          [](FlowGraphDesc &self, std::shared_ptr<FlowConfig> &config) {
+            return self.Init(config);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def("add_input", &modelbox::FlowGraphDesc::AddInput,
            py::call_guard<py::gil_scoped_release>())
-      .def("set_nodedesc", &modelbox::NodeDesc::SetNodeDesc,
-           py::call_guard<py::gil_scoped_release>());
+      .def(
+          "add_output",
+          [](FlowGraphDesc &self, const std::string &output_name,
+             std::shared_ptr<FlowPortDesc> source_node_port) {
+            return self.AddOutput(output_name, source_node_port);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "add_output",
+          [](FlowGraphDesc &self, const std::string &output_name,
+             std::shared_ptr<FlowNodeDesc> source_node) {
+            return self.AddOutput(output_name, source_node);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "add_node",
+          [](FlowGraphDesc &self, const std::string &flowunit_name,
+             const std::string &device, const std::vector<std::string> &config,
+             const std::unordered_map<std::string,
+                                      std::shared_ptr<FlowPortDesc>>
+                 &source_node_ports) {
+            return self.AddNode(flowunit_name, device, config,
+                                source_node_ports);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "add_node",
+          [](FlowGraphDesc &self, const std::string &flowunit_name,
+             const std::string &device, const std::vector<std::string> &config,
+             std::shared_ptr<FlowNodeDesc> source_node) {
+            return self.AddNode(flowunit_name, device, config, source_node);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "add_node",
+          [](FlowGraphDesc &self, const std::string &flowunit_name,
+             const std::string &device,
+             const std::unordered_map<std::string,
+                                      std::shared_ptr<FlowPortDesc>>
+                 &source_node_ports) {
+            return self.AddNode(flowunit_name, device, source_node_ports);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "add_node",
+          [](FlowGraphDesc &self, const std::string &flowunit_name,
+             const std::string &device,
+             std::shared_ptr<FlowNodeDesc> source_node) {
+            return self.AddNode(flowunit_name, device, source_node);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "add_node",
+          [](FlowGraphDesc &self, const std::string &flowunit_name,
+             const std::string &device,
+             const std::vector<std::string> &config) {
+            return self.AddNode(flowunit_name, device, config);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "add_function",
+          [](FlowGraphDesc &self,
+             const std::function<StatusCode(std::shared_ptr<DataContext>)>
+                 &func,
+             const std::vector<std::string> &input_name_list,
+             const std::vector<std::string> &output_name_list,
+             const std::unordered_map<std::string,
+                                      std::shared_ptr<FlowPortDesc>>
+                 &source_node_ports) {
+            return self.AddFunction(func, input_name_list, output_name_list,
+                                    source_node_ports);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "add_function",
+          [](FlowGraphDesc &self,
+             const std::function<StatusCode(std::shared_ptr<DataContext>)>
+                 &func,
+             const std::vector<std::string> &input_name_list,
+             const std::vector<std::string> &output_name_list,
+             std::shared_ptr<FlowNodeDesc> source_node) {
+            return self.AddFunction(func, input_name_list, output_name_list,
+                                    source_node);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def("get_status", &modelbox::FlowGraphDesc::GetStatus);
+}
+
+void ModelboxPyApiSetUpFlowNodeDesc(pybind11::module &m) {
+  py::class_<modelbox::FlowNodeDesc, std::shared_ptr<modelbox::FlowNodeDesc>>(
+      m, "FlowNodeDesc")
+      .def(py::init<const std::string &>())
+      .def("set_node_name", &modelbox::FlowNodeDesc::SetNodeName)
+      .def("get_node_name", &modelbox::FlowNodeDesc::GetNodeName)
+      .def("__getitem__",
+           [](modelbox::FlowNodeDesc &node_desc, const std::string &output_name)
+               -> std::shared_ptr<modelbox::FlowPortDesc> {
+             return node_desc[output_name];
+           })
+      .def("__getitem__",
+           [](modelbox::FlowNodeDesc &node_desc,
+              size_t port_idx) -> std::shared_ptr<modelbox::FlowPortDesc> {
+             return node_desc[port_idx];
+           });
+}
+
+void ModelboxPyApiSetUpFlowPortDesc(pybind11::module &m) {
+  py::class_<modelbox::FlowPortDesc, std::shared_ptr<modelbox::FlowPortDesc>>(
+      m, "FlowPortDesc")
+      .def(py::init<const std::string &, const std::string &>())
+      .def("get_node_name", &modelbox::FlowPortDesc::GetNodeName)
+      .def("get_port_name", &modelbox::FlowPortDesc::GetPortName);
 }
 
 void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m) {

@@ -34,7 +34,6 @@ constexpr const char *GRAPH_KEY_DEVICE_ID = "deviceid";
 constexpr const char *GRAPH_KEY_QUEUE_SIZE = "queue_size";
 constexpr const char *GRAPH_KEY_BATCH_SIZE = "batch_size";
 constexpr const char *GRAPH_KEY_CHECK_NODE_OUTPUT = "need_check_output";
-constexpr const char *GRAPH_NODE_REGISTER_FLOWUNIT = "register_flowunit";
 
 Graph::Graph()
     : nodes_(),
@@ -581,49 +580,6 @@ Status Graph::BuildFlowunitNode(std::shared_ptr<GCGraph> g,
   return STATUS_SUCCESS;
 }
 
-Status Graph::BuildCommonRegisterNode(std::shared_ptr<GCGraph> g,
-                                      std::shared_ptr<GCNode> gcnode) {
-  auto name = gcnode->GetNodeName();
-  auto node_config = gcnode->GetConfiguration();
-  auto device = node_config->GetString(GRAPH_KEY_DEVICE, "cpu");
-  auto deviceid = node_config->GetString(GRAPH_KEY_DEVICE_ID, "0");
-  auto flowunit = node_config->GetString(GRAPH_NODE_FLOWUNIT, "");
-  auto inports = gcnode->GetInputPorts();
-  auto outports = gcnode->GetOutputPorts();
-
-  if (inports->size() == 0 && outports->size() == 0) {
-    auto msg =
-        "callback flowunit has no input or output port, please must specify "
-        "one port";
-    return {STATUS_BADCONF, msg};
-  }
-
-  if (UpdateGraphConfigToNode(g, gcnode) == false) {
-    auto msg =
-        "update node config failed, please check node config in graph scope";
-    return {STATUS_BADCONF, msg};
-  }
-
-  auto node = std::make_shared<Node>();
-  node->SetFlowUnitInfo(flowunit, device, deviceid, flowunit_mgr_);
-  node->SetProfiler(profiler_);
-  node->SetStats(graph_stats_);
-  node->SetSessionManager(&session_manager_);
-  node->SetName(name);
-  auto status = InitNode(node, *inports, *outports, node_config);
-  if (!status) {
-    return status;
-  }
-
-  status = AddNode(node);
-  if (!status) {
-    auto msg = "add node failed. name: '" + name + "'";
-    return {status, msg};
-  }
-
-  return STATUS_SUCCESS;
-}
-
 Status Graph::BuildInputNode(std::shared_ptr<GCNode> gcnode) {
   auto name = gcnode->GetNodeName();
   auto node_config = gcnode->GetConfiguration();
@@ -666,8 +622,6 @@ Status Graph::BuildNode(std::shared_ptr<GCGraph> g,
     status = BuildInputNode(gcnode);
   } else if (type == GRAPH_NODE_OUTPUT) {
     status = BuildOutputNode(gcnode);
-  } else if (type == GRAPH_NODE_REGISTER_FLOWUNIT) {
-    status = BuildCommonRegisterNode(g, gcnode);
   } else {
     if (strict) {
       auto msg =

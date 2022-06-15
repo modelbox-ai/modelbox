@@ -52,9 +52,13 @@ void ModelboxPyApiSetUpEngine(pybind11::module &m);
 
 void ModelboxPyApiSetUpDataHandler(pybind11::module &m);
 
+void ModelboxPyApiSetUpFlowConfig(pybind11::module &m);
+
 void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m);
 
-void ModelboxPyApiSetUpNodeDesc(pybind11::module &m);
+void ModelboxPyApiSetUpFlowNodeDesc(pybind11::module &m);
+
+void ModelboxPyApiSetUpFlowPortDesc(pybind11::module &m);
 
 void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m);
 

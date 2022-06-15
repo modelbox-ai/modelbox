@@ -23,70 +23,104 @@
 
 namespace modelbox {
 
-enum NodeDescType { NODE_INPUT = 0, NODE_OUTPUT };
+constexpr const char *GRAPH_NODE_INPUT = "input";
+constexpr const char *GRAPH_NODE_OUTPUT = "output";
+constexpr const char *GRAPH_NODE_FLOWUNIT = "flowunit";
 
-class NodeDesc : public std::enable_shared_from_this<NodeDesc> {
- public:
-  NodeDesc();
+class FlowNodeDesc;
 
-  ~NodeDesc();
-
-  std::shared_ptr<NodeDesc> operator[](const std::string &port_name);
-
-  /**
-   * @brief get data from data handler via port_name
-   * @param key: port name
-   * @return  data handler contains data of port(key)
-   */
-  std::shared_ptr<NodeDesc> GetNodeDesc(const std::string &key);
-  /**
-   * @brief: Combind a datahandler with some datahandlers bind port
-   * @param data_map: datahandlers related specify port
-   */
-  Status SetNodeDesc(
-      const std::map<std::string, std::shared_ptr<NodeDesc>> &data_map);
-
-  /**
-   * @brief get flow error
-   * @return error code
-   */
-  Status GetError() { return error_; }
-
-  /**
-   * @brief set flowunit name for datahandler
-   * @param name: flowunit name
-   */
-  void SetNodeName(const std::string &name);
-  /**
-   * @brief get flowunit name of datahandler
-   * @return flowunit name
-   */
-  std::string GetNodeName();
-  /**
-   * @brief save error status of modelbox
-   * @param status: Status of modelbox
-   */
-  void SetError(const Status &status) { error_ = status; }
-
- private:
-  NodeDescType GetNodeType();
-  void SetNodeType(const NodeDescType &type);
-  std::set<std::string> GetPortNames();
-  Status SetPortNames(std::set<std::string> &outport_names);
-  std::unordered_map<std::string, std::string> GetPortMap() {
-    return port_to_port_;
-  };
-
- private:
+/**
+ * @brief port of node
+ **/
+class FlowPortDesc {
   friend class FlowGraphDesc;
-  Status error_{STATUS_SUCCESS};
-  NodeDescType data_handler_type_{NODE_INPUT};
-  std::string node_name_{""};
-  std::set<std::string> port_names_;
-  std::unordered_map<std::string, std::string> port_to_port_;
-  std::unordered_map<std::string, std::string> port_to_node_;
-  //   std::weak_ptr<ModelBoxEngine> engine_;
+
+ public:
+  FlowPortDesc(const std::string &node_name, const std::string &port_name)
+      : node_name_(node_name), port_name_(port_name) {}
+
+  /**
+   * @brief get node name
+   * @return node name
+   **/
+  std::string GetNodeName() { return node_name_; }
+
+  /**
+   * @brief get port name
+   * @return port name
+   **/
+  std::string GetPortName() { return port_name_; }
+
+ private:
+  std::string node_name_;
+  std::string port_name_;
 };
 
-};  // namespace modelbox
-#endif
+class FlowNodeDesc : public std::enable_shared_from_this<FlowNodeDesc> {
+  friend class FlowGraphDesc;
+
+ public:
+  FlowNodeDesc(const std::string &node_name);
+
+  virtual ~FlowNodeDesc();
+
+  /**
+   * @brief set custom node name to override default node name
+   * @param node_name custom node name
+   **/
+  void SetNodeName(const std::string &node_name);
+
+  /**
+   * @brief get node name
+   * @return node name
+   **/
+  std::string GetNodeName();
+
+  /**
+   * @brief get output port by output_name
+   * @param output_name name for node output port
+   **/
+  std::shared_ptr<FlowPortDesc> operator[](const std::string &output_name);
+
+  /**
+   * @brief get output port by port index
+   * @param port_idx index for node output port
+   **/
+  std::shared_ptr<FlowPortDesc> operator[](size_t port_idx);
+
+ private:
+  void SetNodeType(const std::string &type);
+
+  void SetFlowUnitName(const std::string &flowunit_name);
+
+  void SetDevice(const std::string &device);
+
+  void SetConfig(const std::vector<std::string> &config);
+
+  std::vector<std::string> GetNodeConfig();
+
+  void SetOutputPortNames(
+      const std::vector<std::string> &output_port_name_list);
+
+  void SetInputLinks(
+      const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+          &source_node_ports);
+
+  const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+      &GetInputLinks();
+
+  void Clear();
+
+ private:
+  std::string node_name_;
+  std::string flowunit_name_;
+  std::string type_;
+  std::string device_;
+  std::vector<std::string> config_;
+  std::vector<std::string> output_port_name_list_;
+  std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+      source_node_ports_;
+};
+
+}  // namespace modelbox
+#endif  // FLOW_NODE_DESC_H_

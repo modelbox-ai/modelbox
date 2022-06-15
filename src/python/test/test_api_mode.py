@@ -25,63 +25,64 @@ from PIL import ImageChops
 import cv2
 
 def callback_func(ctx):
-    input = ctx.Input("In_1")
-    output = ctx.output("Out_1")
-    buffer = input[0]
-    output.push_back(buffer)
+    input = ctx.input("in1")
+    input1 = ctx.input("in2")
+    output = ctx.output("out1")
+    buffer1 = input[0]
+    buffer2 = input1[0]
+    array1 = np.array(buffer1)
+    array2 = np.array(buffer2)
+    output.push_back(array1 + array2)
     return modelbox.Status.StatusCode.STATUS_SUCCESS
 
-class TestDynamicGraph(unittest.TestCase):
+class TestAPIMode(unittest.TestCase):
     def setUp(self):
-        pass
+        flow_cfg = modelbox.FlowConfig()
+        flow_cfg.set_queue_size(32)
+        flow_cfg.set_batch_size(8)
+        flow_cfg.set_skip_default_drivers(True)
+        flow_cfg.set_drivers_dir([test_config.TEST_DRIVER_DIR])
+        self.graph_desc = modelbox.FlowGraphDesc()
+        self.graph_desc.init(flow_cfg)
 
     def tearDown(self):
         pass
 
-    def test_api_graph(self):
-        engine = modelbox.FlowGraphDesc()
-        self.assertNotEqual(engine, None)
-        config = modelbox.Configuration()
-        config.set("graph.queue_size","32")
-        config.set("graph.queue_size_external","1000")
-        config.set("graph.batch_size","16")
-        config.set("drivers.skip-default", "true")
-        config.set("drivers.dir", [test_config.TEST_DRIVER_DIR])
-        engine.init(config)
-        video_demuxer_output = engine.addnode("video_demuxer",{},{})
+    def test_add_node(self):
+        source_url = test_config.TEST_ASSETS + "/video/jpeg_5s_480x320_24fps_yuv444_8bit.mp4"
         
-        engine.bindinput(video_demuxer_output,"in_video_url")
-        engine.bindoutput(video_demuxer_output,"out_video_packet")
+        input = self.graph_desc.add_input("input1")
+        video_demuxer = self.graph_desc.add_node("video_demuxer", "cpu", input)
+        self.graph_desc.add_output("output1", video_demuxer)
+        
         flow = modelbox.Flow()
-        flow.init(engine)
-        flow.build()
-        flow.run_async()
-      
-        retval = modelbox.Status()
-        ret = flow.wait(1000, retval)
-    
-    def test_callback(self):
-        desc = modelbox.FlowGraphDesc()
-        self.assertNotEqual(desc, None)
-        config = modelbox.Configuration()
-        config.set("graph.queue_size","32")
-        config.set("graph.queue_size_external","1000")
-        config.set("graph.batch_size","16")
-        config.set("drivers.skip-default", "true")
-        config.set("drivers.dir", [test_config.TEST_DRIVER_DIR])
-        desc.init(config)
+        flow.init(self.graph_desc)
+        flow.start_run()
 
-        resize_output = desc.addnode("resize", {"width": "256", "height": "256"},{})
-        out_image = resize_output.get_nodedesc("out_image")
-        callback_output = desc.addnode(callback_func, ["In_1"],["Out_1"],{"In_1":out_image})
-        desc.bindinput(resize_output,"__default__inport__")
-        desc.bindoutput(callback_output,"__default__outport__")
+    def test_add_function(self):
+        input1 = self.graph_desc.add_input("input1")
+        input2 = self.graph_desc.add_input("input2")
+        func_node = self.graph_desc.add_function(callback_func, ["in1", "in2"], ["out1"], {"in1": input1[0], "in2": input2[0]})
+        self.graph_desc.add_output("output1", func_node)
+
         flow = modelbox.Flow()
-        flow.init(desc)
-        flow.build()
-        flow.run_async()
-        retval = modelbox.Status()
-        flow.wait(1000, retval)
-        
+        flow.init(self.graph_desc)
+        flow.start_run()
+
+        data = np.array([1, 1])
+        data_map = flow.create_external_data_map()
+        buffer_list = data_map.create_buffer_list()
+        buffer_list.push_back(data)
+        data_map.send("input1", buffer_list)
+        data_map.send("input2", buffer_list)
+        result = modelbox.ExtOutputBufferList()
+        data_map.recv(result)
+        buffer_list = result.get_buffer_list("output1")
+        buffer = buffer_list[0]
+        out_data = np.array(buffer)
+        self.assertEqual(out_data[0], 2)
+        self.assertEqual(out_data[1], 2)
+
+
 if __name__ == '__main__':
     unittest.main()

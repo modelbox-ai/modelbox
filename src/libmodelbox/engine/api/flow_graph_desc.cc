@@ -15,581 +15,428 @@
  */
 
 #include "modelbox/flow_graph_desc.h"
-#include <securec.h>
 
-#include "modelbox/base/log.h"
 #include "modelbox/base/register_flowunit.h"
-#include "modelbox/base/utils.h"
-#include "modelbox/flow_node_desc.h"
-#include "scheduler/flow_scheduler.h"
 
 namespace modelbox {
 
-constexpr const char *GRAPH_KEY_DEVICE = "device";
-constexpr const char *GRAPH_KEY_DEVICE_ID = "deviceid";
-constexpr const char *GRAPH_KEY_QUEUE_SIZE = "queue_size";
-constexpr const char *GRAPH_KEY_BATCH_SIZE = "batch_size";
-constexpr const char *GRAPH_KEY_CHECK_NODE_OUTPUT = "need_check_output";
-constexpr const char *GRAPH_VIRTUAL_NODE = "inner_virtual_node_";
-constexpr const char *GRAPH_NODE_REGISTER_FLOWUNIT = "register_flowunit";
+constexpr const char *CONFIG_KEY_QUEUE_SIZE = "graph.queue_size";
+constexpr const char *CONFIG_KEY_BATCH_SIZE = "graph.batch_size";
+constexpr const char *CONFIG_KEY_DRIVERS_DIR = "drivers.dir";
+constexpr const char *CONFIG_KEY_DRIVERS_SKIP_DEFAULT = "drivers.skip-default";
 
-static std::shared_ptr<NodeDesc> err_msg(const Status &status) {
-  auto data_handler = std::make_shared<NodeDesc>();
-  data_handler->SetError(status);
-  MBLOG_ERROR << status.Errormsg();
-  return data_handler;
+FlowConfig::FlowConfig() { content_ = ConfigurationBuilder().Build(); }
+
+void FlowConfig::SetQueueSize(size_t queue_size) {
+  content_->SetProperty(CONFIG_KEY_QUEUE_SIZE, queue_size);
 }
 
-FlowGraphDesc::FlowGraphDesc() {}
+void FlowConfig::SetBatchSize(size_t batch_size) {
+  content_->SetProperty(CONFIG_KEY_BATCH_SIZE, batch_size);
+}
 
-FlowGraphDesc::~FlowGraphDesc() { Close(); }
+void FlowConfig::SetDriversDir(
+    const std::vector<std::string> &drivers_dir_list) {
+  content_->SetProperty(CONFIG_KEY_DRIVERS_DIR, drivers_dir_list);
+}
 
-Status FlowGraphDesc::Init(std::shared_ptr<Configuration> &config) {
-  config_ = config;
+void FlowConfig::SetSkipDefaultDrivers(bool is_skip) {
+  content_->SetProperty(CONFIG_KEY_DRIVERS_SKIP_DEFAULT, is_skip);
+}
+
+FlowGraphDesc::FlowGraphDesc() { config_ = ConfigurationBuilder().Build(); }
+
+FlowGraphDesc::~FlowGraphDesc() {
+  for (auto &node_desc : node_desc_list_) {
+    node_desc->Clear();
+  }
+}
+
+Status FlowGraphDesc::Init() {
+  auto flow_cfg = std::make_shared<FlowConfig>();
+  return Init(flow_cfg);
+}
+
+Status FlowGraphDesc::Init(std::shared_ptr<FlowConfig> config) {
+  if (is_init_) {
+    return STATUS_OK;
+  }
+
+  config_ = config->content_;
   drivers_ = std::make_shared<Drivers>();
   device_mgr_ = std::make_shared<DeviceManager>();
   flowunit_mgr_ = std::make_shared<FlowUnitManager>();
-  std::string msg = "";
-  if (!(drivers_ && device_mgr_ && flowunit_mgr_)) {
-    msg = "drivers, flowunit_mgr , device is null, return";
-    MBLOG_ERROR << msg;
-    return STATUS_FAULT;
-  }
 
   auto ret = drivers_->Initialize(config_->GetSubConfig("drivers"));
   if (!ret) {
-    msg = "driver init failed";
-    MBLOG_ERROR << msg << ", " << ret.WrapErrormsgs();
-    return {ret, msg};
+    MBLOG_ERROR << "init drivers failed, ret " << ret;
+    return ret;
   }
-
-  Defer {
-    if (ret == STATUS_OK) {
-      return;
-    }
-    Close();
-  };
 
   ret = drivers_->Scan();
   if (!ret) {
-    msg = "Scan driver failed.";
-    MBLOG_ERROR << msg << ": " << ret.WrapErrormsgs();
-    return {ret, msg};
+    MBLOG_ERROR << "scan driver failed, ret " << ret;
+    return ret;
   }
 
   ret = device_mgr_->Initialize(drivers_, nullptr);
   if (!ret) {
-    msg = "Inital device failed";
-    MBLOG_ERROR << msg << ", " << ret.WrapErrormsgs();
-    return {ret, msg};
+    MBLOG_ERROR << "device mgr init failed, ret " << ret;
+    return ret;
   }
 
   ret = flowunit_mgr_->Initialize(drivers_, device_mgr_, nullptr);
   if (!ret) {
-    msg = "Initial flowunit manager failed ";
-    MBLOG_ERROR << msg << ", " << ret.WrapErrormsgs();
-    return {ret, msg};
+    MBLOG_ERROR << "flowunit mgr init failed, ret " << ret;
+    return ret;
   }
 
+  build_status_ = STATUS_OK;
+  is_init_ = true;
   return STATUS_OK;
 }
+
+// add input
+
+std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddInput(
+    const std::string &input_name) {
+  if (!is_init_) {
+    MBLOG_ERROR << "Should call init first";
+    build_status_ = STATUS_FAULT;
+    return nullptr;
+  }
+
+  if (node_name_idx_map_[input_name] >= 1) {
+    MBLOG_ERROR << "Input name " << input_name << " has been used";
+    build_status_ = STATUS_FAULT;
+    return nullptr;
+  }
+
+  ++node_name_idx_map_[input_name];
+  auto node = std::make_shared<FlowNodeDesc>(input_name);
+  node->SetNodeType(GRAPH_NODE_INPUT);
+  node->SetOutputPortNames({input_name});
+  node_desc_list_.push_back(node);
+  return node;
+}
+
+// add output
+
+void FlowGraphDesc::AddOutput(const std::string &output_name,
+                              std::shared_ptr<FlowPortDesc> source_node_port) {
+  AddOutput(output_name, "cpu", source_node_port);
+}
+
+void FlowGraphDesc::AddOutput(const std::string &output_name,
+                              std::shared_ptr<FlowNodeDesc> source_node) {
+  if (source_node == nullptr) {
+    MBLOG_ERROR << "add output " << output_name
+                << " failed, source_node is null";
+    build_status_ = STATUS_FAULT;
+    return;
+  }
+  AddOutput(output_name, "cpu", (*source_node)[0]);
+}
+
+// add flowunit
+
+std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
+    const std::string &flowunit_name, const std::string &device,
+    const std::vector<std::string> &config,
+    const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+        &source_node_ports) {
+  if (!is_init_) {
+    MBLOG_ERROR << "Should call init first";
+    build_status_ = STATUS_FAULT;
+    return nullptr;
+  }
+
+  auto node_name = flowunit_name;
+  ++node_name_idx_map_[node_name];
+  auto idx = node_name_idx_map_[node_name];
+  if (idx != 1) {
+    node_name = node_name + std::to_string(idx);
+  }
+
+  auto flowunit_desc = flowunit_mgr_->GetFlowUnitDesc(device, flowunit_name);
+  if (flowunit_desc == nullptr) {
+    MBLOG_ERROR << "Can not find flowunit " << flowunit_name << ", device "
+                << device;
+    build_status_ = STATUS_FAULT;
+    return nullptr;
+  }
+
+  std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+      format_source_node_ports;
+  auto ret = FormatInputLinks(flowunit_name, flowunit_desc, source_node_ports,
+                              format_source_node_ports);
+  if (!ret) {
+    return nullptr;
+  }
+
+  auto output_list = flowunit_desc->GetFlowUnitOutput();
+  std::vector<std::string> output_name_list;
+  output_name_list.reserve(output_list.size());
+  for (auto &output_desc : output_list) {
+    output_name_list.push_back(output_desc.GetPortName());
+  }
+
+  auto node = std::make_shared<FlowNodeDesc>(node_name);
+  node->SetNodeType(GRAPH_NODE_FLOWUNIT);
+  node->SetFlowUnitName(flowunit_name);
+  node->SetDevice(device);
+  node->SetConfig(config);
+  node->SetInputLinks(format_source_node_ports);
+  node->SetOutputPortNames(output_name_list);
+  node_desc_list_.push_back(node);
+  return node;
+}
+
+std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
+    const std::string &flowunit_name, const std::string &device,
+    const std::vector<std::string> &config,
+    std::shared_ptr<FlowNodeDesc> source_node) {
+  return AddNode(flowunit_name, device, config, {{"", (*source_node)[0]}});
+}
+
+std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
+    const std::string &flowunit_name, const std::string &device,
+    const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+        &source_node_ports) {
+  return AddNode(flowunit_name, device, {}, source_node_ports);
+}
+
+std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
+    const std::string &flowunit_name, const std::string &device,
+    std::shared_ptr<FlowNodeDesc> source_node) {
+  return AddNode(flowunit_name, device, {}, source_node);
+}
+
+std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
+    const std::string &flowunit_name, const std::string &device,
+    const std::vector<std::string> &config) {
+  return AddNode(
+      flowunit_name, device, config,
+      std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>{});
+}
+
+// add function
+
+std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddFunction(
+    const std::function<Status(std::shared_ptr<DataContext>)> &func,
+    const std::vector<std::string> &input_name_list,
+    const std::vector<std::string> &output_name_list,
+    const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+        &source_node_ports) {
+  if (!is_init_) {
+    MBLOG_ERROR << "Should call init first";
+    build_status_ = STATUS_FAULT;
+    return nullptr;
+  }
+
+  std::string flowunit_name =
+      "register_func_" + std::to_string(function_node_idx_);
+  ++function_node_idx_;
+  auto device = "cpu";
+  // register flowunit
+  auto flowunit_factory = std::make_shared<RegisterFlowUnitFactory>(
+      flowunit_name, input_name_list, output_name_list, func);
+  flowunit_mgr_->InsertFlowUnitFactory(flowunit_name, device, flowunit_factory);
+  // check link
+  if (!CheckInputLinks(input_name_list, source_node_ports)) {
+    return nullptr;
+  }
+  // add node
+  auto node = std::make_shared<FlowNodeDesc>(flowunit_name);
+  node->SetNodeType(GRAPH_NODE_FLOWUNIT);
+  node->SetFlowUnitName(flowunit_name);
+  node->SetDevice(device);
+  node->SetInputLinks(source_node_ports);
+  node->SetOutputPortNames(output_name_list);
+  node_desc_list_.push_back(node);
+  return node;
+}
+
+std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddFunction(
+    const std::function<Status(std::shared_ptr<DataContext>)> &func,
+    const std::vector<std::string> &input_name_list,
+    const std::vector<std::string> &output_name_list,
+    std::shared_ptr<FlowNodeDesc> source_node) {
+  if (input_name_list.empty()) {
+    MBLOG_ERROR << "function node input ports is not defined";
+    build_status_ = STATUS_FAULT;
+    return nullptr;
+  }
+
+  if (source_node == nullptr) {
+    MBLOG_ERROR << "function node source_node is null";
+    build_status_ = STATUS_FAULT;
+    return nullptr;
+  }
+
+  return AddFunction(func, input_name_list, output_name_list,
+                     {{input_name_list.front(), (*source_node)[0]}});
+}
+
+// get status
+
+Status FlowGraphDesc::GetStatus() { return build_status_; }
+
+// inner interface
+
+std::shared_ptr<Configuration> FlowGraphDesc::GetConfig() { return config_; }
+
+std::shared_ptr<GCGraph> FlowGraphDesc::GetGCGraph() {
+  auto gcgraph = std::make_shared<GCGraph>();
+  gcgraph->Init(nullptr);
+  auto graph_config = config_->GetSubConfig("graph");
+  gcgraph->SetConfiguration(graph_config);
+  GenGCNodes(gcgraph);
+  GenGCEdges(gcgraph);
+  return gcgraph;
+}
+
+void FlowGraphDesc::GenGCNodes(std::shared_ptr<GCGraph> gcgraph) {
+  for (auto &node_desc : node_desc_list_) {
+    auto gcnode = std::make_shared<GCNode>();
+    gcnode->Init(node_desc->GetNodeName(), gcgraph);
+    const auto &node_config = node_desc->GetNodeConfig();
+    for (auto config_item : node_config) {
+      auto split_pos = config_item.find('=');
+      auto key = config_item.substr(0, split_pos);
+      auto value = config_item.substr(split_pos + 1);
+      gcnode->SetConfiguration(key, value);
+    }
+    gcgraph->AddNode(gcnode);
+  }
+}
+
+void FlowGraphDesc::GenGCEdges(std::shared_ptr<GCGraph> gcgraph) {
+  for (auto &node_desc : node_desc_list_) {
+    auto dest_node_name = node_desc->GetNodeName();
+    const auto &input_links = node_desc->GetInputLinks();
+    for (auto &link_item : input_links) {
+      auto &dest_port = link_item.first;
+      auto &src_node_port = link_item.second;
+      auto dest_node = gcgraph->GetNode(dest_node_name);
+      auto src_node = gcgraph->GetNode(src_node_port->node_name_);
+      dest_node->SetInputPort(dest_port);
+      src_node->SetOutputPort(src_node_port->port_name_);
+
+      auto gcedge = std::make_shared<GCEdge>();
+      gcedge->Init(gcgraph);
+      gcedge->SetHeadNode(src_node);
+      gcedge->SetHeadPort(src_node_port->port_name_);
+      gcedge->SetTailNode(dest_node);
+      gcedge->SetTailPort(dest_port);
+      gcgraph->AddEdge(gcedge);
+    }
+  }
+}
+
+std::shared_ptr<Drivers> FlowGraphDesc::GetDrivers() { return drivers_; }
 
 std::shared_ptr<DeviceManager> FlowGraphDesc::GetDeviceManager() {
   return device_mgr_;
 }
+
 std::shared_ptr<FlowUnitManager> FlowGraphDesc::GetFlowUnitManager() {
   return flowunit_mgr_;
 }
-std::shared_ptr<Configuration> FlowGraphDesc::GetConfig() { return config_; }
 
-std::shared_ptr<FlowUnitDesc> FlowGraphDesc::GetFlowunitDesc(
-    const std::string &name, const std::map<std::string, std::string> &config) {
-  std::string msg = "";
-  if (flowunit_mgr_ == nullptr) {
-    MBLOG_ERROR << "failed get flowunit manager, please init Unit firstly";
-    return nullptr;
-  }
-  auto device_iter = config.find("device");
-  if (device_iter == config.end()) {
-    return nullptr;
-  }
-  auto device = device_iter->second;
-  auto desc = flowunit_mgr_->GetFlowUnitDesc(device_iter->second, name);
-  if (desc == nullptr) {
-    MBLOG_ERROR << "failed find flowunit " << name << " description";
-    return nullptr;
-  }
-
-  return desc;
-}
-
-Status FlowGraphDesc::AddCallBackFactory(
-    const std::string unit_name, const std::set<std::string> input_ports,
-    const std::set<std::string> output_ports,
-    std::function<StatusCode(std::shared_ptr<DataContext>)> &callback) {
-  auto factory = std::make_shared<RegisterFlowUnitFactory>(
-      unit_name, input_ports, output_ports, callback);
-
-  std::string type = "cpu";
-  std::string name = unit_name;
-
-  flowunit_mgr_->InsertFlowUnitFactory(
-      name, type, std::dynamic_pointer_cast<FlowUnitFactory>(factory));
-
-  return STATUS_SUCCESS;
-}
-
-Status FlowGraphDesc::InsertGraphEdge(std::shared_ptr<GCGraph> &root_graph,
-                                      std::shared_ptr<GCNode> &input_node,
-                                      std::string &input_port,
-                                      std::shared_ptr<GCNode> &output_node,
-                                      std::string &output_port) {
-  if (root_graph == nullptr || input_node == nullptr ||
-      output_node == nullptr) {
-    return STATUS_FAULT;
-  }
-
-  auto gcedge = std::make_shared<GCEdge>();
-  if (STATUS_OK != gcedge->Init(root_graph)) {
-    return STATUS_FAULT;
-  }
-
-  gcedge->SetHeadPort(input_port);
-  gcedge->SetTailPort(output_port);
-  gcedge->SetHeadNode(input_node);
-  gcedge->SetTailNode(output_node);
-  root_graph->AddEdge(gcedge);
-  return STATUS_OK;
-}
-
-Status FlowGraphDesc::CheckInputPort(
-    const std::shared_ptr<FlowUnitDesc> &flowunit_desc,
-    const std::shared_ptr<NodeDesc> &data_handler) {
-  auto flowunit_input = flowunit_desc->GetFlowUnitInput();
-  if (data_handler->GetPortNames().size() == 1 && flowunit_input.size() == 1) {
-    return STATUS_OK;
-  }
-
-  if (data_handler->GetPortNames().size() != 0) {
-    auto inport_names = data_handler->GetPortNames();
-    if (inport_names.size() != flowunit_input.size()) {
-      MBLOG_ERROR << "not all input port has data";
-      return STATUS_INVALID;
-    }
-    for (auto &iter : flowunit_input) {
-      if (inport_names.find(iter.GetPortName()) == inport_names.end()) {
-        MBLOG_ERROR << "port:" << iter.GetPortName() << " has link any node";
-        return STATUS_INVALID;
-      }
-    }
-  }
-  return STATUS_OK;
-}
-
-std::shared_ptr<GCNode> FlowGraphDesc::CreateGCNode(
-    const std::string name, std::set<std::string> input_ports,
-    std::set<std::string> out_ports,
-    const std::map<std::string, std::string> &config,
-    const std::shared_ptr<NodeDesc> &data_handler) {
-  if (gcgraph_ == nullptr) {
-    MBLOG_ERROR << "gcgraph is not created";
-    return nullptr;
-  }
-
-  auto gcnode = std::make_shared<GCNode>();
-
-  for (auto &input : input_ports) {
-    gcnode->SetInputPort(input);
-  }
-
-  for (auto &output : out_ports) {
-    gcnode->SetOutputPort(output);
-  }
-
-  gcnode->Init(name, gcgraph_);
-  for (auto &iter : config) {
-    gcnode->SetConfiguration(iter.first, iter.second);
-  }
-  gcnode->SetNodeType(GRAPH_NODE_REGISTER_FLOWUNIT);
-  gcgraph_->AddNode(gcnode);
-  return gcnode;
-}
-
-Status FlowGraphDesc::AddToGCGraph(
-    const std::string name, std::set<std::string> inputs,
-    std::set<std::string> outputs,
-    const std::map<std::string, std::string> &config,
-    const std::shared_ptr<NodeDesc> &data_handler) {
-  auto gcnode = CreateGCNode(name, inputs, outputs, config, data_handler);
-  if (gcnode == nullptr) {
-    MBLOG_ERROR << "Creat GCNode failed";
-    return STATUS_FAULT;
-  }
-
-  if (data_handler == nullptr) {
-    return STATUS_SUCCESS;
-  }
-
-  std::unordered_map<std::string, std::string> port_to_port_map;
-  std::unordered_map<std::string, std::string> port_to_node_map;
-  if (data_handler->GetNodeType() == NODE_OUTPUT) {
-    auto port_name = gcnode->GetNodeName();
-    auto last_port_name = *(data_handler->GetPortNames().begin());
-    auto last_node_name = data_handler->GetNodeName();
-    port_to_port_map[port_name] = last_port_name;
-    port_to_node_map[port_name] = last_node_name;
-  } else {
-    port_to_port_map = data_handler->GetPortMap();
-    port_to_node_map = data_handler->port_to_node_;
-  }
-
-  for (auto &iter : port_to_port_map) {
-    std::string node_name = port_to_node_map[iter.first];
-    auto outport_name = iter.first;
-    auto inport_name = iter.second;
-    auto input_node = gcgraph_->GetNode(node_name);
-    auto output_node = gcnode;
-    if (InsertGraphEdge(gcgraph_, input_node, inport_name, gcnode,
-                        outport_name) != STATUS_OK) {
-      MBLOG_ERROR << "InsertGrahEdge failed";
-      return STATUS_FAULT;
-    }
-  }
-
-  return STATUS_SUCCESS;
-}
-
-Status FlowGraphDesc::CheckBuffer(const std::shared_ptr<FlowUnitDesc> &desc,
-                                  const std::shared_ptr<NodeDesc> &data) {
-  if (data->GetNodeType() == NODE_OUTPUT) {
-    auto input_num = desc->GetFlowUnitInput().size();
-    auto output_num = data->GetPortNames().size();
-    if (desc->GetFlowUnitInput().size() != 1 ||
-        data->GetPortNames().size() != 1) {
-      MBLOG_ERROR << "node: " << desc->GetFlowUnitName()
-                  << "must use correct input: "
-                  << "input_num(" << std::to_string(input_num)
-                  << "),output_num(" << std::to_string(output_num) << ").";
-      return STATUS_FAULT;
-    }
-  }
-  return STATUS_OK;
-}
-
-void FlowGraphDesc::BindDataHanlder(std::shared_ptr<NodeDesc> &data_handler,
-                                    std::shared_ptr<GCNode> &gcnode) {
-  auto outports = gcnode->GetOutputPorts();
-  auto outport_names =
-      std::set<std::string>(outports->begin(), outports->end());
-  auto name = gcnode->GetNodeName();
-  data_handler->SetPortNames(outport_names);
-
-  data_handler->SetNodeName(name);
-  data_handler->SetNodeType(NODE_OUTPUT);
-}
-
-std::shared_ptr<NodeDesc> FlowGraphDesc::AddNode(
-    const std::string &name, std::map<std::string, std::string> config_map,
-    const std::map<std::string, std::shared_ptr<NodeDesc>> &buffers) {
-  if (buffers.size() > 0) {
-    auto data = std::make_shared<NodeDesc>();
-    auto ret = data->SetNodeDesc(buffers);
-    if (ret != STATUS_OK) {
-      data->SetError(ret);
-      return data;
-    }
-
-    return AddNode(name, config_map, data);
-  } else {
-    return AddNode(name, config_map);
-  }
-}
-
-static void SetDefaultConfigValue(
-    const std::string &name, std::map<std::string, std::string> &config_map) {
-  if (config_map.find("type") == config_map.end()) {
-    config_map["type"] = "flowunit";
-  }
-  if (config_map.find("device") == config_map.end()) {
-    config_map["device"] = "cpu";
-  }
-  if (config_map.find("deviceid") == config_map.end()) {
-    config_map["deviceid"] = "0";
-  }
-  if (config_map.find("flowunit") == config_map.end()) {
-    config_map["flowunit"] = name;
-  }
-}
-
-Status FlowGraphDesc::CheckInputFlowUnit(
-    const std::string &name, std::map<std::string, std::string> &config_map,
-    const std::shared_ptr<NodeDesc> &buffers,
-    const std::shared_ptr<FlowUnitDesc> &desc) {
-  if (buffers != nullptr) {
-    if (buffers->GetError() != STATUS_SUCCESS) {
-      auto err_msg = "node: " + name + ", input data has error.";
-      MBLOG_ERROR << err_msg;
-      return {STATUS_FAULT, err_msg};
-    }
-
-    if (graph_ != nullptr) {
-      std::string err_msg = "graph has been build, flowunit " + name +
-                            " cannot been linked to this graph";
-      MBLOG_ERROR << err_msg;
-      return {STATUS_FAULT, err_msg};
-    }
-  }
-
-  if (desc->GetFlowUnitInput().size() > 0 && buffers == nullptr) {
-    auto msg = "must set input for flowunit: " + name;
-    MBLOG_ERROR << msg;
-    return {STATUS_FAULT, msg};
-  }
-
-  return STATUS_OK;
-}
-
-std::shared_ptr<NodeDesc> FlowGraphDesc::ExecuteStreamNode(
-    const std::shared_ptr<FlowUnitDesc> &desc,
-    const std::shared_ptr<NodeDesc> &buffers,
-    std::map<std::string, std::string> &config_map) {
-  auto stream_data_handler = std::make_shared<NodeDesc>();
-  if (buffers == nullptr) {
-    if (gcgraph_ == nullptr) {
-      gcgraph_ = std::make_shared<GCGraph>();
-      gcgraph_->Init(nullptr);
-    }
-
-    auto graph_config = config_->GetSubConfig("graph");
-    if (graph_config != nullptr) {
-      gcgraph_->SetConfiguration(config_);
-    }
-    std::string name = desc->GetFlowUnitName();
-    std::set<std::string> inports;
-    std::set<std::string> outports;
-    auto inputs = desc->GetFlowUnitInput();
-    auto outputs = desc->GetFlowUnitOutput();
-    for (auto &iter : inputs) {
-      inports.emplace(iter.GetPortName());
-    }
-    for (auto &iter : outputs) {
-      outports.emplace(iter.GetPortName());
-    }
-
-    stream_data_handler->SetPortNames(outports);
-
-    auto gcnode =
-        CreateGCNode(name, inports, outports, config_map, stream_data_handler);
-    if (gcnode == nullptr) {
-      auto msg = "Create GCNode failed";
-      return err_msg({STATUS_FAULT, msg});
-    }
-    BindDataHanlder(stream_data_handler, gcnode);
-    return stream_data_handler;
-  }
-
-  if (CheckInputPort(desc, buffers) != STATUS_OK) {
-    return err_msg({STATUS_FAULT, "not all port has data"});
-  }
-  std::string name = desc->GetFlowUnitName();
-  std::set<std::string> inports;
-  std::set<std::string> outports;
-  auto inputs = desc->GetFlowUnitInput();
-  auto outputs = desc->GetFlowUnitOutput();
-  for (auto &iter : inputs) {
-    inports.emplace(iter.GetPortName());
-  }
-  for (auto &iter : outputs) {
-    outports.emplace(iter.GetPortName());
-  }
-
-  auto status = AddToGCGraph(name, inports, outports, config_map, buffers);
-  if (status != status) {
-    MBLOG_ERROR << "add node to graph failed";
-    stream_data_handler->SetError({STATUS_INVALID, status.Errormsg()});
-  }
-  auto gcnode = gcgraph_->GetNode(name);
-  BindDataHanlder(stream_data_handler, gcnode);
-  return stream_data_handler;
-}
-
-std::shared_ptr<NodeDesc> FlowGraphDesc::AddNode(
-    const std::string &name, std::map<std::string, std::string> config_map,
-    const std::shared_ptr<NodeDesc> &buffers) {
-  SetDefaultConfigValue(name, config_map);
-
-  auto flowunit_desc = GetFlowunitDesc(name, config_map);
-  if (flowunit_desc == nullptr) {
-    return err_msg(
-        {STATUS_INVALID, "failed find flowunit " + name + " description"});
-  }
-  if (buffers != nullptr) {
-    auto ret = CheckInputFlowUnit(name, config_map, buffers, flowunit_desc);
-    if (ret != STATUS_OK) {
-      return err_msg(ret);
-    }
-  }
-  return ExecuteStreamNode(flowunit_desc, buffers, config_map);
-}
-
-std::shared_ptr<NodeDesc> FlowGraphDesc::AddNode(
-    std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
-    std::vector<std::string> inports, std::vector<std::string> outports,
-    const std::map<std::string, std::shared_ptr<NodeDesc>> &buffers) {
-  if (buffers.size() > 0) {
-    auto data = std::make_shared<NodeDesc>();
-    auto ret = data->SetNodeDesc(buffers);
-    if (ret != STATUS_OK) {
-      data->SetError(ret);
-      return data;
-    }
-
-    return AddNode(callback, inports, outports, data);
-  } else {
-    return AddNode(callback, inports, outports);
-  }
-}
-
-std::shared_ptr<NodeDesc> FlowGraphDesc::AddNode(
-    std::function<StatusCode(std::shared_ptr<DataContext>)> callback,
-    std::vector<std::string> inports, std::vector<std::string> outports,
-    const std::shared_ptr<NodeDesc> &data) {
-  std::string name = "register_" + std::to_string(node_sequence_++);
-  std::set<std::string> input_ports(inports.begin(), inports.end());
-  std::set<std::string> output_ports(outports.begin(), outports.end());
-  AddCallBackFactory(name, input_ports, output_ports, callback);
-  auto data_handler = std::make_shared<NodeDesc>();
-  data_handler->SetNodeName(name);
-
-  if (data == nullptr) {
-    if (gcgraph_ == nullptr) {
-      gcgraph_ = std::make_shared<GCGraph>();
-      gcgraph_->Init(nullptr);
-    }
-
-    auto graph_config = config_->GetSubConfig("graph");
-    if (graph_config != nullptr) {
-      gcgraph_->SetConfiguration(config_);
-    }
-
-    auto gcnode = CreateGCNode(
-        name, input_ports, output_ports,
-        {{"type", GRAPH_NODE_REGISTER_FLOWUNIT}, {"flowunit", name}},
-        data_handler);
-    BindDataHanlder(data_handler, gcnode);
-    return data_handler;
-  }
-
-  auto status = AddToGCGraph(
-      name, input_ports, output_ports,
-      {{"type", GRAPH_NODE_REGISTER_FLOWUNIT}, {"flowunit", name}}, data);
-  if (status != STATUS_SUCCESS) {
-    auto msg = "create gcnode failed";
-    MBLOG_ERROR << msg;
-    data_handler->SetError({STATUS_INVALID, msg});
-    return data_handler;
-  }
-
-  auto gcnode = gcgraph_->GetNode(name);
-  BindDataHanlder(data_handler, gcnode);
-  return data_handler;
-}
-
-void FlowGraphDesc::Close() {
-  if (closed_) {
+void FlowGraphDesc::AddOutput(const std::string &output_name,
+                              const std::string &device,
+                              std::shared_ptr<FlowPortDesc> source_node_port) {
+  if (!is_init_) {
+    MBLOG_ERROR << "Should call init first";
+    build_status_ = STATUS_FAULT;
     return;
   }
-  nodes_config_.clear();
 
-  flowunit_mgr_->Clear();
-  flowunit_mgr_ = nullptr;
-  device_mgr_->Clear();
-  device_mgr_ = nullptr;
-
-  if (drivers_) {
-    drivers_->Clear();
+  if (source_node_port == nullptr) {
+    MBLOG_ERROR << "add output " << output_name
+                << " failed, source_node_port is null";
+    build_status_ = STATUS_FAULT;
+    return;
   }
-  drivers_ = nullptr;
 
-  closed_ = true;
+  if (node_name_idx_map_[output_name] >= 1) {
+    MBLOG_ERROR << "Output name " << output_name << " has been used";
+    build_status_ = STATUS_FAULT;
+    return;
+  }
+
+  ++node_name_idx_map_[output_name];
+  auto node = std::make_shared<FlowNodeDesc>(output_name);
+  node->SetNodeType(GRAPH_NODE_OUTPUT);
+  node->SetDevice(device);
+  node->SetInputLinks({{output_name, source_node_port}});
+  node_desc_list_.push_back(node);
 }
 
-std::shared_ptr<NodeDesc> FlowGraphDesc::BindOutput(
-    std::shared_ptr<NodeDesc> &node, const std::string port_name) {
-  auto virtual_node_name = node->GetNodeName() + "_" + port_name;
-  auto gcnode = std::make_shared<GCNode>();
-  gcnode->Init(virtual_node_name, gcgraph_);
-  gcnode->SetConfiguration("type", "output");
-
-  auto gcedge = std::make_shared<GCEdge>();
-  auto input_node_name = node->GetNodeName();
-  auto input_node = gcgraph_->GetNode(input_node_name);
-
-  gcedge->SetTailNode(gcnode);
-  gcedge->SetHeadNode(input_node);
-  gcedge->SetHeadPort(port_name);
-  gcedge->SetTailPort(virtual_node_name);
-  if (port_name == "__default__outport__") {
-    if (input_node->GetOutputPorts()->size() != 1) {
-      MBLOG_ERROR << "node " << input_node->GetNodeName()
-                  << "has not only one outport, please specify port name";
-      return nullptr;
+bool FlowGraphDesc::FormatInputLinks(
+    const std::string &flowunit_name,
+    std::shared_ptr<FlowUnitDesc> flowunit_desc,
+    const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+        &origin_source_node_ports,
+    std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+        &format_source_node_ports) {
+  auto input_list = flowunit_desc->GetFlowUnitInput();
+  std::unordered_set<std::string> input_names;
+  for (auto input_desc : input_list) {
+    input_names.insert(input_desc.GetPortName());
+  }
+  size_t port_idx = 0;
+  for (auto &source_node_port_item : origin_source_node_ports) {
+    auto my_input_port_name = source_node_port_item.first;
+    if (!my_input_port_name.empty() &&
+        input_names.find(my_input_port_name) == input_names.end()) {
+      MBLOG_ERROR << "flowunit " << flowunit_name
+                  << " does not have input port " << my_input_port_name;
+      build_status_ = STATUS_FAULT;
+      return false;
     }
-    auto node_port_name = *(input_node->GetOutputPorts()->begin());
-    gcedge->SetHeadPort(node_port_name);
-  }
 
-  auto output = std::make_shared<NodeDesc>();
-  output->SetNodeName(virtual_node_name);
-  output->SetNodeType(NODE_OUTPUT);
-  gcgraph_->AddNode(gcnode);
-  gcgraph_->AddEdge(gcedge);
-
-  return output;
-}
-
-std::shared_ptr<NodeDesc> FlowGraphDesc::BindInput(
-    std::shared_ptr<NodeDesc> &node, const std::string port_name) {
-  auto virtual_node_name = node->GetNodeName() + "_" + port_name;
-  auto gcnode = std::make_shared<GCNode>();
-  gcnode->Init(virtual_node_name, gcgraph_);
-  gcnode->SetConfiguration("type", "input");
-
-  auto gcedge = std::make_shared<GCEdge>();
-  auto input_node_name = node->GetNodeName();
-  auto input_node = gcgraph_->GetNode(input_node_name);
-
-  gcedge->SetHeadNode(gcnode);
-  gcedge->SetTailNode(input_node);
-  gcedge->SetHeadPort(virtual_node_name);
-
-  auto linked_gcnode = gcgraph_->GetNode(node->GetNodeName());
-  if (linked_gcnode == nullptr) {
-    MBLOG_ERROR << "failed find node: " << node->GetNodeName() << " in graph";
-    return nullptr;
-  }
-
-  if (port_name != "__default__inport__") {
-    gcedge->SetTailPort(port_name);
-  } else {
-    if (linked_gcnode->GetInputPorts()->size() != 1) {
-      MBLOG_ERROR << "node " << linked_gcnode->GetNodeName()
-                  << "has not only one inport, please specify port name";
-      return nullptr;
+    if (my_input_port_name.empty()) {
+      // auto fill by port index
+      my_input_port_name = input_list[port_idx].GetPortName();
     }
-    auto node_port_name = *(linked_gcnode->GetInputPorts()->begin());
-    gcedge->SetTailPort(node_port_name);
+
+    auto source_node_port = source_node_port_item.second;
+    if (source_node_port == nullptr) {
+      MBLOG_ERROR << "flowunit " << flowunit_name << ", port "
+                  << my_input_port_name << ", link source_node_port is null";
+      build_status_ = STATUS_FAULT;
+      return false;
+    }
+
+    format_source_node_ports[my_input_port_name] = source_node_port;
+    ++port_idx;
   }
 
-  auto input = std::make_shared<NodeDesc>();
-  input->SetNodeType(NODE_INPUT);
-  input->SetNodeName(virtual_node_name);
-  gcgraph_->AddNode(gcnode);
-  gcgraph_->SetFirstNode(gcnode);
-  gcgraph_->AddEdge(gcedge);
-  return input;
+  return true;
 }
 
-std::shared_ptr<GCGraph> FlowGraphDesc::GetGCGraph() { return gcgraph_; }
+bool FlowGraphDesc::CheckInputLinks(
+    const std::vector<std::string> &defined_ports,
+    const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+        &input_links) {
+  std::unordered_set<std::string> input_names;
+  for (auto input_name : defined_ports) {
+    input_names.insert(input_name);
+  }
+
+  for (auto &link_item : input_links) {
+    auto &port_name = link_item.first;
+    if (input_names.find(port_name) == input_names.end()) {
+      MBLOG_ERROR << "function node, source_node_ports connect to a port ["
+                  << port_name << "] not defined";
+      build_status_ = STATUS_FAULT;
+      return false;
+    }
+  }
+
+  return true;
+}
 
 }  // namespace modelbox
