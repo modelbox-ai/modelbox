@@ -105,7 +105,7 @@ std::string LeastCommonAncestor::GetMatchPortName(
 IndexPort LeastCommonAncestor::ProcessSameNode(const IndexPort &node_a,
                                                const IndexPort &node_b) {
   if (node_a.port_name == node_b.port_name) {
-    return IndexPort(node_a.node_name, node_a.port_name);
+    return IndexPort(node_a.node_name, node_a.port_name, node_a.port_type);
   } else {
     std::string match_port_name;
     auto input_nums = all_nodes_[node_a.node_name]->GetInputNum();
@@ -115,7 +115,7 @@ IndexPort LeastCommonAncestor::ProcessSameNode(const IndexPort &node_a,
       match_port_name =
           all_nodes_[node_a.node_name]->GetInputPorts()[0]->GetName();
     }
-    return IndexPort(node_a.node_name, match_port_name);
+    return IndexPort(node_a.node_name, match_port_name, IndexPortType::INPUT);
   }
 }
 
@@ -197,6 +197,35 @@ std::string LeastCommonAncestor::GetMatchPortName(
   return match_port_name;
 }
 
+void LeastCommonAncestor::GetIndexPortType(const std::string &node_name,
+                                           const std::string &port_name,
+                                           IndexPortType &port_type) {
+  auto node = all_nodes_[node_name];
+  auto input_ports = node->GetInputPorts();
+  for (auto &input_port : input_ports) {
+    auto name = input_port->GetName();
+    if (name != port_name) {
+      continue;
+    }
+
+    port_type = IndexPortType::INPUT;
+    return;
+  }
+
+  auto output_ports = node->GetOutputPorts();
+  for (auto &output_port : output_ports) {
+    auto name = output_port->GetName();
+    if (name != port_name) {
+      continue;
+    }
+
+    port_type = IndexPortType::OUTPUT;
+    return;
+  }
+
+  port_type = IndexPortType::UNKNOWN;
+}
+
 IndexPort LeastCommonAncestor::Find(const IndexPort &node_a,
                                     const IndexPort &node_b) {
   if (node_a.node_name == node_b.node_name) {
@@ -215,16 +244,19 @@ IndexPort LeastCommonAncestor::Find(const IndexPort &node_a,
   }
 
   std::string match_port_name;
+  IndexPortType port_type;
   if (match_node_name == match_a_name) {
     match_port_name = GetMatchPortName(port_name, match_a_name, match_b_name,
                                        match_node_name);
-    ans = IndexPort(match_node_name, match_port_name);
+    GetIndexPortType(match_node_name, match_port_name, port_type);
+    ans = IndexPort(match_node_name, match_port_name, port_type);
     return ans;
   }
 
   match_port_name =
       GetMatchPortName(match_a_name, match_b_name, match_node_name);
-  ans = IndexPort(match_node_name, match_port_name);
+  GetIndexPortType(match_node_name, match_port_name, port_type);
+  ans = IndexPort(match_node_name, match_port_name, port_type);
   return ans;
 }
 
@@ -254,12 +286,13 @@ OverHierarchyCheck::~OverHierarchyCheck() {
 
 void OverHierarchyCheck::InitFirstNode(std::shared_ptr<Node> node) {
   auto node_name = node->GetName();
-  auto index_port = std::make_shared<IndexPort>(node_name, EXTERNAL);
+  auto index_port =
+      std::make_shared<IndexPort>(node_name, EXTERNAL, IndexPortType::INPUT);
   color_map_[index_port->ToString()] = {0};
 
   for (auto &output_port : node->GetOutputPorts()) {
-    auto index_port =
-        std::make_shared<IndexPort>(node_name, output_port->GetName());
+    auto index_port = std::make_shared<IndexPort>(
+        node_name, output_port->GetName(), IndexPortType::OUTPUT);
     color_map_[index_port->ToString()] = {0};
   }
 }
@@ -294,6 +327,7 @@ Status OverHierarchyCheck::CheckInputPortsColorReady(
     const std::vector<std::shared_ptr<InPort>> &input_ports) {
   for (auto &input_port : input_ports) {
     index_port->port_name = input_port->GetName();
+    index_port->port_type = IndexPortType::INPUT;
     if (color_map_.find(index_port->ToString()) == color_map_.end()) {
       return STATUS_NODATA;
     }
@@ -402,6 +436,7 @@ void OverHierarchyCheck::GetColorMap(
   auto input_ports = node->GetInputPorts();
   std::shared_ptr<IndexPort> input_index_port = std::make_shared<IndexPort>();
   input_index_port->node_name = node->GetName();
+  input_index_port->port_type = IndexPortType::INPUT;
   if (input_ports.size() == 0) {
     input_index_port->port_name = EXTERNAL;
   } else {
@@ -445,6 +480,7 @@ void OverHierarchyCheck::GetColorMap(
           std::make_shared<IndexPort>();
       index_output_port->node_name = node_name;
       index_output_port->port_name = out_port->GetName();
+      index_output_port->port_type = IndexPortType::OUTPUT;
       auto inport = *out_port->GetConnectInPort().begin();
       auto link_node_name = inport->GetNode()->GetName();
       if (link_node->GetName() == link_node_name) {
@@ -477,6 +513,7 @@ void OverHierarchyCheck::GetColorMap(
             std::make_shared<IndexPort>();
         index_output_port->node_name = node_name;
         index_output_port->port_name = out_port->GetName();
+        index_output_port->port_type = IndexPortType::OUTPUT;
         auto inport = *out_port->GetConnectInPort().begin();
         auto link_node_name = inport->GetNode()->GetName();
         if (links.first == link_node_name) {
@@ -543,6 +580,7 @@ void OverHierarchyCheck::SetOutPortColor(
         std::make_shared<IndexPort>();
     index_output_port->node_name = node_name;
     index_output_port->port_name = output_port->GetName();
+    index_output_port->port_type = IndexPortType::OUTPUT;
     color_map_[index_output_port->ToString()] = new_color;
   }
 }
@@ -589,6 +627,7 @@ Status OverHierarchyCheck::Check(
             std::make_shared<IndexPort>();
         index_output_port->node_name = node_name;
         index_output_port->port_name = output_port->GetName();
+        index_output_port->port_type = IndexPortType::OUTPUT;
         auto input_ports = output_port->GetConnectInPort();
         for (auto &input_port : input_ports) {
           std::shared_ptr<IndexPort> index_input_port =
@@ -596,6 +635,7 @@ Status OverHierarchyCheck::Check(
           auto inport_node_name = input_port->GetNode()->GetName();
           index_input_port->node_name = inport_node_name;
           index_input_port->port_name = input_port->GetName();
+          index_input_port->port_type = IndexPortType::INPUT;
 
           if (!visited_[inport_node_name]) {
             auto connect_node = CastNode(all_nodes_[inport_node_name]);
@@ -769,7 +809,7 @@ Status GraphChecker::CalNodeStreamMap(std::shared_ptr<NodeBase> node,
 
   // no input
   if (input_ports.empty()) {
-    auto external = IndexPort(EXTERNAL, EXTERNAL);
+    auto external = IndexPort(EXTERNAL, EXTERNAL, IndexPortType::INPUT);
     node_stream_map["p1"] = {external};
     graph_match_map_[node->GetName()] = EXTERNAL;
     return status;
@@ -781,7 +821,8 @@ Status GraphChecker::CalNodeStreamMap(std::shared_ptr<NodeBase> node,
     for (auto &pre_output_port : pre_output_ports) {
       std::string output_port_name = pre_output_port.lock()->GetName();
       std::string pre_node_name = pre_output_port.lock()->GetNode()->GetName();
-      auto value = IndexPort(pre_node_name, output_port_name);
+      auto value =
+          IndexPort(pre_node_name, output_port_name, IndexPortType::OUTPUT);
       node_stream_map[key].emplace_back(value);
     }
   }

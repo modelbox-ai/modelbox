@@ -87,6 +87,15 @@ class GraphCheckerTest : public testing::Test {
     }
 
     {
+      auto mock_desc =
+          GenerateFlowunitDesc("test_1_1_same_name", {"In_1"}, {"In_1"});
+      mock_desc->SetFlowType(STREAM);
+      mock_desc->SetStreamSameCount(true);
+      auto mock_funcitons = std::make_shared<MockFunctionCollection>();
+      flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
+    }
+
+    {
       auto mock_desc = GenerateFlowunitDesc("stream_1_1", {"In_1"}, {"Out_1"});
       mock_desc->SetFlowType(STREAM);
       mock_desc->SetStreamSameCount(false);
@@ -145,8 +154,8 @@ class GraphCheckerTest : public testing::Test {
     }
 
     {
-      auto mock_desc =
-          GenerateFlowunitDesc("expand_2_2", {"In_1", "In_2"}, {"Out_1", "Out_2"});
+      auto mock_desc = GenerateFlowunitDesc("expand_2_2", {"In_1", "In_2"},
+                                            {"Out_1", "Out_2"});
       mock_desc->SetOutputType(EXPAND);
       auto mock_funcitons = std::make_shared<MockFunctionCollection>();
       flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
@@ -161,8 +170,8 @@ class GraphCheckerTest : public testing::Test {
     }
 
     {
-      auto mock_desc =
-          GenerateFlowunitDesc("test_1_3", {"In_1"}, {"Out_1", "Out_2", "Out_3"});
+      auto mock_desc = GenerateFlowunitDesc("test_1_3", {"In_1"},
+                                            {"Out_1", "Out_2", "Out_3"});
       mock_desc->SetFlowType(STREAM);
       auto mock_funcitons = std::make_shared<MockFunctionCollection>();
       flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
@@ -193,8 +202,8 @@ class GraphCheckerTest : public testing::Test {
     }
 
     {
-      auto mock_desc =
-          GenerateFlowunitDesc("test_4_1", {"In_1", "In_2", "In_3", "In_4"}, {"Out_1"});
+      auto mock_desc = GenerateFlowunitDesc(
+          "test_4_1", {"In_1", "In_2", "In_3", "In_4"}, {"Out_1"});
       mock_desc->SetFlowType(STREAM);
       auto mock_funcitons = std::make_shared<MockFunctionCollection>();
       flow_->AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
@@ -1473,6 +1482,42 @@ TEST_F(GraphCheckerTest, Road) {
           b:Out_2 -> ff:In_1
           ee:Out_1 -> ff:In_1
           ff:Out_1 -> gg:In_1
+        }
+      )";
+
+  TestGraph(conf_file_value, STATUS_OK);
+}
+
+TEST_F(GraphCheckerTest, NodeHasSameNameInInputOutputPort) {
+  auto conf_file_value =
+      R"(
+        digraph demo {
+          a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
+          b[type=flowunit, flowunit=condition_1_2, device=cpu, deviceid=0]
+          c[type=flowunit, flowunit=expand_1_2, device=cpu, deviceid=0]
+          d[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          e[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          f[type=flowunit, flowunit=test_1_1, device=cpu, deviceid=0]
+          g[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          h[type=flowunit, flowunit=collapse_1_1, device=cpu, deviceid=0]
+          i[type=flowunit, flowunit=test_2_1, device=cpu, deviceid=0]
+          j[type=flowunit, flowunit=test_1_1_same_name, device=cpu, deviceid=0]
+          output1[type=output]
+
+          a:Out_1->b:In_1
+          b:Out_1->c:In_1
+          b:Out_1->i:In_1
+          b:Out_2->j:In_1
+          c:Out_1->d:In_1
+          c:Out_2->d:In_2
+          c:Out_1->g:In_1
+          d:Out_1->e:In_1
+          e:Out_1->f:In_1
+          f:Out_1->g:In_2
+          g:Out_1->h:In_1
+          h:Out_1->i:In_2
+          i:Out_1->j:In_1
+          j:In_1->output1
         }
       )";
 

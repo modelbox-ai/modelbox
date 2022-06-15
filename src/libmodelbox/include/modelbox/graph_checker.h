@@ -35,17 +35,23 @@ class InputVirtualNode;
 class OutputVirtualNode;
 class OutputUnmatchVirtualNode;
 
+enum IndexPortType { INPUT, OUTPUT, UNKNOWN };
+
 class IndexPort {
  public:
   IndexPort() = default;
-  IndexPort(const std::string &node, const std::string &port)
-      : node_name(node), port_name(port) {}
+  IndexPort(const std::string &node, const std::string &port,
+            const IndexPortType &type = IndexPortType::UNKNOWN)
+      : node_name(node), port_name(port), port_type(type) {}
   virtual ~IndexPort() = default;
 
-  std::string ToString() const { return node_name + "." + port_name; }
+  std::string ToString() const {
+    return node_name + "." + port_name + "." + std::to_string(port_type);
+  }
 
   std::string node_name;
   std::string port_name;
+  IndexPortType port_type{IndexPortType::UNKNOWN};
 };
 
 using NodeStreamConnection = std::map<std::string, std::vector<IndexPort>>;
@@ -74,6 +80,8 @@ class LeastCommonAncestor {
   void FindMatchNode(const IndexPort &node_a, const IndexPort &node_b,
                      std::string &match_a_name, std::string &match_b_name,
                      std::string &match_node_name, std::string &port_name);
+  void GetIndexPortType(const std::string &node_name,
+                        const std::string &port_name, IndexPortType &port_type);
 
  private:
   std::unordered_map<std::string, std::shared_ptr<NodeBase>> all_nodes_;
