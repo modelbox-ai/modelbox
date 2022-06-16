@@ -43,7 +43,10 @@ fi
 
 MODELBOX=${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_BINDIR@/modelbox
 
-test -x $MODELBOX || exit 5
+if [ ! -x "${MODELBOX}" ]; then
+	echo "modelbox server not exists: ${MODELBOX}"
+	exit 5
+fi
 
 case $1 in
 	start)

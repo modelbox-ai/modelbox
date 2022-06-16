@@ -17,6 +17,7 @@
 #include "manager_conf.h"
 #include "util.h"
 #include <string.h>
+#include <stdlib.h>
 
 #include "conf.h"
 #include "log.h"
@@ -51,6 +52,8 @@ int manager_load_app(void *item, int argc, char *argv[]) {
   static struct option options[] = {{"name", 1, 0, 'n'},
                                     {"pidfile", 1, 0, 'p'},
                                     {"check-alive", 0, 0, 'k'},
+                                    {"check-alive-time", 1, 0, 't'},
+                                    {"heartbeat-interval", 1, 0, 'i'},
                                     {0, 0, 0, 0}};
 
   int cmdtype;
@@ -78,12 +81,26 @@ int manager_load_app(void *item, int argc, char *argv[]) {
       case 'k':
         conf_app->check_alive = 1;
         break;
+      case 'i':
+        conf_app->heartbeat_interval = atoi(optarg);
+        break;
+      case 't':
+        conf_app->check_alive_time = atoi(optarg);
+        break;
       case 'p':
         strncpy(conf_app->pidfile, get_modelbox_full_path(optarg), PATH_MAX);
         break;
       default:
         break;
     }
+  }
+
+  if (conf_app->heartbeat_interval <= 0) {
+    conf_app->heartbeat_interval = DEFAULT_HEARTBEAT_INTERVAL;
+  }
+
+  if (conf_app->check_alive_time <= 0) {
+    conf_app->check_alive_time = conf_watchdog_timeout;
   }
 
   for (i = optind; i < argc; i++) {

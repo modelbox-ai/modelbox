@@ -67,7 +67,8 @@ static struct option options[] = {
     /* internal command for develop mode */
     {"check-port", 1, &option_flag, MODELBOX_SERVER_ARG_CHECKPORT},
     {"get-conf-value", 1, &option_flag, MODELBOX_SERVER_ARG_GETCONF},
-    {"get-modelbox-root", 0, &option_flag, MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT},
+    {"get-modelbox-root", 0, &option_flag,
+     MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT},
     {0, 0, 0, 0},
 };
 
@@ -81,9 +82,6 @@ static void showhelp(void) {
         "  -p            pid file.\n"
         "  -V            output log to screen.\n"
         "  -v            show server version.\n"
-        "  -n            service name for manager.\n"
-        "  -k            keep alive time for manager.\n"
-        "  -K            keep alive key file.\n"
         "  -h            show this help message.\n"
         "\n";
 
@@ -193,8 +191,41 @@ int modelbox_init(void) {
   return 0;
 }
 
-int modelbox_run(std::shared_ptr<Server> server, const std::string &keep_name,
-                 int keep_time, const char *keyfile) {
+void modelbox_hung_check(void) {
+  int is_status_ok = 1;
+  auto root = modelbox::Statistics::GetGlobalItem();
+
+  auto flowitem = root->GetItem("flow");
+  if (flowitem == NULL) {
+    app_monitor_heartbeat();
+    return;
+  }
+
+  auto flownames = flowitem->GetItemNames();
+  for (auto const &name : flownames) {
+    auto schedule_item = flowitem->GetItem(name + ".scheduler.status");
+    if (schedule_item == nullptr) {
+      continue;
+    }
+    std::string schedule_status;
+    schedule_item->GetValue(schedule_status);
+    if (schedule_status != "blocking") {
+      continue;
+    }
+    MBLOG_WARN << "flow " << name <<  " is blocking";
+
+    is_status_ok = 0;
+  }
+
+  if (is_status_ok == 0) {
+    return;
+  }
+
+  app_monitor_heartbeat();
+  
+}
+
+int modelbox_run(std::shared_ptr<Server> server) {
   auto ret = server->Init();
   if (!ret) {
     MBLOG_ERROR << "server init failed !";
@@ -208,20 +239,18 @@ int modelbox_run(std::shared_ptr<Server> server, const std::string &keep_name,
   }
 
   std::shared_ptr<TimerTask> heart_beattask = std::make_shared<TimerTask>();
-  heart_beattask->Callback([&]() { app_monitor_heartbeat(); });
+  heart_beattask->Callback(modelbox_hung_check);
 
-  auto future = std::async(
-      std::launch::async, [heart_beattask, keep_name, keep_time, keyfile]() {
-        if (keep_time > 0 && keep_name.length() > 0) {
-          if (app_monitor_init(keep_name.c_str(), keyfile) != 0) {
-            MBLOG_ERROR << "init app monitor failed.";
-            return;
-          }
+  auto future = std::async(std::launch::async, [heart_beattask]() {
+    if (app_monitor_init(NULL, NULL) != 0) {
+      return;
+    }
 
-          sleep(1);
-          kServerTimer->Schedule(heart_beattask, 0, 1000 * keep_time, true);
-        }
-      });
+    sleep(1);
+    MBLOG_INFO << "start manager heartbeat";
+    kServerTimer->Schedule(heart_beattask, 0,
+                           1000 * app_monitor_heartbeat_interval(), true);
+  });
 
   // run timer loop.
   kServerTimer->Run();
@@ -305,10 +334,7 @@ int main(int argc, char *argv[])
 #endif
 {
   std::string pidfile = MODELBOX_SERVER_PID_FILE;
-  std::string keep_name = "";
-  int keep_time = 5;
   int cmdtype = 0;
-  std::string key_file;
   std::string get_conf_key;
 
   MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "hc:Vvfp:n:k:K", options)
@@ -343,15 +369,6 @@ int main(int argc, char *argv[])
         return 1;
       case 'c':
         kConfigPath = modelbox_full_path(optarg);
-        break;
-      case 'n':
-        keep_name = optarg;
-        break;
-      case 'k':
-        keep_time = atoi(optarg);
-        break;
-      case 'K':
-        key_file = modelbox_full_path(optarg);
         break;
       case 'v':
         printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
@@ -394,7 +411,7 @@ int main(int argc, char *argv[])
   auto server = std::make_shared<Server>(kConfig);
   kServerTimer->Start();
 
-  if (modelbox_run(server, keep_name, keep_time, key_file.c_str()) != 0) {
+  if (modelbox_run(server) != 0) {
     return 1;
   }
 

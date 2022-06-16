@@ -52,6 +52,8 @@ enum StatusCode {
   STATUS_SHUTDOWN,    /* Shutdown operation */
   STATUS_EOF,         /* End of file */
   STATUS_NOENT,       /* No such file or directory */
+  STATUS_DEADLOCK,    /* Resource deadlock */
+  STATUS_NORESPONSE,  /* No response*/
   STATUS_LASTFLAG,    /* Status flag, don't used it */
 };
 

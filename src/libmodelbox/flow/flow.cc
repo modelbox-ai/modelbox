@@ -483,7 +483,8 @@ Status Flow::Wait(int64_t millisecond, Status* ret_val) {
 
   auto ret = graph_->Wait(millisecond, ret_val);
   if (ret != STATUS_OK) {
-    if (ret == STATUS_BUSY || ret == STATUS_SHUTDOWN) {
+    if (ret == STATUS_BUSY || ret == STATUS_SHUTDOWN ||
+        ret == STATUS_NORESPONSE) {
       return ret;
     }
     MBLOG_ERROR << "flow wait error, " << ret.WrapErrormsgs();

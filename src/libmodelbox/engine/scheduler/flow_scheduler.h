@@ -92,6 +92,7 @@ class FlowScheduler : public Scheduler {
   FlowScheduler();
   virtual ~FlowScheduler();
   Status Init(std::shared_ptr<Configuration> config,
+              std::shared_ptr<StatisticsItem> stats = nullptr,
               std::shared_ptr<ThreadPool> thread_pool = nullptr) override;
   Status Build(const Graph& graph) override;
   Status Run() override;
@@ -124,8 +125,12 @@ class FlowScheduler : public Scheduler {
 
   std::atomic<uint32_t> running_node_count_{0};
   bool is_wait_stop_{false};
+  bool is_no_response_{false};
   std::mutex notify_mutex_;
   std::condition_variable cv_;
+
+  std::shared_ptr<StatisticsItem> stats_;
+  std::shared_ptr<StatisticsItem> stats_status_;
 
   std::mutex status_mutex_;
   std::unordered_map<std::shared_ptr<NodeBase>, bool> nodes_runing_status_;
@@ -148,7 +153,7 @@ class FlowScheduler : public Scheduler {
   void DisableActivePort(const std::shared_ptr<NodeBase>& node);
   void WaitNodeFinish();
   void ShutdownNodes();
-  void ShowScheduleStatus();
+  void CheckScheduleStatus(const bool &printlog);
 };
 
 }  // namespace modelbox

@@ -136,6 +136,7 @@ JobStatus Job::GetJobStatus() {
         return status_;
       }
       break;
+    case modelbox::STATUS_NORESPONSE:
     case modelbox::STATUS_BUSY:
       return JOB_STATUS_RUNNING;
       break;
