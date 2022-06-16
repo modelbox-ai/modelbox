@@ -12,6 +12,10 @@ int app_monitor_keyfile(char *file);
 
 int app_monitor_init(const char *name, const char *keyfile);
 
+int app_monitor_keepalive_time(void);
+
+int app_monitor_heartbeat_interval(void);
+
 int app_monitor_heartbeat(void);
 
 #ifdef __cplusplus

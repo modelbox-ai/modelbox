@@ -19,6 +19,7 @@
 #include "manager_common.h"
 #include "manager_conf.h"
 #include "manager_monitor.h"
+#include <stdlib.h>
 
 char g_key_file[PATH_MAX];
 
@@ -31,6 +32,8 @@ struct app_struct {
 struct app_struct app_info = {.name[0] = 0};
 static key_t g_msgkey = -1;
 static int g_msgid = -1;
+static int g_keepalive_time = DEFAULT_WATCHDOG_TIMEOUT;
+static int g_heartbeat_interval = DEFAULT_HEARTBEAT_INTERVAL;
 
 extern void app_log_reg(manager_log_callback callback);
 
@@ -41,7 +44,33 @@ static void _app_monitor_reset_msgkey(void) {
 
 int app_monitor_init(const char *name, const char *keyfile) {
   if (name == NULL) {
-    return -1;
+    name = getenv("MANAGER_MONITOR_NAME");
+    if (name == NULL) {
+      return -1;
+    }
+  }
+
+  if (keyfile == NULL) {
+    keyfile = getenv("MANAGER_MONITOR_KEYFILE");
+    if (keyfile == NULL) {
+      return -1;
+    }
+  }
+
+  const char *keepalive_time = getenv("MANAGER_MONITOR_KEEPALIVE_TIME");
+  if (keepalive_time) {
+    int alive_time = atol(keepalive_time);
+    if (alive_time > 0) {
+      g_keepalive_time = alive_time;
+    }
+  }
+
+  const char *heart_interval = getenv("MANAGER_MONITOR_HEARTBEAT_INTERVAL");
+  if (heart_interval) {
+    int interval_time = atol(heart_interval);
+    if (interval_time > 0) {
+      g_heartbeat_interval = interval_time;
+    }
   }
 
   strncpy(app_info.name, name, APP_NAME_LEN);
@@ -56,6 +85,15 @@ int app_monitor_init(const char *name, const char *keyfile) {
   }
 
   return 0;
+}
+
+int app_monitor_keepalive_time(void)
+{
+  return g_keepalive_time;
+}
+
+int app_monitor_heartbeat_interval(void) {
+  return g_heartbeat_interval;
 }
 
 int app_monitor_keyfile(char *file) {

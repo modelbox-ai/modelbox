@@ -39,12 +39,15 @@ else
 	. ${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager-opts
 	PIDDIR=${MODELBOX_ROOT}/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager
 	PIDFILE=${MODELBOX_ROOT}/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.pid
-	KEYFILE=${MODELBOX_ROOT}/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.key
 fi
 
 MODELBOX_MANAGER=${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_BINDIR@/modelbox-manager
 
-test -x $MODELBOX_MANAGER || exit 5
+if [ ! -x "${MODELBOX_MANAGER}" ]; then
+	echo "manager not exists: ${MODELBOX_MANAGER}"
+	exit 5
+fi
+
 
 case $1 in
 	start)
@@ -52,7 +55,7 @@ case $1 in
 			mkdir $PIDDIR
 		fi
 
-		$MODELBOX_MANAGER $MODELBOX_MANAGER_OPTS -p $PIDFILE -k $KEYFILE
+		$MODELBOX_MANAGER $MODELBOX_MANAGER_OPTS -p $PIDFILE
 		LOOP=0
 		while true; do
 			if [ -e "$PIDFILE" ]; then

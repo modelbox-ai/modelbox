@@ -55,6 +55,8 @@ const char* kStatusCodeString[] = {
     "Shutdown operation",
     "End of file",
     "No such file or directory",
+    "Resource deadlock",
+    "No response",
     "End flag",
 };
 

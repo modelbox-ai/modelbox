@@ -24,11 +24,12 @@
 extern "C" {
 #endif /*__cplusplus */
 
-#define DEFAULT_WATCHDOG_TIMEOUT 60
+#define DEFAULT_WATCHDOG_TIMEOUT 90
+#define DEFAULT_HEARTBEAT_INTERVAL 30
 #define DEFAULT_FORCE_KILL_TIMEOUT 5
 #define CONF_MAX_APPS 256
 
-#define CONF_FILE_NAME "master.conf"
+#define CONF_FILE_NAME "manager.conf"
 #define CONF_FILE_PATH "/etc"
 
 #define CONF_WATCHDOG_TIMEOUT "watchdog-timeout"
@@ -49,6 +50,8 @@ struct conf_app {
   char pidfile[PATH_MAX];
   char cmd[PATH_MAX];
   int check_alive;
+  int check_alive_time;
+  int heartbeat_interval;
 };
 
 extern struct conf_app conf_apps[CONF_MAX_APPS];

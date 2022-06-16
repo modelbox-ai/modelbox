@@ -16,6 +16,7 @@
 
 #include "manager.h"
 
+#include <libgen.h>
 #include <sys/mman.h>
 
 #include "common.h"
@@ -106,7 +107,8 @@ int manager_add_apps(void) {
     manager_log(MANAGER_LOG_INFO, "add %s, %s, %s\n", conf_apps[i].name,
                 conf_apps[i].cmd, conf_apps[i].pidfile);
     if (app_start(conf_apps[i].name, conf_apps[i].cmd, conf_apps[i].pidfile,
-                  conf_apps[i].check_alive) != 0) {
+                  conf_apps[i].check_alive, conf_apps[i].check_alive_time,
+                  conf_apps[i].heartbeat_interval) != 0) {
       manager_log(MANAGER_LOG_ERR, "add app %s failed.", conf_apps[i].name);
       return -1;
     }
@@ -150,7 +152,8 @@ void manager_reload_apps(struct conf_app oldapps[CONF_MAX_APPS]) {
 
     if (j == CONF_MAX_APPS) {
       if (app_start(conf_apps[i].name, conf_apps[i].cmd, conf_apps[i].pidfile,
-                    conf_apps[i].check_alive) == 0) {
+                    conf_apps[i].check_alive, conf_apps[i].check_alive_time,
+                    conf_apps[i].heartbeat_interval) == 0) {
         manager_log(MANAGER_LOG_INFO, "start app %s success.",
                     conf_apps[i].name);
       } else {
@@ -287,6 +290,7 @@ static void _manager_default_conf_file(char *path, int max_len) {
 int manager_init(const char *conf_file, char *name) {
   char log_file[PATH_MAX];
   char default_conf_file[PATH_MAX] = {0};
+  char piddir[PATH_MAX];
 
   if (manager_sig_register()) {
     fprintf(stderr, "register signal failed\n");
@@ -299,22 +303,25 @@ int manager_init(const char *conf_file, char *name) {
 
   if (strnlen(pid_file_path, sizeof(pid_file_path)) <= 0) {
     if (name) {
-      snprintf(pid_file_path, sizeof(pid_file_path), "%s/%s.pid",
-               MANAGER_PID_PATH, name);
+      snprintf_s(pid_file_path, sizeof(pid_file_path), sizeof(pid_file_path),
+                 "%s/%s.pid", MANAGER_PID_PATH, name);
     } else {
-      snprintf(pid_file_path, sizeof(pid_file_path), "%s/%s.pid",
-               MANAGER_PID_PATH, MANAGER_NAME);
+      snprintf_s(pid_file_path, sizeof(pid_file_path), sizeof(pid_file_path),
+                 "%s/%s.pid", MANAGER_PID_PATH, MANAGER_NAME);
     }
   }
+
+  strncpy_s(piddir, sizeof(piddir), pid_file_path, sizeof(pid_file_path));
+  dirname(piddir);
 
   /* create key */
   if (strnlen(key_file_path, sizeof(key_file_path)) <= 0) {
     if (name) {
-      snprintf(key_file_path, sizeof(key_file_path), "%s/%s.key",
-               MANAGER_PID_PATH, name);
+      snprintf_s(key_file_path, sizeof(key_file_path), sizeof(key_file_path),
+                 "%s/%s.key", piddir, name);
     } else {
-      snprintf(key_file_path, sizeof(key_file_path), "%s/%s.key",
-               MANAGER_PID_PATH, MANAGER_NAME);
+      snprintf_s(key_file_path, sizeof(key_file_path), sizeof(key_file_path),
+                 "%s/%s.key", piddir, MANAGER_NAME);
     }
   }
 
@@ -340,7 +347,6 @@ int manager_init(const char *conf_file, char *name) {
       conf_file = default_conf_file;
     }
   }
-
 
   if (manager_load_conf(conf_file) != 0) {
     fprintf(stderr, "load master config file %s failed.\n", conf_file);
@@ -387,10 +393,12 @@ int main(int argc, char *argv[])
         name = optarg;
         break;
       case 'p':
-        strncpy(pid_file_path, get_modelbox_full_path(optarg), sizeof(pid_file_path));
+        strncpy(pid_file_path, get_modelbox_full_path(optarg),
+                sizeof(pid_file_path));
         break;
       case 'k':
-        strncpy(key_file_path, get_modelbox_full_path(optarg), sizeof(key_file_path));
+        strncpy(key_file_path, get_modelbox_full_path(optarg),
+                sizeof(key_file_path));
         break;
       case 'f':
         is_forground = 1;
@@ -415,7 +423,6 @@ int main(int argc, char *argv[])
   signal(SIGPIPE, SIG_IGN);
   signal(SIGHUP, manager_sighup);
   g_reload_config = 0;
-
 
   if (manager_init(conf_file, name) != 0) {
     fprintf(stderr, "master init failed.\n");

@@ -34,11 +34,7 @@ namespace modelbox {
 class ManagerTest : public testing::Test {
  public:
  protected:
-  ManagerTest() {
-    printf(
-        "NOTICE: For valgrind memory leak check, please run with "
-        "--child-silent-after-fork=yes to  skip child process check.\n");
-  }
+  ManagerTest() {}
   virtual void SetUp(){
 
   };
@@ -153,7 +149,7 @@ class ManagerTestApp {
 TEST_F(ManagerTest, DISABLED_Start) {
   ManagerTestServer server;
   server.Start();
-  EXPECT_EQ(0, app_start("1", "sleep 1", nullptr, 0));
+  EXPECT_EQ(0, app_start("1", "sleep 1", nullptr, 1, 60, 5));
   sleep(1);
   int pid = app_getpid("1");
   EXPECT_GT(pid, 0);
@@ -167,21 +163,21 @@ TEST_F(ManagerTest, DISABLED_Start) {
 TEST_F(ManagerTest, DISABLED_Start_dup) {
   ManagerTestServer server;
   server.Start();
-  EXPECT_EQ(0, app_start("1", "test", NULL, 0));
-  EXPECT_EQ(0, app_start("2", "test", NULL, 0));
-  EXPECT_EQ(0, app_start("3", "test", NULL, 0));
-  sleep(1);
-  EXPECT_NE(0, app_start("2", "test", NULL, 0));
+  EXPECT_EQ(0, app_start("1", "test", NULL, 1, 60, 5));
+  EXPECT_EQ(0, app_start("2", "test", NULL, 1, 60, 5));
+  EXPECT_EQ(0, app_start("3", "test", NULL, 1, 60, 5));
+  EXPECT_NE(0, app_start("2", "test", NULL, 1, 60, 5));
 }
 
 TEST_F(ManagerTest, DISABLED_Start_many) {
   ManagerTestServer server;
   server.Start();
-  for (int i = 0; i < 128; i++) {
-    EXPECT_EQ(0, app_start(std::to_string(i).c_str(), "test", nullptr, 0));
+  for (int i = 0; i < 8; i++) {
+    EXPECT_EQ(0,
+              app_start(std::to_string(i).c_str(), "test", nullptr, 1, 60, 5));
   }
   sleep(1);
-  for (int i = 0; i < 128; i++) {
+  for (int i = 0; i < 8; i++) {
     EXPECT_EQ(0, app_alive(std::to_string(i).c_str()));
   }
 }
@@ -189,18 +185,18 @@ TEST_F(ManagerTest, DISABLED_Start_many) {
 TEST_F(ManagerTest, DISABLED_Start_stop_half) {
   ManagerTestServer server;
   server.Start();
-  for (int i = 0; i < 128; i++) {
-    EXPECT_EQ(0, app_start(std::to_string(i).c_str(), "test", nullptr, 0));
+  for (int i = 0; i < 8; i++) {
+    EXPECT_EQ(0,
+              app_start(std::to_string(i).c_str(), "test", nullptr, 1, 60, 5));
   }
-  sleep(1);
-  for (int i = 0; i < 128; i++) {
+  for (int i = 0; i < 8; i++) {
     if (i % 2 == 0) {
       continue;
     }
     EXPECT_EQ(0, app_stop(std::to_string(i).c_str(), 0));
   }
   sleep(1);
-  for (int i = 0; i < 128; i++) {
+  for (int i = 0; i < 8; i++) {
     if (i % 2 == 0) {
       EXPECT_EQ(0, app_alive(std::to_string(i).c_str()));
       continue;
@@ -212,15 +208,14 @@ TEST_F(ManagerTest, DISABLED_Start_stop_half) {
 TEST_F(ManagerTest, DISABLED_Start_stop_all) {
   ManagerTestServer server;
   server.Start();
-  for (int i = 0; i < 128; i++) {
-    EXPECT_EQ(0, app_start(std::to_string(i).c_str(), "test", nullptr, 0));
+  for (int i = 0; i < 8; i++) {
+    EXPECT_EQ(0,
+              app_start(std::to_string(i).c_str(), "test", nullptr, 1, 60, 5));
   }
-  sleep(1);
-  for (int i = 0; i < 128; i++) {
+  for (int i = 0; i < 8; i++) {
     EXPECT_EQ(0, app_stop(std::to_string(i).c_str(), 0));
   }
-  sleep(1);
-  for (int i = 0; i < 128; i++) {
+  for (int i = 0; i < 8; i++) {
     EXPECT_NE(0, app_alive(std::to_string(i).c_str()));
   }
 }

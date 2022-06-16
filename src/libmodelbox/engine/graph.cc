@@ -1184,7 +1184,8 @@ Status Graph::InitScheduler() {
     config_->SetProperty("graph.max-thread-num", thread_num * 4);
   }
 
-  auto status = scheduler_->Init(config_);
+  auto schedule_state = graph_stats_->AddItem("scheduler");
+  auto status = scheduler_->Init(config_, schedule_state);
   if (!status) {
     auto msg = "init scheduler failed.";
     MBLOG_FATAL << msg;

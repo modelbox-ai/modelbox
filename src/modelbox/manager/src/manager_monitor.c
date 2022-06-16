@@ -61,6 +61,8 @@ struct app_monitor {
   time_t last_alive;
   time_t dead_time;
   int check_alive;
+  int check_alive_time;
+  int heartbeat_interval;
   APP_STATUS state;
 };
 
@@ -131,6 +133,28 @@ int _app_exists(struct app_monitor *app) {
 
 /* run shell command */
 void _app_start_exec(struct app_monitor *app) {
+  if (app->check_alive) {
+    char keyfileenv[PATH_MAX];
+    char appnameenv[PATH_MAX];
+    char keepalivetime[64];
+    char intervaltime[64];
+
+    snprintf_s(keyfileenv, sizeof(keyfileenv), sizeof(keyfileenv),
+               "MANAGER_MONITOR_KEYFILE=%s", key_file_path);
+    snprintf_s(appnameenv, sizeof(appnameenv), sizeof(appnameenv),
+               "MANAGER_MONITOR_NAME=%s", app->name);
+    snprintf_s(keepalivetime, sizeof(keepalivetime), sizeof(keepalivetime),
+               "MANAGER_MONITOR_KEEPALIVE_TIME=%d", app->check_alive_time);
+    snprintf_s(intervaltime, sizeof(intervaltime), sizeof(intervaltime),
+               "MANAGER_MONITOR_HEARTBEAT_INTERVAL=%d",
+               app->heartbeat_interval);
+
+    putenv(keyfileenv);
+    putenv(appnameenv);
+    putenv(keepalivetime);
+    putenv(intervaltime);
+  }
+
   execl("/bin/sh", "sh", "-c", app->cmdline, NULL);
 }
 
@@ -233,10 +257,27 @@ int _app_start(struct app_monitor *app) {
     return -1;
   } else if (pid == 0) {
     char killcmd[128];
+    char keyfileenv[PATH_MAX];
+    char appnameenv[PATH_MAX];
+    char keepalivetime[64];
+    char intervaltime[64];
+
+    snprintf_s(keyfileenv, sizeof(keyfileenv), sizeof(keyfileenv),
+                "MANAGER_MONITOR_KEYFILE=%s", key_file_path);
+    snprintf_s(appnameenv, sizeof(appnameenv), sizeof(appnameenv),
+                "MANAGER_MONITOR_NAME=%s", app->name);
+    snprintf_s(keepalivetime, sizeof(keepalivetime), sizeof(keepalivetime),
+                "MANAGER_MONITOR_KEEPALIVE_TIME=%d", app->check_alive_time);
+    snprintf_s(intervaltime, sizeof(intervaltime), sizeof(intervaltime),
+                "MANAGER_MONITOR_HEARTBEAT_INTERVAL=%d",
+                app->heartbeat_interval);
+
+    putenv(keyfileenv);
+    putenv(appnameenv);
+    putenv(keepalivetime);
+    putenv(intervaltime);
     close_all_fd();
     app_test(app);
-    snprintf(killcmd, 128, "kill -9 %d", getpid());
-    unused = system(killcmd);
     _exit(1);
   }
 #else
@@ -343,7 +384,7 @@ out:
 }
 
 int app_start(const char *name, const char *cmdline, const char *pidfile,
-              int check_alive) {
+              int check_alive, int keepalive_time, int heartbeat_interval) {
   struct app_monitor *app = NULL;
   unsigned int key;
 
@@ -378,12 +419,14 @@ int app_start(const char *name, const char *cmdline, const char *pidfile,
   app->last_alive = 0;
   app->dead_time = 0;
   app->check_alive = (check_alive) ? 1 : 0;
+  app->check_alive_time = keepalive_time;
+  app->heartbeat_interval = heartbeat_interval;
 
   if (g_manager_restarting) {
     /* if process exists, attach process*/
     if (app_getpid_from_pidfile(app) != 0 && app->pid_file[0] != 0) {
       time(&app->last_alive);
-      app->last_alive -= conf_watchdog_timeout + 5;
+      app->last_alive -= app->check_alive_time + 5;
       app->state = APP_PENDING;
       manager_log(MANAGER_LOG_INFO, "start app %s, pending \n", name);
     } else if (app_getpid_by_ps(app) != 0 && app->pid_file[0] == 0) {
@@ -637,7 +680,7 @@ int _recv_heartbeat(void) {
 
 int _app_alive(struct app_monitor *app) {
   time_t now;
-  int time_out = conf_watchdog_timeout;
+  int time_out = app->check_alive_time;
 
   if (app->pid > 0) {
     if (kill(app->pid, 0) != 0 && app->state != APP_PENDING) {

@@ -26,7 +26,7 @@ extern "C" {
 int manager_monitor_init(void);
 
 int app_start(const char *name, const char *cmdline, const char *pidfile,
-              int no_check);
+              int check_alive, int keepalive_time, int heartbeat_interval);
 
 int app_stop(const char *name, int gracefull);
 

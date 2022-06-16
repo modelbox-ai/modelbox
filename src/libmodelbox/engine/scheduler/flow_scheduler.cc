@@ -40,7 +40,15 @@ FlowScheduler::~FlowScheduler() {
 }
 
 Status FlowScheduler::Init(std::shared_ptr<Configuration> config,
+                           std::shared_ptr<StatisticsItem> stats,
                            std::shared_ptr<ThreadPool> thread_pool) {
+  stats_ = stats;
+  if (stats) {
+    stats_status_ = stats_->AddItem("status", std::string("initial", true));
+  } else {
+    stats_status_ = std::make_shared<StatisticsItem>();
+  }
+
   if (thread_pool == nullptr) {
     auto threads = config->GetUint32("graph.thread-num",
                                      std::thread::hardware_concurrency() * 2);
@@ -271,7 +279,7 @@ void FlowScheduler::WaitNodeFinish() {
   return;
 }
 
-void FlowScheduler::ShowScheduleStatus() {
+void FlowScheduler::CheckScheduleStatus(const bool &printlog) {
   // If the current status is normal, no information is printed. The logic for
   // determining abnormalities is as follows:
   // 1. If the node is running, it indicates that the current node has been
@@ -280,6 +288,7 @@ void FlowScheduler::ShowScheduleStatus() {
   // 2. The node is not in the running state, but the port contains data. The
   // possible cause is that the threads in the thread pool are exhausted.
   bool is_print_threadpool = false;
+  bool is_no_response = false;
   for (auto iter : node_port_map_) {
     auto node = iter.first;
     for (auto port_iter : iter.second) {
@@ -292,7 +301,13 @@ void FlowScheduler::ShowScheduleStatus() {
       // node is not running
       if (node_status == nodes_runing_status_.end() ||
           node_status->second == false) {
-        if (!port_iter->GetPort()->Empty()) {
+        if (port_iter->GetPort()->Empty()) {
+          continue;
+        }
+
+        is_no_response = true;
+
+        if (printlog) {
           MBLOG_WARN << "node:" << node->GetName()
                      << " is not running, but port:"
                      << port_iter->GetPort()->GetName()
@@ -302,7 +317,12 @@ void FlowScheduler::ShowScheduleStatus() {
           is_print_threadpool = true;
         }
       } else {
+        is_no_response = true;
+
         // node is running
+        if (printlog == false) {
+          continue;
+        }
         MBLOG_WARN << "node:" << node->GetName()
                    << " running long time, and port:"
                    << port_iter->GetPort()->GetName()
@@ -332,6 +352,7 @@ void FlowScheduler::ShowScheduleStatus() {
     MBLOG_INFO << "running_node_count: " << running_node_count_;
   }
 
+  is_no_response_ = is_no_response;
   check_count_++;
 }
 
@@ -343,16 +364,34 @@ Status FlowScheduler::RunImpl() {
   is_stop_ = false;
   is_wait_stop_ = false;
   bool has_print = false;
+  is_no_response_ = false;
   int timeout_count = 0;
+  time_t last_check_time = 0;
+  stats_status_->SetValue(std::string("running"));
+
   while (!is_stop_) {
+    if (is_no_response_) {
+      time_t currtime;
+      time(&currtime);
+      if (last_check_time != currtime) {
+        CheckScheduleStatus(false);
+        last_check_time = currtime;
+      }
+    }
+
     status = data_hub_->SelectActivePort(&active_port, check_timeout_);
     if (status == STATUS_TIMEDOUT) {
       // The system displays the current status information every 60 seconds if
       // the system is idle.
       if (!has_print && timeout_count >= max_check_timeout_count_) {
-        ShowScheduleStatus();
+        CheckScheduleStatus(!has_print);
         has_print = true;
         timeout_count = 0;
+        if (is_no_response_) {
+          stats_status_->SetValue(std::string("blocking"));
+        }
+      } else if (is_no_response_ == false) {
+        stats_status_->SetValue(std::string("idle"));
       }
 
       timeout_count++;
@@ -360,6 +399,11 @@ Status FlowScheduler::RunImpl() {
     } else if (status == STATUS_NODATA) {
       timeout_count = 0;
       continue;
+    }
+
+
+    if (timeout_count > 0 && is_no_response_ == false) {
+      stats_status_->SetValue(std::string("running"));
     }
 
     has_print = false;
@@ -379,6 +423,7 @@ Status FlowScheduler::RunImpl() {
 
   ShutdownNodes();
   WaitNodeFinish();
+  stats_status_->SetValue(std::string("shutdown"));
   return status;
 }
 
@@ -424,6 +469,10 @@ Status FlowScheduler::Wait(int64_t milliseconds, Status* ret_val) {
     if (status != std::future_status::ready) {
       return STATUS_TIMEDOUT;
     }
+  }
+
+  if (is_no_response_) {
+    return STATUS_NORESPONSE;
   }
 
   if (is_stop_ == false && milliseconds < 0) {

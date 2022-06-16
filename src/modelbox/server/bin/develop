@@ -169,7 +169,7 @@ For more details on security, please refer to the manual.
     appcmd="app -name \"modelbox\""
     appcmd="$appcmd -pidfile ${MODELBOX_PID_FILE}"
     appcmd="$appcmd --"
-    appcmd="$appcmd ${MODELBOX_BIN} -c ${MODELBOX_USER_CONF_FILE} -p ${MODELBOX_PID_FILE} -n modelbox"
+    appcmd="$appcmd ${MODELBOX_RUN_SCRIPT} start"
     echo "$appcmd" >> ${MODELBOX_MANAGER_USER_CONF_FILE}
 
 
@@ -266,11 +266,11 @@ setup_develop_mode() {
         return 1
     fi
 
-    restart_modelbox
+    stop_modelbox 2>&1 > /dev/null
 
-    $MODELBOX_RUN_SCRIPT status
     $MODELBOX_MANAGER_RUN_SCRIPT restart  2>&1 > /dev/null
     $MODELBOX_MANAGER_RUN_SCRIPT status
+    $MODELBOX_RUN_SCRIPT status
 }
 
 showhelp() {

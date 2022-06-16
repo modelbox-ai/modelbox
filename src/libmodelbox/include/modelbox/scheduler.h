@@ -48,12 +48,15 @@ class Scheduler {
   /**
    * @brief Init scheduler
    * @param config scheduler configuration
+   * @param stats scheduler stats
    * @param thread_pool thread pool for scheduler, if null, scheduler will
    * create its own thread pool
    * @return init result
    */
   virtual Status Init(std::shared_ptr<Configuration> config,
+                      std::shared_ptr<StatisticsItem> stats = nullptr,
                       std::shared_ptr<ThreadPool> thread_pool = nullptr) = 0;
+
 
   /**
    * @brief Build graph
