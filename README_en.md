@@ -47,4 +47,4 @@ ModelBox can run in either of the following modes: service-oriented and SDK.
 |Service-oriented|ModelBox is offered as an independent service that helps developers develop AI application. It provides service-based components for backend services, O&M tools, and Docker images.|
 |SDK|ModelBox provides development libraries for developers to extend and scale their applications for more performance-demanding inference needs, C++ and Python are supported.|
 
-To develop an AI application for inference, follow the procedures described in [First Application](http://modelbox-ai.com/modelbox-book/develop/first-app/first-app.html).
+To develop an AI application for inference, follow the procedures described in [First Application](https://modelbox-ai.com/modelbox-book/first-app/mnist.html).
