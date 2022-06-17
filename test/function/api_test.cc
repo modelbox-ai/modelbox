@@ -88,20 +88,17 @@ TEST_F(FlowGraphTest, AddFuncTest) {
   flow->Init(graph_desc_);
   flow->StartRun();
 
-  auto data_map = flow->CreateExternalDataMap();
-
-  auto bufferlist = data_map->CreateBufferList();
-  bufferlist->Build({10});
-  auto buffer = bufferlist->At(0);
+  auto stream_io = flow->CreateStreamIO();
+  auto buffer = stream_io->CreateBuffer();
+  buffer->Build(10);
   auto buffer_data = (uint8_t *)(buffer->MutableData());
   for (uint8_t i = 0; i < 10; ++i) {
     buffer_data[i] = i;
   }
-  data_map->Send("input1", bufferlist);
-  OutputBufferList output;
-  data_map->Recv(output);
-  ASSERT_EQ(output["output1"]->Size(), 1);
-  auto out_buffer = output["output1"]->At(0);
+  stream_io->Send("input1", buffer);
+
+  std::shared_ptr<Buffer> out_buffer;
+  stream_io->Recv("output1", out_buffer);
   std::string meta;
   out_buffer->Get("test_meta", meta);
   EXPECT_EQ(meta, "test_meta");

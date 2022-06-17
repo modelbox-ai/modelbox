@@ -510,6 +510,21 @@ std::shared_ptr<ExternalDataMap> Flow::CreateExternalDataMap() {
   return graph_->CreateExternalDataMap();
 }
 
+std::shared_ptr<FlowStreamIO> Flow::CreateStreamIO() {
+  if (graph_ == nullptr) {
+    MBLOG_ERROR << "graph is nullptr";
+    return nullptr;
+  }
+
+  auto external_data_map = graph_->CreateExternalDataMap();
+  if (external_data_map == nullptr) {
+    MBLOG_ERROR << "create external data for graph failed";
+    return nullptr;
+  }
+
+  return std::make_shared<FlowStreamIO>(external_data_map);
+}
+
 std::shared_ptr<Profiler> Flow::GetProfiler() { return profiler_; }
 
 std::string Flow::GetGraphId() const {

@@ -385,6 +385,67 @@ py::object BufferToPyObject(modelbox::Buffer &buffer) {
   throw std::runtime_error("invalid type");
 }
 
+void PyBufferToBuffer(std::shared_ptr<Buffer> buffer, const py::buffer &data) {
+  py::buffer_info info = data.request();
+  std::vector<size_t> i_shape;
+  for (auto &dim : info.shape) {
+    i_shape.push_back(dim);
+  }
+
+  if (info.shape.size() == 0) {
+    throw std::runtime_error("can not accept empty numpy.");
+  }
+
+  size_t bytes = Volume(i_shape) * info.itemsize;
+  buffer->BuildFromHost(info.ptr, bytes);
+  buffer->Set("shape", i_shape);
+  buffer->Set("type", TypeFromFormatStr(info.format));
+  buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
+}
+
+void StrToBuffer(std::shared_ptr<Buffer> buffer, const std::string &data) {
+  const char *s = data.c_str();
+  Py_ssize_t len = data.length();
+  buffer->BuildFromHost(const_cast<char *>(s), len);
+  buffer->SetGetBufferType(modelbox::BufferEnumType::STR);
+}
+
+void ListToBuffer(std::shared_ptr<Buffer> buffer, py::list data) {
+  std::vector<std::vector<size_t>> vec_shapes;
+  std::vector<size_t> sizes;
+  std::vector<void *> source_vec;
+  size_t total_bytes = 0;
+  std::string info_type;
+  for (auto &item : data) {
+    auto b = py::cast<py::buffer>(item);
+    py::buffer_info info = b.request();
+    if (info.ptr != nullptr) {
+      source_vec.push_back(info.ptr);
+    }
+
+    std::vector<size_t> i_shape;
+    for (auto &dim : info.shape) {
+      i_shape.push_back(dim);
+    }
+    vec_shapes.push_back(i_shape);
+    size_t bytes = Volume(i_shape) * info.itemsize;
+    total_bytes += bytes;
+    sizes.push_back(bytes);
+    info_type = info.format;
+  }
+
+  buffer->Build(total_bytes);
+  void *start = buffer->MutableData();
+  int offset = 0;
+  for (size_t i = 0; i < sizes.size(); ++i) {
+    memcpy_s((u_char *)start + offset, total_bytes, source_vec[i], sizes[i]);
+    offset += sizes[i];
+  }
+  buffer->Set("shape", vec_shapes);
+  buffer->Set("type", TypeFromFormatStr(info_type));
+  buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
+}
+
 typedef bool (*pInterTypeToPyTypeFunc)(std::size_t hash_code, Any *value,
                                        py::object &ret);
 
@@ -509,13 +570,13 @@ py::buffer_info ModelboxPyApiSetUpBufferDefBuffer(Buffer &buffer) {
   std::vector<size_t> buffer_shape;
   auto ret = buffer.Get("shape", buffer_shape);
   if (!ret) {
-    throw std::runtime_error("can not get buffer shape.");
+    buffer_shape.push_back(buffer.GetBytes());
   }
 
   modelbox::ModelBoxDataType type = MODELBOX_TYPE_INVALID;
   ret = buffer.Get("type", type);
   if (!ret) {
-    throw std::runtime_error("can not get buffer type.");
+    type = modelbox::ModelBoxDataType::MODELBOX_UINT8;
   }
 
   std::vector<ssize_t> shape(buffer_shape.size()), stride(buffer_shape.size());
@@ -579,72 +640,22 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
                .def_buffer(ModelboxPyApiSetUpBufferDefBuffer)
                .def(py::init([](std::shared_ptr<modelbox::Device> device,
                                 py::buffer b) {
-                      py::buffer_info info = b.request();
-                      std::vector<size_t> i_shape;
-                      for (auto &dim : info.shape) {
-                        i_shape.push_back(dim);
-                      }
-
-                      if (info.shape.size() == 0) {
-                        throw std::runtime_error("can not accept empty numpy.");
-                      }
-
-                      size_t bytes = Volume(i_shape) * info.itemsize;
                       auto buffer = std::make_shared<Buffer>(device);
-                      buffer->BuildFromHost(info.ptr, bytes);
-                      buffer->Set("shape", i_shape);
-                      buffer->Set("type", TypeFromFormatStr(info.format));
-                      buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
+                      PyBufferToBuffer(buffer, b);
                       return buffer;
                     }),
                     py::keep_alive<1, 2>())
                .def(py::init([](std::shared_ptr<modelbox::Device> device,
                                 const std::string &str) {
                       auto buffer = std::make_shared<Buffer>(device);
-                      const char *s = str.c_str();
-                      Py_ssize_t len = str.length();
-                      buffer->BuildFromHost(const_cast<char *>(s), len);
-                      buffer->SetGetBufferType(modelbox::BufferEnumType::STR);
+                      StrToBuffer(buffer, str);
                       return buffer;
                     }),
                     py::keep_alive<1, 2>())
                .def(py::init([](std::shared_ptr<modelbox::Device> device,
                                 py::list li) {
                       auto buffer = std::make_shared<Buffer>(device);
-                      std::vector<std::vector<size_t>> vec_shapes;
-                      std::vector<size_t> sizes;
-                      std::vector<void *> source_vec;
-                      size_t total_bytes = 0;
-                      std::string info_type;
-                      for (auto &item : li) {
-                        auto b = py::cast<py::buffer>(item);
-                        py::buffer_info info = b.request();
-                        if (info.ptr != nullptr) {
-                          source_vec.push_back(info.ptr);
-                        }
-
-                        std::vector<size_t> i_shape;
-                        for (auto &dim : info.shape) {
-                          i_shape.push_back(dim);
-                        }
-                        vec_shapes.push_back(i_shape);
-                        size_t bytes = Volume(i_shape) * info.itemsize;
-                        total_bytes += bytes;
-                        sizes.push_back(bytes);
-                        info_type = info.format;
-                      }
-
-                      buffer->Build(total_bytes);
-                      void *start = buffer->MutableData();
-                      int offset = 0;
-                      for (size_t i = 0; i < sizes.size(); ++i) {
-                        memcpy_s((u_char *)start + offset, total_bytes,
-                                 source_vec[i], sizes[i]);
-                        offset += sizes[i];
-                      }
-                      buffer->Set("shape", vec_shapes);
-                      buffer->Set("type", TypeFromFormatStr(info_type));
-                      buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
+                      ListToBuffer(buffer, li);
                       return buffer;
                     }),
                     py::keep_alive<1, 2>())
@@ -652,6 +663,11 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
                .def("as_object",
                     [](Buffer &buffer) -> py::object {
                       return BufferToPyObject(buffer);
+                    })
+               .def("__str__",
+                    [](Buffer &buffer) {
+                      return std::string((const char *)buffer.ConstData(),
+                                         buffer.GetBytes());
                     })
                .def("has_error", &modelbox::Buffer::HasError)
                .def("set_error", &modelbox::Buffer::SetError)
@@ -715,6 +731,12 @@ void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
              bl.PushBack(buffer);
            },
            py::keep_alive<1, 2>())
+      .def("push_back",
+           [](BufferList &bl, const std::string &data) {
+             auto buffer = std::make_shared<Buffer>(bl.GetDevice());
+             StrToBuffer(buffer, data);
+             bl.PushBack(buffer);
+           })
       .def("set",
            [](BufferList &bl, const std::string &key, py::object &obj) {
              for (auto &buffer : bl) {
@@ -1227,6 +1249,67 @@ void ModelboxPyApiSetUpFlowPortDesc(pybind11::module &m) {
       .def(py::init<const std::string &, const std::string &>())
       .def("get_node_name", &modelbox::FlowPortDesc::GetNodeName)
       .def("get_port_name", &modelbox::FlowPortDesc::GetPortName);
+}
+
+void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
+  py::class_<modelbox::FlowStreamIO, std::shared_ptr<modelbox::FlowStreamIO>>(
+      m, "FlowStreamIO")
+      .def(py::init<std::shared_ptr<ExternalDataMap>>())
+      .def("create_buffer", &modelbox::FlowStreamIO::CreateBuffer,
+           py::call_guard<py::gil_scoped_release>())
+      .def("create_buffer",
+           [](FlowStreamIO &self, const py::buffer &data) {
+             auto buffer = self.CreateBuffer();
+             PyBufferToBuffer(buffer, data);
+             return buffer;
+           })
+      .def(
+          "create_buffer",
+          [](FlowStreamIO &self, const std::string &data) {
+            auto buffer = self.CreateBuffer();
+            StrToBuffer(buffer, data);
+            return buffer;
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def("send", &modelbox::FlowStreamIO::Send,
+           py::call_guard<py::gil_scoped_release>())
+      .def("send",
+           [](FlowStreamIO &self, const std::string &input_name,
+              const py::buffer &data) {
+             auto buffer = self.CreateBuffer();
+             PyBufferToBuffer(buffer, data);
+             return self.Send(input_name, buffer);
+           })
+      .def(
+          "send",
+          [](FlowStreamIO &self, const std::string &input_name,
+             const std::string &data) {
+            auto buffer = self.CreateBuffer();
+            StrToBuffer(buffer, data);
+            return self.Send(input_name, buffer);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def("recv", &modelbox::FlowStreamIO::Recv,
+           py::call_guard<py::gil_scoped_release>())
+      .def(
+          "recv",
+          [](FlowStreamIO &self, const std::string &output_name,
+             size_t timeout) {
+            std::shared_ptr<Buffer> buffer;
+            self.Recv(output_name, buffer, timeout);
+            return buffer;
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "recv",
+          [](FlowStreamIO &self, const std::string &output_name) {
+            std::shared_ptr<Buffer> buffer;
+            self.Recv(output_name, buffer, 0);
+            return buffer;
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def("close_input", &modelbox::FlowStreamIO::CloseInput,
+           py::call_guard<py::gil_scoped_release>());
 }
 
 void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m) {

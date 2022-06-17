@@ -170,7 +170,7 @@ Status ExternalDataMapImpl::Recv(OutputBufferList& map_buffer_list,
   if (size == 0) {
     std::lock_guard<std::mutex> lock(session_state_lock_);
     if (!session_end_flag_) {
-      return STATUS_OK;
+      return STATUS_TIMEDOUT;
     }
 
     auto selector = selector_.lock();

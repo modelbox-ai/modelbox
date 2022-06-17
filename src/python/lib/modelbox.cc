@@ -177,6 +177,8 @@ void SetUpFlow(pybind11::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def("create_external_data_map", &modelbox::Flow::CreateExternalDataMap,
            py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
+      .def("create_stream_io", &modelbox::Flow::CreateStreamIO,
+           py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
       .def("start_run", &modelbox::Flow::StartRun,
            py::call_guard<py::gil_scoped_release>());
 }
@@ -199,6 +201,7 @@ PYBIND11_MODULE(_modelbox, m) {
   ModelboxPyApiSetUpFlowGraphDesc(m);
   ModelboxPyApiSetUpFlowNodeDesc(m);
   ModelboxPyApiSetUpFlowPortDesc(m);
+  ModelboxPyApiSetUpFlowStreamIO(m);
   ModelBoxPyApiSetUpSolution(m);
 
 #ifdef VERSION_INFO
