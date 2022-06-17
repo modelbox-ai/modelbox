@@ -21,6 +21,7 @@
 #include <modelbox/base/log.h>
 #include <modelbox/base/status.h>
 #include <modelbox/flow_graph_desc.h>
+#include <modelbox/flow_stream_io.h>
 #include <modelbox/flowunit.h>
 #include <modelbox/graph.h>
 #include <modelbox/profiler.h>
@@ -138,6 +139,12 @@ class Flow {
    * @return extern data
    */
   std::shared_ptr<ExternalDataMap> CreateExternalDataMap();
+
+  /**
+   * @brief Create stream io to send and recv stream data
+   * @return FlowStreamIO
+   */
+  std::shared_ptr<FlowStreamIO> CreateStreamIO();
 
   /**
    * @brief Get profiler

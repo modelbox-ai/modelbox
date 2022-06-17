@@ -127,8 +127,8 @@ modelbox::Status VideoDemuxerFlowUnitRetryTest::SendDataSourceCfg(
     std::this_thread::sleep_for(std::chrono::seconds(1));
     OutputBufferList output;
     auto ret = ext_data->Recv(output, 100);
-    EXPECT_EQ(ret, STATUS_OK);
-    if (ret != STATUS_OK) {
+    EXPECT_EQ(ret, STATUS_TIMEDOUT);
+    if (ret != STATUS_TIMEDOUT) {
       return STATUS_FAULT;
     }
   }
