@@ -51,3 +51,5 @@ if(CPPREST_FOUND)
 else()
     message(STATUS "Not found cpprest library, disable restful output broker plugin")
 endif()
+
+add_subdirectory(vcn_restful_source_parser)

@@ -14,41 +14,28 @@
  * limitations under the License.
  */
 
-#include "vcn_source_parser.h"
+#include "vcn_restful_source_parser.h"
 
-#include <dirent.h>
-#include <securec.h>
-#include <stdio.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <nlohmann/json.hpp>
-#include <string>
-
-#include "modelbox/base/utils.h"
-#include "modelbox/device/cpu/device_cpu.h"
-
-void RemoveFileCallback(std::string uri);
-
-VcnSourceParser::VcnSourceParser() {}
-VcnSourceParser::~VcnSourceParser() {}
-
-modelbox::Status VcnSourceParser::Init(
+modelbox::Status VcnRestfulSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   ReadConf(opts);
 
   ReadConfVcnCommon(opts, retry_enabled_, retry_interval_, retry_max_times_);
+
+  keep_alive_interval_ =
+      opts->GetInt32("vcn_keep_alive_interval_sec", keep_alive_interval_);
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status VcnSourceParser::Deinit() { return modelbox::STATUS_OK; }
+modelbox::Status VcnRestfulSourceParser::Deinit() {
+  return modelbox::STATUS_OK;
+}
 
-modelbox::Status VcnSourceParser::Parse(
+modelbox::Status VcnRestfulSourceParser::Parse(
     std::shared_ptr<modelbox::SessionContext> session_context,
     const std::string &config, std::string &uri,
     DestroyUriFunc &destroy_uri_func) {
-  modelbox::VcnInfo vcn_info;
+  modelbox::VcnRestfulInfo vcn_info;
   uri = "";
 
   // read info from cfg
@@ -58,13 +45,14 @@ modelbox::Status VcnSourceParser::Parse(
     return ret;
   }
 
-  auto vcn_client = modelbox::VcnClient::GetInstance();
+  auto vcn_client =
+      modelbox::VcnRestfulClient::GetInstance(keep_alive_interval_);
   if (nullptr == vcn_client) {
-    MBLOG_ERROR << "failed to get vcn client instance.";
+    MBLOG_ERROR << "failed to get vcn restful client instance.";
     return modelbox::STATUS_FAULT;
   }
 
-  std::shared_ptr<modelbox::VcnStream> stream;
+  std::shared_ptr<modelbox::VcnStreamRestful> stream;
   ret = vcn_client->AddVcnStream(vcn_info, stream);
   if (modelbox::STATUS_OK != ret) {
     MBLOG_ERROR << ret.Errormsg();
@@ -72,12 +60,9 @@ modelbox::Status VcnSourceParser::Parse(
   }
 
   uri = stream->GetUrl();
-  destroy_uri_func = [stream](const std::string &uri) {};
+  destroy_uri_func = [stream](const std::string &uri) {
+    MBLOG_ERROR << "destory " << uri;
+  };
 
   return modelbox::STATUS_OK;
-}
-
-modelbox::Status VcnSourceParser::GetVcnInfo(modelbox::VcnInfo &vcn_info,
-                                             const std::string &config) {
-  return modelbox::GetVcnInfo(vcn_info, config);
 }
