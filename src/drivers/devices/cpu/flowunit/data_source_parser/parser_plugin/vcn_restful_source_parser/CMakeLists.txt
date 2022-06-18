@@ -16,7 +16,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-set(PLUGIN_NAME "vcn_source")
+set(PLUGIN_NAME "vcn_restful_source")
 
 project(modelbox-flowunit-${UNIT_DEVICE}-${UNIT_NAME}-${PLUGIN_NAME})
 
@@ -30,8 +30,8 @@ include_directories(${LIBMODELBOX_BASE_INCLUDE})
 include_directories(${LIBMODELBOX_DEVICE_CPU_INCLUDE})
 include_directories(${MODELBOX_COMMON_INCLUDE})
 include_directories(${NLOHMANN_INCLUDE_DIR})
-include_directories(${VCN_INCLUDE_DIR})
 include_directories(${MODELBOX_COMMON_DRIVER_UTIL_INCLUDE})
+include_directories(${CPP_HTTPLIB_INCLUDE})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../vcn_common)
 
 set(MODELBOX_PLUGIN_SHARED modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}-${PLUGIN_NAME}-shared)
@@ -39,7 +39,7 @@ set(MODELBOX_PLUGIN_SOURCE_INCLUDE ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIS
 set(MODELBOX_PLUGIN_VCN_COMMON_LIST ${CMAKE_CURRENT_LIST_DIR}/../vcn_common/vcn_info.cc)
 
 add_library(${MODELBOX_PLUGIN_SHARED} SHARED ${MODELBOX_PLUGIN_SOURCE} ${MODELBOX_PLUGIN_VCN_COMMON_LIST})
- 
+
 set_target_properties(${MODELBOX_PLUGIN_SHARED} PROPERTIES 
     SOVERSION ${MODELBOX_VERSION_MAJOR}
     VERSION ${MODELBOX_VERSION_MAJOR}.${MODELBOX_VERSION_MINOR}.${MODELBOX_VERSION_PATCH}
@@ -50,9 +50,9 @@ target_link_libraries(${MODELBOX_PLUGIN_SHARED} ${MODELBOX_COMMON_LIBRARY})
 target_link_libraries(${MODELBOX_PLUGIN_SHARED} pthread)
 target_link_libraries(${MODELBOX_PLUGIN_SHARED} rt)
 target_link_libraries(${MODELBOX_PLUGIN_SHARED} dl)
-target_link_libraries(${MODELBOX_PLUGIN_SHARED} ${VCN_LIBRARIES})
 target_link_libraries(${MODELBOX_PLUGIN_SHARED} ${LIBMODELBOX_SHARED})
 target_link_libraries(${MODELBOX_PLUGIN_SHARED} ${MODELBOX_COMMON_SOURCE_CONTEXT_LIBRARY})
+target_link_libraries(${MODELBOX_PLUGIN_SHARED} ${CPP_HTTPLIB_STATIC_LIBRARIES})
 set_target_properties(${MODELBOX_PLUGIN_SHARED} PROPERTIES OUTPUT_NAME "modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}-${PLUGIN_NAME}")
 
 install(TARGETS ${MODELBOX_PLUGIN_SHARED} 

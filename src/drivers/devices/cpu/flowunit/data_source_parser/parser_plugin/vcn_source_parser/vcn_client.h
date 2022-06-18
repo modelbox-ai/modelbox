@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_VCN_CLIENT_H_
 #define MODELBOX_FLOWUNIT_VCN_CLIENT_H_
 
@@ -24,18 +23,10 @@
 #include <mutex>
 #include <vector>
 
+#include "vcn_info.h"
 #include "vcn_sdk_wrapper.h"
 
 namespace modelbox {
-
-typedef struct tag_VcnInfo {
-  std::string ip = "";
-  std::string port = "";
-  std::string user_name = "";
-  std::string password = "";
-  std::string camera_code = "";
-  uint32_t stream_type;
-} VcnInfo;
 
 class VcnAccount;
 class VcnStream;
@@ -60,7 +51,7 @@ class VcnClient {
    * @return  Successful or not
    */
   modelbox::Status AddVcnStream(VcnInfo &info,
-                              std::shared_ptr<VcnStream> &stream);
+                                std::shared_ptr<VcnStream> &stream);
 
   /**
    * @brief   Remove the vcn stream from VcnClient, and logout the responding
@@ -104,7 +95,7 @@ class VcnClient {
    * @return  Successful or not
    */
   modelbox::Status LoginVcnAccount(std::shared_ptr<const VcnAccount> account,
-                                 int32_t &session_id);
+                                   int32_t &session_id);
 
   /**
    * @brief   logout a vcn account
@@ -124,15 +115,7 @@ class VcnClient {
    * @return  Successful or not
    */
   modelbox::Status GetUrl(int32_t session_id, const std::string &camera_code,
-                        uint32_t stream_type, std::string &url);
-
-  /**
-   * @brief   Check whether the vcn info contains valid user name/password/ip
-   * and port.
-   * @param   info - in, vcn info.
-   * @return  true for valid, vice versa.
-   */
-  bool IsVcnInfoValid(const VcnInfo &info);
+                          uint32_t stream_type, std::string &url);
 
   /**
    * @brief   check whether the error can be solved by a RETRY.
@@ -148,18 +131,11 @@ class VcnClient {
   std::shared_ptr<VcnSdkWrapper> sdk_wrapper_;
 };
 
-class VcnAccount {
+class VcnAccount : public VcnAccountBase {
   friend class VcnClient;
 
  public:
-  VcnAccount(const VcnInfo &info)
-      : ip_(info.ip),
-        port_(info.port),
-        user_name_(info.user_name),
-        password_(info.password) {
-    streams_count_ = 0;
-    session_id_ = -1;
-  };
+  VcnAccount(const VcnInfo &info) : VcnAccountBase(info) { session_id_ = -1; };
 
   virtual ~VcnAccount(){};
   bool GetLoginState() {
@@ -167,83 +143,33 @@ class VcnAccount {
   };
 
   /**
-   * @brief   get vcn user name
-   * @return  user name
-   */
-  std::string GetUserName() const { return user_name_; };
-
-  /**
-   * @brief   get vcn user password
-   * @return  user password
-   */
-  std::string GetPassword() const { return password_; };
-
-  /**
-   * @brief   get vcn ip
-   * @return  vcn ip
-   */
-  std::string GetIp() const { return ip_; };
-
-  /**
-   * @brief   get vcn port
-   * @return  vcn port
-   */
-  std::string GetPort() const { return port_; };
-
-  /**
    * @brief   get vcn session id
    * @return  session id
    */
   int32_t GetSessionId() const { return session_id_; };
 
-  /**
-   * @brief   get vcn stream count
-   * @return  stream count
-   */
-  uint32_t GetStreamsCount() const { return streams_count_; };
-
  private:
   void SetSessionId(int32_t session_id) { session_id_ = session_id; };
-  void AddStream() { ++streams_count_; };
-  void RemoveStream() {
-    if (streams_count_ > 0) {
-      --streams_count_;
-    }
-  };
 
-  std::string ip_;
-  std::string port_;
-  std::string user_name_;
-  std::string password_;
   int32_t session_id_;
-  uint32_t streams_count_;
 };
 
-class VcnStream {
+class VcnStream : public VcnStreamBase {
   friend class modelbox::VcnClient;
 
  public:
   VcnStream(const std::string &url, const std::string &camera_code,
             const int32_t session_id, std::shared_ptr<VcnAccount> account)
-      : url_(url),
-        camera_code_(camera_code),
-        session_id_(session_id),
-        account_(account){};
+      : VcnStreamBase(url, camera_code),
+        account_(account),
+        session_id_(session_id){};
 
   virtual ~VcnStream(){};
 
-  /**
-   * @brief   get stream url
-   * @return  stream url
-   */
-  std::string GetUrl() { return url_; };
-
  private:
   std::shared_ptr<VcnAccount> GetAccount() { return account_; };
-  std::string url_;
-  std::string camera_code_;
-  int32_t session_id_{0};
   std::shared_ptr<VcnAccount> account_;
+  int32_t session_id_{0};
 };
 
 }  // namespace modelbox

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "vcn_client.h"
 
 #include <securec.h>
@@ -87,8 +86,8 @@ modelbox::Status VcnClient::DeInit() {
 }
 
 modelbox::Status VcnClient::GetUrl(int32_t session_id,
-                                 const std::string &camera_code,
-                                 uint32_t stream_type, std::string &url) {
+                                   const std::string &camera_code,
+                                   uint32_t stream_type, std::string &url) {
   std::string errmsg = "";
   if (session_id < 0 || camera_code.empty() || stream_type > STREAM_TYPE_MAX) {
     return {modelbox::STATUS_INVALID, "invalid parameters."};
@@ -143,7 +142,7 @@ bool VcnClient::NeedToRetry(const IVS_INT32 error_code) {
 }
 
 modelbox::Status VcnClient::AddVcnStream(VcnInfo &info,
-                                       std::shared_ptr<VcnStream> &stream) {
+                                         std::shared_ptr<VcnStream> &stream) {
   std::string errmsg = "";
   const std::string errmsg_prefix = "Failed to add vcn stream: ";
   if (!IsVcnInfoValid(info)) {
@@ -326,11 +325,6 @@ modelbox::Status VcnClient::LogoutVcnAccount(
   MBLOG_INFO << "Successfully logout, session id: " << session_id
              << ", user name: " << account->GetUserName();
   return modelbox::STATUS_OK;
-}
-
-bool VcnClient::IsVcnInfoValid(const VcnInfo &info) {
-  return (!(info.user_name.empty() || info.password.empty() ||
-            info.ip.empty() || info.port.empty()));
 }
 
 }  // namespace modelbox
