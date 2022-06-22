@@ -85,8 +85,9 @@ modelbox::Status PythonFlowUnit::Open(
 
     sys.attr("path").cast<py::list>().append(python_path);
 
-    auto python_class =
-        py::module::import(entry_list[0].c_str()).attr(entry_list[1].c_str());
+    auto python_module = py::module_::import(entry_list[0].c_str());
+    python_module.reload();
+    auto python_class = python_module.attr(entry_list[1].c_str());
     obj_ = python_class();
     python_process_ = obj_.attr("process");
     python_data_pre_ = obj_.attr("data_pre");
