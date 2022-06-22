@@ -132,6 +132,27 @@ format = "graphviz"
             if string_list != ["TEST1", "TEST2", "TEST3"]:
                 return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid string list")
 
+            int_list2 = buffer.get("list2_int_test")
+            if int_list2 != [[1, 2], [3, 4]]:
+                return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid 2D int list")
+
+            float_list2 = buffer.get("list2_float_test")
+            if float_list2 != [[1.1, 2.2], [3.3, 4.4]]:
+                return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid 2D float list")
+
+            bool_list2 = buffer.get("list2_bool_test")
+            if bool_list2 != [[True, False], [False, True]]:
+                return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid 2D bool list")
+
+            string_list2 = buffer.get("list2_string_test")
+            if string_list2 != [["hello", "world"], ["good", "bad"]]:
+                return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid 2D string list")
+
+            np_set_test = np.array([[1, 2 ,3], [11, 12, 13]])
+            np_get_test = buffer.get("np_test")
+            if not (np_set_test == np_get_test).all():
+                return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid np test")
+
             try:
                 dict_test = buffer.get("map_test")
             except ValueError as err:

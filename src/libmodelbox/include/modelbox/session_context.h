@@ -44,9 +44,10 @@ class SessionContext {
    * @brief Set private data to session context
    * @param key private data key
    * @param private_content private data
+   * @param type_id private data typeid
    */
-  void SetPrivate(const std::string &key,
-                  std::shared_ptr<void> private_content);
+  void SetPrivate(const std::string &key, std::shared_ptr<void> private_content,
+                  std::size_t type_id = 0);
 
   /**
    * @brief Get private data from session context
@@ -54,6 +55,13 @@ class SessionContext {
    * @return private data
    */
   std::shared_ptr<void> GetPrivate(const std::string &key);
+
+  /**
+   * @brief Get private data typeid from session context
+   * @param key private data key
+   * @return private data typeid
+   */
+  std::size_t GetPrivateType(const std::string &key);
 
   /**
    * @brief Set session id
@@ -90,6 +98,7 @@ class SessionContext {
  private:
   std::mutex private_map_lock_;
   std::unordered_map<std::string, std::shared_ptr<void>> private_map_;
+  std::unordered_map<std::string, std::size_t> private_map_type_;
   std::string session_id_;
   std::shared_ptr<Configuration> config_;
   std::shared_ptr<FlowUnitError> error_;
