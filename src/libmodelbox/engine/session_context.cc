@@ -45,9 +45,11 @@ SessionContext::~SessionContext() {
 };
 
 void SessionContext::SetPrivate(const std::string &key,
-                                std::shared_ptr<void> private_content) {
+                                std::shared_ptr<void> private_content,
+                                std::size_t type_id) {
   std::lock_guard<std::mutex> lock(private_map_lock_);
   private_map_[key] = private_content;
+  private_map_type_[key] = type_id;
 };
 
 void SessionContext::SetSessionId(const std::string &session_id) {
@@ -86,6 +88,16 @@ std::shared_ptr<void> SessionContext::GetPrivate(const std::string &key) {
   }
 
   return private_map_[key];
+};
+
+std::size_t SessionContext::GetPrivateType(const std::string &key) {
+  std::lock_guard<std::mutex> lock(private_map_lock_);
+  auto iter = private_map_type_.find(key);
+  if (iter == private_map_type_.end()) {
+    return 0;
+  }
+
+  return private_map_type_[key];
 };
 
 }  // namespace modelbox

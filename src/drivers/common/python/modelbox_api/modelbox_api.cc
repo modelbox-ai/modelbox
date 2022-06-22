@@ -116,48 +116,167 @@ modelbox::ModelBoxDataType TypeFromFormatStr(const std::string &format) {
   return iter->second;
 }
 
-typedef bool (*pBufferTypeChangeFunc)(Buffer &, const std::string &, py::object,
-                                      py::object);
-
-template <typename PyType, typename FlowType>
-bool BufferSet(Buffer &buffer, const std::string &key, py::object set_obj,
-               py::object cast_obj) {
-  if (py::isinstance<PyType>(set_obj)) {
-    buffer.Set(key, cast_obj.cast<FlowType>());
-    return true;
+class NumpyInfo {
+ public:
+  NumpyInfo(ssize_t itemsize, std::string format, void *ptr,
+            std::vector<ssize_t> shape, std::vector<ssize_t> strides)
+      : shape_(shape), strides_(strides), itemsize_(itemsize) {
+    ssize_t bytes = std::accumulate(shape_.begin(), shape_.end(), (ssize_t)1,
+                        std::multiplies<ssize_t>()) * itemsize_;
+    m_data_ = std::unique_ptr<char[]>(new char[bytes]);
+    memcpy_s(m_data_.get(), bytes, ptr, bytes);
+    dtype_ = TypeFromFormatStr(format);
   }
 
+  NumpyInfo(const NumpyInfo &obj) {
+    shape_ = obj.Shape();
+    strides_ = obj.Strides();
+    itemsize_ = obj.ItemSize();
+    ssize_t bytes = std::accumulate(shape_.begin(), shape_.end(), (ssize_t)1,
+                        std::multiplies<ssize_t>()) * itemsize_;
+    m_data_ = std::unique_ptr<char[]>(new char[bytes]);
+    memcpy_s(m_data_.get(), bytes, obj.Data(), bytes);
+    dtype_ = obj.Type();
+  }
+  modelbox::ModelBoxDataType Type() const { return dtype_; }
+  std::vector<ssize_t> Shape() const { return shape_; }
+  std::vector<ssize_t> Strides() const { return strides_; }
+  void *Data() const { return (void *)m_data_.get(); }
+  std::size_t ItemSize() const { return itemsize_; }
+
+ private:
+  std::vector<ssize_t> shape_;
+  std::vector<ssize_t> strides_;
+  modelbox::ModelBoxDataType dtype_;
+  ssize_t itemsize_;
+  std::unique_ptr<char[]> m_data_;
+};
+
+template <typename DataType, typename PyType, typename CType>
+bool DataSet(DataType &data, const std::string &key, py::object set_obj,
+             py::object cast_obj) {
+  if (!py::isinstance<PyType>(set_obj)) {
+    return false;
+  }
+  if (auto buffer = dynamic_cast<Buffer *>(&data)) {
+    buffer->Set(key, cast_obj.cast<CType>());
+  } else if (auto session_context = dynamic_cast<SessionContext *>(&data)) {
+    auto c_context = std::make_shared<CType>(cast_obj.cast<CType>());
+    auto c_type = typeid(CType).hash_code();
+    session_context->SetPrivate(key, c_context, c_type);
+  } else {
+    return false;
+  }
+  return true;
+}
+
+typedef bool (*pDataGetFunc)(std::size_t hash_code, void *, py::object &ret);
+
+template <typename CType, typename PyType>
+bool DataGet(std::size_t hash_code, void *value, py::object &ret) {
+  if (typeid(CType).hash_code() == hash_code) {
+    ret = py::cast(*((CType *)(value)));
+    return true;
+  }
   return false;
 }
 
-static pBufferTypeChangeFunc kChangeFunc[] = {
-    BufferSet<py::float_, double>,
-    BufferSet<ModelBoxDataType, ModelBoxDataType>,
-    BufferSet<py::str, std::string>, BufferSet<py::bool_, bool>,
-    BufferSet<py::int_, long>};
+template <typename DataType, typename FuncType>
+bool SetAttributes(DataType &context, const std::string &key, py::object obj,
+                   std::vector<FuncType> &BaseObjectFunc,
+                   std::vector<FuncType> &List1DObjectFunc,
+                   std::vector<FuncType> &List2DObjectFunc) {
+  auto setup_data = [&](std::vector<FuncType> &func_list, py::object set_obj,
+                        py::object cast_obj) {
+    for (auto &func : func_list) {
+      if (func(context, key, set_obj, cast_obj)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  if (setup_data(BaseObjectFunc, obj, obj)) {
+    return true;
+  }
+  if (py::isinstance<py::list>(obj)) {
+    py::list obj_list_all = obj.cast<py::list>();
+    if (py::isinstance<py::list>(obj_list_all[0])) {
+      py::list obj_list_1d = obj_list_all[0].cast<py::list>();
+      if (setup_data(List2DObjectFunc, obj_list_1d[0], obj_list_all)) {
+        return true;
+      }
+    } else {
+      if (setup_data(List1DObjectFunc, obj_list_all[0], obj_list_all)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
-static pBufferTypeChangeFunc kListChangeFunc[] = {
-    BufferSet<py::float_, std::vector<double>>,
-    BufferSet<py::str, std::vector<std::string>>,
-    BufferSet<py::bool_, std::vector<bool>>,
-    BufferSet<py::int_, std::vector<long>>};
-
-void PythonBufferSet(Buffer &buffer, const std::string &key, py::object &obj) {
-  for (auto &pfunc : kChangeFunc) {
-    if (pfunc(buffer, key, obj, obj)) {
-      return;
+template <typename FuncType>
+bool GetAttributes(void *value, std::size_t value_type,
+                   std::vector<FuncType> func_list, py::object &ret_data) {
+  for (auto &pfunc : func_list) {
+    if (pfunc(value_type, value, ret_data)) {
+      return true;
     }
   }
 
-  if (py::isinstance<py::list>(obj)) {
-    py::list obj_list = obj.cast<py::list>();
-    for (auto &pfunc : kListChangeFunc) {
-      if (pfunc(buffer, key, obj_list[0], obj_list)) {
-        return;
-      }
+  if (typeid(NumpyInfo).hash_code() == value_type) {
+    auto *data = (NumpyInfo *)(value);
+    if (data == nullptr) {
+      MBLOG_ERROR << "data is nullptr.";
     }
+    auto buffer_info =
+        py::buffer_info((void *)(data->Data()), data->ItemSize(),
+                        FormatStrFromType(data->Type()), data->Shape().size(),
+                        data->Shape(), data->Strides());
+    ret_data = py::array(buffer_info);
+    return true;
+  }
+  if (typeid(py::object).hash_code() == value_type) {
+    ret_data = *((py::object *)(value));
+    return true;
+  }
+  return false;
+}
 
-    buffer.Set(key, obj_list);
+/*******************************BufferSet Begin**************************/
+typedef bool (*pBufferPyTypeToCTypeFunc)(Buffer &, const std::string &,
+                                         py::object, py::object);
+static std::vector<pBufferPyTypeToCTypeFunc> kBufferBaseObjectFunc = {
+    DataSet<Buffer, py::float_, double>,
+    DataSet<Buffer, ModelBoxDataType, ModelBoxDataType>,
+    DataSet<Buffer, py::str, std::string>, DataSet<Buffer, py::bool_, bool>,
+    DataSet<Buffer, py::int_, long>};
+
+static std::vector<pBufferPyTypeToCTypeFunc> kBufferLIst1DObjectFunc = {
+    DataSet<Buffer, py::float_, std::vector<double>>,
+    DataSet<Buffer, py::str, std::vector<std::string>>,
+    DataSet<Buffer, py::bool_, std::vector<bool>>,
+    DataSet<Buffer, py::int_, std::vector<long>>};
+
+static std::vector<pBufferPyTypeToCTypeFunc> kBufferLIst2DObjectFunc = {
+    DataSet<Buffer, py::float_, std::vector<std::vector<double>>>,
+    DataSet<Buffer, py::str, std::vector<std::vector<std::string>>>,
+    DataSet<Buffer, py::bool_, std::vector<std::vector<bool>>>,
+    DataSet<Buffer, py::int_, std::vector<std::vector<long>>>};
+
+void BufferSetAttributes(Buffer &buffer, const std::string &key,
+                         py::object &obj) {
+  if (SetAttributes<Buffer, pBufferPyTypeToCTypeFunc>(
+          buffer, key, obj, kBufferBaseObjectFunc, kBufferLIst1DObjectFunc,
+          kBufferLIst2DObjectFunc)) {
+    return;
+  }
+  if (py::isinstance<py::buffer>(obj)) {
+    py::buffer obj_buffer = obj.cast<py::buffer>();
+    py::buffer_info buffer_info = obj_buffer.request();
+    NumpyInfo numpy_info(buffer_info.itemsize, buffer_info.format,
+                          buffer_info.ptr, buffer_info.shape,
+                          buffer_info.strides);
+    buffer.Set(key, numpy_info);
     return;
   }
 
@@ -165,6 +284,190 @@ void PythonBufferSet(Buffer &buffer, const std::string &key, py::object &obj) {
                               py::str(obj).cast<std::string>() + " for key " +
                               key);
 }
+/*******************************BufferSet End*******************************/
+
+/*******************************BufferGet Begin*****************************/
+
+static std::vector<pDataGetFunc> kBufferObjectConvertFunc = {
+    DataGet<ModelBoxDataType, ModelBoxDataType>,
+    DataGet<int, py::int_>,
+    DataGet<unsigned int, py::int_>,
+    DataGet<long, py::int_>,
+    DataGet<unsigned long, py::int_>,
+    DataGet<char, py::int_>,
+    DataGet<unsigned char, py::int_>,
+    DataGet<float, py::float_>,
+    DataGet<double, py::float_>,
+    DataGet<std::string, py::str>,
+    DataGet<bool, py::bool_>,
+
+    DataGet<std::vector<int>, py::list>,
+    DataGet<std::vector<unsigned int>, py::list>,
+    DataGet<std::vector<long>, py::list>,
+    DataGet<std::vector<unsigned long>, py::list>,
+    DataGet<std::vector<char>, py::list>,
+    DataGet<std::vector<unsigned char>, py::list>,
+    DataGet<std::vector<float>, py::list>,
+    DataGet<std::vector<double>, py::list>,
+    DataGet<std::vector<std::string>, py::list>,
+    DataGet<std::vector<bool>, py::list>,
+
+    DataGet<std::vector<std::vector<float>>, py::list>,
+    DataGet<std::vector<std::vector<double>>, py::list>,
+    DataGet<std::vector<std::vector<int>>, py::list>,
+    DataGet<std::vector<std::vector<unsigned int>>, py::list>,
+    DataGet<std::vector<std::vector<long>>, py::list>,
+    DataGet<std::vector<std::vector<unsigned long>>, py::list>,
+    DataGet<std::vector<std::vector<std::string>>, py::list>,
+    DataGet<std::vector<std::vector<bool>>, py::list>,};
+
+py::object BufferGetAttributes(Buffer &buffer, const std::string &key) {
+  auto ret = buffer.Get(key);
+  if (!std::get<1>(ret)) {
+    throw std::invalid_argument("can not find buffer meta: " + key);
+  }
+  auto *data = std::get<0>(ret);
+  auto value_type = (std::size_t)(data->type().hash_code());
+  auto *value = any_cast<void *>(data);
+  py::object ret_data;
+
+  if (GetAttributes(value, value_type, kBufferObjectConvertFunc, ret_data)) {
+    return ret_data;
+  }
+  throw std::invalid_argument("invalid data type " + 
+                              std::string(data->type().name()) +
+                              " for buffer meta " + key);
+}
+/*******************************BufferGet End*****************************/
+
+/***************************ConfigurationSet Begin************************/
+typedef bool (*pConfigurationPyTypeToCTypeFunc)(Configuration &config,
+                                                const std::string &key,
+                                                py::object set_obj,
+                                                py::object cast_obj);
+
+template <typename PyType, typename CType>
+bool ConfigSet(Configuration &config, const std::string &key,
+               py::object set_obj, py::object cast_obj) {
+  if (py::isinstance<PyType>(set_obj)) {
+    config.SetProperty(key, cast_obj.cast<CType>());
+    return true;
+  }
+
+  return false;
+}
+
+static std::vector<pConfigurationPyTypeToCTypeFunc>
+    kConfigurationBaseObjectFunc = {
+        ConfigSet<py::float_, double>, ConfigSet<py::str, std::string>,
+        ConfigSet<py::bool_, bool>, ConfigSet<py::int_, long>};
+
+static std::vector<pConfigurationPyTypeToCTypeFunc>
+    kConfigurationListObjectFunc = {
+        ConfigSet<py::float_, std::vector<double>>,
+        ConfigSet<py::str, std::vector<std::string>>,
+        ConfigSet<py::bool_, std::vector<bool>>,
+        ConfigSet<py::int_, std::vector<long>>};
+static std::vector<pConfigurationPyTypeToCTypeFunc>
+    kConfigurationList2DObjectFunc = {};
+void ConfigurationSetAttributes(Configuration &config, const std::string &key,
+                                py::object obj) {
+  if (SetAttributes<Configuration, pConfigurationPyTypeToCTypeFunc>(
+          config, key, obj, kConfigurationBaseObjectFunc,
+          kConfigurationListObjectFunc, kConfigurationList2DObjectFunc)) {
+    return;
+  }
+  throw std::invalid_argument("invalid data type " +
+                              py::str(obj).cast<std::string>() + " for key " +
+                              key);
+}
+/***************************ConfigurationSet End************************/
+
+/***************************DataContextSet Begin************************/
+void DataContextSetAttributes(DataContext &data_context, const std::string &key,
+                              py::object obj) {
+  obj.inc_ref();
+  auto py_context = std::make_shared<py::object>(obj);
+  data_context.SetPrivate(key, py_context);
+}
+/***************************DataContextSet End**************************/
+
+/***************************DataContextGet Begin************************/
+py::object DataContextGetAttributes(DataContext &data_context,
+                                    const std::string &key) {
+  auto *value = data_context.GetPrivate(key).get();
+  return *((py::object *)(value));
+}
+/***************************DataContextGet End*****************************/
+
+/***************************SessionContextSet Start************************/
+
+typedef bool (*pSessionContextPyTypeToCTypeFunc)(SessionContext &,
+                                                 const std::string &,
+                                                 py::object, py::object);
+
+static std::vector<pSessionContextPyTypeToCTypeFunc>
+    kSessionContextBaseObjectFunc = {
+        DataSet<SessionContext, py::float_, double>,
+        DataSet<SessionContext, py::str, std::string>,
+        DataSet<SessionContext, py::bool_, bool>,
+        DataSet<SessionContext, py::int_, long>};
+
+static std::vector<pSessionContextPyTypeToCTypeFunc>
+    kSessionContextList1DObjectFunc = {
+        DataSet<SessionContext, py::float_, std::vector<double>>,
+        DataSet<SessionContext, py::str, std::vector<std::string>>,
+        DataSet<SessionContext, py::bool_, std::vector<bool>>,
+        DataSet<SessionContext, py::int_, std::vector<long>>};
+
+static std::vector<pSessionContextPyTypeToCTypeFunc>
+    kSessionContextList2DObjectFunc = {
+        DataSet<SessionContext, py::float_, std::vector<std::vector<double>>>,
+        DataSet<SessionContext, py::str, std::vector<std::vector<std::string>>>,
+        DataSet<SessionContext, py::bool_, std::vector<std::vector<bool>>>,
+        DataSet<SessionContext, py::int_, std::vector<std::vector<long>>>};
+
+void SessionContextSetAttributes(SessionContext &session_context,
+                                 const std::string &key, py::object obj) {
+  if (SetAttributes<SessionContext, pSessionContextPyTypeToCTypeFunc>(
+          session_context, key, obj, kSessionContextBaseObjectFunc,
+          kSessionContextList1DObjectFunc, kSessionContextList2DObjectFunc)) {
+    return;
+  }
+  if (py::isinstance<py::buffer>(obj)) {
+    py::buffer obj_buffer = obj.cast<py::buffer>();
+    auto buffer_info = obj_buffer.request();
+    auto buffer_context = std::make_shared<NumpyInfo>(
+        buffer_info.itemsize, buffer_info.format, buffer_info.ptr,
+        buffer_info.shape, buffer_info.strides);
+    auto buffer_type = typeid(NumpyInfo).hash_code();
+    session_context.SetPrivate(key, buffer_context, buffer_type);
+    return;
+  }
+  obj.inc_ref();
+  auto py_context = std::make_shared<py::object>(obj);
+  auto py_type = typeid(py::object).hash_code();
+  session_context.SetPrivate(key, py_context, py_type);
+}
+/***************************SessionContextSet End**************************/
+
+/***************************SessionContextGet Start************************/
+
+static std::vector<pDataGetFunc> kSessionContextObjectConvertFunc =
+    kBufferObjectConvertFunc;
+py::object SessionContextGetAttributes(SessionContext &session_context,
+                                       const std::string &key) {
+  py::object ret_data;
+  auto *value = session_context.GetPrivate(key).get();
+  auto value_type = session_context.GetPrivateType(key);
+  if (GetAttributes(value, value_type, kSessionContextObjectConvertFunc,
+                    ret_data)) {
+    return ret_data;
+  }
+  throw std::invalid_argument("invalid data type " + key);
+}
+
+/***************************SessionContextGet End************************/
 
 void ModelboxPyApiSetUpLog(pybind11::module &m) {
   m.def("debug", FlowUnitPythonLog::Debug);
@@ -239,30 +542,6 @@ void ModelboxPyApiSetUpStatus(pybind11::module &m) {
       .value("STATUS_EOF", STATUS_EOF);
 }
 
-typedef bool (*pConfigSetFunc)(Configuration &config, const std::string &key,
-                               py::object set_obj, py::object cast_obj);
-
-template <typename PyType, typename FlowType>
-bool ConfigSet(Configuration &config, const std::string &key,
-               py::object set_obj, py::object cast_obj) {
-  if (py::isinstance<PyType>(set_obj)) {
-    config.SetProperty(key, cast_obj.cast<FlowType>());
-    return true;
-  }
-
-  return false;
-}
-
-static pConfigSetFunc kConfigFunc[] = {
-    ConfigSet<py::float_, double>, ConfigSet<py::str, std::string>,
-    ConfigSet<py::bool_, bool>, ConfigSet<py::int_, long>};
-
-static pConfigSetFunc kConfigListFunc[] = {
-    ConfigSet<py::float_, std::vector<double>>,
-    ConfigSet<py::str, std::vector<std::string>>,
-    ConfigSet<py::bool_, std::vector<bool>>,
-    ConfigSet<py::int_, std::vector<long>>};
-
 void ModelboxPyApiSetUpConfiguration(pybind11::module &m) {
   py::class_<modelbox::Configuration, std::shared_ptr<modelbox::Configuration>>(
       m, "Configuration", py::module_local())
@@ -285,24 +564,7 @@ void ModelboxPyApiSetUpConfiguration(pybind11::module &m) {
            py::arg("key"), py::arg("default") = py::make_tuple())
       .def("set", [](modelbox::Configuration &config, const std::string &key,
                      py::object obj) {
-        for (auto &pfunc : kConfigFunc) {
-          if (pfunc(config, key, obj, obj)) {
-            return;
-          }
-        }
-
-        if (py::isinstance<py::list>(obj)) {
-          py::list obj_list = obj.cast<py::list>();
-          for (auto &pfunc : kConfigListFunc) {
-            if (pfunc(config, key, obj_list[0], obj_list)) {
-              return;
-            }
-          }
-        }
-
-        throw std::invalid_argument("invalid data type " +
-                                    py::str(obj).cast<std::string>() +
-                                    " for key " + key);
+        ConfigurationSetAttributes(config, key, obj);
       });
 }
 
@@ -446,101 +708,6 @@ void ListToBuffer(std::shared_ptr<Buffer> buffer, py::list data) {
   buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
 }
 
-typedef bool (*pInterTypeToPyTypeFunc)(std::size_t hash_code, Any *value,
-                                       py::object &ret);
-
-template <typename InterTyper, typename PyType>
-bool InterTypeToPyType(std::size_t hash_code, Any *value, py::object &ret) {
-  if (typeid(InterTyper).hash_code() == hash_code) {
-    auto *data = any_cast<InterTyper>(value);
-    if (data == nullptr) {
-      return false;
-    }
-    ret = py::cast(*data);
-    return true;
-  }
-
-  return false;
-}
-
-template <typename InterTyper, typename PyType>
-bool InterTypeToPyListType(std::size_t hash_code, Any *value, py::object &ret) {
-  if (typeid(std::vector<InterTyper>).hash_code() == hash_code) {
-    auto *data = any_cast<std::vector<InterTyper>>(value);
-    if (data == nullptr) {
-      return false;
-    }
-
-    py::list li;
-    for_each(data->begin(), data->end(),
-             [&li](const InterTyper &val) { li.append(val); });
-    ret = li;
-    return true;
-  }
-
-  return false;
-}
-
-template <typename InterTyper, typename PyType>
-bool InterTypeToPyListInListType(std::size_t hash_code, Any *value,
-                                 py::object &ret) {
-  if (typeid(std::vector<std::vector<InterTyper>>).hash_code() == hash_code) {
-    auto *data = any_cast<std::vector<std::vector<InterTyper>>>(value);
-    if (data == nullptr) {
-      MBLOG_ERROR << "data is nullptr.";
-      return false;
-    }
-
-    py::list li;
-    for_each(data->begin(), data->end(),
-             [&li](const std::vector<InterTyper> &val) {
-               py::list item_li;
-               for (const auto &item : val) {
-                 item_li.append(item);
-               }
-               li.append(item_li);
-             });
-    ret = li;
-    return true;
-  }
-
-  return false;
-}
-
-static pInterTypeToPyTypeFunc kTypeFunc[] = {
-    InterTypeToPyType<ModelBoxDataType, ModelBoxDataType>,
-    InterTypeToPyType<int, py::int_>,
-    InterTypeToPyType<unsigned int, py::int_>,
-    InterTypeToPyType<long, py::int_>,
-    InterTypeToPyType<unsigned long, py::int_>,
-    InterTypeToPyType<char, py::int_>,
-    InterTypeToPyType<unsigned char, py::int_>,
-    InterTypeToPyType<float, py::float_>,
-    InterTypeToPyType<double, py::float_>,
-    InterTypeToPyType<std::string, py::str>,
-    InterTypeToPyType<bool, py::bool_>};
-
-static pInterTypeToPyTypeFunc kListTypeFunc[] = {
-    InterTypeToPyListType<int, py::list>,
-    InterTypeToPyListType<unsigned int, py::list>,
-    InterTypeToPyListType<long, py::list>,
-    InterTypeToPyListType<unsigned long, py::list>,
-    InterTypeToPyListType<char, py::list>,
-    InterTypeToPyListType<unsigned char, py::list>,
-    InterTypeToPyListType<float, py::list>,
-    InterTypeToPyListType<double, py::list>,
-    InterTypeToPyListType<std::string, py::list>,
-    InterTypeToPyListType<bool, py::list>};
-
-static pInterTypeToPyTypeFunc kListInListTypeFunc[] = {
-    InterTypeToPyListInListType<float, py::list>,
-    InterTypeToPyListInListType<double, py::list>,
-    InterTypeToPyListInListType<int, py::list>,
-    InterTypeToPyListInListType<unsigned int, py::list>,
-    InterTypeToPyListInListType<long, py::list>,
-    InterTypeToPyListInListType<unsigned long, py::list>,
-};
-
 void ModelboxPyApiSetUpDevice(pybind11::module &m) {
   py::class_<modelbox::Device, std::shared_ptr<modelbox::Device>>(
       m, "Device", py::module_local())
@@ -597,39 +764,6 @@ py::buffer_info ModelboxPyApiSetUpBufferDefBuffer(Buffer &buffer) {
                          FormatStrFromType(type), shape.size(), shape, stride);
 }
 
-py::object ModelboxPyApiSetUpBufferDefGet(Buffer &buffer,
-                                          const std::string &key) {
-  auto ret = buffer.Get(key);
-  if (!std::get<1>(ret)) {
-    throw std::invalid_argument("can not find buffer meta: " + key);
-  }
-
-  auto *value = std::get<0>(ret);
-  auto hash_code = value->type().hash_code();
-  py::object ret_data;
-  for (auto &pfunc : kTypeFunc) {
-    if (pfunc(hash_code, value, ret_data)) {
-      return ret_data;
-    }
-  }
-
-  for (auto &pfunc : kListTypeFunc) {
-    if (pfunc(hash_code, value, ret_data)) {
-      return ret_data;
-    }
-  }
-
-  for (auto &pfunc : kListInListTypeFunc) {
-    if (pfunc(hash_code, value, ret_data)) {
-      return ret_data;
-    }
-  }
-
-  throw std::invalid_argument("invalid data type " +
-                              std::string(value->type().name()) +
-                              " for buffer meta " + key);
-}
-
 void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
   using namespace pybind11::literals;
 
@@ -681,9 +815,10 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
                       buffer.CopyMeta(other_ptr);
                     })
                .def("set",
-                    [](Buffer &buffer, const std::string &key,
-                       py::object &obj) { PythonBufferSet(buffer, key, obj); })
-               .def("get", ModelboxPyApiSetUpBufferDefGet);
+                    [](Buffer &buffer, const std::string &key, py::object &obj) {
+                      BufferSetAttributes(buffer, key, obj);
+                    })
+               .def("get", BufferGetAttributes);
 
   ModelboxPyApiSetUpDataType(h);
 }
@@ -740,7 +875,7 @@ void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
       .def("set",
            [](BufferList &bl, const std::string &key, py::object &obj) {
              for (auto &buffer : bl) {
-               PythonBufferSet(*buffer, key, obj);
+               BufferSetAttributes(*buffer, key, obj);
              }
            })
       .def("set_error", &modelbox::BufferList::SetError)
@@ -869,6 +1004,14 @@ void ModelboxPyApiSetUpSessionContext(pybind11::module &m) {
 
              return *((std::string *)(data.get()));
            })
+      .def("set_private",
+           [](SessionContext &ctx, const std::string &key, py::object &obj) {
+             SessionContextSetAttributes(ctx, key, obj);
+           })
+      .def("get_private",
+           [](SessionContext &ctx, const std::string &key) {
+             return SessionContextGetAttributes(ctx, key);
+           })
       .def("get_session_config", &modelbox::SessionContext::GetConfig)
       .def("get_session_id", &modelbox::SessionContext::GetSessionId);
 }
@@ -922,6 +1065,14 @@ void ModelboxPyApiSetUpDataContext(pybind11::module &m) {
              }
 
              return *((long *)(data.get()));
+           })
+      .def("set_private",
+           [](DataContext &ctx, const std::string &key, py::object &obj) {
+             DataContextSetAttributes(ctx, key, obj);
+           })
+      .def("get_private",
+           [](DataContext &ctx, const std::string &key) {
+             return DataContextGetAttributes(ctx, key);
            })
       .def("get_input_meta", &modelbox::DataContext::GetInputMeta)
       .def("get_input_group_meta", &modelbox::DataContext::GetInputGroupMeta)
