@@ -117,7 +117,7 @@ modelbox::Status ImageDecoderFlowUnit::Process(
     output_buffer->Set("type", modelbox::ModelBoxDataType::MODELBOX_UINT8);
     output_buffer->Set(
         "shape",
-        std::vector<size_t>{(size_t)img_dest.cols, (size_t)img_dest.rows,
+        std::vector<size_t>{(size_t)img_dest.rows, (size_t)img_dest.cols,
                             (size_t)img_dest.channels()});
     output_buffer->Set("layout", std::string("hwc"));
   }
