@@ -20,6 +20,8 @@
 
 using namespace pybind11::literals;
 
+static std::mutex reload_mutex;
+
 PythonFlowUnit::PythonFlowUnit(){};
 PythonFlowUnit::~PythonFlowUnit() {
   py::gil_scoped_acquire interpreter_guard{};
@@ -65,6 +67,9 @@ modelbox::Status PythonFlowUnit::Open(
   }
 
   const auto& python_path = python_desc_->GetPythonFilePath();
+
+  // module reload mutex
+  std::lock_guard<std::mutex> lck(reload_mutex);
 
   py::gil_scoped_acquire interpreter_guard{};
 
