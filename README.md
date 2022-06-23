@@ -1,5 +1,7 @@
 # ModelBox
 
+[![daily building](https://github.com/modelbox-ai/modelbox/actions/workflows/unit-test-daily-on-device.yml/badge.svg)](https://github.com/modelbox-ai/modelbox/actions/workflows/unit-test-daily-on-device.yml)
+
 [English](README_en.md)
 
 ModelBox是一个适用于端边云场景的AI推理应用开发框架，提供了基于Pipeline的并行执行流程，能帮助AI应用开发者较快的开发出高效，高性能，以及支持软硬协同优化的AI应用。[详细介绍](http://modelbox-ai.com/modelbox-book/)

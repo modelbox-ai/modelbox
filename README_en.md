@@ -1,5 +1,7 @@
 # ModelBox
 
+[![daily building](https://github.com/modelbox-ai/modelbox/actions/workflows/unit-test-daily-on-device.yml/badge.svg)](https://github.com/modelbox-ai/modelbox/actions/workflows/unit-test-daily-on-device.yml)
+
 ModelBox is an AI application development framework featuring device-edge-cloud synergy. It provides a parallel execution framework based on pipelines, helping developers quickly develop high-performance AI applications that support software-hardware synergized optimization. [See details](http://modelbox-ai.com/modelbox-book/)
 
 ## ModelBox Highlights
