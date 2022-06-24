@@ -42,6 +42,8 @@ class BufferTestFlowunit(modelbox.FlowUnit):
 
         empty_np = np.array([])
         empty_buffer = self.create_buffer(empty_np)
+        first_buffer = in_bl.front()
+        last_buffer = in_bl.back()
         for buffer in in_bl:
             np_image = np.array(buffer, copy= False)
             image = Image.fromarray(np_image)

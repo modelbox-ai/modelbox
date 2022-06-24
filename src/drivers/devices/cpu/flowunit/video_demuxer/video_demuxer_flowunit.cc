@@ -15,6 +15,7 @@
  */
 
 #include "video_demuxer_flowunit.h"
+
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
@@ -25,6 +26,7 @@ VideoDemuxerFlowUnit::~VideoDemuxerFlowUnit(){};
 
 modelbox::Status VideoDemuxerFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
+  key_frame_only_ = opts->GetBool("key_frame_only", false);
   return modelbox::STATUS_OK;
 }
 modelbox::Status VideoDemuxerFlowUnit::Close() { return modelbox::STATUS_OK; }
@@ -261,7 +263,7 @@ modelbox::Status VideoDemuxerFlowUnit::InitDemuxer(
   }
 
   auto video_demuxer = std::make_shared<FfmpegVideoDemuxer>();
-  ret = video_demuxer->Init(reader, false);
+  ret = video_demuxer->Init(reader, key_frame_only_);
   if (ret != STATUS_SUCCESS) {
     MBLOG_INFO << "video demux init falied, set DEMUX_STATUS failed";
     return STATUS_FAULT;

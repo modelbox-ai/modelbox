@@ -878,6 +878,8 @@ void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
                BufferSetAttributes(*buffer, key, obj);
              }
            })
+      .def("front", &BufferList::Front)
+      .def("back", &BufferList::Back)
       .def("set_error", &modelbox::BufferList::SetError)
       .def("copy_meta", &modelbox::BufferList::CopyMeta)
       .def("__len__", [](const modelbox::BufferList &bl) { return bl.Size(); })
