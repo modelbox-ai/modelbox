@@ -103,6 +103,8 @@ class VideoDemuxerFlowUnit
 
   void UpdateStatsInfo(const std::shared_ptr<modelbox::DataContext> &ctx,
                        const std::shared_ptr<FfmpegVideoDemuxer> &demuxer);
+
+  bool key_frame_only_{false};
 };
 
 #endif  // MODELBOX_FLOWUNIT_VIDEO_DEMUXER_CPU_H_
