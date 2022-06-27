@@ -98,7 +98,7 @@ modelbox::Status VideoDecodeFlowUnit::GetDecoderParam(
   return modelbox::STATUS_OK;
 }
 
-constexpr int32_t MAX_VDEC_CHAN = 32;
+constexpr int32_t MAX_VDEC_CHAN = 128;
 
 void VideoDecodeFlowUnit::InitInstanceId() {
   for (int i = 0; i < MAX_VDEC_CHAN; i++) {
