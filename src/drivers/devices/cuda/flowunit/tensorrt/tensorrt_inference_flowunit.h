@@ -53,7 +53,7 @@ using TensorRTProcess =
 class RndInt8Calibrator;
 
 class iLogger : public nvinfer1::ILogger {
-  void log(Severity severity, const char* msg) override {
+  void log(Severity severity, const char* msg) noexcept override {
     // suppress info-level messages
     if (severity < Severity::kINFO) std::cout << msg << std::endl;
   }
@@ -183,10 +183,11 @@ class RndInt8Calibrator : public IInt8EntropyCalibrator {
                     std::map<std::string, nvinfer1::Dims3>& input_dims);
 
   virtual ~RndInt8Calibrator();
-  int getBatchSize() const override;
-  bool getBatch(void* bindings[], const char* names[], int nbBindings) override;
-  const void* readCalibrationCache(size_t& length) override;
-  virtual void writeCalibrationCache(const void*, size_t) override;
+  int getBatchSize() const noexcept override;
+  bool getBatch(void* bindings[], const char* names[],
+                int nbBindings) noexcept override;
+  const void* readCalibrationCache(size_t& length) noexcept override;
+  virtual void writeCalibrationCache(const void*, size_t) noexcept override;
 
  private:
   int total_samples_{0};

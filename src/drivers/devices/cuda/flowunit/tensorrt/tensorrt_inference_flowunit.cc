@@ -26,7 +26,9 @@
 #include "common_util.h"
 #include "modelbox/base/status.h"
 #include "modelbox/device/cuda/device_cuda.h"
-#include "plugin_factory.h"
+#ifndef TENSORRT8
+#include "nvplugin/plugin_factory.h"
+#endif
 #include "virtualdriver_inference.h"
 
 TensorRTInferenceFlowUnit::TensorRTInferenceFlowUnit(){};
@@ -84,10 +86,10 @@ RndInt8Calibrator::~RndInt8Calibrator() {
     }
 }
 
-int RndInt8Calibrator::getBatchSize() const { return 1; }
+int RndInt8Calibrator::getBatchSize() const noexcept { return 1; }
 
 bool RndInt8Calibrator::getBatch(void* bindings[], const char* names[],
-                                 int nbBindings) {
+                                 int nbBindings) noexcept {
   if (current_sample_ >= total_samples_) {
     return false;
   }
@@ -100,7 +102,7 @@ bool RndInt8Calibrator::getBatch(void* bindings[], const char* names[],
   return true;
 }
 
-const void* RndInt8Calibrator::readCalibrationCache(size_t& length) {
+const void* RndInt8Calibrator::readCalibrationCache(size_t& length) noexcept {
   calibration_cache_.clear();
   std::ifstream input(cache_file_, std::ios::binary);
   input >> std::noskipws;
@@ -113,7 +115,7 @@ const void* RndInt8Calibrator::readCalibrationCache(size_t& length) {
   return length ? &calibration_cache_[0] : nullptr;
 }
 
-void RndInt8Calibrator::writeCalibrationCache(const void*, size_t) {}
+void RndInt8Calibrator::writeCalibrationCache(const void*, size_t) noexcept {}
 
 modelbox::Status TensorRTInferenceFlowUnit::PreProcess(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
@@ -246,6 +248,7 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpModelFile(
 
 void TensorRTInferenceFlowUnit::configureBuilder(
     std::shared_ptr<IBuilder> builder, RndInt8Calibrator& calibrator) {
+#ifndef TENSORRT8
   builder->setMaxWorkspaceSize(static_cast<unsigned int>(params_.workspace_size)
                                << 20);
   builder->setFp16Mode(params_.fp16);
@@ -260,6 +263,7 @@ void TensorRTInferenceFlowUnit::configureBuilder(
     builder->setDLACore(params_.use_DLACore);
     if (params_.allow_GPUFallback) builder->allowGPUFallback(true);
   }
+#endif
 }
 
 void TensorRTInferenceFlowUnit::PrintModelBindInfo(
@@ -279,7 +283,11 @@ void TensorRTInferenceFlowUnit::PrintModelBindInfo(
     dim_info << "]";
     MBLOG_INFO << dim_info.str();
 
+#ifdef TENSORRT8
+    params_.use_enqueue_v2 = true;
+#else
     params_.use_enqueue_v2 = (bind_dims.d[0] == -1);
+#endif
   }
 
   if (params_.dynamic_batch_contain) {
@@ -291,6 +299,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
     const std::shared_ptr<modelbox::Configuration>& config,
     std::shared_ptr<IBuilder>& builder,
     std::shared_ptr<INetworkDefinition>& network) {
+#ifndef TENSORRT8
   // parse the caffe model to populate the network, then set the outputs
   std::shared_ptr<ICaffeParser> parser =
       TensorRTInferObject(createCaffeParser());
@@ -376,7 +385,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
-
+#endif  // TENSORRT8
   return modelbox::STATUS_OK;
 }
 
@@ -384,6 +393,7 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
     const std::shared_ptr<modelbox::Configuration>& config,
     std::shared_ptr<IBuilder>& builder,
     std::shared_ptr<INetworkDefinition>& network) {
+#ifndef TENSORRT8
   // parse the uff model to populate the network, then set the outputs
   std::shared_ptr<IUffParser> parser = TensorRTInferObject(createUffParser());
   if (parser == nullptr) {
@@ -463,7 +473,7 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
-
+#endif  // TENSORRT8
   return modelbox::STATUS_OK;
 }
 
@@ -504,7 +514,7 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
     return {modelbox::STATUS_FAULT, "failed to parse onnex file."};
   }
 
-#ifdef TENSORRT7
+#if defined(TENSORRT7) || defined(TENSORRT8)
   auto builder_config = builder->createBuilderConfig();
   auto profile = builder->createOptimizationProfile();
   for (int i = 0, n = network->getNbInputs(); i < n; i++) {
@@ -524,8 +534,22 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
     }
   }
   builder_config->addOptimizationProfile(profile);
+#ifdef TENSORRT8
+  auto serialized_engine = TensorRTInferObject(
+      builder->buildSerializedNetwork(*network, *builder_config));
+  std::shared_ptr<IRuntime> infer =
+      TensorRTInferObject(createInferRuntime(gLogger));
+  if (infer == nullptr) {
+    auto err_msg = "create runtime from model_file engine failed.";
+    MBLOG_ERROR << err_msg;
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+  engine_ = TensorRTInferObject(infer->deserializeCudaEngine(
+      serialized_engine->data(), serialized_engine->size()));
+#else
   engine_ = TensorRTInferObject(
       builder->buildEngineWithConfig(*network, *builder_config));
+#endif
 #else
   for (int i = 0, n = network->getNbInputs(); i < n; i++) {
     auto input = network->getInput(i);
@@ -606,8 +630,13 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
       MBLOG_ERROR << err_msg;
       return {modelbox::STATUS_BADCONF, err_msg};
     }
+#ifdef TENSORRT8
+    engine_ = TensorRTInferObject(
+        infer->deserializeCudaEngine(modelBuf.get(), model_len));
+#else
     engine_ = TensorRTInferObject(infer->deserializeCudaEngine(
         modelBuf.get(), model_len, plugin_factory_.get()));
+#endif
   } else if (modelState == ModelDecryption::MODEL_STATE_PLAIN) {
     std::vector<char> trtModelStream;
     size_t size{0};
@@ -624,9 +653,13 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
     trtModelStream.resize(size);
     file.read(trtModelStream.data(), size);
     file.close();
-
+#ifdef TENSORRT8
+    engine_ = TensorRTInferObject(
+        infer->deserializeCudaEngine(trtModelStream.data(), size));
+#else
     engine_ = TensorRTInferObject(infer->deserializeCudaEngine(
         trtModelStream.data(), size, plugin_factory_.get()));
+#endif
 
   } else {
     auto err_msg = "model state error.";
@@ -676,7 +709,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(
   }
 
   // parse the caffe model to populate the network, then set the outputs
-#ifdef TENSORRT7
+#if defined(TENSORRT7) || defined(TENSORRT8)
   std::shared_ptr<INetworkDefinition> network =
       TensorRTInferObject(builder->createNetworkV2(
           1U << static_cast<int>(
@@ -710,12 +743,12 @@ void TensorRTInferenceFlowUnit::SetPluginFactory(std::string pluginName) {
   if (pluginName.empty()) {
     return;
   }
-
+#ifndef TENSORRT8
   if (pluginName == "yolo") {
     plugin_factory_ = std::make_shared<YoloPluginFactory>();
     return;
   }
-
+#endif
   MBLOG_DEBUG << "The plugin " << pluginName.c_str() << " is not supported";
   return;
 }
@@ -1054,7 +1087,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CudaProcess(
   }
 
   bool enqueue_res;
-#ifdef TENSORRT7
+#if defined(TENSORRT7) || defined(TENSORRT8)
   if (params_.use_enqueue_v2) {
     for (auto& input_name : params_.inputs_name_list) {
       auto bind_index = engine_->getBindingIndex(input_name.c_str());
