@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "nvcodec_video_decoder.h"
 
 #include <string>
@@ -92,8 +91,8 @@ Status NvcodecVideoDecoder::Init(const std::string &device_id,
                                  bool skip_err_frame) {
   gpu_id_ = std::stoi(device_id);
   MBLOG_INFO << "Init decode in gpu " << gpu_id_;
-  // Use cuda runtime CUContext on same device in whole modelbox process to ensure
-  // cuda work properly
+  // Use cuda runtime CUContext on same device in whole modelbox process to
+  // ensure cuda work properly
   auto cuda_ret = cudaSetDevice(gpu_id_);
   if (cuda_ret != cudaSuccess) {
     MBLOG_ERROR << "Set device to " << gpu_id_ << " failed, err " << cuda_ret;
@@ -349,7 +348,11 @@ int32_t NvcodecVideoDecoder::HandlePictureDecode(CUVIDPICPARAMS *pic_params) {
     return 0;
   }
 
-  CUDA_API_CALL(cuvidDecodePicture(video_decoder_, pic_params));
+  auto ret = cuvidDecodePicture(video_decoder_, pic_params);
+  if (ret != CUDA_SUCCESS) {
+    MBLOG_ERROR << "cuvidDecodePicture failed, ret: " << ret;
+    return 0;
+  }
   return 1;
 }
 
