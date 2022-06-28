@@ -35,7 +35,11 @@ struct TensorRTInferDeleter {
       return;
     }
 
+#ifdef TENSORRT8
+    delete obj;
+#else
     obj->destroy();
+#endif
   }
 };
 
