@@ -470,6 +470,7 @@ py::object SessionContextGetAttributes(SessionContext &session_context,
 /***************************SessionContextGet End************************/
 
 void ModelboxPyApiSetUpLog(pybind11::module &m) {
+  m.def("set_log_level", FlowUnitPythonLog::SetLogLevel);
   m.def("debug", FlowUnitPythonLog::Debug);
   m.def("info", FlowUnitPythonLog::Info);
   m.def("notice", FlowUnitPythonLog::Notice);
@@ -1409,13 +1410,15 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
       m, "FlowStreamIO")
       .def(py::init<std::shared_ptr<ExternalDataMap>>())
       .def("create_buffer", &modelbox::FlowStreamIO::CreateBuffer,
-           py::call_guard<py::gil_scoped_release>())
-      .def("create_buffer",
-           [](FlowStreamIO &self, const py::buffer &data) {
-             auto buffer = self.CreateBuffer();
-             PyBufferToBuffer(buffer, data);
-             return buffer;
-           })
+           py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
+      .def(
+          "create_buffer",
+          [](FlowStreamIO &self, const py::buffer &data) {
+            auto buffer = self.CreateBuffer();
+            PyBufferToBuffer(buffer, data);
+            return buffer;
+          },
+          py::keep_alive<0, 1>())
       .def(
           "create_buffer",
           [](FlowStreamIO &self, const std::string &data) {
@@ -1423,7 +1426,7 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
             StrToBuffer(buffer, data);
             return buffer;
           },
-          py::call_guard<py::gil_scoped_release>())
+          py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
       .def("send", &modelbox::FlowStreamIO::Send,
            py::call_guard<py::gil_scoped_release>())
       .def("send",
@@ -1442,8 +1445,22 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
             return self.Send(input_name, buffer);
           },
           py::call_guard<py::gil_scoped_release>())
-      .def("recv", &modelbox::FlowStreamIO::Recv,
-           py::call_guard<py::gil_scoped_release>())
+      .def(
+          "recv",
+          [](FlowStreamIO &self, const std::string &output_name,
+             std::shared_ptr<Buffer> &buffer,
+             size_t timeout) -> modelbox::Status {
+            std::shared_ptr<Buffer> out_buffer;
+            auto ret = self.Recv(output_name, out_buffer, timeout);
+            if (ret != STATUS_OK) {
+              return ret;
+            }
+
+            *buffer = *out_buffer;
+            return modelbox::STATUS_OK;
+          },
+          py::arg("output_name"), py::arg("buffer"), py::arg("timeout") = 0,
+          py::call_guard<py::gil_scoped_release>())
       .def(
           "recv",
           [](FlowStreamIO &self, const std::string &output_name,
@@ -1452,7 +1469,7 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
             self.Recv(output_name, buffer, timeout);
             return buffer;
           },
-          py::call_guard<py::gil_scoped_release>())
+          py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
       .def(
           "recv",
           [](FlowStreamIO &self, const std::string &output_name) {
@@ -1460,7 +1477,7 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
             self.Recv(output_name, buffer, 0);
             return buffer;
           },
-          py::call_guard<py::gil_scoped_release>())
+          py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
       .def("close_input", &modelbox::FlowStreamIO::CloseInput,
            py::call_guard<py::gil_scoped_release>());
 }

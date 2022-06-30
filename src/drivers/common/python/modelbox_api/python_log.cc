@@ -36,6 +36,10 @@ FlowUnitPythonLog::~FlowUnitPythonLog() {
   }
 }
 
+void FlowUnitPythonLog::SetLogLevel(LogLevel level) {
+  ModelBoxLogger.GetLogger()->SetLogLevel(level);
+}
+
 void FlowUnitPythonLog::Debug(py::args args, py::kwargs kwargs) {
   Instance().Log(modelbox::LOG_DEBUG, args, kwargs);
 }

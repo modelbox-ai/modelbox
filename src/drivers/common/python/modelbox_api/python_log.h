@@ -30,6 +30,7 @@ class __attribute__((visibility("hidden"))) FlowUnitPythonLog {
   static void Init();
   static void Finish();
   static FlowUnitPythonLog &Instance();
+  static void SetLogLevel(LogLevel level);
   static void Debug(py::args args, py::kwargs kwargs);
   static void Info(py::args args, py::kwargs kwargs);
   static void Notice(py::args args, py::kwargs kwargs);
