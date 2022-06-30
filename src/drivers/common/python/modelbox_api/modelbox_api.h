@@ -63,8 +63,6 @@ void ModelboxPyApiSetUpFlowPortDesc(pybind11::module &m);
 void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m);
 
 void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m);
-
-void ModelBoxPyApiSetUpSolution(pybind11::module &m);
 }  // namespace modelbox
 
 #endif  // MODELBOX_PYTHON_MODELBOX_API_H_
