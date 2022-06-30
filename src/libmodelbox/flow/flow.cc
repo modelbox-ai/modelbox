@@ -61,6 +61,7 @@ void Flow::Clear() {
   device_mgr_ = nullptr;
   graphconf_mgr_ = nullptr;
   profiler_ = nullptr;
+  args_ = nullptr;
   if (drivers_) {
     drivers_->Clear();
   }
@@ -71,16 +72,61 @@ void Flow::Clear() {
   }
 }
 
-Status Flow::Init(const Solution& solution) {
-  std::string graph_path;
-  std::string solution_dir = solution.GetSolutionDir();
-  std::string solution_name = solution.GetSolutionName();
-  auto status = GetGraphFilePathByName(solution_name, solution_dir, graph_path);
+Status Flow::GetInputArgs(
+    std::shared_ptr<Configuration>& config,
+    const std::unordered_map<std::string, std::string>& input_args) {
+  // get default args
+  auto sub_keys = config->GetSubKeys("args");
+  if (!sub_keys.empty()) {
+    auto args_config = config->GetSubConfig("args");
+    args_ = std::make_shared<std::unordered_map<std::string, std::string>>();
+    for (auto& key : sub_keys) {
+      auto value = args_config->GetSubConfig(key)->GetString("default");
+      args_->insert({key, value});
+    }
+  }
+
+  // get final args
+  for (auto& input_arg : input_args) {
+    if (args_ == nullptr || args_->find(input_arg.first) == args_->end()) {
+      MBLOG_ERROR << "input args key:" << input_arg.first
+                  << " is not in the flow.";
+      return STATUS_FAULT;
+    }
+
+    MBLOG_INFO << "input args key:" << input_arg.first << " use custom value.";
+    (*args_)[input_arg.first] = input_arg.second;
+  }
+
+  return STATUS_OK;
+}
+
+Status Flow::InitByName(
+    const std::string& name,
+    const std::unordered_map<std::string, std::string>& args,
+    const std::string& flow_dir) {
+  Status ret;
+  std::string flow_path;
+  auto status = GetGraphFilePathByName(name, flow_dir, flow_path);
   if (status != STATUS_OK) {
     MBLOG_ERROR << "failed find toml file, errmsg:" << status.Errormsg();
     return status;
   }
-  return Init(graph_path);
+
+  std::shared_ptr<Configuration> config;
+  ret = GetConfigByGraphFile(flow_path, config, FORMAT_AUTO);
+  if (ret != STATUS_OK) {
+    MBLOG_ERROR << "read config from  toml:" << flow_path
+                << "failed, err :" << ret.Errormsg();
+    return ret;
+  }
+
+  ret = GetInputArgs(config, args);
+  if (ret != STATUS_OK) {
+    return ret;
+  }
+
+  return Init(config);
 }
 
 Status Flow::Init(const std::shared_ptr<FlowGraphDesc>& flow_graph_desc) {
@@ -329,7 +375,6 @@ Status Flow::GetGraphFilePathByName(const std::string& flow_name,
                                     const std::string& graph_dir,
                                     std::string& graph_path) {
   std::vector<std::string> toml_list;
-  std::map<std::string, std::string> toml_path_map;
   std::string filter = "*.toml";
   auto status = modelbox::ListSubDirectoryFiles(graph_dir, filter, &toml_list);
   if (status != modelbox::STATUS_OK) {
@@ -348,7 +393,7 @@ Status Flow::GetGraphFilePathByName(const std::string& flow_name,
   toml_list.insert(toml_list.end(), json_list.begin(), json_list.end());
   if (toml_list.empty()) {
     std::string err_msg =
-        "there is no graph file for solution " + flow_name + " in " + graph_dir;
+        "there is no graph file named " + flow_name + " in " + graph_dir;
     return {STATUS_NOTFOUND, err_msg};
   }
 
@@ -358,21 +403,17 @@ Status Flow::GetGraphFilePathByName(const std::string& flow_name,
     if (status != STATUS_OK) {
       continue;
     }
-    MBLOG_DEBUG << "solution name: " << config->GetString("flow.name")
-                << ", toml path = " << iter;
-    if (config->GetString("flow.name") != "") {
-      auto name = config->GetString("flow.name");
-      toml_path_map.emplace(name, iter);
+
+    if (config->GetString("flow.name") == flow_name) {
+      graph_path = iter;
+      MBLOG_DEBUG << "found flow name: " << config->GetString("flow.name")
+                  << ", toml path = " << iter;
+      return STATUS_OK;
     }
   }
 
-  auto iter = toml_path_map.find(flow_name);
-  if (iter == toml_path_map.end()) {
-    return {STATUS_NOTFOUND,
-            "failed find solution:" + flow_name + "'s toml file"};
-  }
-  graph_path = iter->second;
-  return STATUS_OK;
+  return {STATUS_NOTFOUND,
+          "failed find flow name:" + flow_name + "'s toml file"};
 }
 
 Status Flow::GetConfigByGraphFile(const std::string& configfile,
@@ -442,6 +483,23 @@ Status Flow::Build() {
       MBLOG_ERROR << "graph config resolve failed, "
                   << StatusError.WrapErrormsgs();
       return STATUS_FAULT;
+    }
+  }
+
+  // update args
+  if (args_ != nullptr && !args_->empty()) {
+    auto nodes = gcgraph_->GetAllNodes();
+    for (auto& node : nodes) {
+      auto node_config = node.second->GetConfiguration();
+      auto node_keys = node_config->GetKeys();
+      for (auto& key : node_keys) {
+        auto value = node_config->GetString(key);
+        auto value_name = value.substr(1, value.size());
+        if (std::regex_match(value, std::regex("^\\$.*")) &&
+            args_->find(value_name) != args_->end()) {
+          node_config->SetProperty(key, (*args_)[value_name]);
+        }
+      }
     }
   }
 

@@ -219,7 +219,55 @@ format = "graphviz"
                 except ValueError as e:
                     self.assertTrue(False)
         flow.stop()
+    
+    def test_flow_op_by_name(self):
+        conf_file = test_config.TEST_DATA_DIR + "/py_op_config.toml"
+        driver_dir = test_config.TEST_DRIVER_DIR
+        with open(conf_file, "w") as out:
+            txt = r"""
+[driver]
+dir=["{}", "{}"]
+skip-default=true
+[flow]
+name="test_flow"
+[log]
+level="INFO"
+[args.test_arg1]
+default="test_arg1_value"
+[args.test_arg2]
+default="test_arg2_value"
+[graph]
+graphconf = '''digraph demo {{                                                                            
+    input[type=input]   
+    python_args[type=flowunit, flowunit=python_args, device=cpu, test_arg1="$test_arg1", test_arg2="$test_arg2"]
+    output[type=output]
+    input -> python_args:input
+    python_args:output -> output
+}}'''
+format = "graphviz"
+""".format(driver_dir, test_config.TEST_DATA_DIR + "/python_op")
+            out.write(txt)
 
+        conf = modelbox.Configuration()
+        flow = modelbox.Flow()
+        ret = flow.init_by_name("test_flow", {"test_arg1": "test_arg1_value2"}, test_config.TEST_DATA_DIR)
+        if ret == False:
+            modelbox.error(ret)
+        os.remove(conf_file)
+        ret = flow.start_run()
+        self.assertTrue(ret)
+        
+        stream_io = flow.create_stream_io()
+        input_buffer = stream_io.create_buffer("input_buffer")
+        stream_io.send("input", "input_buffer")
+        stream_io.close_input()
+        result = stream_io.recv("output")
+        modelbox.info("get output", result.as_object().strip(chr(0)))
+        exp_output = "input_buffer, test_arg1_value2, test_arg2_value"
+        modelbox.info("exp output", exp_output)
+        self.assertTrue(result.as_object() == exp_output)
+
+        flow.stop()
 
 if __name__ == '__main__':
     unittest.main()

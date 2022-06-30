@@ -25,12 +25,14 @@
 #include <modelbox/flowunit.h>
 #include <modelbox/graph.h>
 #include <modelbox/profiler.h>
-#include <modelbox/solution.h>
 
 #include <memory>
 #include <string>
 
 namespace modelbox {
+
+constexpr const char* DEFAULT_FLOW_PATH =
+    "/usr/local/share/modelbox/solutions/graphs";
 
 /**
  * @brief modelbox flow control
@@ -84,18 +86,23 @@ class Flow {
   Status Init(std::shared_ptr<Configuration> config);
 
   /**
-   * @brief Init flow from solution
-   * @param solution solution object
-   * @return init result.
-   */
-  Status Init(const Solution& solution);
-
-  /**
    * @brief  init flow from FlowGraphDesc
    * @param flow_graph_desc  graph desc
    * @return init result.
    */
   Status Init(const std::shared_ptr<FlowGraphDesc>& flow_graph_desc);
+
+  /**
+   * @brief init flow by name, args and flow directory
+   * @param name flow name
+   * @param args flow args
+   * @param flow_dir scan flow directory
+   * @return init result.
+   */
+  Status InitByName(
+      const std::string& name,
+      const std::unordered_map<std::string, std::string>& args = {},
+      const std::string& flow_dir = DEFAULT_FLOW_PATH);
 
   /**
    * @brief return until flow running
@@ -177,6 +184,10 @@ class Flow {
                                 const std::string& graph_dir,
                                 std::string& graph_path);
 
+  Status GetInputArgs(
+      std::shared_ptr<Configuration>& config,
+      const std::unordered_map<std::string, std::string>& input_args = {});
+
   Status GuessConfFormat(const std::string& configfile, const std::string& data,
                          enum Format* format);
 
@@ -190,6 +201,7 @@ class Flow {
   std::shared_ptr<Graph> graph_;
   std::shared_ptr<Profiler> profiler_;
   bool timer_run_ = false;
+  std::shared_ptr<std::unordered_map<std::string, std::string>> args_;
 };
 
 }  // namespace modelbox

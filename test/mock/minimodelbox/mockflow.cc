@@ -3509,25 +3509,6 @@ Status MockFlow::InitFlow(const std::string& name, const std::string& graph) {
   return flow_->Init(name, graph);
 }
 
-Status MockFlow::BuildAndRun(Solution& slu) {
-  flow_ = std::make_shared<Flow>();
-  auto ret = flow_->Init(slu);
-  if (!ret) {
-    return ret;
-  }
-
-  ret = flow_->Build();
-  if (!ret) {
-    return ret;
-  }
-
-  ret = flow_->RunAsync();
-  if (!ret) {
-    return ret;
-  }
-  return STATUS_OK;
-}
-
 Status MockFlow::BuildAndRun(const std::string& name, const std::string& graph,
                              int timeout) {
   auto ret = InitFlow(name, graph);
