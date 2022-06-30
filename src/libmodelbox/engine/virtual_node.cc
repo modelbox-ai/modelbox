@@ -105,7 +105,7 @@ OutputVirtualNode::OutputVirtualNode(
   queue_size_ = -1;
   priority_ = 0;
   device_mgr_ = device_manager;
-  target_device_ = device_mgr_->GetDevice(device_name, device_id);
+  target_device_ = device_mgr_->CreateDevice(device_name, device_id);
 }
 
 OutputVirtualNode::~OutputVirtualNode() {}
