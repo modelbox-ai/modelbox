@@ -66,7 +66,12 @@ int32_t VideoDecodeFlowUnit::GetDvppEncodeType(AVCodecID codec_id,
 modelbox::Status VideoDecodeFlowUnit::GetDecoderParam(
     std::shared_ptr<modelbox::DataContext> data_ctx, int32_t &rate_num,
     int32_t &rate_den, int32_t &encode_type) {
-  auto buffer = data_ctx->Input(VIDEO_PACKET_INPUT)->At(0);
+  auto input_packet = data_ctx->Input(VIDEO_PACKET_INPUT);
+  if (input_packet == nullptr) {
+    return {modelbox::STATUS_FAULT, "get input failed."};
+  }
+
+  auto buffer = input_packet->At(0);
   auto res = buffer->Get("rate_num", rate_num);
   if (!res) {
     return {modelbox::STATUS_FAULT, "get rate_num failed."};

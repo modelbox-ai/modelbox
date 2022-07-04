@@ -190,7 +190,7 @@ std::shared_ptr<std::string> VideoDemuxerFlowUnit::GetSourceUrl(
 
   // Try get url in input buffer
   auto inputs = data_ctx->Input(STREAM_META_INPUT);
-  if (inputs->Size() == 0) {
+  if (inputs == nullptr || inputs->Size() == 0) {
     MBLOG_ERROR << "source url not found in input";
     return nullptr;
   }
