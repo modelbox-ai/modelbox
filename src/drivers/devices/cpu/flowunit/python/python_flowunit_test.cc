@@ -55,7 +55,7 @@ std::shared_ptr<DriverFlowTest> PythonFlowUnitTest::GetDriverFlow() {
   return driver_flow_;
 }
 
-TEST_F(PythonFlowUnitTest, Init) {
+TEST_F(PythonFlowUnitTest, DISABLED_Init) {
   auto op_dir = test_data_dir + "/python_op";
   std::string toml_content = R"(
     [driver]
@@ -83,7 +83,7 @@ format = "graphviz"
   EXPECT_EQ(ret, STATUS_STOP);
 }
 
-TEST_F(PythonFlowUnitTest, DISABLED_StatusCount) {
+TEST_F(PythonFlowUnitTest, StatusCount) {
   auto op_dir = test_data_dir + "/python_op";
   std::string toml_content = R"(
     [driver]
