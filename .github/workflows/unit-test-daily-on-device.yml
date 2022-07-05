@@ -16,9 +16,7 @@ jobs:
       max-parallel: 1
       matrix:
           devices: 
-            - tensorrt
-            - pytorch
-            - tensorflow
+            - ubuntu
 
     steps:
     - uses: actions/checkout@v2
@@ -37,5 +35,4 @@ jobs:
       working-directory: build
       run: | 
         make build-test -j4
-        unset LD_LIBRARY_PATH
         make unittest

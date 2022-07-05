@@ -83,7 +83,7 @@ format = "graphviz"
   EXPECT_EQ(ret, STATUS_STOP);
 }
 
-TEST_F(PythonFlowUnitTest, StatusCount) {
+TEST_F(PythonFlowUnitTest, DISABLED_StatusCount) {
   auto op_dir = test_data_dir + "/python_op";
   std::string toml_content = R"(
     [driver]

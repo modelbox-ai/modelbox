@@ -700,7 +700,7 @@ TEST_F(ModelboxServerTest, Stat) {
   server.Stop();
 }
 
-TEST_F(ModelboxServerTest, JSPlugin) {
+TEST_F(ModelboxServerTest, DISABLED_JSPlugin) {
   const std::string test_etc_dir = TEST_DATA_DIR;
   const std::string test_js_path = test_etc_dir + "/modelbox-plugin-billing.js";
   std::string conf = R"(
