@@ -36,22 +36,19 @@ constexpr const int HTTP_STATUS_CODE_OK = 200;
 
 namespace modelbox {
 
-std::unordered_map<REQ_METHOD,
-                   std::function<httplib::Result(
-                       httplib::Client &, const std::string &,
-                       const httplib::Headers &, const std::string &)>>
-    g_httpcli_func_map = {
-        {REQ_GET,
-         [](httplib::Client &cli, const std::string &path,
-            const httplib::Headers &headers, const std::string &body) {
-           return cli.Get(path.c_str(), headers);
-         }},
-        {REQ_POST,
-         [](httplib::Client &cli, const std::string &path,
-            const httplib::Headers &headers, const std::string &body) {
-           return cli.Post(path.c_str(), headers, body, nullptr);
-         }},
-};
+VcnRestfulWrapper::VcnRestfulWrapper() {
+  httpcli_func_map_[REQ_GET] = [](httplib::Client &cli, const std::string &path,
+                                  const httplib::Headers &headers,
+                                  const std::string &body) {
+    return cli.Get(path.c_str(), headers);
+  };
+
+  httpcli_func_map_[REQ_POST] =
+      [](httplib::Client &cli, const std::string &path,
+         const httplib::Headers &headers, const std::string &body) {
+        return cli.Post(path.c_str(), headers, body, nullptr);
+      };
+}
 
 modelbox::Status VcnRestfulWrapper::SendRequest(const std::string &uri,
                                                 const std::string &path,
@@ -63,8 +60,8 @@ modelbox::Status VcnRestfulWrapper::SendRequest(const std::string &uri,
   cli.enable_server_certificate_verification(false);
   cli.set_write_timeout(std::chrono::seconds(30));
 
-  auto func_item = g_httpcli_func_map.find(method);
-  if (func_item == g_httpcli_func_map.end()) {
+  auto func_item = httpcli_func_map_.find(method);
+  if (func_item == httpcli_func_map_.end()) {
     return {modelbox::STATUS_NOTSUPPORT, "Not support http method"};
   }
 
@@ -286,8 +283,8 @@ modelbox::Status VcnRestfulWrapper::GetUrl(const VcnRestfulInfo &restful_info,
   body["mediaURLParam"]["streamType"] = restful_info.stream_type;
 
   httplib::Response resp;
-  auto ret =
-      SendRequest(uri, RESTFUL_GET_RTSP_URL, "", headers, REQ_POST, resp);
+  auto ret = SendRequest(uri, RESTFUL_GET_RTSP_URL, body.dump(), headers,
+                         REQ_POST, resp);
   if (modelbox::STATUS_OK != ret) {
     std::string msg =
         "Failed to restful get url, send request fail reason:" + ret.Errormsg();

@@ -18,6 +18,7 @@
 #define MODELBOX_FLOWUNIT_VCN_RESTFUL_CLIENT_H_
 
 #include <modelbox/base/status.h>
+#include <modelbox/base/timer.h>
 
 #include <mutex>
 #include <vector>
@@ -45,7 +46,7 @@ class VcnRestfulClient {
   static std::shared_ptr<VcnRestfulClient> GetInstance(
       int32_t keep_alive_interval);
 
-  virtual ~VcnRestfulClient();
+  virtual ~VcnRestfulClient() = default;
 
   modelbox::Status Init();
 
@@ -76,12 +77,15 @@ class VcnRestfulClient {
   modelbox::Status SetRestfulWrapper(
       std::shared_ptr<VcnRestfulWrapper> _restful_wrapper);
 
+  void SetKeepAliveInterval(int32_t keep_alive_interval) {
+    keep_alive_interval_ = keep_alive_interval;
+  }
+
  private:
   VcnRestfulClient(int32_t keep_alive_interval)
       : restful_wrapper_(nullptr),
         keep_alive_interval_(keep_alive_interval),
-        keep_alive_thread_(nullptr),
-        is_keep_alive_(true) {}
+        keep_alive_timer_task_(nullptr) {}
 
   modelbox::Status GetVcnAccount(const VcnInfo &info,
                                  std::shared_ptr<VcnAccountRestful> &account);
@@ -95,11 +99,11 @@ class VcnRestfulClient {
   modelbox::Status RemoveVcnAccount(
       const std::shared_ptr<VcnAccountRestful> &account);
 
-  void KeepAliveThreadProc();
-  void KeepAliveProcess();
+  modelbox::Status KeepAliveProcess();
   void GetRestfulInfoFromAccount(
       const std::shared_ptr<const VcnAccountRestful> &account,
       VcnRestfulInfo &info);
+  void PullKeepAliveThread();
 
  private:
   static std::mutex vcn_client_lock_;
@@ -107,8 +111,8 @@ class VcnRestfulClient {
   std::vector<std::shared_ptr<VcnAccountRestful>> vcn_accounts_;
   std::shared_ptr<VcnRestfulWrapper> restful_wrapper_;
   int32_t keep_alive_interval_;
-  std::shared_ptr<std::thread> keep_alive_thread_;
-  std::atomic_bool is_keep_alive_{true};
+  std::shared_ptr<modelbox::TimerTask> keep_alive_timer_task_;
+  modelbox::Timer timer_;
 };
 
 class VcnAccountRestful : public VcnAccountBase {

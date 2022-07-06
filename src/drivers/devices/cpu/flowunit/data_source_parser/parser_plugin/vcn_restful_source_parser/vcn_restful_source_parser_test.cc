@@ -57,7 +57,7 @@ DataSourceVcnRestfulParserPluginTest::RunDriverFlow(
                              R"([graph]
     graphconf = '''digraph demo {
           input[type=input, device=cpu, deviceid=0]
-          data_source_parser[type=flowunit, flowunit=data_source_parser, device=cpu, deviceid=0, label="<data_uri>", plugin_dir=")" +
+          data_source_parser[type=flowunit, flowunit=data_source_parser, device=cpu, deviceid=0, vcn_keep_alive_interval_sec=2, label="<data_uri>", plugin_dir=")" +
                              test_lib_dir + R"("]
           )" + mock_flowunit_name +
                              R"([type=flowunit, flowunit=)" +
@@ -91,6 +91,7 @@ modelbox::Status DataSourceVcnRestfulParserPluginTest::SendDataSourceCfg(
            data_source_cfg.size());
   buffer->Set("source_type", source_type);
   ext_data->Send("input", buffer_list);
+  std::this_thread::sleep_for(std::chrono::seconds(5));
   ext_data->Shutdown();
   return modelbox::STATUS_OK;
 }
