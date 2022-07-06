@@ -61,7 +61,7 @@ modelbox::Status VcnRestfulSourceParser::Parse(
 
   uri = stream->GetUrl();
   destroy_uri_func = [stream](const std::string &uri) {
-    MBLOG_ERROR << "destory " << uri;
+    MBLOG_DEBUG << "destory " << uri;
   };
 
   return modelbox::STATUS_OK;

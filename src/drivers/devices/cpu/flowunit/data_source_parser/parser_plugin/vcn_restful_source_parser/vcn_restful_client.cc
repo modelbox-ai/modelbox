@@ -28,6 +28,7 @@ std::shared_ptr<VcnRestfulClient> VcnRestfulClient::GetInstance(
   std::lock_guard<std::mutex> lock(vcn_client_lock_);
   static bool is_initialized = false;
   if (is_initialized) {
+    vcn_client->SetKeepAliveInterval(keep_alive_interval);
     return vcn_client;
   }
 
@@ -38,34 +39,16 @@ std::shared_ptr<VcnRestfulClient> VcnRestfulClient::GetInstance(
     return nullptr;
   }
 
+  vcn_client->SetKeepAliveInterval(keep_alive_interval);
+
   is_initialized = true;
   return vcn_client;
 }
 
-VcnRestfulClient::~VcnRestfulClient() {
-  is_keep_alive_ = false;
-  if (keep_alive_thread_ != nullptr && keep_alive_thread_->joinable()) {
-    keep_alive_thread_->join();
-    keep_alive_thread_ = nullptr;
-  }
-}
-
 modelbox::Status VcnRestfulClient::Init() {
-  if (keep_alive_thread_ != nullptr) {
-    MBLOG_INFO << "restful client repeat init";
-    return modelbox::STATUS_OK;
-  }
-
   restful_wrapper_ = std::make_shared<VcnRestfulWrapper>();
   if (restful_wrapper_ == nullptr) {
     return {modelbox::STATUS_INVALID, "failed to create vcn wrapper"};
-  }
-
-  keep_alive_thread_ = std::make_shared<std::thread>(
-      &VcnRestfulClient::KeepAliveThreadProc, this);
-  if (keep_alive_thread_ == nullptr) {
-    return {modelbox::STATUS_INVALID,
-            "failed to create vcn restful keep alive thread"};
   }
 
   return modelbox::STATUS_OK;
@@ -107,6 +90,8 @@ modelbox::Status VcnRestfulClient::AddVcnStream(
       });
 
   account->AddStream();
+
+  PullKeepAliveThread();
 
   return modelbox::STATUS_OK;
 }
@@ -239,20 +224,15 @@ modelbox::Status VcnRestfulClient::RemoveVcnAccount(
   return modelbox::STATUS_OK;
 }
 
-void VcnRestfulClient::KeepAliveThreadProc() {
-  while (is_keep_alive_) {
-    KeepAliveProcess();
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+modelbox::Status VcnRestfulClient::KeepAliveProcess() {
+  std::lock_guard<std::mutex> lock(vcn_account_lock_);
+  if (vcn_accounts_.size() <= 0) {
+    // No error when vcn_accounts_ is empty, this is normal bussiness
+    return {modelbox::STATUS_INVALID, ""};
   }
 
-  MBLOG_INFO << "keep alive thread exit";
-}
-
-void VcnRestfulClient::KeepAliveProcess() {
-  std::lock_guard<std::mutex> lock(vcn_account_lock_);
   if (restful_wrapper_ == nullptr) {
-    MBLOG_ERROR << "wrapper is nullptr";
-    return;
+    return {modelbox::STATUS_INVALID, "wrapper is nullptr"};
   }
 
   for (auto &account : vcn_accounts_) {
@@ -272,6 +252,8 @@ void VcnRestfulClient::KeepAliveProcess() {
 
     account->SetKeepAliveTime(now);
   }
+
+  return modelbox::STATUS_OK;
 }
 
 void VcnRestfulClient::GetRestfulInfoFromAccount(
@@ -292,6 +274,28 @@ modelbox::Status VcnRestfulClient::SetRestfulWrapper(
 
   restful_wrapper_ = _restful_wrapper;
   return modelbox::STATUS_OK;
+}
+
+void VcnRestfulClient::PullKeepAliveThread() {
+  if (keep_alive_timer_task_ != nullptr) {
+    return;
+  }
+
+  timer_.Start();
+
+  keep_alive_timer_task_ = std::make_shared<modelbox::TimerTask>([this]() {
+    auto ret = KeepAliveProcess();
+    if (ret != modelbox::STATUS_OK && !ret.Errormsg().empty()) {
+      MBLOG_ERROR << "failed to KeepAliveProcess reason: " << ret.Errormsg();
+    }
+  });
+
+  if (keep_alive_timer_task_ == nullptr) {
+    MBLOG_ERROR << "failed to create vcn restful keep alive timer task";
+    return;
+  }
+
+  timer_.Schedule(keep_alive_timer_task_, 0, keep_alive_interval_ * 1000);
 }
 
 }  // namespace modelbox

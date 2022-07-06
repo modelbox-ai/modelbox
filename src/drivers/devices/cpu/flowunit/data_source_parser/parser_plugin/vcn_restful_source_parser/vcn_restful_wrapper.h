@@ -37,12 +37,20 @@ typedef struct tag_VcnRestfulInfo : public VcnInfo {
 
 typedef enum REQ_METHOD { REQ_GET, REQ_POST } REQ_METHOD;
 
+using HttpcliFunc = httplib::Result(httplib::Client &cli,
+                                    const std::string &path,
+                                    const httplib::Headers &headers,
+                                    const std::string &body);
+
+using HttpcliFuncMap =
+    std::unordered_map<REQ_METHOD, std::function<HttpcliFunc>>;
+
 /**
  * @brief   wrap the vcn restful apis; help to be mocked.
  */
 class VcnRestfulWrapper {
  public:
-  VcnRestfulWrapper() = default;
+  VcnRestfulWrapper();
   virtual ~VcnRestfulWrapper() = default;
 
  public:
@@ -81,6 +89,9 @@ class VcnRestfulWrapper {
                                const std::string &body,
                                const httplib::Headers &headers,
                                REQ_METHOD method, httplib::Response &resp);
+
+ private:
+  HttpcliFuncMap httpcli_func_map_;
 };
 
 }  // namespace modelbox
