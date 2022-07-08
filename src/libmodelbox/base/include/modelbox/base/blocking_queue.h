@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_BLOCKINGQUEUE_H_
 #define MODELBOX_BLOCKINGQUEUE_H_
 
@@ -52,10 +51,10 @@ struct StableElement {
   StableElement(const T& o, std::size_t c) : object_(o), order_(c) {}
 
   /** @brief destructor order element */
-  virtual ~StableElement() {}
+  virtual ~StableElement() = default;
 
   /** @brief override of () */
-  operator T() { return object_; }
+  explicit operator T() { return object_; }
 
   /** @brief override of < */
   bool operator<(const StableElementT& rhs) const {
@@ -90,9 +89,9 @@ class StablePriorityQueue
 
  public:
   /// @brief constructor of priority queue.
-  StablePriorityQueue() {}
+  StablePriorityQueue() = default;
   /// @brief destructor of priority queue.
-  virtual ~StablePriorityQueue() {}
+  virtual ~StablePriorityQueue() = default;
   /// @brief front of the queue
   const T& front() { return this->c.front().object_; }
   /// @brief top of the queue
@@ -268,11 +267,9 @@ class BlockingQueue {
    * @return true or false
    */
   bool Push(const T& elem, int timeout) {
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      if (PushQueue(lock, elem, timeout) == false) {
-        return false;
-      }
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (PushQueue(lock, elem, timeout) == false) {
+      return false;
     }
 
     not_empty_.notify_one();
@@ -292,10 +289,8 @@ class BlockingQueue {
    */
   size_t Push(Sequence* elems, int timeout = 0) {
     size_t num = 0;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      num = PushQueue(lock, elems, timeout);
-    }
+    std::unique_lock<std::mutex> lock(mutex_);
+    num = PushQueue(lock, elems, timeout);
 
     if (num <= 0) {
       return num;
@@ -317,11 +312,8 @@ class BlockingQueue {
    */
   size_t PushBatch(Sequence* elems, int timeout = 0) {
     size_t ret = 0;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      ret = PushQueue(lock, elems, timeout, elems->size());
-    }
-
+    std::unique_lock<std::mutex> lock(mutex_);
+    ret = PushQueue(lock, elems, timeout, elems->size());
     not_empty_.notify_all();
     return ret;
   }
@@ -340,11 +332,8 @@ class BlockingQueue {
   size_t PushBatchForce(Sequence* elems, bool wait_when_full = false,
                         int timeout = 0) {
     size_t ret = 0;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      ret = PushQueueForce(lock, elems, wait_when_full, timeout);
-    }
-
+    std::unique_lock<std::mutex> lock(mutex_);
+    ret = PushQueueForce(lock, elems, wait_when_full, timeout);
     not_empty_.notify_all();
     return ret;
   }
@@ -363,11 +352,8 @@ class BlockingQueue {
    */
   virtual bool PushForce(const T& elem) {
     bool ret = false;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      ret = PushQueueForce(elem);
-    }
-
+    std::unique_lock<std::mutex> lock(mutex_);
+    ret = PushQueueForce(elem);
     not_empty_.notify_one();
 
     return ret;
@@ -407,11 +393,9 @@ class BlockingQueue {
    * @return is pop success
    */
   bool Pop(T* elem, int timeout) {
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      if (PopQueue(lock, elem, timeout) == false) {
-        return false;
-      }
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (PopQueue(lock, elem, timeout) == false) {
+      return false;
     }
     /* wakeup waiter */
     not_full_.notify_one();
@@ -433,12 +417,10 @@ class BlockingQueue {
    */
   virtual size_t Pop(Sequence* elems, int timeout = 0, size_t maxsize = 0) {
     size_t num = 0;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      num = PopQueue(lock, elems, timeout, maxsize);
-      if (num < 0) {
-        return num;
-      }
+    std::unique_lock<std::mutex> lock(mutex_);
+    num = PopQueue(lock, elems, timeout, maxsize);
+    if (num < 0) {
+      return num;
     }
 
     /* wakeup waiter */
@@ -459,10 +441,8 @@ class BlockingQueue {
    */
   size_t PopBatch(Sequence* elems, int timeout = 0, uint32_t max_elems = -1) {
     size_t num = 0;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
-      num = PopQueueBatch(lock, elems, timeout, max_elems);
-    }
+    std::unique_lock<std::mutex> lock(mutex_);
+    num = PopQueueBatch(lock, elems, timeout, max_elems);
 
     /* wakeup waiter */
     not_full_.notify_all();
@@ -511,7 +491,7 @@ class BlockingQueue {
    * @return wait success
    */
   bool Wait(std::condition_variable& cond, std::unique_lock<std::mutex>& lock,
-            int timeout, std::function<bool()> wait_cond) {
+            int timeout, const std::function<bool()> &wait_cond) {
     bool ret = false;
     auto cond_func = [&]() { return need_wakeup_ || wait_cond(); };
 
@@ -844,7 +824,7 @@ class PriorityBlockingQueue
   explicit PriorityBlockingQueue(size_t capacity = SIZE_MAX)
       : _BlockingQueue(capacity) {}
 
-  virtual ~PriorityBlockingQueue(){};
+  virtual ~PriorityBlockingQueue() = default;
 
   /**
    * @brief Pop a sequence of elems which equal each other from queue at once
@@ -914,7 +894,6 @@ class PriorityBlockingQueue
     return num;
   }
 
- private:
   Compare comp_;
 };
 
