@@ -116,6 +116,17 @@ TEST_F(LogTest, LoggerConsole) {
   MBLOG_STACKTRACE(LOG_INFO);
 }
 
+TEST_F(LogTest, LoggerWithID) {
+  ModelBoxLogger.GetLogger()->SetLogLevel(LOG_DEBUG);
+  auto logid = modelbox::LogSetLogID("LOGID");
+  MBLOG_DEBUG << "this is DEBUG";
+  MBLOG_INFO << "this is INFO";
+  MBLOG_NOTICE << "this is NOTICE";
+  MBLOG_ERROR << "this is ERROR";
+  MBLOG_FATAL << "this is FATAL";
+  MBLOG_STACKTRACE(LOG_INFO);
+}
+
 TEST_F(LogTest, LoggerCallBackPrint) {
   std::string origin_msg = "this is message";
   std::string expect_msg = "";

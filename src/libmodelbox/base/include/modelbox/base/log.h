@@ -321,6 +321,8 @@ extern const char *LogLevelToString(LogLevel level);
  */
 extern LogLevel LogLevelStrToLevel(const std::string &level);
 
+extern std::shared_ptr<const void> LogSetLogID(const char *id);
+
 }  // namespace modelbox
 
 #ifndef BASE_FILE_NAME
