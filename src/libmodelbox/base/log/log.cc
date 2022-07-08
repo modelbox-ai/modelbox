@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/log.h"
 
 #include <libgen.h>
@@ -34,12 +33,23 @@ namespace modelbox {
 
 constexpr int LOG_BUFF_SIZE = 4096;
 
+thread_local const char *kLogID;
 Log klogger;
 std::shared_ptr<LoggerCallback> kloggercallback =
     std::make_shared<LoggerCallback>();
 
-Log &GetLogger() {
-  return klogger;
+Log &GetLogger() { return klogger; }
+
+void LogIdReset(const void *id) {
+  if (id == kLogID) {
+    kLogID = nullptr;
+  }
+}
+
+extern std::shared_ptr<const void> LogSetLogID(const char *id) {
+  kLogID = id;
+  std::shared_ptr<const void> ret(id, LogIdReset);
+  return ret;
 }
 
 const char *kLogLevelString[] = {
@@ -275,7 +285,12 @@ LogMessage::LogMessage(Log *log, LogLevel level, const char *file, int lineno,
 }
 
 LogMessage::~LogMessage() {
-  log_->Print(level_, file_, lineno_, func_, "%s", msg_.str().c_str());
+  if (kLogID) {
+    log_->Print(level_, file_, lineno_, func_, "[%s] %s", kLogID,
+                msg_.str().c_str());
+  } else {
+    log_->Print(level_, file_, lineno_, func_, "%s", msg_.str().c_str());
+  }
 }
 
 std::ostream &LogMessage::Stream() { return msg_; }
