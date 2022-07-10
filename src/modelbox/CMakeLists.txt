@@ -29,6 +29,7 @@ endif()
 add_subdirectory(common)
 add_subdirectory(manager)
 add_subdirectory(server)
+add_subdirectory(serving)
 add_subdirectory(tool)
 
 set(MODELBOX_PROG_INCLUDE ${CMAKE_CURRENT_LIST_DIR})

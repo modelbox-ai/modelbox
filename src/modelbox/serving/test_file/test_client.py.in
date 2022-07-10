@@ -1,0 +1,46 @@
+import http.client
+import os
+from urllib.parse import urlparse
+import urllib.request
+import json
+
+class HttpConfig:
+    def __init__(self):
+        self.httpMethod = "POST"
+        self.requstURL = "/test_default_"
+
+        self.headerdata = {
+            "Content-Type": "application/json"
+        }
+
+        self.test_data = {
+            "input": [1.0, 2.0, 3.0]
+        }
+
+        self.body = json.dumps(self.test_data)
+
+def DoInfer(host):
+    o = urlparse('//' + host)
+
+    http_config = HttpConfig()
+    http_config.hostIP = o.hostname
+    http_config.Port = o.port
+
+    conn = http.client.HTTPConnection(host=http_config.hostIP, port=http_config.Port)
+    try:
+        conn.request(method=http_config.httpMethod, url=http_config.requstURL, body=http_config.body,
+                headers=http_config.headerdata)
+    except  Exception as e:
+        print("Connect to " + host + " failed, reaseon: ")
+        print(e)
+        print("Please check the service status, or use '-host [ip:port]' to specify the address of the service.")
+        return 1
+
+    response = conn.getresponse().read().decode()
+    print(response)
+    return 0
+
+
+if __name__ == "__main__":
+    host = "0.0.0.0:39110"
+    DoInfer(host)
