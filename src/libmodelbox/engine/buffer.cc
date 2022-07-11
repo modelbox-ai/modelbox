@@ -177,7 +177,7 @@ Status Buffer::SetBufferMutable(bool is_mutable) {
 }
 
 void Buffer::SetError(const std::string& error_code,
-                         const std::string& error_msg) {
+                      const std::string& error_msg) {
   data_error_ = std::make_shared<DataError>(error_code, error_msg);
 
   dev_mem_ = nullptr;
@@ -303,8 +303,9 @@ bool Buffer::GetDelayedCopyFlag(std::shared_ptr<Device> dest_device) {
   // if current buffer device type is "cuda"/"ascend" and input port device
   // type is "cpu" , the real data will be copied to target device when the
   // user calls Buffer::ConstData()
-  return "cpu" == dest_device->GetType() &&
-         "cpu" != dev_mem_->GetDevice()->GetType();
+  return dev_mem_ ? ("cpu" == dest_device->GetType() &&
+                     "cpu" != dev_mem_->GetDevice()->GetType())
+                  : false;
 }
 
 Status Buffer::MoveToTargetDevice() {
