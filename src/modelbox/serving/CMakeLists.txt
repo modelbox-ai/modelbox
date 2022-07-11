@@ -20,7 +20,9 @@ file(GLOB_RECURSE MODELBOX_SOURCES *.cpp *.cc *.c)
 set(MODELBOX_INCLUDE ${CMAKE_CURRENT_LIST_DIR}/include)
 
 include_directories(${MODELBOX_INCLUDE})
+include_directories(${MODELBOX_COMMON_INCLUDE})
 include_directories(${HUAWEI_SECURE_C_INCLUDE_DIR})
+include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})
 
 add_executable(modelbox-serving ${MODELBOX_SOURCES})
