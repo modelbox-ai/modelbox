@@ -210,6 +210,19 @@ Status CreateDirectory(const std::string &directory_path) {
   return STATUS_OK;
 }
 
+bool IsDirectory(const std::string &path) {
+  struct stat buffer;
+  if (stat(path.c_str(), &buffer) == -1) {
+    return false;
+  }
+
+  if (S_ISDIR(buffer.st_mode) == 0) {
+    return false;
+  }
+
+  return true;
+}
+
 static int rmfiles(const char *pathname, const struct stat *sbuf, int type,
                    struct FTW *ftwb) {
   remove(pathname);
@@ -505,7 +518,7 @@ void StringReplaceAll(std::string &str, const std::string &from,
   if (from.empty()) {
     return;
   }
-  
+
   while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
     str.replace(start_pos, from.length(), to);
     start_pos += to.length();

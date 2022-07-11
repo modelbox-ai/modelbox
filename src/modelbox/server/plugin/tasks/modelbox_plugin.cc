@@ -149,17 +149,21 @@ modelbox::Status ModelboxPlugin::CreateLocalJobs() {
   MBLOG_INFO << "create local job";
   std::vector<std::string> files;
   if (default_flow_path_.length() > 0) {
-  auto ret = modelbox::ListFiles(default_flow_path_, "*", &files,
-                                 modelbox::LIST_FILES_FILE);
-    if (!ret) {
-      MBLOG_WARN << "Load flow path failed. " << ret;
+    if (!modelbox::IsDirectory(default_flow_path_)) {
+      files.emplace_back(default_flow_path_);
+    } else {
+      auto ret = modelbox::ListFiles(default_flow_path_, "*", &files,
+                                     modelbox::LIST_FILES_FILE);
+      if (!ret) {
+        MBLOG_WARN << "Load flow path failed. " << ret;
+      }
     }
   }
 
   if (default_application_path_.length() > 0) {
     std::vector<std::string> project_dirs;
-    auto ret = modelbox::ListFiles(default_application_path_, "*", &project_dirs,
-                        modelbox::LIST_FILES_DIR);
+    auto ret = modelbox::ListFiles(default_application_path_, "*",
+                                   &project_dirs, modelbox::LIST_FILES_DIR);
     if (!ret) {
       MBLOG_WARN << "Load project path failed. " << ret;
     }
