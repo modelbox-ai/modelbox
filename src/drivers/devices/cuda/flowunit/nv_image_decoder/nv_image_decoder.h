@@ -69,26 +69,6 @@ class NvImageDecoderFlowUnit : public modelbox::FlowUnit {
   modelbox::Status Process(
       std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPre(
-      std::shared_ptr<modelbox::DataContext> data_ctx) override {
-    return modelbox::STATUS_OK;
-  };
-
-  modelbox::Status DataPost(
-      std::shared_ptr<modelbox::DataContext> data_ctx) override {
-    return modelbox::STATUS_OK;
-  };
-
-  modelbox::Status DataGroupPre(
-      std::shared_ptr<modelbox::DataContext> data_ctx) override {
-    return modelbox::STATUS_OK;
-  };
-
-  modelbox::Status DataGroupPost(
-      std::shared_ptr<modelbox::DataContext> data_ctx) override {
-    return modelbox::STATUS_OK;
-  };
-
  private:
   ImageType CheckImageType(const uint8_t *input_data);
 

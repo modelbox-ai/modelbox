@@ -49,11 +49,6 @@ modelbox::Status ImageDecoderFlowUnit::Open(
 
 modelbox::Status ImageDecoderFlowUnit::Close() { return modelbox::STATUS_OK; }
 
-modelbox::Status ImageDecoderFlowUnit::DataPre(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  return modelbox::STATUS_OK;
-}
-
 modelbox::Status ImageDecoderFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> ctx) {
   MBLOG_DEBUG << "process image decode";
@@ -76,9 +71,13 @@ modelbox::Status ImageDecoderFlowUnit::Process(
         input_data, input_data + buffer->GetBytes() / sizeof(u_char));
 
     cv::Mat img_bgr = cv::imdecode(input_data2, cv::IMREAD_COLOR);
-    if (img_bgr.data == NULL) {
-      MBLOG_ERROR << "input image buffer is invalid, imdecode failed.";
-      return modelbox::STATUS_FAULT;
+    if (img_bgr.data == nullptr || img_bgr.size == 0) {
+      std::string error_msg = "input image buffer is invalid, imdecode failed.";
+      MBLOG_ERROR << error_msg;
+      auto buffer = std::make_shared<modelbox::Buffer>();
+      buffer->SetError("ImageDecoder.DecodeFailed", error_msg);
+      output_bufs->PushBack(buffer);
+      continue;
     }
     cv::Mat img_dest;
     if (pixel_format_ == "bgr") {
@@ -90,8 +89,12 @@ modelbox::Status ImageDecoderFlowUnit::Process(
     }
 
     if (!modelbox::StatusError) {
-      MBLOG_ERROR << "dest image data is invalid, imdecode failed.";
-      return modelbox::STATUS_FAULT;
+      std::string error_msg = "input image decode success, but transform nv12 format failed.";
+      MBLOG_ERROR << error_msg;
+      auto buffer = std::make_shared<modelbox::Buffer>();
+      buffer->SetError("ImageDecoder.DecodeFailed", error_msg);
+      output_bufs->PushBack(buffer);
+      continue;
     }
 
     MBLOG_DEBUG << "decode image clos : " << img_bgr.cols
@@ -146,21 +149,6 @@ cv::Mat ImageDecoderFlowUnit::BGR2YUV_NV12(const cv::Mat &src_bgr) {
   }
 
   return dst_nv12;
-}
-
-modelbox::Status ImageDecoderFlowUnit::DataPost(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  return modelbox::STATUS_OK;
-}
-
-modelbox::Status ImageDecoderFlowUnit::DataGroupPre(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
-  return modelbox::STATUS_OK;
-}
-
-modelbox::Status ImageDecoderFlowUnit::DataGroupPost(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
-  return modelbox::STATUS_OK;
 }
 
 MODELBOX_FLOWUNIT(ImageDecoderFlowUnit, desc) {
