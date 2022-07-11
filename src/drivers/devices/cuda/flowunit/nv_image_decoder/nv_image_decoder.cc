@@ -98,11 +98,10 @@ modelbox::Status NvImageDecoderFlowUnit::Process(
       decode_ret = DecodeOthers(buffer, output_buffer);
     }
 
-    if (decode_ret) {
-      output_bufs->PushBack(output_buffer);
-    } else {
-      return modelbox::STATUS_FAULT;
+    if (!decode_ret) {
+      output_buffer->SetError("ImageDecoder.DecodeFailed", "NvImageDecoder decode failed.");
     }
+    output_bufs->PushBack(output_buffer);
   }
 
   return modelbox::STATUS_OK;
@@ -219,7 +218,7 @@ bool NvImageDecoderFlowUnit::DecodeOthers(
       input_data, input_data + input_buffer->GetBytes() / sizeof(uint8_t));
 
   cv::Mat img_bgr = cv::imdecode(input_data2, cv::IMREAD_COLOR);
-  if (img_bgr.data == NULL) {
+  if (img_bgr.data == nullptr || img_bgr.size == 0) {
     MBLOG_ERROR << "input image buffer is invalid, imdecode failed.";
     return false;
   }
