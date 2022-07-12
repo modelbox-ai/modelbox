@@ -161,8 +161,9 @@ int modelbox_run() {
         modelbox_full_path(std::string(MODELBOX_ROOT_VAR) + modelbox_bin);
   }
 
-  std::vector<std::string> cmd{modelbox_bin, "restart"};
-  auto status = p->Open(cmd, -1);
+  modelbox_bin += " restart";
+
+  auto status = p->Open(modelbox_bin, -1, "");
   if (status != modelbox::STATUS_OK) {
     fprintf(stderr, "execute modelbox cmd failed");
     return 1;
@@ -170,7 +171,7 @@ int modelbox_run() {
 
   int ret = p->Close();
   if (ret != 0) {
-    fprintf(stderr, "popen close failed failed.");
+    fprintf(stderr, "run %s failed, ret: %d\n", modelbox_bin.c_str(), ret);
     return 1;
   }
 
@@ -254,6 +255,6 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  fprintf(stdout, "exit modelbox process\n");
+  fprintf(stdout, "modelbox run successed\n");
   return 0;
 }
