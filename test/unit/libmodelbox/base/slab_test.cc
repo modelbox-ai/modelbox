@@ -196,6 +196,8 @@ TEST_F(SlabTest, SlabCacheReclaim) {
   EXPECT_EQ(number, cache.GetEmptySlabNumber());
   cache.Reclaim(0);
   EXPECT_EQ(number * 10 / 100, cache.GetEmptySlabNumber());
+  cache.Reclaim(0);
+  EXPECT_EQ(1, cache.GetEmptySlabNumber());
 }
 
 TEST_F(SlabTest, Perf) {

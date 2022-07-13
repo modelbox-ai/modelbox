@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/slab.h"
 
 #include <stdarg.h>
@@ -166,14 +165,14 @@ void *Slab::_Alloc(size_t size) {
     return cache_->_Alloc(size);
   }
   return malloc(size);
-};
+}
 
 void Slab::_Free(void *ptr) {
   if (cache_) {
     return cache_->_Free(ptr);
   }
   return free(ptr);
-};
+}
 
 SlabCache::SlabCache(size_t obj_size, size_t slab_size,
                      MemoryAllocFree *mem_allocator) {
@@ -318,18 +317,20 @@ void SlabCache::Reclaim(time_t before) {
   }
 
   const int free_percent_threshold = 10;
+  const int idle_free_time_before = 60 * 10;
   auto free_obj_percent =
       (slab_empty_num_ * batch_object_num_ * 100) / (obj_num_ * 100);
   auto shrink_percent = free_obj_percent * 100 - free_percent_threshold;
   if (shrink_percent <= 0) {
     /* shrink unused slabs */
-    RemoveSlabs(&empty_, slab_empty_num_, 60 * 10);
+    RemoveSlabs(&empty_, slab_empty_num_, idle_free_time_before);
     return;
   }
 
   int shrink_obj_num = obj_num_ * shrink_percent / 100;
   int shrink_num = shrink_obj_num / batch_object_num_;
   if (shrink_num <= 0) {
+    RemoveSlabs(&empty_, slab_empty_num_, idle_free_time_before);
     return;
   }
 
