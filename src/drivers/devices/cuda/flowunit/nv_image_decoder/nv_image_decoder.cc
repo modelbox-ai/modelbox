@@ -15,12 +15,15 @@
  */
 
 #include "nv_image_decoder.h"
+
 #include <cuda_runtime_api.h>
 #include <npp.h>
 #include <nppi_data_exchange_and_initialization.h>
+
 #include <opencv2/opencv.hpp>
-#include "modelbox/flowunit_api_helper.h"
+
 #include "modelbox/device/cuda/device_cuda.h"
+#include "modelbox/flowunit_api_helper.h"
 
 std::map<std::string, nvjpegOutputFormat_t> NvImgPixelFormat{
     {"bgr", NVJPEG_OUTPUT_BGR}, {"rgb", NVJPEG_OUTPUT_RGB}};
@@ -90,16 +93,19 @@ modelbox::Status NvImageDecoderFlowUnit::Process(
     auto output_buffer = std::make_shared<modelbox::Buffer>(GetBindDevice());
     auto input_data = static_cast<const uint8_t *>(buffer->ConstData());
     bool decode_ret = false;
-    if (CheckImageType(input_data) == IMAGE_TYPE_JPEG) {
-      decode_ret = DecodeJpeg(buffer, output_buffer, jpeg_handle);
-    } 
-    
-    if (!decode_ret) {
-      decode_ret = DecodeOthers(buffer, output_buffer);
+    if (buffer->GetBytes() != 0) {
+      if (CheckImageType(input_data) == IMAGE_TYPE_JPEG) {
+        decode_ret = DecodeJpeg(buffer, output_buffer, jpeg_handle);
+      }
+
+      if (!decode_ret) {
+        decode_ret = DecodeOthers(buffer, output_buffer);
+      }
     }
 
     if (!decode_ret) {
-      output_buffer->SetError("ImageDecoder.DecodeFailed", "NvImageDecoder decode failed.");
+      output_buffer->SetError("ImageDecoder.DecodeFailed",
+                              "NvImageDecoder decode failed.");
     }
     output_bufs->PushBack(output_buffer);
   }
