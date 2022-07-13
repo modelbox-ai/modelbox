@@ -473,6 +473,11 @@ Status BufferList::MoveAllBufferToTargetDevice() {
       return modelbox::STATUS_FAULT;
     }
 
+    if (buffer->HasError()) {
+      new_buffer_list.push_back(buffer);
+      continue;
+    }
+
     auto same_device_flag = dev_mem_->IsSameDevice(buffer->dev_mem_);
     auto delayed_copy_flag = buffer->GetDelayedCopyFlag(target_device);
     // No need to copy real data or need delayed copy .
