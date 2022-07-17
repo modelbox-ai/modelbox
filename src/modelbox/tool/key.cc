@@ -21,6 +21,7 @@
 #include <modelbox/base/crypto.h>
 #include <modelbox/base/utils.h>
 #include <openssl/evp.h>
+#include <securec.h>
 #include <stdio.h>
 #include <string.h>
 #include <termios.h>
@@ -207,8 +208,17 @@ Status ModelEncrypt(const std::string &model_path,
   iv.resize(IV_LEN + MAX_PASSWORD_LEN);
   Base64Decode(*en_pass, &iv);
 
-  ret = EncryptWithFile(model_path, model_path + ".en",
-                        (unsigned char *)aes256_pass.data(), iv.data());
+  // fill key with "0"
+  unsigned char keybuf[AES256_KEY_LEN] = {0};
+  if (memcpy_s(keybuf, AES256_KEY_LEN, aes256_pass.data(),
+               aes256_pass.size() >= AES256_KEY_LEN
+                   ? AES256_KEY_LEN
+                   : aes256_pass.size()) != EOK) {
+    return {modelbox::STATUS_FAULT, "failed to memcpy"};
+  }
+
+  ret = EncryptWithFile(model_path, model_path + ".en", (unsigned char *)keybuf,
+                        iv.data());
   if (ret != STATUS_SUCCESS) {
     return ret;
   }
