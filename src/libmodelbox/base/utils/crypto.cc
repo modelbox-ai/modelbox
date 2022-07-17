@@ -535,7 +535,8 @@ Status PassDecrypt(const std::string &en_pass, const std::string &rootkey,
   contex = (struct cipher_context *)raw_pass.data();
   std::vector<unsigned char> encrypt_raw_pass(contex->ciph,
                                               contex->ciph + en_pass_len);
-  pass->resize(en_pass.length() + EVP_MAX_BLOCK_LENGTH);
+  // fill key with "0"
+  pass->resize(en_pass.length() + EVP_MAX_BLOCK_LENGTH, '\0');
   int passwordlen = 0;
   ret = Decrypt(ciphername.c_str(), contex->ciph, en_pass_len - IV_LEN,
                 (unsigned char *)pass->data(), &passwordlen, MAX_PASSWORD_LEN,
