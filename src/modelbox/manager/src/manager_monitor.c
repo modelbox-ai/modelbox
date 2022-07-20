@@ -256,7 +256,6 @@ int _app_start(struct app_monitor *app) {
     manager_log(MANAGER_LOG_ERR, "start process failed, %s", strerror(errno));
     return -1;
   } else if (pid == 0) {
-    char killcmd[128];
     char keyfileenv[PATH_MAX];
     char appnameenv[PATH_MAX];
     char keepalivetime[64];

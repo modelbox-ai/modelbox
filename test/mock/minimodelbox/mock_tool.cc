@@ -29,11 +29,16 @@ MockTool::~MockTool() {}
 
 int MockTool::Run(const std::string &cmd) {
   auto cmds = modelbox::StringSplit(cmd, ' ');
+  if (cmds.empty()) {
+    return 1;
+  }
+
   int argc = cmds.size();
   char *argv[cmds.size()];
   for (size_t i = 0; i < cmds.size(); i++) {
     argv[i] = (char *)cmds[i].data();
   }
+
   return Run(argc, argv);
 }
 

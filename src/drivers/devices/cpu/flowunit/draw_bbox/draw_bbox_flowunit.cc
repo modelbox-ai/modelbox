@@ -80,7 +80,7 @@ modelbox::Status DrawBBoxFlowUnit::Process(
     }
 
     // get images
-    int32_t width, height, channel, rate_den, rate_num;
+    int32_t width = 0, height = 0, channel = 0, rate_den = 0, rate_num = 0;
     input2_bufs->At(i)->Get("width", width);
     input2_bufs->At(i)->Get("height", height);
     input2_bufs->At(i)->Get("channel", channel);

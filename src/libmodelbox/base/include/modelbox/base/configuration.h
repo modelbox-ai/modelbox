@@ -254,7 +254,7 @@ T Configuration::GetProperty(const std::string &key,
   }
 
   return convert_prop;
-};
+}
 
 template <class T>
 std::vector<T> Configuration::GetProperty(
@@ -269,7 +269,7 @@ std::vector<T> Configuration::GetProperty(
   StringSplit(raw_prop, LIST_DELIMITER, raw_value_list);
 
   std::vector<T> value_list;
-  T convert_prop;
+  T convert_prop{};
   for (const auto &raw_value : raw_value_list) {
     ret = Convert<T>(raw_value, convert_prop);
     if (ret != STATUS_SUCCESS) {

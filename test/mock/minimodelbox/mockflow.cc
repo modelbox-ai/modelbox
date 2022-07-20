@@ -950,7 +950,7 @@ void MockFlow::Register_Loop_Flowunit() {
       [=](std::shared_ptr<DataContext> ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto input_bufs_1 = ctx->Input("In_1");
-    int ending;
+    int ending = 0;
 
     auto output_bufs_1 = ctx->Output("Out_1");
     auto output_bufs_2 = ctx->Output("Out_2");
@@ -3495,11 +3495,11 @@ bool MockFlow::Init(bool with_default_flowunit) {
     Register_Expand_Stream_Flowunit();
   }
 
-  bool result = drivers->Scan(TEST_LIB_DIR, "/libmodelbox-unit-*");
+  drivers->Scan(TEST_LIB_DIR, "/libmodelbox-unit-*");
 
   std::shared_ptr<FlowUnitManager> flowunit_mgr =
       FlowUnitManager::GetInstance();
-  result = flowunit_mgr->Initialize(drivers, device_mgr, config);
+  auto result = flowunit_mgr->Initialize(drivers, device_mgr, config);
 
   return result;
 };
