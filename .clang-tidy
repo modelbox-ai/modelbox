@@ -1,0 +1,130 @@
+#
+# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# clang-tidy checks
+# https://clang.llvm.org/extra/clang-tidy/checks/list.html
+
+Checks: >
+  -*,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-redundant-void-arg,
+  -modernize-deprecated-headers,
+  -modernize-use-default-member-init,
+  -modernize-avoid-c-arrays,
+  -modernize-use-override,
+  -modernize-use-equals-default,
+  -modernize-loop-convert,
+  -modernize-pass-by-value,
+  -modernize-raw-string-literal,
+  -modernize-return-braced-init-list,
+  -modernize-use-using,
+  -modernize-use-auto,
+  -modernize-use-nullptr,
+  -modernize-use-equals-delete,
+  -modernize-use-bool-literals,
+  -modernize-use-emplace,
+  -modernize-use-nodiscard,
+  -modernize-use-transparent-functors,
+  bugprone-*,
+  -bugprone-forwarding-reference-overload,
+  -bugprone-lambda-function-name,
+  -bugprone-signed-char-misuse,
+  -bugprone-parent-virtual-call,
+  -bugprone-macro-parentheses,
+  -bugprone-narrowing-conversions,
+  -bugprone-exception-escape,
+  -bugprone-branch-clone,
+  -bugprone-misplaced-widening-cast,
+  -bugprone-move-forwarding-reference,
+  -bugprone-unhandled-self-assignment,
+  -bugprone-argument-comment,
+  -bugprone-suspicious-string-compare,
+  -bugprone-not-null-terminated-result,
+  -bugprone-sizeof-expression,
+  performance-*,
+  -performance-unnecessary-value-param,
+  -performance-for-range-copy,
+  -performance-inefficient-string-concatenation,
+  -performance-noexcept-move-constructor,
+  -performance-unnecessary-copy-initialization,
+  -performance-faster-string-find,
+  -performance-no-automatic-move,
+  -performance-inefficient-vector-operation,
+  -performance-move-const-arg,
+  -performance-type-promotion-in-math-fn,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  -misc-redundant-expression,
+  -misc-unused-parameters,
+  -misc-unconventional-assign-operator,
+  -misc-definitions-in-headers,
+  -misc-unused-using-decls,
+  readability-*,
+  -readability-inconsistent-declaration-parameter-name,
+  -readability-redundant-access-specifiers,
+  -readability-simplify-boolean-expr,
+  -readability-container-size-empty,
+  -readability-avoid-const-params-in-decls,
+  -readability-magic-numbers,
+  -readability-implicit-bool-conversion,
+  -readability-convert-member-functions-to-static,
+  -readability-const-return-type,
+  -readability-uppercase-literal-suffix,
+  -readability-implicit-bool-conversion,
+  -readability-qualified-auto,
+  -readability-redundant-control-flow,
+  -readability-non-const-parameter,
+  -readability-make-member-function-const,
+  -readability-else-after-return,
+  -readability-static-accessed-through-instance,
+  -readability-redundant-smartptr-get,
+  -readability-redundant-member-init,
+  -readability-isolate-declaration,
+  -readability-redundant-member-init,
+  -readability-redundant-declaration,
+  -readability-named-parameter,
+  -readability-redundant-string-init,
+  -readability-misleading-indentation,
+  -readability-redundant-string-cstr,
+  -readability-braces-around-statements,
+  -readability-string-compare,
+  -readability-simplify-subscript-expr,
+  concurrency-*,
+  portability-*,
+  google-*,
+  -google-readability-avoid-underscore-in-googletest-name,
+  -google-readability-namespace-comments,
+  -google-default-arguments,
+  -google-runtime-int,
+  -google-runtime-references,
+  -google-readability-casting,
+  -google-readability-todo,
+  -google-explicit-constructor,
+  -google-build-using-namespace,
+  -google-readability-braces-around-statements,
+  -google-build-namespaces,
+  -google-global-names-in-headers,
+
+# enable this when required
+  # clang-analyzer-*,
+  # clang-analyzer-deadcode.DeadStores,
+  # clang-analyzer-optin.performance.Padding,
+  # clang-analyzer-optin.cplusplus.VirtualCall,
+
+# Turn all the warnings from the checks above into errors.
+WarningsAsErrors: "*"
+HeaderFilterRegex: '^(?!thirdparty/|/usr/include)*$'
+FormatStyle: file
