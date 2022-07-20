@@ -76,7 +76,7 @@ modelbox::Status ImageRotateFlowUnitBase::Process(
       return check_ret;
     }
 
-    int32_t width, height;
+    int32_t width = 0, height = 0;
     buffer->Get("width", width);
     buffer->Get("height", height);
 

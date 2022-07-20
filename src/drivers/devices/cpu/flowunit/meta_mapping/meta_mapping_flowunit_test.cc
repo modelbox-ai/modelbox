@@ -132,8 +132,8 @@ TEST_F(MetaMappingFlowUnitTest, Int32Mapping) {
   auto output_buffer2 = output_buffer_list->At(1);
   auto output_buffer3 = output_buffer_list->At(2);
   auto output_buffer4 = output_buffer_list->At(3);
-  int32_t dest_val;
-  int32_t expect_val;
+  int32_t dest_val = 0;
+  int32_t expect_val = 0;
   EXPECT_TRUE(output_buffer1->Get("dest", dest_val));
   EXPECT_TRUE(output_buffer1->Get("expect", expect_val));
   EXPECT_EQ(dest_val, expect_val);

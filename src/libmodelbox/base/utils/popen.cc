@@ -164,6 +164,7 @@ Status Popen::Open(std::vector<std::string> args, int timeout, const char *mode,
       close(fd_err[1]);
     }
 
+    // call readdir after vfork is not safe, for glibc only
     CloseAllParentFds(fd_out_keep);
 
     // args
@@ -434,7 +435,6 @@ int Popen::WriteString(const std::string &in) {
       return -1;
     }
 
-    written_len += len;
     total_len -= len;
   } while (total_len > 0);
 

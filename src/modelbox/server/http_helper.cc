@@ -275,7 +275,7 @@ Status HttpPathMatchTree::Match(const std::string &path,
     node_path_buffer << "/" << path_name;
   }
 
-  node_path = std::move(node_path_buffer.str());
+  node_path = node_path_buffer.str();
   return STATUS_OK;
 }
 

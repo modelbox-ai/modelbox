@@ -317,7 +317,6 @@ modelbox::Status AtcInference::Infer(
     return {STATUS_FAULT, "Create output failed"};
   }
 
-  acl_ret = ACL_ERROR_NONE;
   if (stream == nullptr) {
     acl_ret = aclmdlExecute(model_id_, input.get(), output.get());
   } else {

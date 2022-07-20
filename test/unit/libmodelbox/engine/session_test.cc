@@ -50,6 +50,9 @@ class TestSessionIO : public SessionIO {
                                std::shared_ptr<DataMeta> meta) {
     return STATUS_OK;
   }
+
+  ~TestSessionIO() = default;
+
   virtual Status Send(const std::string &port_name,
                       std::shared_ptr<BufferList> buffer_list) {
     return STATUS_OK;

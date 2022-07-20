@@ -21,6 +21,13 @@ include(ExternalProject)
 set(THIRDPARTY_DOWNLOAD_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/download)
 set(THIRDPARTY_DOWNLOAD_WORKING_DIR ${THIRDPARTY_DOWNLOAD_BINARY_DIR}/build)
 
+# disable clang lint for third party lib
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/.clang-tidy" "
+---
+Checks: '-*,llvm-twine-local'
+...
+")
+
 # 预先下载的三方组件，当使用ADD_SUBDIRECTORY包含子项目时，采用此方式。
 if (NOT LOCAL_PACKAGE_PATH) 
   set(THIRDPARTY_DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/download)

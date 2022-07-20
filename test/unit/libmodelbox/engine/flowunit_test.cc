@@ -413,8 +413,8 @@ TEST_F(VirtualFlowUnitTest, VirtualTest) {
 
   std::string file_misc_python =
       std::string(TEST_LIB_DIR) + "/libmodelbox-unit-cpu-python.so";
-  result = drivers->Add(file_misc_python);
-  result = drivers->Scan(TEST_LIB_DIR, "libmodelbox-virtualdriver-python.so");
+  drivers->Add(file_misc_python);
+  drivers->Scan(TEST_LIB_DIR, "libmodelbox-virtualdriver-python.so");
   drivers->VirtualDriverScan();
   std::shared_ptr<DeviceManager> device_mgr = DeviceManager::GetInstance();
   device_mgr->Initialize(drivers, config);

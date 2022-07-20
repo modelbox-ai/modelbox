@@ -65,7 +65,7 @@ modelbox::Status ThreadHandler::CreateThread() {
   int createThreadErr = pthread_create(&threadId_, nullptr,
                                        ThreadHandler::ThreadFunc, (void *)this);
   if (createThreadErr != 0) {
-    auto errMsg = "create thread failed, err = " + createThreadErr;
+    auto errMsg = "create thread failed, err = " + std::to_string(createThreadErr);
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }

@@ -63,7 +63,6 @@ constexpr const char* HTTP_RESP_ERR_GETINFO_FAILED = "Get info failed";
 constexpr const char* HTTP_RESP_ERR_PATH_NOT_FOUND = "Path not found";
 constexpr const char* HTTP_RESP_ERR_PATH_NOT_FILE = "Path not a file";
 constexpr const char* HTTP_RESP_ERR_CANNOT_READ = "Can not read file";
-constexpr int MAX_FILES = 1 << 16;
 
 const std::string ModelboxGetMimeType(const std::string& file) {
   std::string ext = file.substr(file.find_last_of(".") + 1);
@@ -527,8 +526,8 @@ modelbox::Status ModelboxEditorPlugin::RunCommand(const std::string& cmd,
     p.WriteString(*in);
   }
 
-  auto ret = p.ReadAll(&outmsg, &err);
-  ret = p.Close();
+  p.ReadAll(&outmsg, &err);
+  auto ret = p.Close();
   if (ret == 0) {
     retstatus = modelbox::STATUS_OK;
   } else {

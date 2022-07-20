@@ -234,7 +234,7 @@ TEST_F(TaskManagerTest, TaskInQueue) {
   running_task->RegisterStatusCallback(TaskStopped);
   running_task->Stop();
 
-  cv.wait(lck, [this]() { return count >= 3; });
+  cv.wait(lck, []() { return count >= 3; });
   running_tasks = 0;
   waitting_tasks = 0;
   stopped_tasks = 0;

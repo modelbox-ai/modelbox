@@ -611,7 +611,7 @@ bool Drivers::CheckPathAndMagicCode() {
 
   std::string file_check_node;
   std::unordered_map<std::string, bool> file_map;
-  int64_t ld_cache_time;
+  int64_t ld_cache_time = 0;
   FillCheckInfo(file_check_node, file_map, ld_cache_time);
 
   if (ld_cache_time != buffer.st_mtim.tv_sec) {
