@@ -15,6 +15,7 @@
  */
 #include "model_decrypt_plugin.h"
 
+#include <securec.h>
 #include <sys/mman.h>
 
 #include "modelbox/base/crypto.h"
@@ -23,6 +24,8 @@
 #include "modelbox/base/utils.h"
 
 using namespace modelbox;
+
+constexpr int AES256_KEY_LEN = 32;
 
 Status ModelDecryptPlugin::Init(
     const std::string &fname,
@@ -50,9 +53,17 @@ Status ModelDecryptPlugin::ModelDecrypt(uint8_t *raw_buf, int64_t raw_len,
   iv.resize(IV_LEN + MAX_PASSWORD_LEN);
   Base64Decode(en_pass_, &iv);
 
+  // fill key with "0"
+  unsigned char keybuf[AES256_KEY_LEN] = {0};
+  if (memcpy_s(keybuf, AES256_KEY_LEN, pass.data(),
+               pass.size() >= AES256_KEY_LEN ? AES256_KEY_LEN : pass.size()) !=
+      EOK) {
+    return {modelbox::STATUS_FAULT, "failed to memcpy"};
+  }
+
   int out_len;
   ret = Decrypt(DEFAULT_CIPHER_AES256_CBC, raw_buf, raw_len, plain_buf,
-                &out_len, plain_len, (unsigned char *)pass.data(), iv.data());
+                &out_len, plain_len, (unsigned char *)keybuf, iv.data());
   if (ret != STATUS_SUCCESS) {
     MBLOG_ERROR << "decrypt model err:" << ret;
     return ret;
