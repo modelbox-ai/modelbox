@@ -101,6 +101,7 @@ format = "graphviz"
         ret = flow.wait(0, retval)
         self.assertEqual(retval, modelbox.Status.StatusCode.STATUS_STOP)
 
+    @unittest.skip("disable thread for no delete")
     def test_flow_op_thread(self):
         conf_file = test_config.TEST_DATA_DIR + "/py_op_config.toml"
         driver_dir = test_config.TEST_DRIVER_DIR

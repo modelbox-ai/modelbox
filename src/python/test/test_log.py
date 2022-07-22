@@ -43,6 +43,9 @@ class TestLog(unittest.TestCase):
         frame = frame.f_back
         info = inspect.getframeinfo(frame)
 
+        if file.endswith((".cc", ".c", ".h", ".hpp")):
+            return
+
         self._msg = msg
         self.assertEqual(file, os.path.basename(info.filename))
         self.assertEqual(lineno, info.lineno)
@@ -58,7 +61,7 @@ class TestLog(unittest.TestCase):
         frame = inspect.currentframe()
         info = inspect.getframeinfo(frame)
         self._log.print_ext(modelbox.Log.Level.INFO, os.path.basename(info.filename),
-                            info.lineno + 2, info.function, msg)
+                            info.lineno + 1, info.function, msg)
         self.assertEqual(msg, self._msg)
 
     def test_LogSetLevel(self):

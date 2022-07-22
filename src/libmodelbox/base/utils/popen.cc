@@ -623,7 +623,7 @@ void PopenEnv::LoadEnvFromList(const std::string &item_list) {
       continue;
     }
 
-    std::string item(envp, field);
+    std::string item(envp, field - envp);
     std::string value = field + 1;
     Add(item, value);
   }
