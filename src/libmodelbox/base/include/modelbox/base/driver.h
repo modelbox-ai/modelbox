@@ -238,7 +238,7 @@ class Drivers {
   Status WriteScanInfo(const std::string &scan_info_path,
                        const std::string &check_code);
   Status GatherScanInfo(const std::string &scan_path);
-  void FillCheckInfo(std::string &file_check_node,
+  Status FillCheckInfo(std::string &file_check_node,
                      std::unordered_map<std::string, bool> &file_map,
                      int64_t &ld_cache_time);
   bool CheckPathAndMagicCode();
