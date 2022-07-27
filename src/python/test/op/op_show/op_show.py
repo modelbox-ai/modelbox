@@ -52,8 +52,8 @@ class ShowFlowunit(modelbox.FlowUnit):
 
             image = Image.fromarray(np_image)
 
-            if self.__is_save_config == True:
-                image.save(self.__out_file)
+            # if self.__is_save_config == True:
+            #    image.save(self.__out_file)
 
             with Image.open(self.__check_path) as check_image:
                 try:
@@ -63,7 +63,7 @@ class ShowFlowunit(modelbox.FlowUnit):
                 except ValueError as e:
                     return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid check image size")
 
-            check_image.close()
+            # check_image.close()
 
         modelbox.info("ShowFlowunit process")
         return modelbox.Status(modelbox.Status.StatusCode.STATUS_STOP)

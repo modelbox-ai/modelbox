@@ -61,7 +61,6 @@ format = "graphviz"
             modelbox.error(ret)
         self.assertFalse(ret)
         
-    @unittest.skip("disable thread for no delete")
     def test_flow_op(self):
         conf_file = test_config.TEST_DATA_DIR + "/py_op_config.toml"
         driver_dir = test_config.TEST_DRIVER_DIR

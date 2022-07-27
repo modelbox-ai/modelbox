@@ -432,7 +432,7 @@ modelbox::Status ReplaceVersion(const std::string &src, const std::string &dest,
 
 std::string GetTFVersion() {
   std::string ans = "";
-  void *handler = dlopen(MODELBOX_TF_SO_PATH, RTLD_LAZY | RTLD_NODELETE);
+  void *handler = dlopen(MODELBOX_TF_SO_PATH, RTLD_LOCAL | RTLD_DEEPBIND);
   if (handler == nullptr) {
     MBLOG_ERROR << "dlopen error: " << dlerror();
     return ans;
