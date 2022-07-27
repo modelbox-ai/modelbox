@@ -131,7 +131,8 @@ modelbox::Status ModelboxServingTest::ReplaceVersion(
 
 std::string ModelboxServingTest::GetTFVersion() {
   std::string ans = "";
-  void *handler = dlopen(MODELBOX_TF_SO_PATH, RTLD_LAZY | RTLD_NODELETE);
+  void *handler =
+      dlopen(MODELBOX_TF_SO_PATH, RTLD_LOCAL | RTLD_DEEPBIND);
   if (handler == nullptr) {
     MBLOG_ERROR << "dlopen error: " << dlerror();
     return ans;
@@ -147,7 +148,7 @@ std::string ModelboxServingTest::GetTFVersion() {
     return ans;
   }
 
-  ans = std::string(func());
+  ans = func();
   return ans;
 }
 
