@@ -28,14 +28,14 @@ modelbox::Status ExampleFlowUnit::Open(
 modelbox::Status ExampleFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status ExampleFlowUnit::DataPre(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status ExampleFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  auto input_bufs = ctx->Input("in");
-  auto output_bufs = ctx->Output("out");
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto input_bufs = data_ctx->Input("in");
+  auto output_bufs = data_ctx->Output("out");
 
   // Your code goes here
   //
@@ -44,7 +44,7 @@ modelbox::Status ExampleFlowUnit::Process(
 }
 
 modelbox::Status ExampleFlowUnit::DataPost(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   return modelbox::STATUS_OK;
 }
 

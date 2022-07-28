@@ -27,13 +27,13 @@ Status FfmpegVideoEncoder::Init(int32_t width, int32_t height,
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
   av_register_all();
 #endif
-  auto codec = avcodec_find_encoder_by_name(encoder_name.c_str());
+  auto *codec = avcodec_find_encoder_by_name(encoder_name.c_str());
   if (codec == nullptr) {
     MBLOG_ERROR << "Find encoder failed, encoder name:" << encoder_name;
     return STATUS_FAULT;
   }
 
-  auto codec_ctx = avcodec_alloc_context3(codec);
+  auto *codec_ctx = avcodec_alloc_context3(codec);
   if (codec_ctx == nullptr) {
     MBLOG_ERROR << "Alloc codec ctx failed, encoder name:" << encoder_name;
     return STATUS_FAULT;
@@ -78,7 +78,7 @@ Status FfmpegVideoEncoder::Encode(
   }
 
   do {
-    auto av_packet_ptr = av_packet_alloc();
+    auto *av_packet_ptr = av_packet_alloc();
     if (av_packet_ptr == nullptr) {
       MBLOG_ERROR << "av packet alloc failed";
       return STATUS_FAULT;

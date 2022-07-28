@@ -175,8 +175,8 @@ modelbox::Status MindSporeInference::Init(
                                                mindspore_type, &graph);
   } else if (model_decrypt.GetModelState() ==
              ModelDecryption::MODEL_STATE_PLAIN) {
-    ms_status = mindspore::Serialization::Load(model_entry.c_str(),
-                                               mindspore_type, &graph);
+    ms_status =
+        mindspore::Serialization::Load(model_entry, mindspore_type, &graph);
   }
   if (ms_status != mindspore::kSuccess) {
     auto err_msg = "mindspore load model failed, path " + model_entry + ", ";
@@ -208,7 +208,7 @@ modelbox::Status MindSporeInference::Init(
 
   auto size = model_->GetInputs()[0].Shape()[0];
   if (size <= 0) {
-    auto err_msg = "model input batch_size less than zero";
+    const auto *err_msg = "model input batch_size less than zero";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -278,7 +278,7 @@ modelbox::Status MindSporeInference::Infer(
 
     output_buffer_list->Set("shape", output_tensor[i].Shape());
     MBLOG_DEBUG << "output shape: ";
-    for (auto &item : output_tensor[i].Shape()) {
+    for (const auto &item : output_tensor[i].Shape()) {
       MBLOG_DEBUG << item;
     }
     output_buffer_list->Set("type",

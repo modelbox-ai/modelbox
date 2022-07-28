@@ -62,7 +62,7 @@ class PaddingFlowUnit : public modelbox::CudaFlowUnit {
   modelbox::Status Close() override { return modelbox::STATUS_OK; };
 
   modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                             cudaStream_t stream) override;
+                               cudaStream_t stream) override;
 
  private:
   modelbox::Status PaddingOneImage(std::shared_ptr<modelbox::Buffer> &in_image,

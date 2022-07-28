@@ -184,7 +184,7 @@ Status DataHandler::SetDataHandler(
     return STATUS_FAULT;
   }
 
-  for (auto &iter : data_map) {
+  for (const auto &iter : data_map) {
     if (iter.second->GetBindNodeType() == BUFFERLIST_NODE) {
       MBLOG_ERROR
           << "function SetDataHandler not support node type: bufferlistnode";

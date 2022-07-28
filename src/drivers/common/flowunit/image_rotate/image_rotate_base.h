@@ -30,7 +30,7 @@ class ImageRotateFlowUnitBase : public modelbox::FlowUnit {
 
   modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
   modelbox::Status Close();
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> ct);
+  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
 
   virtual modelbox::Status RotateOneImage(
       std::shared_ptr<modelbox::Buffer> input_buffer,

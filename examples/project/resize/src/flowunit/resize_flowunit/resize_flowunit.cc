@@ -38,11 +38,11 @@ modelbox::Status ResizeFlowUnitTest::Open(
 modelbox::Status ResizeFlowUnitTest::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status ResizeFlowUnitTest::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   MBLOG_DEBUG << "process image cvresize";
 
-  auto input_bufs = ctx->Input("in_1");
-  auto output_bufs = ctx->Output("out_1");
+  auto input_bufs = data_ctx->Input("in_1");
+  auto output_bufs = data_ctx->Output("out_1");
 
   if (input_bufs->Size() <= 0) {
     auto errMsg = "input images batch is " + std::to_string(input_bufs->Size());

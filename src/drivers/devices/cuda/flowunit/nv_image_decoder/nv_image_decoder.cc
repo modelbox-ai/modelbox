@@ -50,7 +50,7 @@ modelbox::Status NvImageDecoderFlowUnit::Open(
   MBLOG_DEBUG << "pixel_format " << pixel_format_;
 
   nvjpegStatus_t ret = NVJPEG_STATUS_SUCCESS;
-  ret = nvjpegCreate(NVJPEG_BACKEND_DEFAULT, NULL, &handle_);
+  ret = nvjpegCreate(NVJPEG_BACKEND_DEFAULT, nullptr, &handle_);
   if (ret != NVJPEG_STATUS_SUCCESS) {
     MBLOG_ERROR << "nvjpegCreateSimple failed, ret " << ret;
     return modelbox::STATUS_FAULT;
@@ -224,7 +224,7 @@ bool NvImageDecoderFlowUnit::DecodeOthers(
       input_data, input_data + input_buffer->GetBytes() / sizeof(uint8_t));
 
   cv::Mat img_bgr = cv::imdecode(input_data2, cv::IMREAD_COLOR);
-  if (img_bgr.data == nullptr || img_bgr.size == 0) {
+  if (img_bgr.data == nullptr || img_bgr.size == nullptr) {
     MBLOG_ERROR << "input image buffer is invalid, imdecode failed.";
     return false;
   }

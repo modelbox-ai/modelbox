@@ -55,9 +55,9 @@ TEST_F(CryptoTest, Base64) {
 TEST_F(CryptoTest, AesEncryptPass) {
   std::string str = "password";
   std::vector<char> pass(str.begin(), str.end());
-  std::string rootkey = "";
-  std::string enpass = "";
-  
+  std::string rootkey;
+  std::string enpass;
+
   EXPECT_EQ(PassEncrypt(pass, true, &rootkey, &enpass), STATUS_OK);
 
   std::vector<char> outpass;

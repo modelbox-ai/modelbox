@@ -25,7 +25,7 @@
 
 namespace modelbox {
 
-ExternalDataMapImpl::ExternalDataMapImpl(std::shared_ptr<Node> graph_input_node,
+ExternalDataMapImpl::ExternalDataMapImpl(std::shared_ptr<Node> input_node,
                                          std::shared_ptr<Stream> init_stream)
     : init_stream_(init_stream),
       session_(init_stream_->GetSession()),
@@ -33,9 +33,9 @@ ExternalDataMapImpl::ExternalDataMapImpl(std::shared_ptr<Node> graph_input_node,
   root_buffer_ = std::make_shared<BufferIndexInfo>();
   root_buffer_->SetStream(init_stream);
   root_buffer_->SetIndex(0);
-  graph_input_node_ = graph_input_node;
-  graph_input_node_device_ = graph_input_node->GetDevice();
-  for (auto& ext_port : graph_input_node->GetExternalPorts()) {
+  graph_input_node_ = input_node;
+  graph_input_node_device_ = input_node->GetDevice();
+  for (auto& ext_port : input_node->GetExternalPorts()) {
     const auto& port_name = ext_port->GetName();
     graph_input_node_ports_[port_name] = ext_port;
     graph_input_ports_cache_[port_name] = std::list<std::shared_ptr<Buffer>>();
@@ -117,7 +117,7 @@ void ExternalDataMapImpl::PopMachedInput(
   }
 
   for (auto& port_data_list_iter : graph_input_ports_cache_) {
-    auto& port_name = port_data_list_iter.first;
+    const auto& port_name = port_data_list_iter.first;
     auto& port_data_list = port_data_list_iter.second;
     auto& matched_data_list = matched_port_data[port_name];
     auto end_pos = port_data_list.begin();
@@ -135,12 +135,12 @@ Status ExternalDataMapImpl::SendMatchData(
     return STATUS_SUCCESS;
   }
 
-  for (auto& input_port_data_iter : matched_port_data) {
-    auto& port_name = input_port_data_iter.first;
-    auto& port_data_list = input_port_data_iter.second;
+  for (const auto& input_port_data_iter : matched_port_data) {
+    const auto& port_name = input_port_data_iter.first;
+    const auto& port_data_list = input_port_data_iter.second;
     auto& port_stream = graph_input_ports_stream_[port_name];
     auto& graph_input_port = graph_input_node_ports_[port_name];
-    for (auto& port_data : port_data_list) {
+    for (const auto& port_data : port_data_list) {
       auto& port_buffer_index_info = port_data->index_info_;
       auto port_buffer_index = port_stream->GetBufferCount();
       port_stream->IncreaseBufferCount();
@@ -191,7 +191,7 @@ Status ExternalDataMapImpl::Recv(OutputBufferList& map_buffer_list,
     }
 
     for (auto& port_data_item : output_buffer_list) {
-      auto& port_name = port_data_item.first;
+      const auto& port_name = port_data_item.first;
       auto& port_data_list = port_data_item.second;
       std::shared_ptr<BufferList> buffer_list;
       auto out_item = map_buffer_list.find(port_name);
@@ -227,7 +227,7 @@ Status ExternalDataMapImpl::Close() {
 
   // add end buffer
   for (auto& input_node_port_item : graph_input_node_ports_) {
-    auto& port_name = input_node_port_item.first;
+    const auto& port_name = input_node_port_item.first;
     auto& port = input_node_port_item.second;
     auto& port_stream = graph_input_ports_stream_[port_name];
     auto end_buffer = std::make_shared<Buffer>();
@@ -348,12 +348,12 @@ ExternalDataSelect::ExternalDataSelect() {}
 ExternalDataSelect::~ExternalDataSelect() {}
 
 void ExternalDataSelect::RegisterExternalData(
-    std::shared_ptr<ExternalDataMap> externl) {
+    std::shared_ptr<ExternalDataMap> externl_data) {
   std::lock_guard<std::mutex> lock(external_list_lock_);
-  std::shared_ptr<ExternalDataMapImpl> externl_data =
-      std::dynamic_pointer_cast<ExternalDataMapImpl>(externl);
-  external_list_.push_back(externl_data);
-  externl_data->SetSelector(shared_from_this());
+  std::shared_ptr<ExternalDataMapImpl> externl_data_imp =
+      std::dynamic_pointer_cast<ExternalDataMapImpl>(externl_data);
+  external_list_.push_back(externl_data_imp);
+  externl_data_imp->SetSelector(shared_from_this());
 }
 
 void ExternalDataSelect::RemoveExternalData(

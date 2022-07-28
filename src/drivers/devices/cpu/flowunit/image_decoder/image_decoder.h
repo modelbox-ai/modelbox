@@ -48,7 +48,7 @@ class ImageDecoderFlowUnit : public modelbox::FlowUnit {
 
   modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
   modelbox::Status Close();
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> ct);
+  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
 
  private:
   cv::Mat BGR2YUV_NV12(const cv::Mat &src_bgr);

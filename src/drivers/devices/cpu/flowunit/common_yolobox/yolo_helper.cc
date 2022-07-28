@@ -33,11 +33,11 @@ void YoloHelper::GetBoundingBox(
   int category = 0;
   float score = 0;
   for (size_t anchor_index = 0; anchor_index < anchor_num; ++anchor_index) {
-    auto anchor_data = single_layer_result + anchor_index * anchor_size;
+    const auto *anchor_data = single_layer_result + anchor_index * anchor_size;
     for (int32_t h = 0; h < output_height; ++h) {
       for (int32_t w = 0; w < output_width; ++w) {
         auto confidence = Sigmoid(anchor_data[4 * step + h * output_width + w]);
-        auto score_data = anchor_data + 5 * step + h * output_width + w;
+        const auto *score_data = anchor_data + 5 * step + h * output_width + w;
         GetCategoryAndScore(score_data, step, param_.class_num_, category,
                             score);
         if (category == CLASS_BACKGROUND) {
@@ -91,7 +91,12 @@ void YoloHelper::GetOneBoundingBox(
 
   auto feature_width = param_.layer_wh_[2 * layer_index];
   auto feature_height = param_.layer_wh_[2 * layer_index + 1];
-  float box_x, box_y, box_w, box_h, x_bias, y_bias;
+  float box_x;
+  float box_y;
+  float box_w;
+  float box_h;
+  float x_bias;
+  float y_bias;
 
   auto offset = feature_map_h * feature_width + feature_map_w;
   box_x = (feature_map_w + Sigmoid(anchor_data[offset])) / float(feature_width);

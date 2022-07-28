@@ -34,8 +34,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetType(modelbox::GRAPHCONF_TYPE);
   desc->SetVersion(modelbox::GRAPHVIZE_VERSION);
   desc->SetDescription(modelbox::GRAPHCONF_DESC);
-
-  return;
 }
 
 modelbox::Status DriverInit() { return modelbox::STATUS_OK; }

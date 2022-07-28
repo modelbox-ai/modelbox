@@ -58,7 +58,7 @@ void ThreadWorker::Run(ThreadWorker *worker) {
     worker->pool_->RunWorker(worker);
   }
 
-  auto pool = worker->pool_;
+  auto *pool = worker->pool_;
   worker->pool_ = nullptr;
   auto thread = worker->thread_;
   std::unique_lock<std::mutex> lock(worker->lock_);
@@ -228,7 +228,6 @@ void ThreadPool::RmvWorker(ThreadWorker *worker) {
     exit_cond_.notify_one();
   }
   lock_.unlock();
-  return;
 }
 
 Status ThreadPool::AddWorker(bool core_worker) {

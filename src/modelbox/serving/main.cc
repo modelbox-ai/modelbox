@@ -54,15 +54,15 @@ enum MODELBOX_SERVING_ARG {
 };
 
 static struct option options[] = {
-    {"model-name", 1, 0, MODELBOX_SERVING_ARG_MODEL_NAME},
-    {"model-path", 1, 0, MODELBOX_SERVING_ARG_MODEL_PATH},
-    {"daemon", 0, 0, MODELBOX_SERVING_ARG_DAEMON},
-    {"port", 1, 0, MODELBOX_SERVING_ARG_PORT},
-    {"h", 0, 0, MODELBOX_SERVING_ARG_HELP},
-    {0, 0, 0, 0},
+    {"model-name", 1, nullptr, MODELBOX_SERVING_ARG_MODEL_NAME},
+    {"model-path", 1, nullptr, MODELBOX_SERVING_ARG_MODEL_PATH},
+    {"daemon", 0, nullptr, MODELBOX_SERVING_ARG_DAEMON},
+    {"port", 1, nullptr, MODELBOX_SERVING_ARG_PORT},
+    {"h", 0, nullptr, MODELBOX_SERVING_ARG_HELP},
+    {nullptr, 0, nullptr, 0},
 };
 
-static void showhelp(void) {
+static void showhelp() {
   /* clang-format off */
     char help[] = ""
         "Usage: modelbox-serving [OPTION]...\n"
@@ -112,7 +112,7 @@ static void modelbox_sig_handler(int volatile sig_no, siginfo_t *sig_info,
   _exit(1);
 }
 
-static int modelbox_reg_signal(void) {
+static int modelbox_reg_signal() {
   if (modelbox_sig_register(g_sig_list, g_sig_num, modelbox_sig_handler) != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
@@ -121,7 +121,7 @@ static int modelbox_reg_signal(void) {
   return 0;
 }
 
-int modelbox_serving_init(void) {
+int modelbox_serving_init() {
   if (modelbox_reg_signal() != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
@@ -178,7 +178,7 @@ int modelbox_run() {
   return 0;
 }
 
-static void onexit(void) {}
+static void onexit() {}
 
 #ifdef BUILD_TEST
 int modelbox_serving_main(int argc, char *argv[])
@@ -186,8 +186,8 @@ int modelbox_serving_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
-  std::string model_name = "";
-  std::string model_path = "";
+  std::string model_name;
+  std::string model_path;
   bool kDaemon{false};
   int port = 9110;
   int cmdtype = 0;

@@ -63,7 +63,7 @@ Status NodeBase::InitPorts(const std::set<std::string>& input_port_names,
   // create input port
   input_ports_.clear();
   input_ports_.reserve(input_port_names.size());
-  for (auto& input_port_name : input_port_names) {
+  for (const auto& input_port_name : input_port_names) {
     auto port_queue_size =
         config->GetUint64("queue_size_" + input_port_name, queue_size_);
     if (0 == port_queue_size) {
@@ -89,7 +89,7 @@ Status NodeBase::InitPorts(const std::set<std::string>& input_port_names,
   // create output port
   output_ports_.clear();
   output_ports_.reserve(output_port_names.size());
-  for (auto& output_port_name : output_port_names) {
+  for (const auto& output_port_name : output_port_names) {
     auto output_port =
         std::make_shared<OutPort>(output_port_name, shared_from_this());
     output_ports_.push_back(output_port);
@@ -427,7 +427,7 @@ Status Node::AppendDataContextByEvent(
     std::shared_ptr<MatchStreamData> match_stream_data,
     std::set<std::shared_ptr<FlowUnitDataContext>>& data_ctx_set) {
   auto event = match_stream_data->GetEvent();
-  auto data_ctx_match_key = event->GetDataCtxMatchKey();
+  auto* data_ctx_match_key = event->GetDataCtxMatchKey();
   auto data_ctx_item = data_ctx_map_.find(data_ctx_match_key);
   if (data_ctx_item == data_ctx_map_.end()) {
     // might be finished
@@ -491,7 +491,7 @@ Status Node::AppendDataContextByData(
       // collapse will match at expand, child stream after expand match at one
       // buffer in parent stream, we need parent stream info to gather all child
       // stream
-      auto match_at_ancestor_buffer =
+      auto* match_at_ancestor_buffer =
           (BufferIndexInfo*)match_stream_data->GetStreamMatchKey();
       auto ancestor_stream = match_at_ancestor_buffer->GetStream();
       data_ctx_match_key = MatchKey::AsKey(ancestor_stream.get());
@@ -595,7 +595,7 @@ std::shared_ptr<FlowUnitDataContext> Node::AppendDataToDataContext(
 
   auto split_stream_data_map = std::make_shared<PortDataMap>();
   for (auto& port_data_item : *stream_data_map) {
-    auto& port_name = port_data_item.first;
+    const auto& port_name = port_data_item.first;
     auto& data_list = port_data_item.second;
     (*split_stream_data_map)[port_name].push_back(data_list[buffer_index]);
   }
@@ -652,7 +652,7 @@ Status Node::Send(
     }
 
     for (auto& output_port : output_ports_) {
-      auto& port_name = output_port->GetName();
+      const auto& port_name = output_port->GetName();
       auto item = stream_data_map.find(port_name);
       if (item == stream_data_map.end()) {
         if (GetLoopType() == LoopType::LOOP) {

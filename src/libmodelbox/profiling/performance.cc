@@ -115,7 +115,6 @@ class FlowUnitPerfCollector : public PerfCollector {
 
   bool Empty() override;
 
- public:
   std::shared_ptr<FlowUnitPerfCtx> GetFlowUnitPerfCtx(
       const std::string& flow_unit_name);
 
@@ -239,9 +238,9 @@ Status Performance::WritePerformance() {
     collector->Export(perf_json);
   }
 
-  time_t current_time = time(0);
+  time_t current_time = time(nullptr);
   char buf[64] = {0};
-  auto local_tm = localtime(&current_time);
+  auto* local_tm = localtime(&current_time);
   if (local_tm) {
     strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", local_tm);
   }

@@ -100,7 +100,7 @@ modelbox::Status ObsSourceParser::Parse(
   if (modelbox::STATUS_OK != GetUUID(&uuid)) {
     MBLOG_WARN << "Failed to generate a uuid for the OBS output broker! Use "
                   "default id: yyyymmddhhmmss";
-    time_t now = time(0);
+    time_t now = time(nullptr);
     uuid = GetTimeString(&now);
   }
 
@@ -238,5 +238,4 @@ void RemoveFileCallback(std::string uri) {
       MBLOG_WARN << "Failed to remove obs downloaded file: " << uri;
     }
   }
-  return;
 }

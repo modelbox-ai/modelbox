@@ -38,9 +38,6 @@ using namespace modelbox;
 #define MODELBOX_TOOL_LOG_PATH \
   "${MODELBOX_ROOT}/var/log/modelbox/modelbox-tool.log"
 
-extern char *program_invocation_name;
-extern char *program_invocation_short_name;
-
 static int g_sig_list[] = {
     SIGIO,   SIGPWR,    SIGSTKFLT, SIGPROF, SIGINT,  SIGTERM,
     SIGBUS,  SIGVTALRM, SIGTRAP,   SIGXCPU, SIGXFSZ, SIGILL,
@@ -64,15 +61,15 @@ enum MODELBOX_TOOL_COMMAND {
 };
 
 static struct option options[] = {
-    {"verbose", 0, 0, MODELBOX_TOOL_COMMAND_VERBOSE},
-    {"log-level", 1, 0, MODELBOX_TOOL_COMMAND_LOG_LEVEL},
-    {"log-path", 1, 0, MODELBOX_TOOL_COMMAND_LOG_PATH},
-    {"h", 0, 0, MODELBOX_TOOL_COMMAND_HELP},
-    {"v", 0, 0, MODELBOX_TOOL_SHOW_VERSION},
-    {0, 0, 0, 0},
+    {"verbose", 0, nullptr, MODELBOX_TOOL_COMMAND_VERBOSE},
+    {"log-level", 1, nullptr, MODELBOX_TOOL_COMMAND_LOG_LEVEL},
+    {"log-path", 1, nullptr, MODELBOX_TOOL_COMMAND_LOG_PATH},
+    {"h", 0, nullptr, MODELBOX_TOOL_COMMAND_HELP},
+    {"v", 0, nullptr, MODELBOX_TOOL_SHOW_VERSION},
+    {nullptr, 0, nullptr, 0},
 };
 
-static void showhelp(void) {
+static void showhelp() {
   /* clang-format off */
     char help[] = ""
         "Usage: modelbox-tool [OPTION]...\n"
@@ -131,7 +128,7 @@ static void modelbox_tool_sig_handler(int volatile sig_no, siginfo_t *sig_info,
   _exit(1);
 }
 
-static int modelbox_tool_init_bbox(void) {
+static int modelbox_tool_init_bbox() {
   if (modelbox_sig_register(g_sig_list, g_sig_num, modelbox_tool_sig_handler) !=
       0) {
     fprintf(stderr, "register signal failed.\n");
@@ -141,7 +138,7 @@ static int modelbox_tool_init_bbox(void) {
   return 0;
 }
 
-int modelbox_tool_init_log(void) {
+int modelbox_tool_init_log() {
   kServerLogger = std::make_shared<ModelboxServerLogger>();
   if (kServerLogger->Init(kLogFile, 1024 * 1024, 32, kVerbose) == false) {
     fprintf(stderr, "init logger failed.\n");
@@ -155,7 +152,7 @@ int modelbox_tool_init_log(void) {
   return 0;
 }
 
-int modelbox_tool_init(void) {
+int modelbox_tool_init() {
   if (modelbox_tool_init_bbox() != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
@@ -197,7 +194,7 @@ int modelbox_tool_run(int argc, char *argv[]) {
 
 void modelbox_tool_stop() {}
 
-static void onexit(void) {}
+static void onexit() {}
 
 #ifdef BUILD_TEST
 int modelbox_tool_main(int argc, char *argv[])

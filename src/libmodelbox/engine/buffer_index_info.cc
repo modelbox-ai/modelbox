@@ -126,7 +126,7 @@ std::shared_ptr<BufferIndexInfo> BufferManageView::GetFirstParentBuffer(
     return nullptr;
   }
 
-  auto &parent_buffers = process_info->GetParentBuffers();
+  const auto &parent_buffers = process_info->GetParentBuffers();
   if (parent_buffers.empty()) {
     MBLOG_ERROR << "buffer parent info is empty";
     return nullptr;

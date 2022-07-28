@@ -47,8 +47,7 @@ const std::string GraphvizFactory::GetGraphConfFactoryType() {
 }
 
 GraphvizConfig::GraphvizConfig(const std::string &graph_conf,
-                               const bool is_file)
-    : GraphConfig() {
+                               const bool is_file) {
   graphviz_conf_ = graph_conf;
   is_file_ = is_file;
 }
@@ -76,7 +75,7 @@ std::shared_ptr<GCGraph> GraphvizConfig::Resolve() {
     return nullptr;
   }
 
-  auto graph_name = agnameof(g.get());
+  auto *graph_name = agnameof(g.get());
   if (graph_name != nullptr) {
     graph->SetGraphName(graph_name);
   }
@@ -136,7 +135,7 @@ std::shared_ptr<Agraph_t> GraphvizConfig::LoadGraphFromFile() {
   }
 
   FILE *fp = fopen(file.c_str(), "r");
-  if (fp == NULL) {
+  if (fp == nullptr) {
     MBLOG_ERROR << "open file failed, file: " << file << ", "
                 << StrError(errno);
     StatusError = {STATUS_BADCONF, StrError(errno)};
@@ -144,7 +143,7 @@ std::shared_ptr<Agraph_t> GraphvizConfig::LoadGraphFromFile() {
   }
 
   std::unique_lock<std::mutex> lock(kCgraphLock);
-  g = agread(fp, 0);
+  g = agread(fp, nullptr);
   fclose(fp);
   fp = nullptr;
 
@@ -168,7 +167,7 @@ std::shared_ptr<Agraph_t> GraphvizConfig::LoadGraphFromFile() {
 Status GraphvizConfig::TraversalsGraph(std::shared_ptr<Agraph_t> g,
                                        std::shared_ptr<GCGraph> graph) {
   std::vector<std::string> node_keys;
-  Agsym_t *sym = 0;
+  Agsym_t *sym = nullptr;
 
   if (g == nullptr || graph == nullptr) {
     MBLOG_ERROR << "graph is null.";
@@ -177,7 +176,7 @@ Status GraphvizConfig::TraversalsGraph(std::shared_ptr<Agraph_t> g,
 
   while (true) {
     sym = agnxtattr(g.get(), AGRAPH, sym);
-    if (sym == NULL) {
+    if (sym == nullptr) {
       break;
     }
 
@@ -185,7 +184,7 @@ Status GraphvizConfig::TraversalsGraph(std::shared_ptr<Agraph_t> g,
   }
 
   for (const std::string &elem : node_keys) {
-    auto agget_str = agget(g.get(), const_cast<char *>(elem.c_str()));
+    auto *agget_str = agget(g.get(), const_cast<char *>(elem.c_str()));
     if (agget_str == nullptr) {
       MBLOG_ERROR << "failed to get graph attr name: " << elem;
       continue;
@@ -202,10 +201,10 @@ Status GraphvizConfig::TraversalsNode(std::shared_ptr<Agraph_t> g,
   std::vector<std::string> node_keys;
   Agnode_t *agnode = nullptr;
 
-  Agsym_t *sym = 0;
+  Agsym_t *sym = nullptr;
   while (true) {
     sym = agnxtattr(g.get(), AGNODE, sym);
-    if (sym == NULL) {
+    if (sym == nullptr) {
       break;
     }
     node_keys.emplace_back(sym->name);
@@ -214,7 +213,7 @@ Status GraphvizConfig::TraversalsNode(std::shared_ptr<Agraph_t> g,
   for (agnode = agfstnode(g.get()); agnode;
        agnode = agnxtnode(g.get(), agnode)) {
     auto gcnode = std::make_shared<GCNode>();
-    auto agname = agnameof(agnode);
+    auto *agname = agnameof(agnode);
     if (agname == nullptr) {
       return {STATUS_BADCONF, "agname is invalid"};
     }
@@ -272,7 +271,7 @@ std::shared_ptr<modelbox::GCEdge> GraphvizConfig::NewGcEdgeFromAgedge(
    */
 
   std::string head_node_name;
-  auto node_name = agnameof(agtail(agedge));
+  auto *node_name = agnameof(agtail(agedge));
   if (node_name == nullptr) {
     head_node_name = "";
   } else {
@@ -315,10 +314,10 @@ Status GraphvizConfig::TraversalsEdge(std::shared_ptr<Agraph_t> g,
   Agedge_t *agedge = nullptr;
   std::vector<std::string> edge_keys;
 
-  Agsym_t *sym = 0;
+  Agsym_t *sym = nullptr;
   while (true) {
     sym = agnxtattr(g.get(), AGEDGE, sym);
-    if (sym == NULL) {
+    if (sym == nullptr) {
       break;
     }
     edge_keys.emplace_back(sym->name);

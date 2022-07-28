@@ -45,20 +45,20 @@ modelbox::Status VideoEncoderFlowUnit::Open(
 modelbox::Status VideoEncoderFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status VideoEncoderFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto muxer =
-      std::static_pointer_cast<FfmpegVideoMuxer>(ctx->GetPrivate(MUXER_CTX));
+      std::static_pointer_cast<FfmpegVideoMuxer>(data_ctx->GetPrivate(MUXER_CTX));
   auto encoder = std::static_pointer_cast<FfmpegVideoEncoder>(
-      ctx->GetPrivate(ENCODER_CTX));
+      data_ctx->GetPrivate(ENCODER_CTX));
   auto color_cvt = std::static_pointer_cast<FfmpegColorConverter>(
-      ctx->GetPrivate(COLOR_CVT_CTX));
+      data_ctx->GetPrivate(COLOR_CVT_CTX));
   if (muxer == nullptr || encoder == nullptr || color_cvt == nullptr) {
     MBLOG_ERROR << "Stream not inited";
     return STATUS_FAULT;
   }
 
   std::vector<std::shared_ptr<AVFrame>> av_frame_list;
-  auto ret = ReadFrames(color_cvt, ctx, av_frame_list);
+  auto ret = ReadFrames(color_cvt, data_ctx, av_frame_list);
   if (ret != STATUS_SUCCESS) {
     MBLOG_ERROR << "Read input frame failed";
     return STATUS_FAULT;
@@ -82,16 +82,16 @@ modelbox::Status VideoEncoderFlowUnit::Process(
 
 modelbox::Status VideoEncoderFlowUnit::ReadFrames(
     std::shared_ptr<FfmpegColorConverter> color_cvt,
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<std::shared_ptr<AVFrame>> &av_frame_list) {
-  auto frame_buffer_list = ctx->Input(FRAME_INFO_INPUT);
+  auto frame_buffer_list = data_ctx->Input(FRAME_INFO_INPUT);
   if (frame_buffer_list == nullptr || frame_buffer_list->Size() == 0) {
     MBLOG_ERROR << "Input frame list is empty";
     return STATUS_FAULT;
   }
 
   auto frame_index_ptr =
-      std::static_pointer_cast<int64_t>(ctx->GetPrivate(FRAME_INDEX_CTX));
+      std::static_pointer_cast<int64_t>(data_ctx->GetPrivate(FRAME_INDEX_CTX));
   for (auto frame_buffer : *frame_buffer_list) {
     std::shared_ptr<AVFrame> av_frame;
     auto ret = ReadFrameFromBuffer(frame_buffer, av_frame);
@@ -118,7 +118,7 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrames(
 modelbox::Status VideoEncoderFlowUnit::ReadFrameFromBuffer(
     std::shared_ptr<modelbox::Buffer> &frame_buffer,
     std::shared_ptr<AVFrame> &av_frame) {
-  auto frame_ptr = av_frame_alloc();
+  auto *frame_ptr = av_frame_alloc();
   if (frame_ptr == nullptr) {
     MBLOG_ERROR << "Alloca frame failed";
     return STATUS_FAULT;
@@ -151,7 +151,7 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrameFromBuffer(
 modelbox::Status VideoEncoderFlowUnit::CvtFrameToYUV420P(
     std::shared_ptr<FfmpegColorConverter> color_cvt,
     std::shared_ptr<AVFrame> origin, std::shared_ptr<AVFrame> &yuv420p_frame) {
-  auto frame = av_frame_alloc();
+  auto *frame = av_frame_alloc();
   if (frame == nullptr) {
     MBLOG_ERROR << "Alloc frame failed";
     return STATUS_FAULT;
@@ -326,7 +326,7 @@ MODELBOX_FLOWUNIT(VideoEncoderFlowUnit, desc) {
 
   std::map<std::string, std::string> fmt_list;
 
-  for (auto &item : g_supported_fmt) {
+  for (const auto &item : g_supported_fmt) {
     fmt_list[item] = item;
   }
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(

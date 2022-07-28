@@ -30,15 +30,15 @@ class OriginInferencePlugin : public TensorRTInferencePlugin {
   OriginInferencePlugin() = default;
   virtual ~OriginInferencePlugin() = default;
 
-  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> ctx) override;
+  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> ctx) override;
+  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
   modelbox::Status PluginInit(
       std::shared_ptr<modelbox::Configuration> config) override;
 
-  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> ctx) override;
-  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> ctx) override;
+  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx) override;
+  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   modelbox::Status SetUpInputOutput(std::shared_ptr<modelbox::Configuration> config,

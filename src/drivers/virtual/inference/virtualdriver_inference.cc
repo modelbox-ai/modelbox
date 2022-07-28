@@ -92,7 +92,12 @@ modelbox::Status InferenceVirtualDriverManager::Scan(const std::string &path) {
 }
 
 modelbox::Status InferenceVirtualDriverManager::Add(const std::string &file) {
-  std::string name, type, version, description, entry, flowunit_type;
+  std::string name;
+  std::string type;
+  std::string version;
+  std::string description;
+  std::string entry;
+  std::string flowunit_type;
   std::shared_ptr<ConfigurationBuilder> builder =
       std::make_shared<ConfigurationBuilder>();
   std::shared_ptr<Configuration> config = builder->Build(file);
@@ -185,7 +190,9 @@ modelbox::Status VirtualInferenceFlowUnitFactory::FillItem(
   }
 
   for (unsigned int i = 1; i <= item.size(); ++i) {
-    std::string item_device, item_name, item_type;
+    std::string item_device;
+    std::string item_name;
+    std::string item_type;
     auto key = type + "." + type + std::to_string(i);
     auto item_table = config->GetSubKeys(key);
     if (item_table.empty()) {

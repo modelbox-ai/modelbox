@@ -63,7 +63,7 @@ class SourceContext {
 
   void SetStreamType(std::string type);
   std::shared_ptr<std::string> GetSourceURL();
-  void SetLastProcessStatus(modelbox::Status last_status);
+  void SetLastProcessStatus(modelbox::Status status);
   void SetDataSourceCfg(std::string data_source_cfg);
   void SetSessionContext(
       std::shared_ptr<modelbox::SessionContext> session_context);

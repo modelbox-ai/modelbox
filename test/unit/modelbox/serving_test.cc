@@ -130,7 +130,7 @@ modelbox::Status ModelboxServingTest::ReplaceVersion(
 }
 
 std::string ModelboxServingTest::GetTFVersion() {
-  std::string ans = "";
+  std::string ans;
   void *handler =
       dlopen(MODELBOX_TF_SO_PATH, RTLD_LOCAL | RTLD_DEEPBIND);
   if (handler == nullptr) {

@@ -41,14 +41,14 @@ enum MODELBOX_TOOL_FLOW_CONVERT_COMMAND {
 };
 
 static struct option flow_convert_options[] = {
-    {"path", 1, 0, MODELBOX_TOOL_FLOW_CONVERT_COMMAND_PATH},
-    {"out-format", 1, 0, MODELBOX_TOOL_FLOW_CONVERT_COMMAND_OUTFORMAT},
-    {0, 0, 0, 0},
+    {"path", 1, nullptr, MODELBOX_TOOL_FLOW_CONVERT_COMMAND_PATH},
+    {"out-format", 1, nullptr, MODELBOX_TOOL_FLOW_CONVERT_COMMAND_OUTFORMAT},
+    {nullptr, 0, nullptr, 0},
 };
 static struct option flow_options[] = {
-    {"run", 1, 0, MODELBOX_TOOL_FLOW_RUN},
-    {"conf-convert", 0, 0, MODELBOX_TOOL_FLOW_CONF_CONVERT},
-    {0, 0, 0, 0},
+    {"run", 1, nullptr, MODELBOX_TOOL_FLOW_RUN},
+    {"conf-convert", 0, nullptr, MODELBOX_TOOL_FLOW_CONF_CONVERT},
+    {nullptr, 0, nullptr, 0},
 };
 
 ToolCommandFlow::ToolCommandFlow() {}

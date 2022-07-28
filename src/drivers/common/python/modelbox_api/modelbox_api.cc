@@ -88,8 +88,6 @@ void BuildTypeToNumpyType() {
     kNPTypeToType["e"] = MODELBOX_FLOAT;
     kNPTypeToType["l"] = MODELBOX_INT64;
   }
-
-  return;
 }
 
 std::string FormatStrFromType(const modelbox::ModelBoxDataType &type) {
@@ -158,9 +156,9 @@ bool DataSet(DataType &data, const std::string &key, py::object set_obj,
   if (!py::isinstance<PyType>(set_obj)) {
     return false;
   }
-  if (auto buffer = dynamic_cast<Buffer *>(&data)) {
+  if (auto *buffer = dynamic_cast<Buffer *>(&data)) {
     buffer->Set(key, cast_obj.cast<CType>());
-  } else if (auto session_context = dynamic_cast<SessionContext *>(&data)) {
+  } else if (auto *session_context = dynamic_cast<SessionContext *>(&data)) {
     auto c_context = std::make_shared<CType>(cast_obj.cast<CType>());
     auto c_type = typeid(CType).hash_code();
     session_context->SetPrivate(key, c_context, c_type);
@@ -502,9 +500,9 @@ void ModelboxPyApiSetUpStatus(pybind11::module &m) {
           .def("__str__", &modelbox::Status::ToString)
           .def("__bool__", [](const modelbox::Status &s) { return bool(s); })
           .def(py::self == true)
-          .def(py::self == py::self)
+          .def(py::self == py::self) // NOLINT
           .def(py::self == StatusCode())
-          .def(py::self != py::self)
+          .def(py::self != py::self) // NOLINT
           .def(py::self != StatusCode())
           .def("code", &modelbox::Status::Code)
           .def("set_errormsg", &modelbox::Status::SetErrormsg)
@@ -579,8 +577,8 @@ py::array BufferToPyRawBuffer(modelbox::Buffer &buffer) {
   }
 
   size_t len = buffer.GetBytes() / typesize;
-  auto const_data_ptr = buffer.ConstData();
-  auto data_ptr = const_cast<void *>(const_data_ptr);
+  const auto *const_data_ptr = buffer.ConstData();
+  auto *data_ptr = const_cast<void *>(const_data_ptr);
   switch (type) {
     case MODELBOX_UINT8:
       return mkarray_via_buffer<uint8_t>(data_ptr, len);
@@ -618,12 +616,12 @@ py::array BufferToPyArrayObject(modelbox::Buffer &buffer) {
 }
 
 py::object BufferToPyString(modelbox::Buffer &buffer) {
-  auto const_data_ptr = (char *)buffer.ConstData();
+  auto *const_data_ptr = (char *)buffer.ConstData();
   if (const_data_ptr == nullptr) {
     throw std::runtime_error("can not get buffer data.");
   }
 
-  char *data_ptr = const_cast<char *>(const_data_ptr);
+  auto *data_ptr = const_cast<char *>(const_data_ptr);
   if (data_ptr == nullptr) {
     throw std::runtime_error("convert data to string failed.");
   }
@@ -679,7 +677,7 @@ void ListToBuffer(std::shared_ptr<Buffer> buffer, py::list data) {
   std::vector<void *> source_vec;
   size_t total_bytes = 0;
   std::string info_type;
-  for (auto &item : data) {
+  for (const auto &item : data) {
     auto b = py::cast<py::buffer>(item);
     py::buffer_info info = b.request();
     if (info.ptr != nullptr) {
@@ -747,7 +745,8 @@ py::buffer_info ModelboxPyApiSetUpBufferDefBuffer(Buffer &buffer) {
     type = modelbox::ModelBoxDataType::MODELBOX_UINT8;
   }
 
-  std::vector<ssize_t> shape(buffer_shape.size()), stride(buffer_shape.size());
+  std::vector<ssize_t> shape(buffer_shape.size());
+  std::vector<ssize_t> stride(buffer_shape.size());
   size_t dim_prod = 1;
   for (size_t i = 0; i < buffer_shape.size(); ++i) {
     shape[i] = buffer_shape[i];
@@ -758,8 +757,8 @@ py::buffer_info ModelboxPyApiSetUpBufferDefBuffer(Buffer &buffer) {
     dim_prod *= buffer_shape[(buffer_shape.size() - 1) - i];
   }
 
-  auto const_data_ptr = buffer.ConstData();
-  auto data_ptr = const_cast<void *>(const_data_ptr);
+  const auto *const_data_ptr = buffer.ConstData();
+  auto *data_ptr = const_cast<void *>(const_data_ptr);
 
   return py::buffer_info(data_ptr, modelbox::GetDataTypeSize(type),
                          FormatStrFromType(type), shape.size(), shape, stride);

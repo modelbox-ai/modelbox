@@ -117,8 +117,8 @@ bool MatchBufferCache::IsMatched() const {
   }
 
   // if combine condition node output, will have multi end_flag received
-  for (auto& buffer_count_item : cur_buffer_count_each_port_) {
-    auto& port_name = buffer_count_item.first;
+  for (const auto& buffer_count_item : cur_buffer_count_each_port_) {
+    const auto& port_name = buffer_count_item.first;
     auto buffer_count = buffer_count_item.second;
     auto max_buffer_count = (*stream_count_each_port_)[port_name];
     if (buffer_count < max_buffer_count) {
@@ -139,8 +139,8 @@ MatchBufferCache::GetBuffers() const {
   }
 
   // match at placeholder, all buffer mark as placeholder
-  for (auto& item : buffer_cache_) {
-    auto& buffer = item.second;
+  for (const auto& item : buffer_cache_) {
+    const auto& buffer = item.second;
     auto index_info = BufferManageView::GetIndexInfo(buffer);
     index_info->MarkAsPlaceholder();
   }
@@ -226,7 +226,7 @@ std::shared_ptr<PortDataMap> MatchStreamCache::PopReadyMatchBuffers(
 
   for (auto match_buffer_iter = ready_match_buffers_.begin();
        match_buffer_iter != ready_match_buffers_.end();) {
-    auto& buffer_index = match_buffer_iter->first;
+    const auto& buffer_index = match_buffer_iter->first;
     auto& match_buffer = match_buffer_iter->second;
 
     if (in_order && buffer_index != index_in_order_) {
@@ -243,7 +243,7 @@ std::shared_ptr<PortDataMap> MatchStreamCache::PopReadyMatchBuffers(
   for (auto& match_buffer_cache : pop_match_buffers) {
     auto port_buffer_map = match_buffer_cache->GetBuffers();
     for (auto& item : port_buffer_map) {
-      auto& port_name = item.first;
+      const auto& port_name = item.first;
       auto& buffer = item.second;
       auto& buffer_list = (*ready_port_buffers)[port_name];
       if (buffer_list.empty()) {
@@ -319,7 +319,7 @@ Status InputMatchStreamManager::LoadData(
 
   bool has_read_data = false;
   for (auto& data_port : data_ports) {
-    auto& port_name = data_port->GetName();
+    const auto& port_name = data_port->GetName();
     auto read_count = GetReadCount(port_name);
     if (read_count == 0) {
       // too much cache for this port, stop read this port
@@ -359,7 +359,7 @@ Status InputMatchStreamManager::GenMatchStreamData(
     std::list<std::shared_ptr<MatchStreamData>>& match_stream_list) {
   for (auto cache_iter = match_stream_cache_map_.begin();
        cache_iter != match_stream_cache_map_.end();) {
-    auto match_key = cache_iter->first;
+    auto* match_key = cache_iter->first;
     auto& match_stream_cache = cache_iter->second;
     auto ready_port_buffers = match_stream_cache->PopReadyMatchBuffers(
         is_input_in_order_, need_gather_all_);
@@ -400,7 +400,7 @@ Status InputMatchStreamManager::CacheBuffer(const std::string& port_name,
     return STATUS_OK;
   }
   // Match different port
-  auto stream_match_key =
+  auto* stream_match_key =
       GetInputStreamMatchKey(buffer_index_info, backward_level);
   auto match_stream_cache_item = match_stream_cache_map_.find(stream_match_key);
   std::shared_ptr<MatchStreamCache> match_stream_cache;
@@ -505,7 +505,7 @@ bool InputMatchStreamManager::InitInheritBackwardLevel(
 
   // all match to min deepth
   for (auto& port_deepth_item : port_inherit_deepth_map) {
-    auto& port_name = port_deepth_item.first;
+    const auto& port_name = port_deepth_item.first;
     auto& deepth = port_deepth_item.second;
     auto backward_level = deepth - min_deepth;
     port_inherit_backward_level_[port_name] = backward_level;
@@ -632,7 +632,7 @@ Status OutputMatchStreamManager::UpdateStreamInfo(
     // no data to process
     return STATUS_OK;
   }
-  auto match_key = GetOutputStreamMatchKey(stream_data_map);
+  auto* match_key = GetOutputStreamMatchKey(stream_data_map);
   if (match_key == nullptr) {
     MBLOG_ERROR << "node " << node_name_
                 << " get output stream match key failed";
@@ -650,16 +650,16 @@ Status OutputMatchStreamManager::UpdateStreamInfo(
 
   size_t end_stream_count = 0;
   std::stringstream stream_count_stats;
-  for (auto& stream_data : stream_data_map) {
-    auto& port_name = stream_data.first;
-    auto& port_data_list = stream_data.second;
+  for (const auto& stream_data : stream_data_map) {
+    const auto& port_name = stream_data.first;
+    const auto& port_data_list = stream_data.second;
     auto stream = output_match_stream.GetStream(port_name);
     if (stream == nullptr) {
       MBLOG_ERROR << "port [" << port_name
                   << "] in output data is not defined in node";
       return STATUS_FAULT;
     }
-    for (auto& port_data : port_data_list) {
+    for (const auto& port_data : port_data_list) {
       if (port_data == nullptr) {
         // if-else empty output, drop it
         continue;
@@ -704,7 +704,7 @@ MatchKey* OutputMatchStreamManager::GetOutputStreamMatchKey(
   std::shared_ptr<Buffer> not_null_output_buffer;
   for (auto port_iter = stream_data_map.begin();
        port_iter != stream_data_map.end(); ++port_iter) {
-    auto& port_data_list = port_iter->second;
+    const auto& port_data_list = port_iter->second;
     not_null_output_buffer = port_data_list.front();
     if (not_null_output_buffer != nullptr) {
       break;
@@ -741,7 +741,7 @@ void OutputMatchStreamManager::GenerateOutputStream(
   std::shared_ptr<Buffer> not_null_output_buffer;
   for (auto port_iter = stream_data_map.begin();
        port_iter != stream_data_map.end(); ++port_iter) {
-    auto& port_data_list = port_iter->second;
+    const auto& port_data_list = port_iter->second;
     not_null_output_buffer = port_data_list.front();
     if (not_null_output_buffer != nullptr) {
       break;
@@ -752,11 +752,11 @@ void OutputMatchStreamManager::GenerateOutputStream(
   std::shared_ptr<StreamOrder> stream_order;
   size_t input_buffer_index = 0;
   auto inherit_stream_meta = std::make_shared<DataMeta>();
-  auto& input_stream_data_map =
+  const auto& input_stream_data_map =
       out_buffer_index->GetProcessInfo()->GetParentBuffers();
-  for (auto& in_port_data_item : input_stream_data_map) {
-    auto& port_data_list = in_port_data_item.second;
-    auto& first_in_buffer = port_data_list.front();
+  for (const auto& in_port_data_item : input_stream_data_map) {
+    const auto& port_data_list = in_port_data_item.second;
+    const auto& first_in_buffer = port_data_list.front();
     auto in_port_stream = first_in_buffer->GetStream();
     // combine all input port stream meta
     auto stream_meta = in_port_stream->GetStreamMeta();
@@ -783,7 +783,7 @@ void OutputMatchStreamManager::GenerateOutputStream(
   }
 
   // generate output stream
-  for (auto& output_port_name : output_port_names_) {
+  for (const auto& output_port_name : output_port_names_) {
     if (stream_data_map.find(output_port_name) == stream_data_map.end()) {
       // output port has no data, no need to create output stream
       continue;
@@ -794,7 +794,7 @@ void OutputMatchStreamManager::GenerateOutputStream(
     auto new_stream_meta = std::make_shared<DataMeta>(*inherit_stream_meta);
     auto port_stream_meta_item = port_stream_meta.find(output_port_name);
     if (port_stream_meta_item != port_stream_meta.end()) {
-      auto& stream_meta = port_stream_meta_item->second;
+      const auto& stream_meta = port_stream_meta_item->second;
       for (auto& meta_item : stream_meta->GetMetas()) {
         new_stream_meta->SetMeta(meta_item.first, meta_item.second);
       }

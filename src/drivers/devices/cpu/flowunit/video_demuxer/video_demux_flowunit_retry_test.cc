@@ -49,8 +49,7 @@ class VideoDemuxerFlowUnitRetryTest : public testing::Test {
 
   std::string GetRtspTomlConfig();
 
-  modelbox::Status StartFlow(std::string &toml_content,
-                             const uint64_t millisecond);
+  modelbox::Status StartFlow(std::string &toml_content, uint64_t millisecond);
 
  private:
   std::shared_ptr<MockFlow> driver_flow_;

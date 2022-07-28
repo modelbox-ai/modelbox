@@ -155,7 +155,7 @@ void Control::ProcessMsg(std::shared_ptr<ControlMsg> msg,
     case SERVER_CONTROL_MSG_TYPE_HELP: {
       auto help_msg = std::dynamic_pointer_cast<ControlMsgHelp>(msg);
       if (help_msg == nullptr) {
-        auto errmsg = "message is invalid";
+        const auto *errmsg = "message is invalid";
         ret = {modelbox::STATUS_FAULT, errmsg};
         return;
       }
@@ -164,14 +164,14 @@ void Control::ProcessMsg(std::shared_ptr<ControlMsg> msg,
     case SERVER_CONTROL_MSG_TYPE_CMD: {
       auto cmd_msg = std::dynamic_pointer_cast<ControlMsgCmd>(msg);
       if (cmd_msg == nullptr) {
-        auto errmsg = "message is invalid";
+        const auto *errmsg = "message is invalid";
         ret = {modelbox::STATUS_FAULT, errmsg};
         return;
       }
       process_ret = ProcessCmd(cmd_msg, reply_func);
     } break;
     default:
-      auto errmsg = "command not found";
+      const auto *errmsg = "command not found";
       ret = {modelbox::STATUS_NOTFOUND, errmsg};
       return;
       break;
@@ -187,12 +187,10 @@ void Control::ProcessMsg(std::shared_ptr<ControlMsg> msg,
 
   int len = reply_func(ret_msg.GetData(), ret_msg.GetDataLen());
   if (len < 0) {
-    auto errmsg = "send to client failed.";
+    const auto *errmsg = "send to client failed.";
     ret = {modelbox::STATUS_FAULT, errmsg};
     return;
   }
-
-  return;
 }
 
 void Control::ReplyMsgError(int err_code, const std::string &err_msg,

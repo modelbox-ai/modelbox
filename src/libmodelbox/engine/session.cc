@@ -81,7 +81,7 @@ std::shared_ptr<FlowUnitError> Session::GetError() { return error_; }
 
 std::shared_ptr<Session> SessionManager::CreateSession(
     std::shared_ptr<StatisticsItem> graph_stats) {
-  auto session = new Session(graph_stats);
+  auto *session = new Session(graph_stats);
   auto session_id = session->GetSessionCtx()->GetSessionId();
   auto session_ptr =
       std::shared_ptr<Session>(session, [session_id, this](Session *ptr) {

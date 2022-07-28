@@ -23,13 +23,13 @@ using namespace modelbox;
 
 Status FfmpegVideoDecoder::Init(AVCodecID codec_id) {
   codec_id_ = codec_id;
-  auto codec_ptr = avcodec_find_decoder(codec_id_);
+  auto *codec_ptr = avcodec_find_decoder(codec_id_);
   if (codec_ptr == nullptr) {
     MBLOG_ERROR << "Find decoder for codec[" << codec_id_ << "] failed";
     return STATUS_FAULT;
   }
 
-  auto av_ctx_ptr = avcodec_alloc_context3(codec_ptr);
+  auto *av_ctx_ptr = avcodec_alloc_context3(codec_ptr);
   if (av_ctx_ptr == nullptr) {
     MBLOG_ERROR << "avcodec_alloc_context3 return, codec_id "
                 << codec_id_;
@@ -67,7 +67,7 @@ Status FfmpegVideoDecoder::Decode(
   }
 
   do {
-    auto av_frame_ptr = av_frame_alloc();
+    auto *av_frame_ptr = av_frame_alloc();
     if (av_frame_ptr == nullptr) {
       MBLOG_ERROR << "av frame alloc failed";
       return STATUS_FAULT;

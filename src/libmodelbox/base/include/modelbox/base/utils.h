@@ -273,11 +273,10 @@ inline bool RegexMatch(const std::string &str, const std::string &pattern) {
 /**
  * @brief Split string by delim
  * @param s input string
- * @param delimiter delimiter
+ * @param delim delimiter
  * @return strings splitted
  */
-std::vector<std::string> StringSplit(const std::string &s,
-                                     const char delimiter);
+std::vector<std::string> StringSplit(const std::string &s, const char delim);
 
 /**
  * @brief Replace string

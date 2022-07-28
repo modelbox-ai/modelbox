@@ -38,9 +38,9 @@ MockFlowUnitFactory::FlowUnitProbe() {
 }
 
 std::shared_ptr<modelbox::FlowUnit> MockFlowUnitFactory::CreateFlowUnit(
-    const std::string &name, const std::string &unit_type) {
+    const std::string &name, const std::string &type) {
   if (flowunit_create_func_) {
-    return flowunit_create_func_(name, unit_type);
+    return flowunit_create_func_(name, type);
   }
 
   if (bind_mock_flowunit_ != nullptr) {

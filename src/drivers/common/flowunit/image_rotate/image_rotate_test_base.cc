@@ -64,7 +64,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
 
       auto external = data_ctx->External();
       std::string input_path = std::string((char*)(*external)[0]->ConstData());
-      cv::Mat input_img = cv::imread(input_path.c_str());
+      cv::Mat input_img = cv::imread(input_path);
 
       MBLOG_INFO << "gimage col " << input_img.cols << "  grow "
                  << input_img.rows << " gchannel:" << input_img.channels();
@@ -75,7 +75,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
         auto output_buffer =
             std::make_shared<modelbox::Buffer>(mock_flowunit->GetBindDevice());
         output_buffer->Build(input_img.total() * input_img.elemSize());
-        auto output_data = static_cast<uchar*>(output_buffer->MutableData());
+        auto *output_data = static_cast<uchar *>(output_buffer->MutableData());
         auto ret =
             memcpy_s(output_data, output_buffer->GetBytes(), input_img.data,
                      input_img.total() * input_img.elemSize());
@@ -123,8 +123,8 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
         rotate_buf->At(i)->Get("height", height);
         rotate_buf->At(i)->Get("channel", channels);
         origin_buf->At(i)->Get("rotate_angle", rotate_angle);
-        auto input_data =
-            static_cast<const uchar*>(rotate_buf->ConstBufferData(i));
+        const auto *input_data =
+            static_cast<const uchar *>(rotate_buf->ConstBufferData(i));
 
         cv::Mat img_data(cv::Size(width, height), CV_8UC3);
         auto ret =
@@ -141,7 +141,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
         std::string name = std::string(TEST_DATA_DIR) + "/rotate_result_" +
                            std::to_string(rotate_angle) + ".jpg";
 
-        cv::imwrite(name.c_str(), img_data);
+        cv::imwrite(name, img_data);
       }
 
       return modelbox::STATUS_STOP;

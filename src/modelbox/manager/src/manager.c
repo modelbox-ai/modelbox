@@ -265,8 +265,8 @@ int manager_tlog(MANAGER_LOG_LEVEL level, const char *file, int line,
 }
 
 static void _manager_default_conf_file(char *path, int max_len) {
-  char current_path[PATH_MAX] = {0};
-  if (get_prog_path(current_path, max_len) != 0) {
+  char current_path[1024] = {0};
+  if (get_prog_path(current_path, sizeof(current_path) - 1) != 0) {
     path[0] = 0;
     return;
   }
@@ -387,18 +387,19 @@ int main(int argc, char *argv[])
   while ((opt = getopt(argc, argv, "fvhc:n:p:k:")) != -1) {
     switch (opt) {
       case 'c':
-        strncpy(conf_file, get_modelbox_full_path(optarg), sizeof(conf_file));
+        strncpy(conf_file, get_modelbox_full_path(optarg),
+                sizeof(conf_file) - 1);
         break;
       case 'n':
         name = optarg;
         break;
       case 'p':
         strncpy(pid_file_path, get_modelbox_full_path(optarg),
-                sizeof(pid_file_path));
+                sizeof(pid_file_path) - 1);
         break;
       case 'k':
         strncpy(key_file_path, get_modelbox_full_path(optarg),
-                sizeof(key_file_path));
+                sizeof(key_file_path) - 1);
         break;
       case 'f':
         is_forground = 1;

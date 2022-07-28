@@ -41,16 +41,16 @@ modelbox::Status VideoDecoderFlowUnit::Open(
 modelbox::Status VideoDecoderFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status VideoDecoderFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto video_decoder = std::static_pointer_cast<NvcodecVideoDecoder>(
-      ctx->GetPrivate(DECODER_CTX));
+      data_ctx->GetPrivate(DECODER_CTX));
   if (video_decoder == nullptr) {
     MBLOG_ERROR << "Video decoder is not init";
     return modelbox::STATUS_FAULT;
   }
 
   std::vector<std::shared_ptr<NvcodecPacket>> pkt_list;
-  auto ret = ReadData(ctx, pkt_list);
+  auto ret = ReadData(data_ctx, pkt_list);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Read av_packet input failed";
     return modelbox::STATUS_FAULT;
@@ -76,7 +76,7 @@ modelbox::Status VideoDecoderFlowUnit::Process(
       return modelbox::STATUS_FAULT;
     }
 
-    ret = WriteData(ctx, frame_list, decode_ret == modelbox::STATUS_NODATA,
+    ret = WriteData(data_ctx, frame_list, decode_ret == modelbox::STATUS_NODATA,
                     video_decoder->GetFileUrl());
     if (ret != modelbox::STATUS_SUCCESS) {
       MBLOG_ERROR << "Send frame data failed";
@@ -95,9 +95,9 @@ modelbox::Status VideoDecoderFlowUnit::Process(
 }
 
 modelbox::Status VideoDecoderFlowUnit::ReadData(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<std::shared_ptr<NvcodecPacket>> &pkt_list) {
-  auto video_packet_input = ctx->Input(VIDEO_PACKET_INPUT);
+  auto video_packet_input = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (video_packet_input == nullptr) {
     MBLOG_ERROR << "video packet input is null";
     return modelbox::STATUS_FAULT;
@@ -144,15 +144,15 @@ modelbox::Status VideoDecoderFlowUnit::ReadNvcodecPacket(
 }
 
 modelbox::Status VideoDecoderFlowUnit::WriteData(
-    std::shared_ptr<modelbox::DataContext> &ctx,
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<std::shared_ptr<NvcodecFrame>> &frame_list, bool eos,
     const std::string &file_url) {
   auto last_frame =
-      std::static_pointer_cast<modelbox::Buffer>(ctx->GetPrivate(LAST_FRAME));
-  ctx->SetPrivate(LAST_FRAME, nullptr);
+      std::static_pointer_cast<modelbox::Buffer>(data_ctx->GetPrivate(LAST_FRAME));
+  data_ctx->SetPrivate(LAST_FRAME, nullptr);
   auto color_cvt =
-      std::static_pointer_cast<NppiColorConverter>(ctx->GetPrivate(CVT_CTX));
-  auto frame_buff_list = ctx->Output(FRAME_INFO_OUTPUT);
+      std::static_pointer_cast<NppiColorConverter>(data_ctx->GetPrivate(CVT_CTX));
+  auto frame_buff_list = data_ctx->Output(FRAME_INFO_OUTPUT);
   if (last_frame != nullptr) {
     frame_buff_list->PushBack(last_frame);  // Send last frame in cache
   }
@@ -166,8 +166,8 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
   }
 
   auto frame_index =
-      std::static_pointer_cast<int64_t>(ctx->GetPrivate(FRAME_INDEX_CTX));
-  auto pack_buff_list = ctx->Input(VIDEO_PACKET_INPUT);
+      std::static_pointer_cast<int64_t>(data_ctx->GetPrivate(FRAME_INDEX_CTX));
+  auto pack_buff_list = data_ctx->Input(VIDEO_PACKET_INPUT);
   auto pack_buff = pack_buff_list->At(0);
   int32_t rate_num = 0;
   int32_t rate_den = 0;
@@ -181,7 +181,7 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
   pack_buff->Get("time_base", time_base);
   size_t buffer_size;
   for (auto &frame : frame_list) {
-    videodecode::UpdateStatsInfo(ctx, frame->width, frame->height);
+    videodecode::UpdateStatsInfo(data_ctx, frame->width, frame->height);
     auto frame_buffer = std::make_shared<modelbox::Buffer>(GetBindDevice());
     auto ret = videodecode::GetBufferSize(frame->width, frame->height,
                                           out_pix_fmt_str_, buffer_size);
@@ -227,13 +227,13 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
     if (frame != frame_list.back()) {
       frame_buff_list->PushBack(frame_buffer);
     } else {
-      // try save last frame in ctx, when demuxe end, we could set last
+      // try save last frame in data_ctx, when demuxe end, we could set last
       // frame eos to 'true'
       if (eos) {
         frame_buffer->Set("eos", true);
         frame_buff_list->PushBack(frame_buffer);
       } else {
-        ctx->SetPrivate(LAST_FRAME, frame_buffer);
+        data_ctx->SetPrivate(LAST_FRAME, frame_buffer);
       }
     }
   }

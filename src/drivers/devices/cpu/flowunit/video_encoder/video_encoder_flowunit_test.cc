@@ -43,7 +43,7 @@ class VideoEncoderFlowUnitTest : public testing::Test {
  public:
   std::shared_ptr<MockFlow> flow_;
 
-  void StartFlow(std::string& toml_content, const uint64_t millisecond);
+  void StartFlow(std::string& toml_content, uint64_t millisecond);
 
  private:
   Status AddMockFlowUnit();
@@ -128,7 +128,7 @@ Status VideoEncoderFlowUnitTest::AddMockFlowUnit() {
       std::vector<size_t> shape(1, file_size);
       output_buff_list->Build(shape);
       auto output_buff = output_buff_list->At(0);
-      auto ptr = (char*)output_buff->MutableData();
+      auto* ptr = (char*)output_buff->MutableData();
       img_file.read(ptr, file_size);
       output_buff->Set("width", 480);
       output_buff->Set("height", 320);

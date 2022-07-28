@@ -61,18 +61,18 @@ static void test_sig_handler(int volatile sig_no, siginfo_t *sig_info,
   _exit(1);
 }
 
-static int test_sig_register(void) {
+static int test_sig_register() {
   int i = 0;
   struct sigaction sig_act;
 
   for (i = 0; i < g_sig_num; i++) {
-    sig_act.sa_handler = 0;
+    sig_act.sa_handler = nullptr;
     (void)sigemptyset(&sig_act.sa_mask);
-    sig_act.sa_restorer = 0;
+    sig_act.sa_restorer = nullptr;
     sig_act.sa_sigaction = test_sig_handler;
     sig_act.sa_flags = SA_SIGINFO | SA_RESTART;
 
-    if (sigaction(g_sig_list[i], &sig_act, NULL) < 0) {
+    if (sigaction(g_sig_list[i], &sig_act, nullptr) < 0) {
       fprintf(stderr, "Register signal %d failed.", g_sig_list[i]);
     }
   }
@@ -80,7 +80,7 @@ static int test_sig_register(void) {
   return 0;
 }
 
-static int test_init(void) {
+static int test_init() {
   if (test_sig_register() != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;

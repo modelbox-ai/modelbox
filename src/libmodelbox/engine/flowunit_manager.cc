@@ -121,8 +121,11 @@ Status FlowUnitManager::FlowUnitProbe() {
     if (value == flowunit_desc_list_.end()) {
       flowunit_desc_list_.insert(std::make_pair(iter.first.first, tmp));
     } else {
-      for (const auto &item : tmp)
-        value->second.insert(std::make_pair(item.first, item.second));
+      for (const auto &item : tmp) {
+        {
+          value->second.insert(std::make_pair(item.first, item.second));
+        }
+      }
     }
 
     for (const auto &iter_flow : tmp) {
@@ -165,7 +168,7 @@ std::vector<std::string> FlowUnitManager::GetFlowUnitTypes(
     const std::string &unit_name) {
   std::vector<std::string> unit_types;
   for (auto &iter : flowunit_desc_list_) {
-    auto &dev_type = iter.first;
+    const auto &dev_type = iter.first;
     auto &units = iter.second;
     auto unit_item = units.find(unit_name);
     if (unit_item == units.end()) {
@@ -291,7 +294,7 @@ modelbox::Status FlowUnitManager::AutoFillDeviceConf(
   }
 
   for (auto &cfg_item : dev_cfg) {
-    auto &dev_type = cfg_item.first;
+    const auto &dev_type = cfg_item.first;
     auto &ids = cfg_item.second;
     if (ids.empty()) {
       // will auto fill all id if no id selected
@@ -323,7 +326,7 @@ std::vector<std::shared_ptr<FlowUnit>> FlowUnitManager::CreateFlowUnit(
   }
 
   for (auto &cfg_item : unit_dev_cfg) {
-    auto &dev_type = cfg_item.first;
+    const auto &dev_type = cfg_item.first;
     auto &ids = cfg_item.second;
     if (ids.empty()) {
       MBLOG_WARN << "CreateFlowUnit: " << unit_name << "," << dev_type

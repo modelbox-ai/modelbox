@@ -30,14 +30,13 @@ namespace modelbox {
 
 class InputVirtualNode : public Node {
  public:
-  InputVirtualNode(const std::string& unit_device_name,
-                   const std::string& unit_device_id,
+  InputVirtualNode(const std::string& device_name, const std::string& device_id,
                    std::shared_ptr<DeviceManager> device_manager);
 
   virtual ~InputVirtualNode() override;
 
-  Status Init(const std::set<std::string>& input_ports,
-              const std::set<std::string>& output_ports,
+  Status Init(const std::set<std::string>& input_port_names,
+              const std::set<std::string>& output_port_names,
               std::shared_ptr<Configuration> config) override;
 
   /**

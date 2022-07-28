@@ -121,7 +121,7 @@ std::shared_ptr<DeviceMemory> DeviceMemory::CombineContinuous(
          const std::shared_ptr<DeviceMemory> &mem2) {
         return mem1->GetConstPtr<void>() < mem2->GetConstPtr<void>();
       });
-  auto &mem = *first_mem_ptr;
+  const auto &mem = *first_mem_ptr;
   auto device = mem->GetDevice();
   auto continuous_mem = device->MemAlloc(0);
   continuous_mem->offset_ = mem->offset_;
@@ -328,12 +328,12 @@ Status DeviceMemory::TransferInHost(
     size_t src_size, size_t dest_offset) {
   // TODO: consider 4k cache
   std::shared_ptr<uint8_t> host_cache(new (std::nothrow) uint8_t[src_size],
-                                      [](uint8_t *ptr) { delete[] ptr; });
-  if (host_cache.get() == nullptr) {
+                                      [](const uint8_t *ptr) { delete[] ptr; });
+  if (host_cache == nullptr) {
     MBLOG_ERROR << "No memory for host cache";
     return STATUS_NOMEM;
   }
-  
+
   auto src_mem_mgr = src_memory->mem_mgr_;
   auto src_dev = src_memory->GetDevice();
   auto ret =
@@ -445,7 +445,7 @@ Status DeviceMemory::AppendData(
     const std::vector<std::shared_ptr<DeviceMemory>> &mem_list,
     std::shared_ptr<DeviceMemory> &target_device_mem) {
   size_t offset = size_;
-  for (auto &mem : mem_list) {
+  for (const auto &mem : mem_list) {
     if (mem->GetSize() == 0) {
       continue;
     }

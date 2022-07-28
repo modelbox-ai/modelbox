@@ -70,7 +70,8 @@ class FfmpegVideoDemuxer {
 
   modelbox::Status GetStreamFrameInfo();
 
-  void RescaleFrameRate(int32_t &numerator_scale, int32_t &denominator_scale);
+  void RescaleFrameRate(int32_t &frame_rate_numerator,
+                        int32_t &frame_rate_denominator);
 
   modelbox::Status GetStreamBsfInfo();
 
@@ -87,7 +88,7 @@ class FfmpegVideoDemuxer {
   std::shared_ptr<AVBSFContext> CreateBsfCtx(const std::string &bsf_name,
                                              AVDictionary **options = nullptr);
 
-  bool IsAnnexb(uint8_t *extra_data, size_t extra_size);
+  bool IsAnnexb(const uint8_t *extra_data, size_t extra_size);
 
   std::string source_url_;
   bool key_frame_only_{false};

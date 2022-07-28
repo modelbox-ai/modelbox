@@ -86,7 +86,12 @@ modelbox::Status YoloBoxVirtualDriverManager::Scan(const std::string &path) {
 }
 
 modelbox::Status YoloBoxVirtualDriverManager::Add(const std::string &file) {
-  std::string name, type, version, description, entry, flowunit_type;
+  std::string name;
+  std::string type;
+  std::string version;
+  std::string description;
+  std::string entry;
+  std::string flowunit_type;
   auto builder = std::make_shared<ConfigurationBuilder>();
   std::shared_ptr<Configuration> config = builder->Build(file);
   if (config == nullptr) {
@@ -158,7 +163,7 @@ modelbox::Status YoloBoxVirtualDriverManager::Add(const std::string &file) {
 
 modelbox::Status YoloBoxVirtualDriverManager::GetTargetDriverList(
     modelbox::Drivers &drivers) {
-  for (auto &bind_type : BIND_FLOWUNIT_TYPE) {
+  for (const auto &bind_type : BIND_FLOWUNIT_TYPE) {
     auto tmp_driver =
         drivers.GetDriver(modelbox::DRIVER_CLASS_FLOWUNIT, bind_type,
                           BIND_FLOWUNIT_NAME, BIND_FLOWUNIT_VERSION);
@@ -186,7 +191,9 @@ modelbox::Status YoloBoxVirtualFlowUnitFactory::FillInput(
   }
 
   for (size_t i = 1; i <= unit_input.size(); ++i) {
-    std::string input_device, input_name, input_type;
+    std::string input_device;
+    std::string input_name;
+    std::string input_type;
     auto key = "input.input" + std::to_string(i);
     auto input_item_table = config->GetSubKeys(key);
     if (input_item_table.empty()) {
@@ -217,7 +224,9 @@ modelbox::Status YoloBoxVirtualFlowUnitFactory::FillOutput(
   }
 
   for (size_t i = 1; i <= unit_output.size(); ++i) {
-    std::string output_device, output_name, output_type;
+    std::string output_device;
+    std::string output_name;
+    std::string output_type;
     auto key = "output.output" + std::to_string(i);
     auto output_item_table = config->GetSubKeys(key);
     if (output_item_table.empty()) {

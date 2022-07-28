@@ -121,7 +121,7 @@ bool FileRequester::ReadRequestRange(const web::http::http_request &request,
   auto range_value = headers["Range"];
   const std::string range_prefix = "bytes=";
   auto pos = range_value.find(range_prefix);
-  if (pos == range_value.npos) {
+  if (pos == std::string::npos) {
     MBLOG_ERROR << "Range header has no bytes range values.";
     return false;
   }
@@ -177,9 +177,9 @@ void FileRequester::ProcessRequest(
 
   std::shared_ptr<unsigned char> raw_data(
       new (std::nothrow) unsigned char[MAX_BLOCK_SIZE],
-      [](unsigned char *p) { delete[] p; });
+      [](const unsigned char *p) { delete[] p; });
 
-  if (raw_data.get() == nullptr) {
+  if (raw_data == nullptr) {
     MBLOG_ERROR << "create raw data buffer failed.";
     request.reply(web::http::status_codes::InternalError);
     return;
@@ -232,7 +232,8 @@ void FileRequester::HandleFileGet(web::http::http_request request) {
   }
 
   int file_size = file_get_handler->GetFileSize();
-  uint64_t range_start, range_end = 0;
+  uint64_t range_start;
+  uint64_t range_end = 0;
   if (!ReadRequestRange(request, file_size, range_start, range_end)) {
     MBLOG_ERROR << "Read request range for file " << path << " filed.";
     request.reply(web::http::status_codes::BadRequest);
@@ -241,5 +242,4 @@ void FileRequester::HandleFileGet(web::http::http_request request) {
 
   pool_->Submit(&FileRequester::ProcessRequest, this, request, file_get_handler,
                 range_start, range_end);
-  return;
 }

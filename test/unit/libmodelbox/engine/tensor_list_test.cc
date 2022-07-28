@@ -65,7 +65,7 @@ TEST_F(TensorListTest, TensorListBuild) {
   EXPECT_EQ(tensor_list.Size(), shapes.size());
 
   size_t size = BATCH_NUM * Volume(shapes[0]);
-  auto data = tensor_list.MutableData<int>();
+  auto *data = tensor_list.MutableData<int>();
   for (size_t i = 0; i < size; ++i) {
     data[i] = i;
   }
@@ -73,7 +73,7 @@ TEST_F(TensorListTest, TensorListBuild) {
   for (size_t i = 0; i < tensor_list.Size(); ++i) {
     auto tensor_buffer = tensor_list[i];
     EXPECT_EQ(tensor_list[i]->Shape(), shapes[i]);
-    auto tensor_data = tensor_list[i]->ConstData<int>();
+    const auto *tensor_data = tensor_list[i]->ConstData<int>();
     auto tensor_size = tensor_list[i]->GetBytes() / sizeof(int);
     for (size_t j = 0; j < tensor_size; ++j) {
       EXPECT_EQ(tensor_data[j], i * tensor_size + j);
@@ -89,7 +89,7 @@ TEST_F(TensorListTest, TensorListBuildFromHost) {
   const int BATCH_NUM = 10;
   std::vector<std::vector<size_t>> shapes(BATCH_NUM, {1, 2, 3});
   auto size = Volume(shapes);
-  auto data = (int *)malloc(size * sizeof(int));
+  auto *data = (int *)malloc(size * sizeof(int));
   Defer {
     if (data) {
       free(data);
@@ -107,7 +107,7 @@ TEST_F(TensorListTest, TensorListBuildFromHost) {
 
   for (size_t i = 0; i < tensor_list.Size(); ++i) {
     EXPECT_EQ(tensor_list[i]->Shape(), shapes[i]);
-    auto tensor_data = tensor_list[i]->ConstData<int>();
+    const auto *tensor_data = tensor_list[i]->ConstData<int>();
     auto tensor_size = tensor_list[i]->GetBytes() / sizeof(int);
     for (size_t j = 0; j < tensor_size; ++j) {
       EXPECT_EQ(tensor_data[j], i * tensor_size + j);
@@ -288,8 +288,8 @@ TEST_F(TensorBufferTest, DeepCopy) {
   tensor2->Get("Width", tensor2_value);
   EXPECT_EQ(tensor_value, tensor2_value);
 
-  auto buf_data = tensor.MutableData<int>();
-  auto buf_data2 = tensor2->MutableData<int>();
+  auto *buf_data = tensor.MutableData<int>();
+  auto *buf_data2 = tensor2->MutableData<int>();
   EXPECT_NE(buf_data, buf_data2);
 
   EXPECT_EQ(tensor.GetBytes(), tensor2->GetBytes());

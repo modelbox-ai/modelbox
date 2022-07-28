@@ -232,7 +232,7 @@ class HttpListener {
 
   bool IsRunning();
 
-  void SetAclWhiteList(const std::vector<std::string> &white_rule);
+  void SetAclWhiteList(const std::vector<std::string> &white_list);
 
  private:
   IPACL acl_;

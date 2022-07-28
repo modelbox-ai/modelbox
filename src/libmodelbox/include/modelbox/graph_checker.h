@@ -99,8 +99,8 @@ class OverHierarchyCheck {
       const std::unordered_map<std::string, std::shared_ptr<NodeBase>>
           &all_nodes,
       const std::set<std::shared_ptr<NodeBase>> &start_nodes,
-      const std::map<std::string, std::string> &loop_links_,
-      const std::vector<std::vector<std::string>> &loop_structures_,
+      const std::map<std::string, std::string> &loop_links,
+      const std::vector<std::vector<std::string>> &loop_structures,
       const std::map<std::shared_ptr<OutPort>,
                      std::set<std::shared_ptr<InPort>>> &edges);
   virtual ~OverHierarchyCheck();

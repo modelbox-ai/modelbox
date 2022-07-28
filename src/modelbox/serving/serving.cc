@@ -191,9 +191,11 @@ modelbox::Status ModelServing::FillModelItem(const std::string &type) {
     return modelbox::STATUS_BADCONF;
   }
 
-  std::vector<std::string> item_names, item_types;
+  std::vector<std::string> item_names;
+  std::vector<std::string> item_types;
   for (unsigned int i = 1; i <= item.size(); ++i) {
-    std::string item_name, item_type;
+    std::string item_name;
+    std::string item_type;
     auto key = type + "." + type + std::to_string(i);
     auto item_table = config_->GetSubKeys(key);
     if (item_table.empty()) {

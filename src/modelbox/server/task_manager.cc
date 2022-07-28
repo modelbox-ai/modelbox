@@ -18,11 +18,10 @@
 #include <modelbox/server/task_manager.h>
 namespace modelbox {
 
-TaskManager::TaskManager(std::shared_ptr<Flow> task_flow,
-                         uint32_t task_limits) {
-  flow_ = task_flow;
-  thread_pool_ = std::make_shared<ThreadPool>(0, task_limits);
-  task_num_limits_ = task_limits;
+TaskManager::TaskManager(std::shared_ptr<Flow> flow, uint32_t task_num_limits) {
+  flow_ = flow;
+  thread_pool_ = std::make_shared<ThreadPool>(0, task_num_limits);
+  task_num_limits_ = task_num_limits;
   avaiable_task_counts_ = 0;
   thread_run_ = true;
   selector_ = std::make_shared<ExternalDataSelect>();
@@ -32,7 +31,8 @@ TaskManager::~TaskManager() { Stop(); }
 Status TaskManager::Submit(std::shared_ptr<Task> task) {
   std::unique_lock<std::mutex> guard(new_del_lock_);
   if (avaiable_task_counts_ >= task_num_limits_) {
-    MBLOG_INFO<<"Running Task exceed task_num_limits "<<avaiable_task_counts_;
+    MBLOG_INFO << "Running Task exceed task_num_limits "
+               << avaiable_task_counts_;
     return STATUS_SUCCESS;
   }
   if (thread_pool_ == nullptr) {

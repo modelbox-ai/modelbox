@@ -169,7 +169,6 @@ modelbox::Status TorchInferenceFlowUnit::ConvertType(
 
   torch_type = type_map[type];
   return modelbox::STATUS_OK;
-
 }
 
 modelbox::Status TorchInferenceFlowUnit::CreateTorchTensor(
@@ -252,12 +251,12 @@ modelbox::Status TorchInferenceFlowUnit::CreateTorchTensorList(
 }
 
 modelbox::Status TorchInferenceFlowUnit::PreProcess(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<torch::jit::IValue> &inputs) {
   int index = 0;
   modelbox::Status status;
   for (const auto &input_name : params_.input_name_list_) {
-    const auto input_buf = ctx->Input(input_name);
+    const auto input_buf = data_ctx->Input(input_name);
 
     std::string type = params_.input_type_list_[index];
     std::string torch_set_type =
@@ -476,7 +475,8 @@ modelbox::Status TorchInferenceFlowUnit::GetOutputTensorVec(
 }
 
 modelbox::Status TorchInferenceFlowUnit::PostProcess(
-    std::shared_ptr<modelbox::DataContext> ctx, torch::jit::IValue &outputs) {
+    std::shared_ptr<modelbox::DataContext> data_ctx,
+    torch::jit::IValue &outputs) {
   int index = 0;
   for (const auto &output_name : params_.output_name_list_) {
     std::vector<torch::Tensor> output_vector;
@@ -490,8 +490,8 @@ modelbox::Status TorchInferenceFlowUnit::PostProcess(
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    auto output_buf = ctx->Output(output_name);
-    auto size = ctx->Input(params_.input_name_list_[0])->Size();
+    auto output_buf = data_ctx->Output(output_name);
+    auto size = data_ctx->Input(params_.input_name_list_[0])->Size();
     if (size == 0) {
       auto err_msg = "input size is 0 bytes";
       MBLOG_ERROR << err_msg;
@@ -530,9 +530,9 @@ modelbox::Status TorchInferenceFlowUnit::PostProcess(
 }
 
 modelbox::Status TorchInferenceFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   std::vector<torch::jit::IValue> inputs;
-  modelbox::Status status = PreProcess(ctx, inputs);
+  modelbox::Status status = PreProcess(data_ctx, inputs);
   if (status != modelbox::STATUS_OK) {
     auto err_msg =
         "torch inference preprocess failed, error: " + status.WrapErrormsgs();
@@ -554,7 +554,7 @@ modelbox::Status TorchInferenceFlowUnit::Process(
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  status = PostProcess(ctx, outputs);
+  status = PostProcess(data_ctx, outputs);
   if (status != modelbox::STATUS_OK) {
     auto err_msg =
         "torch inference postprocess failed, error: " + status.WrapErrormsgs();

@@ -58,7 +58,7 @@ static void Register_Test_0_1_Batch_Flowunit(
 
             auto buffer_list = ext_data->CreateBufferList();
             buffer_list->Build({10 * sizeof(int)});
-            auto data = (int *)buffer_list->MutableData();
+            auto *data = (int *)buffer_list->MutableData();
             for (size_t i = 0; i < 10; i++) {
               data[i] = i;
             }
@@ -102,7 +102,7 @@ static void Register_Test_0_1_Batch_Flowunit(
         output_buf_1->Set("type", type);
         std::vector<size_t> shape{8};
         output_buf_1->Set("shape", shape);
-        auto dev_data = (float *)(output_buf_1->MutableData());
+        auto *dev_data = (float *)(output_buf_1->MutableData());
         float num;
         for (size_t i = 0; i < output_buf_1->Size(); ++i) {
           num = 1.0;
@@ -181,7 +181,7 @@ static void Register_Test_1_0_Batch_Flowunit(
         EXPECT_EQ(input_shape, shape_vector);
 
         for (size_t i = 0; i < input_bufs->Size(); ++i) {
-          auto input_data =
+          const auto *input_data =
               static_cast<const float *>(input_bufs->ConstBufferData(i));
           MBLOG_DEBUG << "index: " << i;
           for (size_t j = 0; j < input_shape[0]; ++j) {
@@ -238,7 +238,7 @@ static void Register_Test_0_1_Flowunit(std::shared_ptr<MockDriverCtl> &ctl) {
 
             auto buffer_list = ext_data->CreateBufferList();
             buffer_list->Build({10 * sizeof(int)});
-            auto data = (int *)buffer_list->MutableData();
+            auto *data = (int *)buffer_list->MutableData();
             for (size_t i = 0; i < 10; i++) {
               data[i] = i;
             }
@@ -282,7 +282,7 @@ static void Register_Test_0_1_Flowunit(std::shared_ptr<MockDriverCtl> &ctl) {
         output_buf_1->Set("type", type);
         std::vector<size_t> shape{8};
         output_buf_1->Set("shape", shape);
-        auto dev_data = (float *)(output_buf_1->MutableData());
+        auto *dev_data = (float *)(output_buf_1->MutableData());
         float num = 1.0;
         for (size_t i = 0; i < output_buf_1->Size(); ++i) {
           for (size_t j = 0; j < 8; ++j) {
@@ -358,7 +358,7 @@ static void Register_Test_1_0_Flowunit(std::shared_ptr<MockDriverCtl> &ctl) {
         EXPECT_EQ(input_shape, shape_vector);
 
         for (size_t i = 0; i < input_bufs->Size(); ++i) {
-          auto input_data =
+          const auto *input_data =
               static_cast<const float *>(input_bufs->ConstBufferData(i));
           MBLOG_DEBUG << "index: " << i;
           for (size_t j = 0; j < input_shape[0]; ++j) {
@@ -431,7 +431,7 @@ modelbox::Status ReplaceVersion(const std::string &src, const std::string &dest,
 }
 
 std::string GetTFVersion() {
-  std::string ans = "";
+  std::string ans;
   void *handler = dlopen(MODELBOX_TF_SO_PATH, RTLD_LOCAL | RTLD_DEEPBIND);
   if (handler == nullptr) {
     MBLOG_ERROR << "dlopen error: " << dlerror();

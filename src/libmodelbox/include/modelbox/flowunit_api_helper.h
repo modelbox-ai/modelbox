@@ -144,7 +144,7 @@ extern std::shared_ptr<modelbox::DriverFactory> FlowUnitCreateFactory()
   FlowUnitPlugin<clazz> MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz);
 
 #define MODELBOX_FLOWUNIT_SETTER(clazz, desc)                                    \
-  void FlowUnitPluginInit_##clazz(modelbox::FlowUnitDesc &clazz);                \
+  void FlowUnitPluginInit_##clazz(modelbox::FlowUnitDesc &desc);                \
   auto unused_##clazz = []() {                                                 \
     auto func = []() {                                                         \
       FlowUnitPluginInit_##clazz(MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz).Desc); \

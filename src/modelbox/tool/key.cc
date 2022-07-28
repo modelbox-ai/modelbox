@@ -40,9 +40,9 @@ enum MODELBOX_TOOL_KEY_COMMAND {
 };
 
 static struct option key_options[] = {
-    {"pass", 0, 0, MODELBOX_TOOL_KEY_PASS},
-    {"model", 1, 0, MODELBOX_TOOL_KEY_MODEL},
-    {0, 0, 0, 0},
+    {"pass", 0, nullptr, MODELBOX_TOOL_KEY_PASS},
+    {"model", 1, nullptr, MODELBOX_TOOL_KEY_MODEL},
+    {nullptr, 0, nullptr, 0},
 };
 
 enum MODELBOX_TOOL_KEY_PASS_COMMAND {
@@ -50,8 +50,8 @@ enum MODELBOX_TOOL_KEY_PASS_COMMAND {
 };
 
 static struct option key_pass_option[] = {
-    {"n", 0, 0, MODELBOX_TOOL_KEY_PASS_NON_SYSRELATED},
-    {0, 0, 0, 0},
+    {"n", 0, nullptr, MODELBOX_TOOL_KEY_PASS_NON_SYSRELATED},
+    {nullptr, 0, nullptr, 0},
 };
 
 constexpr int ASCII_ETX = 0x3;
@@ -113,12 +113,12 @@ Status EncryptWithFile(const std::string &plain_path,
 
   std::shared_ptr<uint8_t> read_buf(new (std::nothrow)
                                         uint8_t[ENCRYPT_BLOCK_SIZE],
-                                    [](uint8_t *p) { delete[] p; });
+                                    [](const uint8_t *p) { delete[] p; });
   std::shared_ptr<uint8_t> en_buf(
       new (std::nothrow) uint8_t[ENCRYPT_BLOCK_SIZE + EVP_MAX_BLOCK_LENGTH + 1],
-      [](uint8_t *p) { delete[] p; });
+      [](const uint8_t *p) { delete[] p; });
 
-  if (en_buf.get() == nullptr || read_buf.get() == nullptr) {
+  if (en_buf == nullptr || read_buf == nullptr) {
     return {STATUS_NOMEM, "no memory to encode"};
   }
 
@@ -149,7 +149,7 @@ Status EncryptWithFile(const std::string &plain_path,
    * In this example we are using 256 bit AES (i.e. a 256 bit key). The
    * IV size for *most* modes is the same as the block size. For AES this
    * is 128 bits */
-  if (1 != EVP_EncryptInit_ex(ctx.get(), cipher, NULL, key, iv)) {
+  if (1 != EVP_EncryptInit_ex(ctx.get(), cipher, nullptr, key, iv)) {
     return {STATUS_FAULT, "encrypt init failed."};
   }
 
@@ -218,7 +218,7 @@ Status ModelEncrypt(const std::string &model_path,
 
 int ToolCommandKey::Run(int argc, char *argv[]) {
   int cmdtype = 0;
-  std::string fname("");
+  std::string fname;
 #if OPENSSL_API_COMPAT < 0x10100000L
   OpenSSL_add_all_algorithms();
   Defer { EVP_cleanup(); };
@@ -247,7 +247,8 @@ int ToolCommandKey::Run(int argc, char *argv[]) {
 }
 
 Status ToolCommandKey::ReadPassword(std::string *pass) {
-  struct termios oldt, newt;
+  struct termios oldt;
+  struct termios newt;
   char ch;
   int num = 0;
   char c_pass[MAX_PASSWORD_LEN];

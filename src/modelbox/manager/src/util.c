@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "util.h"
 
 #include <dirent.h>
@@ -100,12 +99,12 @@ const char *get_modelbox_root_path(void) {
   is_init = 1;
   char prog_path[PATH_MAX] = {0};
   char path_tmp[PATH_MAX];
-  
-  if (get_prog_path(prog_path, PATH_MAX) != 0) {
+
+  if (get_prog_path(prog_path, PATH_MAX - 1) != 0) {
     return root_path;
   }
 
-  snprintf_s(path_tmp, PATH_MAX, PATH_MAX, "%s/../../../", prog_path);
+  snprintf_s(path_tmp, PATH_MAX - 1, PATH_MAX - 1, "%s/../../../", prog_path);
   if (realpath(path_tmp, root_path) == NULL) {
     return root_path;
   }

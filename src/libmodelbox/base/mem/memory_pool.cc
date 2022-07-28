@@ -51,7 +51,7 @@ std::shared_ptr<void> MemoryPoolBase::AllocSharedPtr(size_t size) {
     }
 
     if (ret == nullptr) {
-      auto ptr = MemAlloc(size);
+      auto *ptr = MemAlloc(size);
       if (ptr == nullptr) {
         return nullptr;
       }
@@ -130,7 +130,6 @@ void MemoryPoolBase::AddSlabCache(std::shared_ptr<SlabCache> slab_cache) {
             [](std::shared_ptr<SlabCache> a, std::shared_ptr<SlabCache> b) {
               return a->ObjectSize() < b->ObjectSize();
             });
-  return;
 }
 
 size_t MemoryPoolBase::CalSlabSize(size_t object_size) {

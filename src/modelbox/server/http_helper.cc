@@ -100,14 +100,14 @@ const HttpMethod HttpMethods::PATCH = "PATCH";
 
 Status UseCertificate(SSL_CTX &ctx, const void *cert_buf, int len,
                       pem_password_cb cb, void *cb_user_data) {
-  auto cert_bio = BIO_new_mem_buf(cert_buf, len);
+  auto *cert_bio = BIO_new_mem_buf(cert_buf, len);
   if (cert_bio == nullptr) {
     GET_SSL_ERR(err_code, err_str);
     return {STATUS_FAULT,
             "load cert as bio failed, err: " + err_code + ", " + err_str};
   }
 
-  auto cert = PEM_read_bio_X509_AUX(cert_bio, nullptr, cb, cb_user_data);
+  auto *cert = PEM_read_bio_X509_AUX(cert_bio, nullptr, cb, cb_user_data);
   BIO_free(cert_bio);
   if (cert == nullptr) {
     GET_SSL_ERR(err_code, err_str);
@@ -126,14 +126,14 @@ Status UseCertificate(SSL_CTX &ctx, const void *cert_buf, int len,
 
 Status UsePrivateKey(SSL_CTX &ctx, const void *key_buf, int len,
                      pem_password_cb cb, void *cb_user_data) {
-  auto key_bio = BIO_new_mem_buf(key_buf, len);
+  auto *key_bio = BIO_new_mem_buf(key_buf, len);
   if (key_bio == nullptr) {
     GET_SSL_ERR(err_code, err_str);
     return {STATUS_FAULT,
             "load key as bio failed, err: " + err_code + ", " + err_str};
   }
 
-  auto key = PEM_read_bio_PrivateKey(key_bio, nullptr, cb, cb_user_data);
+  auto *key = PEM_read_bio_PrivateKey(key_bio, nullptr, cb, cb_user_data);
   BIO_free(key_bio);
   if (key == nullptr) {
     GET_SSL_ERR(err_code, err_str);
@@ -289,7 +289,7 @@ std::list<std::string> HttpPathMatchTree::SplitHttpPath(
 
   while (true) {
     auto name_end_pos = http_path.find('/', name_start_pos);
-    if (name_end_pos == http_path.npos) {
+    if (name_end_pos == std::string::npos) {
       name_list.push_back(http_path.substr(name_start_pos));
       break;
     }
@@ -311,7 +311,7 @@ HttpServer::HttpServer(const std::string &endpoint)
 HttpServer::HttpServer(const std::string &endpoint,
                        const HttpServerConfig &config) {
   std::smatch http_match_result;
-  std::regex http_pattern("(https?://)([\\w\\-\\.]+)(:[0-9]+)?");
+  std::regex http_pattern(R"((https?://)([\w\-\.]+)(:[0-9]+)?)");
   std::regex_match(endpoint, http_match_result, http_pattern);
   const size_t sub_str_count = 4;
   if (http_match_result.size() != sub_str_count) {
@@ -326,7 +326,7 @@ HttpServer::HttpServer(const std::string &endpoint,
     port_str = port_str.substr(1);  // remove ':'
   }
 
-  auto format_tips = "http://ip[:port] or https://ip[:port]";
+  const auto *format_tips = "http://ip[:port] or https://ip[:port]";
   if (scheme.empty()) {
     status_ = {STATUS_BADCONF,
                endpoint + " format is wrong, should be " + format_tips};
@@ -555,7 +555,7 @@ Status HttpListener::GetStatus() { return shared_server_->GetStatus(); }
 bool HttpListener::IsRunning() { return shared_server_->IsRunning(); }
 
 void HttpListener::SetAclWhiteList(const std::vector<std::string> &white_list) {
-  for (auto &white_rule : white_list) {
+  for (const auto &white_rule : white_list) {
     acl_.AddCidr(white_rule);
     enable_acl_ = true;
   }
@@ -627,7 +627,7 @@ std::unordered_map<std::string,
 Status SendHttpRequest(HttpRequest &request) {
   auto url = request.GetURL();
   std::smatch url_match_result;
-  std::regex url_pattern("(https?://[\\w\\-\\.]+(:[0-9]+)?)(/.*)?");
+  std::regex url_pattern(R"((https?://[\w\-\.]+(:[0-9]+)?)(/.*)?)");
   auto ret = std::regex_match(url, url_match_result, url_pattern);
   if (!ret) {
     return {STATUS_BADCONF, "url " + url + " is wrong format"};
@@ -666,7 +666,7 @@ Status SendHttpRequest(HttpRequest &request) {
 void SplitPath(const std::string &path, std::string &prefix_path,
                std::string &last_path) {
   auto last_split_start_pos = path.rfind('/');
-  if (last_split_start_pos == path.npos) {
+  if (last_split_start_pos == std::string::npos) {
     prefix_path = path;
     last_path.clear();
     return;

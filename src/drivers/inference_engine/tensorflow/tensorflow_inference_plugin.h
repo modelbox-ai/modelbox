@@ -35,11 +35,11 @@ class InferencePlugin {
       std::shared_ptr<modelbox::Configuration> config) = 0;
 
   virtual modelbox::Status PreProcess(
-      std::shared_ptr<modelbox::DataContext> ctx,
+      std::shared_ptr<modelbox::DataContext> data_ctx,
       std::vector<TF_Tensor *> &input_tf_tensor_list) = 0;
 
   virtual modelbox::Status PostProcess(
-      std::shared_ptr<modelbox::DataContext> ctx,
+      std::shared_ptr<modelbox::DataContext> data_ctx,
       std::vector<TF_Tensor *> &output_tf_tensor_list) = 0;
 };
 

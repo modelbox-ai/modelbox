@@ -42,6 +42,7 @@ struct base64_encode_simd_param {
   int output_len{0};
 };
 
+// NOLINTNEXTLINE
 void cpuid(int info[4], int function_id_) {
   __cpuid_count(function_id_, 0, info[0], info[1], info[2], info[3]);
 }
@@ -124,7 +125,7 @@ bool CheckSupportBase64SIMD() {
 Status Base64EncodeSIMD(const uint8_t *input, size_t input_len,
                         std::string *output) {
   if (input == nullptr || input_len == 0) {
-    auto err_msg = "base64 encode input data is null or size is zero";
+    const auto *err_msg = "base64 encode input data is null or size is zero";
     MBLOG_ERROR << err_msg;
     return {STATUS_INVALID, err_msg};
   }
@@ -140,7 +141,7 @@ Status Base64EncodeSIMD(const uint8_t *input, size_t input_len,
   param.batch_count = input_len / param.batch_size;
 
   output->resize(param.output_len);
-  uint8_t *output_buffer = (uint8_t *)output->data();
+  auto *output_buffer = (uint8_t *)output->data();
 
   for (int i = 0; i <= param.input_len - param.batch_size;
        i += param.batch_size) {

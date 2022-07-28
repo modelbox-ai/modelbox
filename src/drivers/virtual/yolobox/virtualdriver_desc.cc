@@ -31,7 +31,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetName(VIRTUAL_YOLO_POST_FLOWUNIT);
   desc->SetType(modelbox::DRIVER_TYPE_VIRTUAL);
   desc->SetVersion(BIND_FLOWUNIT_VERSION);
-  return;
 }
 
 modelbox::Status DriverInit() {

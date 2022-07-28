@@ -229,8 +229,6 @@ void Timer::Schedule(const std::shared_ptr<TimerTask> timer_task,
   if (timer_task_sched.get() == top.get()) {
     cond_.notify_one();
   }
-
-  return;
 }
 
 bool Timer::SetPriority(int priority) {
@@ -317,8 +315,6 @@ void Timer::WaitTimerTask(std::unique_lock<std::mutex> &lock,
                  << "ms";
     }
   }
-
-  return;
 }
 
 bool Timer::GetTimerTask(std::unique_lock<std::mutex> &lock,

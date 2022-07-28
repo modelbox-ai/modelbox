@@ -50,7 +50,7 @@ class FlowUnitGroup {
   virtual ~FlowUnitGroup(){};
 
   Status Init(const std::set<std::string> &, const std::set<std::string> &,
-              std::shared_ptr<FlowUnitManager>, bool check_port = true);
+              std::shared_ptr<FlowUnitManager>, bool checkport = true);
 
   Status CheckInputAndOutput(const std::set<std::string> &input_ports_name,
                              const std::set<std::string> &output_ports_name);

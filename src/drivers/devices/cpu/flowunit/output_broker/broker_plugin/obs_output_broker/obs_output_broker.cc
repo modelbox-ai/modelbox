@@ -120,7 +120,7 @@ modelbox::Status ObsOutputBroker::Write(
     const std::shared_ptr<OutputBrokerHandle> &handle,
     const std::shared_ptr<modelbox::Buffer> &buffer) {
   size_t data_size = buffer->GetBytes();
-  char *data = const_cast<char *>((const char *)buffer->ConstData());
+  auto *data = const_cast<char *>((const char *)buffer->ConstData());
   if (buffer == nullptr || data == nullptr || data_size == 0) {
     MBLOG_WARN << "Invalid buffer: buffer is nullptr!";
     return modelbox::STATUS_NODATA;
@@ -139,14 +139,14 @@ modelbox::Status ObsOutputBroker::Write(
   lock.unlock();
 
   // set OBS file key
-  std::string file_key = "";
+  std::string file_key;
   buffer->Get(META_OUTPUT_FILE_NAME, file_key);
   if (file_key.empty()) {
     file_key =
         handle->broker_id_ + "_" + std::to_string(output_info->file_key_index);
   }
 
-  std::string path = "";
+  std::string path;
   if (!output_info->path.empty()) {
     if ('/' != output_info->path.at(output_info->path.length() - 1)) {
       path = output_info->path + "/";

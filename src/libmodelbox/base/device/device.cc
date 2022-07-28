@@ -258,8 +258,8 @@ void DeviceDesc::SetDeviceVersion(const std::string &device_version) {
   device_version_ = device_version;
 }
 
-void DeviceDesc::SetDeviceDesc(const std::string &device_description) {
-  device_description_ = device_description;
+void DeviceDesc::SetDeviceDesc(const std::string &device_desc) {
+  device_description_ = device_desc;
 }
 
 std::string DeviceDesc::GetDeviceId() { return device_id_; }

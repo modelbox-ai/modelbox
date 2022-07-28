@@ -76,12 +76,12 @@ TEST_F(BufferTest, MutableData) {
 
   Buffer buffer(device_);
   buffer.Build(data.size() * sizeof(int));
-  auto dev_data = static_cast<int *>(buffer.MutableData());
+  auto *dev_data = static_cast<int *>(buffer.MutableData());
   for (size_t i = 0; i < data.size(); ++i) {
     dev_data[i] = data[i];
   }
 
-  const auto buffer_data = (const int *)buffer.ConstData();
+  const auto *const buffer_data = (const int *)buffer.ConstData();
   EXPECT_NE(nullptr, buffer_data);
   for (size_t i = 0; i < data.size(); i++) {
     EXPECT_EQ(buffer_data[i], data[i]);
@@ -89,7 +89,7 @@ TEST_F(BufferTest, MutableData) {
 
   buffer.SetError("BufferTest.ProcessError", "exception test");
 
-  auto buffer_data2 = (int *)buffer.MutableData();
+  auto *buffer_data2 = (int *)buffer.MutableData();
   EXPECT_EQ(nullptr, buffer_data2);
   EXPECT_TRUE(buffer.HasError());
 }
@@ -211,8 +211,8 @@ TEST_F(BufferTest, DeepCopy) {
   buffer2->Get("Width", buffer2_value);
   EXPECT_EQ(buffer_value, buffer2_value);
 
-  auto buf_data = (int *)buffer.MutableData();
-  auto buf_data2 = (int *)buffer2->MutableData();
+  auto *buf_data = (int *)buffer.MutableData();
+  auto *buf_data2 = (int *)buffer2->MutableData();
   EXPECT_NE(buf_data, buf_data2);
 
   EXPECT_EQ(buffer.GetBytes(), buffer2->GetBytes());
@@ -254,7 +254,7 @@ TEST_F(BufferTest, MoveToTargetDevice) {
   auto device_cpu = dev_mgr->CreateDevice("cpu", "0");
   buffer.SetDelayedCopyDestinationDevice(device_cpu);
   EXPECT_EQ("cuda", buffer.GetDevice()->GetType());
-  auto data = buffer.ConstData();
+  const auto *data = buffer.ConstData();
   EXPECT_NE(data, nullptr);
   EXPECT_EQ("cpu", buffer.GetDevice()->GetType());
   EXPECT_EQ(3 * sizeof(int), buffer.GetBytes());

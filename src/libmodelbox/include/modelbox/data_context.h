@@ -274,8 +274,8 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   void FillPlaceholderOutput(bool from_valid_input = false,
                              bool same_with_input_num = true);
 
-  void FillErrorOutput(bool from_valid, const std::string &error_msg,
-                       const std::string &error_code,
+  void FillErrorOutput(bool from_valid, const std::string &error_code,
+                       const std::string &error_msg,
                        bool same_with_input_num = true);
 
   bool HasValidOutput();

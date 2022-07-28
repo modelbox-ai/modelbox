@@ -68,12 +68,12 @@ TEST_F(FlowGraphTest, AddFuncTest) {
   auto input1 = graph_desc_->AddInput("input1");
   auto process_func = [](std::shared_ptr<DataContext> data_context) -> Status {
     auto input = data_context->Input("in_1");
-    auto in_data = (const uint8_t *)(input->ConstBufferData(0));
+    const auto *in_data = (const uint8_t *)(input->ConstBufferData(0));
 
     auto output = data_context->Output("out_1");
     auto buffer = input->At(0);
     output->Build({buffer->GetBytes()});
-    auto data_ptr = (uint8_t *)(output->MutableBufferData(0));
+    auto *data_ptr = (uint8_t *)(output->MutableBufferData(0));
     for (uint8_t i = 0; i < 10; ++i) {
       data_ptr[i] = in_data[i] + 1;
     }
@@ -91,7 +91,7 @@ TEST_F(FlowGraphTest, AddFuncTest) {
   auto stream_io = flow->CreateStreamIO();
   auto buffer = stream_io->CreateBuffer();
   buffer->Build(10);
-  auto buffer_data = (uint8_t *)(buffer->MutableData());
+  auto *buffer_data = (uint8_t *)(buffer->MutableData());
   for (uint8_t i = 0; i < 10; ++i) {
     buffer_data[i] = i;
   }
@@ -102,7 +102,7 @@ TEST_F(FlowGraphTest, AddFuncTest) {
   std::string meta;
   out_buffer->Get("test_meta", meta);
   EXPECT_EQ(meta, "test_meta");
-  auto data = (const uint8_t *)(out_buffer->ConstData());
+  const auto *data = (const uint8_t *)(out_buffer->ConstData());
   for (uint8_t i = 0; i < 10; ++i) {
     EXPECT_EQ(data[i], i + 1);
   }

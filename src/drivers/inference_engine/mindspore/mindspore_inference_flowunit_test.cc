@@ -88,7 +88,7 @@ Status InferenceMindSporeFlowUnitTest::AddMockFlowUnit() {
       output_buf_1->Set("type", type);
       std::vector<size_t> shape{len, 2};
       output_buf_1->Set("shape", shape);
-      auto dev_data1 = (float *)(output_buf_1->MutableData());
+      auto *dev_data1 = (float *)(output_buf_1->MutableData());
       MBLOG_INFO << "output_buf_1.size: " << output_buf_1->Size();
       float val = 1.0;
       for (size_t i = 0; i < output_buf_1->Size(); ++i) {
@@ -101,7 +101,7 @@ Status InferenceMindSporeFlowUnitTest::AddMockFlowUnit() {
       output_buf_2->Build(shape_vector);
       output_buf_2->Set("type", type);
       output_buf_2->Set("shape", shape);
-      auto dev_data2 = (float *)(output_buf_2->MutableData());
+      auto *dev_data2 = (float *)(output_buf_2->MutableData());
       val = 2.0;
       for (size_t i = 0; i < output_buf_2->Size(); ++i) {
         for (size_t j = 0; j < len; ++j) {
@@ -142,7 +142,7 @@ Status InferenceMindSporeFlowUnitTest::AddMockFlowUnit() {
       EXPECT_EQ(input_shape[0], 2);
       EXPECT_EQ(input_shape[1], 2);
 
-      auto ptr = (const float *)input_bufs->ConstData();
+      const auto *ptr = (const float *)input_bufs->ConstData();
       float val = 3.0;
       for (size_t i = 0; i < 4; ++i) {
         EXPECT_TRUE((std::abs(ptr[i]) - val) < 1e-7);

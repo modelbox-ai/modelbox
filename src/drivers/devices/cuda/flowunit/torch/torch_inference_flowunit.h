@@ -75,16 +75,16 @@ class TorchInferenceFlowUnit : public modelbox::FlowUnit {
                                c10::ScalarType &torch_type);
   modelbox::Status CreateOutputBufferList(
       std::shared_ptr<modelbox::BufferList> &output_buffer_list,
-      torch::Tensor &output, size_t input_size);
+      torch::Tensor &output_tensor, size_t input_size);
   modelbox::Status CreateOutputBufferListFromVector(
       std::shared_ptr<modelbox::BufferList> &output_buffer_list,
-      std::vector<torch::Tensor> &output, size_t input_size);
-  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> ctx,
+      std::vector<torch::Tensor> &output_tensor, size_t input_size);
+  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
                               std::vector<torch::jit::IValue> &inputs);
   modelbox::Status SetOutputBufferListMeta(
       const std::vector<torch::Tensor> &output,
       std::shared_ptr<modelbox::BufferList> &output_buf);
-  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> ctx,
+  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
                                torch::jit::IValue &outputs);
 
   modelbox::Status InitConfig(

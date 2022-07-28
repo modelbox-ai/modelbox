@@ -41,7 +41,7 @@ ServerPlugin::ServerPlugin(const std::string &plugin_path)
 std::shared_ptr<ServerPlugin> ServerPlugin::MakePlugin(
     const std::string &plugin_path) {
   auto suffix_pos = plugin_path.find_last_of('.');
-  if (suffix_pos != plugin_path.npos) {
+  if (suffix_pos != std::string::npos) {
     auto suffix = plugin_path.substr(suffix_pos);
     auto type_item = plugin_construct_map.find(suffix);
     if (type_item != plugin_construct_map.end()) {
@@ -71,7 +71,7 @@ modelbox::Status DlPlugin::Init(
   plugin_handler_ = dlopen(plugin_path_.c_str(), RTLD_NOW);
   if (plugin_handler_ == nullptr) {
     std::string errmsg = "Open library " + plugin_path_ + " failed";
-    auto dlerr_msg = dlerror();
+    auto *dlerr_msg = dlerror();
     if (dlerr_msg != nullptr) {
       errmsg += ", ";
       errmsg += dlerr_msg;
@@ -92,7 +92,7 @@ modelbox::Status DlPlugin::Init(
 
   if (create_plugin_func == nullptr) {
     std::string errmsg = "Cannot find symbol CreatePlugin";
-    auto dlerr_msg = dlerror();
+    auto *dlerr_msg = dlerror();
     if (dlerr_msg != nullptr) {
       errmsg += ", ";
       errmsg += dlerr_msg;

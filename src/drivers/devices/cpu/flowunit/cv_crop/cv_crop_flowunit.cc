@@ -32,10 +32,10 @@ modelbox::Status CVCropFlowUnit::Open(
 modelbox::Status CVCropFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status CVCropFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   MBLOG_DEBUG << "process image cv_crop";
 
-  auto input_img_bufs = ctx->Input("in_image");
+  auto input_img_bufs = data_ctx->Input("in_image");
   if (input_img_bufs->Size() <= 0) {
     auto errMsg =
         "in_image image batch is " + std::to_string(input_img_bufs->Size());
@@ -43,7 +43,7 @@ modelbox::Status CVCropFlowUnit::Process(
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
-  auto input_box_bufs = ctx->Input("in_region");
+  auto input_box_bufs = data_ctx->Input("in_region");
   if (input_box_bufs->Size() <= 0) {
     auto errMsg =
         "in_region roi box batch is " + std::to_string(input_box_bufs->Size());
@@ -59,7 +59,7 @@ modelbox::Status CVCropFlowUnit::Process(
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
-  auto output_bufs = ctx->Output("out_image");
+  auto output_bufs = data_ctx->Output("out_image");
   output_bufs->CopyMeta(input_img_bufs);
 
   for (size_t i = 0; i < input_img_bufs->Size(); ++i) {
@@ -98,14 +98,15 @@ modelbox::Status CVCropFlowUnit::Process(
 
     channel = RGB_CHANNLES;
 
-    auto bbox = static_cast<const RoiBox *>(input_box_bufs->ConstBufferData(i));
+    const auto *bbox =
+        static_cast<const RoiBox *>(input_box_bufs->ConstBufferData(i));
     if (!CheckRoiBoxVaild(bbox, width, height)) {
       return {modelbox::STATUS_FAULT, "roi box param is invaild !"};
     }
 
     MBLOG_DEBUG << "crop bbox :  " << bbox->x << " " << bbox->y << " "
                 << bbox->w << " " << bbox->h;
-    void *input_data = const_cast<void *>(input_img_bufs->ConstBufferData(i));
+    auto *input_data = const_cast<void *>(input_img_bufs->ConstBufferData(i));
     cv::Mat img_data(cv::Size(width, height), CV_8UC3, input_data);
     MBLOG_DEBUG << "ori image : cols " << img_data.cols << " rows "
                 << img_data.rows << " channel " << img_data.channels();

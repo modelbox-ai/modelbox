@@ -65,7 +65,7 @@ class NppiResizeFlowUnit : public modelbox::CudaFlowUnit {
   modelbox::Status Close() override { return modelbox::STATUS_OK; };
 
   modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                             cudaStream_t stream) override;
+                               cudaStream_t stream) override;
 
   modelbox::Status DataPre(
       std::shared_ptr<modelbox::DataContext> data_ctx) override {

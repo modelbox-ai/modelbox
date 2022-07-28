@@ -31,11 +31,11 @@ class OriginInferencePlugin : public InferencePlugin {
   virtual ~OriginInferencePlugin() = default;
 
   modelbox::Status PreProcess(
-      std::shared_ptr<modelbox::DataContext> ctx,
+      std::shared_ptr<modelbox::DataContext> data_ctx,
       std::vector<TF_Tensor *> &input_tf_tensor_list) override;
 
   modelbox::Status PostProcess(
-      std::shared_ptr<modelbox::DataContext> ctx,
+      std::shared_ptr<modelbox::DataContext> data_ctx,
       std::vector<TF_Tensor *> &output_tf_tensor_list) override;
 
   modelbox::Status PluginInit(

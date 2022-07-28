@@ -90,18 +90,18 @@ class VideoDemuxerFlowUnit
       std::shared_ptr<modelbox::DataContext> data_ctx);
 
   modelbox::Status Reconnect(modelbox::Status &status,
-                             std::shared_ptr<modelbox::DataContext> &ctx);
+                             std::shared_ptr<modelbox::DataContext> &data_ctx);
   modelbox::Status CreateRetryTask(
       std::shared_ptr<modelbox::DataContext> &data_ctx);
-  modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> &ctx,
+  modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> &data_ctx,
                              std::shared_ptr<AVPacket> &pkt,
                              std::shared_ptr<FfmpegVideoDemuxer> video_demuxer);
-  void WriteEnd(std::shared_ptr<modelbox::DataContext> &ctx);
+  void WriteEnd(std::shared_ptr<modelbox::DataContext> &data_ctx);
 
-  modelbox::Status InitDemuxer(std::shared_ptr<modelbox::DataContext> &ctx,
+  modelbox::Status InitDemuxer(std::shared_ptr<modelbox::DataContext> &data_ctx,
                                std::shared_ptr<std::string> &source_url);
 
-  void UpdateStatsInfo(const std::shared_ptr<modelbox::DataContext> &ctx,
+  void UpdateStatsInfo(const std::shared_ptr<modelbox::DataContext> &data_ctx,
                        const std::shared_ptr<FfmpegVideoDemuxer> &demuxer);
 
   bool key_frame_only_{false};

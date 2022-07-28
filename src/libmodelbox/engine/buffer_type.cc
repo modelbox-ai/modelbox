@@ -23,7 +23,7 @@ BufferType::BufferType() {}
 BufferType::BufferType(const std::string &type) : type_(type) {}
 BufferType::~BufferType() {}
 
-std::shared_ptr<BufferTypeTree> BufferTypeTree::instance_(NULL);
+std::shared_ptr<BufferTypeTree> BufferTypeTree::instance_(nullptr);
 
 void BufferType::SetType(std::string type) { type_ = type; }
 
@@ -132,7 +132,7 @@ bool BufferTypeTree::AddRootType(std::string root_type) {
   std::shared_ptr<BufferType> root_buffer_type_ptr = GetType(root_);
 
   if (root_buffer_type_ptr == nullptr) {
-    auto root_buffer_type = new BufferType();
+    auto *root_buffer_type = new BufferType();
     root_buffer_type->SetType(root_type);
     root_buffer_type_ptr.reset(root_buffer_type);
     nodes_.insert(std::make_pair(root_type, root_buffer_type_ptr));
@@ -159,7 +159,7 @@ bool BufferTypeTree::AddType(std::string type, std::string parent_type) {
     return false;
   }
 
-  auto child_buffer_type = new BufferType();
+  auto *child_buffer_type = new BufferType();
   child_buffer_type->SetType(type);
   child_buffer_type_ptr.reset(child_buffer_type);
   if (!parent_buffer_type_ptr->AddChildType(child_buffer_type_ptr)) {

@@ -41,15 +41,15 @@ modelbox::Status MeanFlowUnit::Open(
 modelbox::Status MeanFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status MeanFlowUnit::CudaProcess(
-    std::shared_ptr<modelbox::DataContext> ctx, cudaStream_t stream) {
+    std::shared_ptr<modelbox::DataContext> data_ctx, cudaStream_t stream) {
   cudaStreamSynchronize(stream);
-  const auto input_bufs = ctx->Input("in_data");
+  const auto input_bufs = data_ctx->Input("in_data");
   if (input_bufs->Size() == 0) {
     MBLOG_ERROR << "mean flowunit in_data invalied";
     return modelbox::STATUS_FAULT;
   }
 
-  auto output_bufs = ctx->Output("out_data");
+  auto output_bufs = data_ctx->Output("out_data");
   if (!BuildOutputBufferList(input_bufs, output_bufs)) {
     MBLOG_ERROR << "build output BufferList failed";
     return modelbox::STATUS_FAULT;
@@ -70,7 +70,7 @@ modelbox::Status MeanFlowUnit::CudaProcess(
     auto out_data = static_cast<float *>(out_buff->MutableData());
 
     if (type == modelbox::ModelBoxDataType::MODELBOX_FLOAT) {
-      float *in_data_f32 =
+      auto *in_data_f32 =
           static_cast<float *>(const_cast<void *>(input_buf->ConstData()));
       if (in_data_f32 == nullptr) {
         MBLOG_ERROR << "mean flowunit data is nullptr";
@@ -80,7 +80,7 @@ modelbox::Status MeanFlowUnit::CudaProcess(
       cudaMemcpy(out_data, in_data_f32, input_buf->GetBytes(),
                  cudaMemcpyDeviceToDevice);
     } else {
-      uint8_t *in_data_uint8 =
+      auto *in_data_uint8 =
           static_cast<uint8_t *>(const_cast<void *>(input_buf->ConstData()));
       if (in_data_uint8 == nullptr) {
         MBLOG_ERROR << "mean flowunit data is nullptr";

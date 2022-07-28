@@ -268,9 +268,10 @@ setup_develop_mode() {
 
     stop_modelbox 2>&1 > /dev/null
 
+    $MODELBOX_RUN_SCRIPT restart  2>&1 > /dev/null
     $MODELBOX_MANAGER_RUN_SCRIPT restart  2>&1 > /dev/null
-    $MODELBOX_MANAGER_RUN_SCRIPT status
     $MODELBOX_RUN_SCRIPT status
+    $MODELBOX_MANAGER_RUN_SCRIPT status
 }
 
 showhelp() {

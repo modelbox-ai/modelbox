@@ -56,7 +56,7 @@ Status ModelBoxEngine::Init(std::shared_ptr<Configuration> &config) {
   flowunit_mgr_ = std::make_shared<FlowUnitManager>();
   scheduler_ = std::make_shared<FlowScheduler>();
   profiler_ = nullptr;
-  std::string msg = "";
+  std::string msg;
   if (!(drivers_ && device_mgr_ && flowunit_mgr_)) {
     msg = "drivers, flowunit_mgr or device is null, return";
     MBLOG_ERROR << msg;
@@ -111,7 +111,7 @@ Status ModelBoxEngine::Init(std::shared_ptr<Configuration> &config) {
 
 std::shared_ptr<FlowUnitDesc> ModelBoxEngine::GetFlowunitDesc(
     const std::string &name, const std::map<std::string, std::string> &config) {
-  std::string msg = "";
+  std::string msg;
   if (flowunit_mgr_ == nullptr) {
     MBLOG_ERROR << "failed get flowunit manager, please init Unit firstly";
     return nullptr;
@@ -136,7 +136,7 @@ bool CheckMapEquate(const std::map<std::string, std::string> &first_map,
     return false;
   }
 
-  for (auto &iter : first_map) {
+  for (const auto &iter : first_map) {
     auto temp_iter = second_map.find(iter.first);
     if (temp_iter == second_map.end()) {
       return false;
@@ -179,7 +179,7 @@ std::shared_ptr<NodeBase> ModelBoxEngine::CreateDynamicNormalNode(
 
   ConfigurationBuilder builder;
   auto config = builder.Build();
-  for (auto &iter : config_map) {
+  for (const auto &iter : config_map) {
     config->SetProperty(iter.first, iter.second);
   }
 
@@ -216,7 +216,7 @@ std::shared_ptr<DataHandler> ModelBoxEngine::CreateInput(
       std::make_shared<DataHandler>(VIRTUAL_NODE, shared_from_this());
   data_handler->SetDataHandlerType(INPUT);
   data_handler->SetNodeName(GRAPH_VIRTUAL_NODE);
-  for (auto &iter : port_map) {
+  for (const auto &iter : port_map) {
     auto gcnode = std::make_shared<GCNode>();
     gcnode->Init(iter, gcgraph);
     gcnode->SetConfiguration("type", "input");
@@ -294,7 +294,7 @@ std::shared_ptr<GCNode> ModelBoxEngine::CreateDynamicStreamNode(
   auto flowunit_desc = GetFlowunitDesc(name, config);
   auto gcnode = std::make_shared<GCNode>();
   gcnode->Init(name, root_graph->gcgraph_);
-  for (auto &iter : config) {
+  for (const auto &iter : config) {
     gcnode->SetConfiguration(iter.first, iter.second);
   }
 
@@ -579,15 +579,15 @@ Status ModelBoxEngine::FeedData(std::shared_ptr<DynamicGraph> &dynamic_graph,
 
 std::shared_ptr<DataHandler> ModelBoxEngine::Execute(
     const std::string &name, std::map<std::string, std::string> config_map,
-    const std::map<std::string, std::shared_ptr<DataHandler>> &buffers) {
-  auto data = std::make_shared<DataHandler>(STREAM_NODE, shared_from_this());
-  auto ret = data->SetDataHandler(buffers);
+    const std::map<std::string, std::shared_ptr<DataHandler>> &data) {
+  auto data_handler = std::make_shared<DataHandler>(STREAM_NODE, shared_from_this());
+  auto ret = data_handler->SetDataHandler(data);
   if (ret != STATUS_OK) {
-    data->SetError(ret);
-    return data;
+    data_handler->SetError(ret);
+    return data_handler;
   }
 
-  return Execute(name, config_map, data);
+  return Execute(name, config_map, data_handler);
 }
 
 bool CheckPortisLinked(std::shared_ptr<GCGraph> &gcgraph,
@@ -712,7 +712,7 @@ std::shared_ptr<DataHandler> ModelBoxEngine::ExecuteStreamNode(
     auto gcnode = CreateDynamicStreamNode(desc->GetFlowUnitName(), config_map,
                                           stream_data_handler);
     if (gcnode == nullptr) {
-      auto msg = "CreateDynamicStreamNode failed";
+      const auto *msg = "CreateDynamicStreamNode failed";
       return err_msg({STATUS_FAULT, msg});
     }
     stream_data_handler = BindDataHanlder(stream_data_handler, gcnode);
@@ -731,7 +731,7 @@ std::shared_ptr<DataHandler> ModelBoxEngine::ExecuteStreamNode(
   auto gcnode =
       CreateDynamicGCGraph(desc->GetFlowUnitName(), config_map, buffers);
   if (gcnode == nullptr) {
-    auto msg = "create gcnode failed";
+    const auto *msg = "create gcnode failed";
     stream_data_handler->SetError({STATUS_INVALID, msg});
     MBLOG_ERROR << msg;
     return stream_data_handler;
@@ -742,7 +742,7 @@ std::shared_ptr<DataHandler> ModelBoxEngine::ExecuteStreamNode(
       CheckNodeIsLinked(stream_data_handler->GetBindGraph()->gcgraph_,
                         gcnode)) {
     if (STATUS_OK != RunGraph(stream_data_handler)) {
-      auto msg = "build graph failed";
+      const auto *msg = "build graph failed";
       stream_data_handler->SetError({STATUS_INVALID, msg});
       MBLOG_ERROR << msg;
     }
@@ -772,7 +772,7 @@ std::shared_ptr<DataHandler> ModelBoxEngine::ExecuteBufferListNode(
 
 std::shared_ptr<DataHandler> ModelBoxEngine::Execute(
     const std::string &name, std::map<std::string, std::string> config_map,
-    const std::shared_ptr<DataHandler> &buffers) {
+    const std::shared_ptr<DataHandler> &data) {
   SetDefaultConfigValue(name, config_map);
   auto flowunit_desc = GetFlowunitDesc(name, config_map);
   if (flowunit_desc == nullptr) {
@@ -780,16 +780,16 @@ std::shared_ptr<DataHandler> ModelBoxEngine::Execute(
         {STATUS_INVALID, "failed find flowunit " + name + " description"});
   }
 
-  auto ret = CheckInputFlowUnit(name, config_map, buffers, flowunit_desc);
+  auto ret = CheckInputFlowUnit(name, config_map, data, flowunit_desc);
   if (ret != STATUS_OK) {
     return err_msg(ret);
   }
 
   // stream node, create gcgraph
-  if (CheckisStream(flowunit_desc, buffers)) {
-    return ExecuteStreamNode(flowunit_desc, buffers, config_map);
+  if (CheckisStream(flowunit_desc, data)) {
+    return ExecuteStreamNode(flowunit_desc, data, config_map);
   }
-  return ExecuteBufferListNode(name, config_map, buffers);
+  return ExecuteBufferListNode(name, config_map, data);
 }
 
 void ModelBoxEngine::ShutDown() {
@@ -812,7 +812,9 @@ void ModelBoxEngine::Close() {
 
   graphs_.clear();
   nodes_config_.clear();
-  if (device_mgr_) device_mgr_->Clear();
+  if (device_mgr_) {
+    device_mgr_->Clear();
+  }
   flowunit_mgr_ = nullptr;
   device_mgr_ = nullptr;
   profiler_ = nullptr;

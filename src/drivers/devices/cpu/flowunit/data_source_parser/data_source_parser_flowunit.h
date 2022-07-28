@@ -67,16 +67,16 @@ class DataSourceParserFlowUnit : public modelbox::FlowUnit {
  private:
   std::shared_ptr<modelbox::SourceContext> Parse(
       std::shared_ptr<modelbox::SessionContext> session_context,
-      const std::string &source_type, const std::string &in_data,
+      const std::string &source_type, const std::string &data_source_cfg,
       std::shared_ptr<std::string> &uri);
 
   std::shared_ptr<DataSourceParserPlugin> GetPlugin(
       const std::string &source_type);
 
   modelbox::Status WriteData(
-      std::shared_ptr<modelbox::DataContext> &ctx,
+      std::shared_ptr<modelbox::DataContext> &data_ctx,
       const std::shared_ptr<std::string> &uri, const std::string &source_type,
-      const std::string &cfg,
+      const std::string &data_source_cfg,
       std::shared_ptr<modelbox::SourceContext> &source_context);
 
   std::vector<std::shared_ptr<modelbox::DriverFactory>> factories_;

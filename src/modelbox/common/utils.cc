@@ -36,7 +36,7 @@ static int kPidFileFd = -1;
 
 std::once_flag root_dir_flag;
 
-const std::string &modelbox_root_dir(void) {
+const std::string &modelbox_root_dir() {
   static std::string rootdir;
 
   std::call_once(root_dir_flag, []() {
@@ -145,7 +145,7 @@ int modelbox_sig_register(const int sig_list[], int sig_num,
     sig_act.sa_sigaction = action;
     sig_act.sa_flags = SA_SIGINFO;
 
-    if (sigaction(sig_list[i], &sig_act, NULL) < 0) {
+    if (sigaction(sig_list[i], &sig_act, nullptr) < 0) {
       fprintf(stderr, "Register signal %d failed.", sig_list[i]);
     }
   }

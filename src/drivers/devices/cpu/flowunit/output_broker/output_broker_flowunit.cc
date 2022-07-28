@@ -410,7 +410,7 @@ modelbox::Status OutputBrokerFlowUnit::InitBrokers(
 
   auto broker_instances = std::make_shared<BrokerInstances>();
   auto broker_names = std::make_shared<BrokerNames>();
-  for (auto &broker_json : brokers_json) {
+  for (const auto &broker_json : brokers_json) {
     try {
       AddBroker(broker_instances, broker_names, broker_json);
     } catch (const std::exception &e) {

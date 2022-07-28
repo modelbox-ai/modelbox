@@ -44,7 +44,7 @@ BufferList::BufferList(const BufferList& other) {
   dev_mem_ = other.dev_mem_;
   dev_mem_flags_ = other.dev_mem_flags_;
   buffer_list_.reserve(other.buffer_list_.size());
-  for (auto& buffer : other) {
+  for (const auto& buffer : other) {
     if (buffer == nullptr) {
       buffer_list_.push_back(nullptr);
       continue;
@@ -75,7 +75,7 @@ size_t BufferList::Size() const { return buffer_list_.size(); }
 
 size_t BufferList::GetBytes() const {
   size_t byte_size = 0;
-  for (auto& buffer : buffer_list_) {
+  for (const auto& buffer : buffer_list_) {
     byte_size += buffer->GetBytes();
   }
 
@@ -213,7 +213,8 @@ const std::shared_ptr<Buffer> BufferList::At(size_t idx) const {
 }
 
 Status BufferList::CopyToNewBufferList(std::shared_ptr<DeviceMemory>& dev_mem) {
-  size_t offset = 0, buff_size = 0;
+  size_t offset = 0;
+  size_t buff_size = 0;
   std::vector<std::shared_ptr<Buffer>> new_buffer_list;
   new_buffer_list.reserve(buffer_list_.size());
   for (auto& buffer : buffer_list_) {
@@ -319,15 +320,15 @@ std::shared_ptr<DeviceMemory> BufferList::GetDeviceMemory() {
   return dev_mem_;
 };
 
-Status BufferList::CopyMeta(const std::shared_ptr<BufferList>& bl,
+Status BufferList::CopyMeta(const std::shared_ptr<BufferList>& bufferlist,
                             bool is_override) {
-  if (!bl || Size() != bl->Size()) {
+  if (!bufferlist || Size() != bufferlist->Size()) {
     return STATUS_FAULT;
   }
 
   auto status = STATUS_OK;
   for (size_t i = 0; i < buffer_list_.size(); ++i) {
-    status = buffer_list_[i]->CopyMeta(bl->At(i), is_override);
+    status = buffer_list_[i]->CopyMeta(bufferlist->At(i), is_override);
     if (!status) {
       MBLOG_WARN << "buffer list copt meta failed:" << status;
       return status;
@@ -369,7 +370,7 @@ Status BufferList::BuildSeparate(std::shared_ptr<modelbox::Device> device,
 
   buffer_list_.resize(data_size_list.size(), nullptr);
   for (size_t i = 0; i < buffer_list_.size(); ++i) {
-    auto& size = data_size_list[i];
+    const auto& size = data_size_list[i];
     buffer_list_[i] =
         std::make_shared<Buffer>(device->MemAlloc(size, dev_mem_flags_));
   }
@@ -518,7 +519,7 @@ void BufferList::SetError(const std::string& error_code,
     return;
   }
 
-  for (auto &buffer : buffer_list_) {
+  for (auto& buffer : buffer_list_) {
     buffer->SetError(error_code, error_msg);
   }
 }
@@ -542,7 +543,7 @@ Status BufferList::EmplaceBack(void* device_data, size_t data_size,
 
 Status BufferList::EmplaceBack(std::shared_ptr<void> device_data,
                                size_t data_size) {
-  auto delete_func = [device_data](void*) { /* hold device data */ };
+  auto delete_func = [device_data](void* /*unused*/) { /* hold device data */ };
   return EmplaceBack(device_data.get(), data_size, delete_func);
 }
 

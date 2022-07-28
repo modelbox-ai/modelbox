@@ -197,7 +197,7 @@ class GraphTest : public testing::Test {
       ---->c---->
 */
 TEST_F(GraphTest, BuildGraph) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0, label="<Out_1> | <Out_2>"]
@@ -230,7 +230,7 @@ TEST_F(GraphTest, BuildGraph) {
       ---->c---->
 */
 TEST_F(GraphTest, BuildGraph_IsolatedPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0, label="<Out_1> | <Out_2>"]
@@ -263,7 +263,7 @@ TEST_F(GraphTest, BuildGraph_IsolatedPort) {
      ---->c----
 */
 TEST_F(GraphTest, BuildGraph_IsolatedNode) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0, label="<Out_1> | <Out_2>"]
@@ -297,7 +297,7 @@ TEST_F(GraphTest, BuildGraph_IsolatedNode) {
      ---->c---->
 */
 TEST_F(GraphTest, BuildGraph_Topology) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0, label="<Out_1> | <Out_2>"]
@@ -332,7 +332,7 @@ TEST_F(GraphTest, BuildGraph_Topology) {
 */
 
 TEST_F(GraphTest, BuildGraph_SingleLoop) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]
@@ -364,7 +364,7 @@ TEST_F(GraphTest, BuildGraph_SingleLoop) {
 */
 
 TEST_F(GraphTest, DISABLED_BuildGraph_DoubleLoop) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]
@@ -400,7 +400,7 @@ a --> b --> c --> d    |
 */
 
 TEST_F(GraphTest, DISABLED_BuildGraph_LoopInLoop) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]
@@ -431,7 +431,7 @@ TEST_F(GraphTest, DISABLED_BuildGraph_LoopInLoop) {
 }
 
 TEST_F(GraphTest, BuildGraph_LoopInputOutputInvalid) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a1[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]
@@ -455,7 +455,7 @@ TEST_F(GraphTest, BuildGraph_LoopInputOutputInvalid) {
 }
 
 TEST_F(GraphTest, BuildGraph_StreamInLoop) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"]
@@ -479,7 +479,7 @@ TEST_F(GraphTest, BuildGraph_StreamInLoop) {
 }
 
 TEST_F(GraphTest, OrphanCheck) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           orphan[flowunit=test_1_1]
@@ -497,7 +497,7 @@ TEST_F(GraphTest, OrphanCheck) {
 }
 
 TEST_F(GraphTest, SkipOrphan) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           orphan[flowunit=test_1_1]
@@ -516,7 +516,7 @@ TEST_F(GraphTest, SkipOrphan) {
 }
 
 TEST_F(GraphTest, DefaultGraphConfig) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           queue_size=8
@@ -551,7 +551,7 @@ TEST_F(GraphTest, DefaultGraphConfig) {
 }
 
 TEST_F(GraphTest, InputStreamUnmatch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_2]
@@ -576,7 +576,7 @@ TEST_F(GraphTest, InputStreamUnmatch) {
 }
 
 TEST_F(GraphTest, InputStreamCollapseRoot) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_1]
@@ -597,7 +597,7 @@ TEST_F(GraphTest, InputStreamCollapseRoot) {
 }
 
 TEST_F(GraphTest, InputStreamCollapseUnmatch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_2]
@@ -621,7 +621,7 @@ TEST_F(GraphTest, InputStreamCollapseUnmatch) {
 }
 
 TEST_F(GraphTest, InputStreamConditionUnmatch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_1]
@@ -645,7 +645,7 @@ TEST_F(GraphTest, InputStreamConditionUnmatch) {
 }
 
 TEST_F(GraphTest, InputStreamConditionOne) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_1]
@@ -668,7 +668,7 @@ TEST_F(GraphTest, InputStreamConditionOne) {
 }
 
 TEST_F(GraphTest, InputStreamConditionOne1) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_1]
@@ -695,7 +695,7 @@ TEST_F(GraphTest, InputStreamConditionOne1) {
 }
 
 TEST_F(GraphTest, InputConditionConnectWrongPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_1]
@@ -722,7 +722,7 @@ TEST_F(GraphTest, InputConditionConnectWrongPort) {
 }
 
 TEST_F(GraphTest, InputConditionNotHasSameCount) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_1]
@@ -746,7 +746,7 @@ TEST_F(GraphTest, InputConditionNotHasSameCount) {
 }
 
 TEST_F(GraphTest, SucessConditionGraph) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_1]
@@ -781,7 +781,7 @@ TEST_F(GraphTest, SucessConditionGraph) {
 }
 
 TEST_F(GraphTest, SucessExpandCollapseGraph) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[flowunit=test_0_1]

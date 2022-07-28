@@ -51,7 +51,7 @@ LeastCommonAncestor::~LeastCommonAncestor() {
 void LeastCommonAncestor::Update(
     const std::vector<IndexPort> &values,
     const std::unordered_map<std::string, std::string> &match_map) {
-  for (auto &value : values) {
+  for (const auto &value : values) {
     auto cur_name = value.node_name;
     auto index = name_index_map_[cur_name];
     std::vector<int> path{index};
@@ -272,7 +272,7 @@ OverHierarchyCheck::OverHierarchyCheck(
       loop_links_(loop_links),
       loop_structures_(loop_structures),
       edges_(edges) {
-  for (auto &all_node : all_nodes) {
+  for (const auto &all_node : all_nodes) {
     visited_[all_node.first] = false;
   }
 }
@@ -325,7 +325,7 @@ bool OverHierarchyCheck::CheckEndIfPort(
 Status OverHierarchyCheck::CheckInputPortsColorReady(
     std::shared_ptr<IndexPort> &index_port,
     const std::vector<std::shared_ptr<InPort>> &input_ports) {
-  for (auto &input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     index_port->port_name = input_port->GetName();
     index_port->port_type = IndexPortType::INPUT;
     if (color_map_.find(index_port->ToString()) == color_map_.end()) {
@@ -475,7 +475,7 @@ void OverHierarchyCheck::GetColorMap(
       return;
     }
 
-    for (auto &out_port : output_ports) {
+    for (const auto &out_port : output_ports) {
       std::shared_ptr<IndexPort> index_output_port =
           std::make_shared<IndexPort>();
       index_output_port->node_name = node_name;
@@ -508,7 +508,7 @@ void OverHierarchyCheck::GetColorMap(
 
   for (auto &links : loop_links_) {
     if (links.second == node->GetName()) {
-      for (auto &out_port : output_ports) {
+      for (const auto &out_port : output_ports) {
         std::shared_ptr<IndexPort> index_output_port =
             std::make_shared<IndexPort>();
         index_output_port->node_name = node_name;
@@ -575,7 +575,7 @@ void OverHierarchyCheck::SetOutPortColor(
     const std::vector<std::shared_ptr<OutPort>> &out_ports,
     const std::vector<int> &new_color) {
   auto node_name = node->GetName();
-  for (auto &output_port : out_ports) {
+  for (const auto &output_port : out_ports) {
     std::shared_ptr<IndexPort> index_output_port =
         std::make_shared<IndexPort>();
     index_output_port->node_name = node_name;
@@ -592,7 +592,7 @@ Status OverHierarchyCheck::Check(
         &graph_single_port_match_map,
     const std::unordered_map<std::string, std::string> &end_if_map) {
   Status status{STATUS_OK};
-  for (auto &start_node : start_nodes_) {
+  for (const auto &start_node : start_nodes_) {
     auto real_node = CastNode(start_node);
     if (real_node == nullptr) {
       continue;
@@ -629,7 +629,7 @@ Status OverHierarchyCheck::Check(
         index_output_port->port_name = output_port->GetName();
         index_output_port->port_type = IndexPortType::OUTPUT;
         auto input_ports = output_port->GetConnectInPort();
-        for (auto &input_port : input_ports) {
+        for (const auto &input_port : input_ports) {
           std::shared_ptr<IndexPort> index_input_port =
               std::make_shared<IndexPort>();
           auto inport_node_name = input_port->GetNode()->GetName();
@@ -763,7 +763,7 @@ Status GraphChecker::Check() {
     NodeStreamConnection node_stream_map;
     auto status = CalNodeStreamMap(check_node, node_stream_map);
     if (status != STATUS_SUCCESS) {
-      auto msg = "caculate node stream map failed";
+      const auto *msg = "caculate node stream map failed";
       MBLOG_ERROR << msg;
       return {status, msg};
     }
@@ -949,7 +949,7 @@ Status GraphChecker::CheckNodeMatch(
 
   std::vector<IndexPort> single_match_result;
   std::unordered_map<std::string, std::string> single_port_match_map_;
-  for (auto &iter : node_stream_map) {
+  for (const auto &iter : node_stream_map) {
     auto values = iter.second;
 
     // in: {d.output}
@@ -1113,7 +1113,8 @@ Status GraphChecker::CheckOverHierarchyMatch() {
 void GraphChecker::FindNearestNeighborMatchExpand(const std::string &node,
                                                   std::string &match_node) {
   int expand_collapse_flag = 1;
-  std::string tmp{node}, pre_node_name;
+  std::string tmp{node};
+  std::string pre_node_name;
   std::shared_ptr<Node> pre_node;
   while (true) {
     pre_node_name = graph_match_map_[tmp];
@@ -1145,7 +1146,6 @@ void GraphChecker::FindNearestNeighborMatchExpand(const std::string &node,
 
   match_node = pre_node_name;
   graph_match_map_[node] = pre_node_name;
-  return;
 }
 
 Status GraphChecker::CheckCollapseMatch(std::shared_ptr<Node> node) {

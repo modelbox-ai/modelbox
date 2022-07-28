@@ -35,13 +35,7 @@ constexpr const char *GRAPH_KEY_QUEUE_SIZE = "queue_size";
 constexpr const char *GRAPH_KEY_BATCH_SIZE = "batch_size";
 constexpr const char *GRAPH_KEY_CHECK_NODE_OUTPUT = "need_check_output";
 
-Graph::Graph()
-    : nodes_(),
-      src_to_dst_(),
-      dst_to_src_(),
-      topo_order_(),
-      scheduler_(nullptr),
-      is_stop_(false) {}
+Graph::Graph() : scheduler_(nullptr), is_stop_(false) {}
 
 Graph::~Graph() {
   if (!is_stop_) {
@@ -61,7 +55,7 @@ Status Graph::Initialize(std::shared_ptr<FlowUnitManager> flowunit_mgr,
                          std::shared_ptr<Profiler> profiler,
                          std::shared_ptr<Configuration> config) {
   if (flowunit_mgr == nullptr || device_mgr == nullptr || config == nullptr) {
-    auto msg = "argument is invalid";
+    const auto *msg = "argument is invalid";
     auto ret = Status(STATUS_INVALID, msg);
     MBLOG_ERROR << ret.WrapErrormsgs();
     return ret;
@@ -145,7 +139,7 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
 
   if (flowunit_mgr_ == nullptr || device_mgr_ == nullptr ||
       config_ == nullptr) {
-    auto msg = "graph is not initialized";
+    const auto *msg = "graph is not initialized";
     auto ret = Status(STATUS_INVALID, msg);
     return ret;
   }
@@ -155,63 +149,63 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
   // build node and add link
   Status status = BuildGraph(g);
   if (!status) {
-    auto msg = "build graph from config fail.";
+    const auto *msg = "build graph from config fail.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = IsValidGraph();
   if (!status) {
-    auto msg = "invalid graph.";
+    const auto *msg = "invalid graph.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = FindLoopStructure();
   if (!status) {
-    auto msg = "loop node is illegal.";
+    const auto *msg = "loop node is illegal.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = GenerateTopology();
   if (!status) {
-    auto msg = "generate topology fail.";
+    const auto *msg = "generate topology fail.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = UpdatePriority();
   if (!status) {
-    auto msg = "update proiority fail.";
+    const auto *msg = "update proiority fail.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = InitPort();
   if (!status) {
-    auto msg = "init port fail.";
+    const auto *msg = "init port fail.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = CheckLoopStructureNode();
   if (!status) {
-    auto msg = "check loop node fail.";
+    const auto *msg = "check loop node fail.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = CheckGraph();
   if (!status) {
-    auto msg = "check graph failed.";
+    const auto *msg = "check graph failed.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = InitScheduler();
   if (!status) {
-    auto msg = "init scheduler fail.";
+    const auto *msg = "init scheduler fail.";
     auto ret = Status(status, msg);
     return ret;
   }
@@ -221,7 +215,7 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
 
 Status Graph::AddNode(std::shared_ptr<NodeBase> node) {
   if (node == nullptr) {
-    auto msg = "node is null pointer.";
+    const auto *msg = "node is null pointer.";
     return {STATUS_INVALID, msg};
   }
 
@@ -286,7 +280,7 @@ Graph::GetNotifyPort() const {
   std::unordered_map<std::shared_ptr<NodeBase>,
                      std::vector<std::shared_ptr<IPort>>>
       node_ports;
-  for (auto &node : nodes_) {
+  for (const auto &node : nodes_) {
     std::vector<std::shared_ptr<IPort>> ports;
     // add in ports
     const auto &in_ports = node.second->GetInputPorts();
@@ -331,24 +325,24 @@ Status Graph::AddLink(const std::string &srcNodeName,
 Status Graph::AddLink(std::shared_ptr<OutPort> src,
                       std::shared_ptr<InPort> dst) {
   if (src == nullptr) {
-    auto msg = "src port is null pointer.";
+    const auto *msg = "src port is null pointer.";
     return {STATUS_INVALID, msg};
   }
 
   if (dst == nullptr) {
-    auto msg = "dst port is null pointer.";
+    const auto *msg = "dst port is null pointer.";
     return {STATUS_INVALID, msg};
   }
 
   auto srcNode = src->GetNode();
   if (srcNode == nullptr) {
-    auto msg = "src node is null point.";
+    const auto *msg = "src node is null point.";
     return {STATUS_INVALID, msg};
   }
 
   auto dstNode = dst->GetNode();
   if (dstNode == nullptr) {
-    auto msg = "dst node is null point.";
+    const auto *msg = "dst node is null point.";
     return {STATUS_INVALID, msg};
   }
 
@@ -408,7 +402,7 @@ std::set<std::shared_ptr<OutPort>> Graph::GetSrcPortsByPort(
 
 std::set<std::shared_ptr<NodeBase>> Graph::GetStartNodes() const {
   std::set<std::shared_ptr<NodeBase>> startNode;
-  for (auto &node : nodes_) {
+  for (const auto &node : nodes_) {
     auto inputNum = node.second->GetInputNum();
     if (inputNum == 0) {
       startNode.insert(node.second);
@@ -420,7 +414,7 @@ std::set<std::shared_ptr<NodeBase>> Graph::GetStartNodes() const {
 
 std::set<std::shared_ptr<NodeBase>> Graph::GetEndNodes() const {
   std::set<std::shared_ptr<NodeBase>> endNode;
-  for (auto &node : nodes_) {
+  for (const auto &node : nodes_) {
     auto inputNum = node.second->GetInputNum();
     if (inputNum == 0) {
       endNode.insert(node.second);
@@ -432,7 +426,7 @@ std::set<std::shared_ptr<NodeBase>> Graph::GetEndNodes() const {
 
 std::set<std::shared_ptr<NodeBase>> Graph::GetEndPointNodes() const {
   std::set<std::shared_ptr<NodeBase>> endNode;
-  for (auto &node : nodes_) {
+  for (const auto &node : nodes_) {
     auto outports = node.second->GetOutputPorts();
     for (auto iter : outports) {
       if (iter->GetConnectInPort().size() <= 0) {
@@ -446,7 +440,7 @@ std::set<std::shared_ptr<NodeBase>> Graph::GetEndPointNodes() const {
 
 std::set<std::shared_ptr<NodeBase>> Graph::GetAllNodes() const {
   std::set<std::shared_ptr<NodeBase>> allNode;
-  for (auto &node : nodes_) {
+  for (const auto &node : nodes_) {
     allNode.insert(node.second);
   }
 
@@ -517,7 +511,7 @@ Status Graph::UpdateGraphConfigToNode(std::shared_ptr<GCGraph> g,
       return;
     }
 
-    node_config->Copy(*graph_config.get(), key);
+    node_config->Copy(*graph_config, key);
   };
 
   update_node_config(GRAPH_KEY_BATCH_SIZE);
@@ -555,7 +549,7 @@ Status Graph::BuildFlowunitNode(std::shared_ptr<GCGraph> g,
   }
 
   if (UpdateGraphConfigToNode(g, gcnode) == false) {
-    auto msg =
+    const auto *msg =
         "update node config failed, please check node config in graph scope";
     return {STATUS_BADCONF, msg};
   }
@@ -660,13 +654,13 @@ Status Graph::BuildVirtualNodes(std::shared_ptr<GCGraph> g) {
     auto input_config = input_node_config_map_.begin()->second;
     auto status = input_node_->Init({}, input_node_ports_, input_config);
     if (!status) {
-      auto msg = "init virtual input node failed.";
+      const auto *msg = "init virtual input node failed.";
       return {status, msg};
     }
     input_node_->SetName(input_node_name_);
     status = AddNode(input_node_);
     if (!status) {
-      auto msg = "add virtual input node failed.";
+      const auto *msg = "add virtual input node failed.";
       return {status, msg};
     }
   }
@@ -687,13 +681,13 @@ Status Graph::BuildVirtualNodes(std::shared_ptr<GCGraph> g) {
 
     auto status = output_node_->Init(output_node_ports_, {}, output_config);
     if (!status) {
-      auto msg = "init virtual output node failed.";
+      const auto *msg = "init virtual output node failed.";
       return {status, msg};
     }
     output_node_->SetName(output_node_name_);
     status = AddNode(output_node_);
     if (!status) {
-      auto msg = "add virtual output node failed.";
+      const auto *msg = "add virtual output node failed.";
       return {status, msg};
     }
   }
@@ -723,7 +717,7 @@ Status Graph::BuildEdges(std::shared_ptr<GCGraph> g) {
 
     auto status = AddLink(srcNodeName, srcPortName, dstNodeName, dstPortName);
     if (!status) {
-      auto msg = "add link failed.";
+      const auto *msg = "add link failed.";
       return {status, msg};
     }
   }
@@ -742,7 +736,7 @@ Status Graph::OpenNodes() {
   }
 
   for (auto &fut : result) {
-    auto msg = "open node failed, please check log.";
+    const auto *msg = "open node failed, please check log.";
     if (!fut.valid()) {
       return {STATUS_FAULT, msg};
     }
@@ -761,7 +755,7 @@ void Graph::CloseNodes() const {
   pool.SetName("Node-Close");
 
   std::vector<std::future<void>> result;
-  for (auto &itr : nodes_) {
+  for (const auto &itr : nodes_) {
     auto node = itr.second;
     auto ret =
         pool.Submit(node->GetName() + "_close", &NodeBase::Close, node.get());
@@ -799,19 +793,19 @@ Status Graph::BuildGraph(std::shared_ptr<GCGraph> g) {
 
 Status Graph::IsValidGraph() const {
   if (nodes_.empty()) {
-    auto msg = "graph is empty, no node.";
+    const auto *msg = "graph is empty, no node.";
     return {STATUS_BADCONF, msg};
   }
 
   auto status = IsAllPortConnect();
   if (!status) {
-    auto msg = "not all port connect.";
+    const auto *msg = "not all port connect.";
     return {status, msg};
   }
 
   status = IsAllNodeConnect();
   if (!status) {
-    auto msg = "not all node connect.";
+    const auto *msg = "not all node connect.";
     return {status, msg};
   }
 
@@ -847,7 +841,7 @@ Status Graph::IsAllPortConnect() const {
 Status Graph::IsAllNodeConnect() const {
   std::map<std::string, int> nodeType;
   int idx = 0;
-  for (auto &node : nodes_) {
+  for (const auto &node : nodes_) {
     nodeType[node.first] = idx++;
   }
 
@@ -886,7 +880,7 @@ Status Graph::IsAllNodeConnect() const {
   auto firstType = nodeType.begin();
   for (auto node : nodeType) {
     if (node.second != firstType->second) {
-      auto msg = "not all node union.";
+      const auto *msg = "not all node union.";
       return Status(STATUS_BADCONF, msg);
     }
   }
@@ -1006,7 +1000,7 @@ Status Graph::FindLoopStructure() {
 
   auto connectNode = GetStartNodes();
   if (connectNode.empty()) {
-    auto msg = "start node is not exist.";
+    const auto *msg = "start node is not exist.";
     return {STATUS_BADCONF, msg};
   }
 
@@ -1038,7 +1032,7 @@ Status Graph::GenerateTopology() {
   std::vector<std::shared_ptr<NodeBase>> topoNode;
   auto connectNode = GetStartNodes();
   if (connectNode.empty()) {
-    auto msg = "start node is not exist.";
+    const auto *msg = "start node is not exist.";
     return {STATUS_BADCONF, msg};
   }
 
@@ -1091,7 +1085,7 @@ Status Graph::GenerateTopology() {
   }
 
   if (topoNode.size() != nodes_.size()) {
-    auto msg = "not all node connect.";
+    const auto *msg = "not all node connect.";
     return {STATUS_BADCONF, msg};
   }
 
@@ -1141,14 +1135,14 @@ Status Graph::InitScheduler() {
   auto schedule_state = graph_stats_->AddItem("scheduler");
   auto status = scheduler_->Init(config_, schedule_state);
   if (!status) {
-    auto msg = "init scheduler failed.";
+    const auto *msg = "init scheduler failed.";
     MBLOG_FATAL << msg;
     return {status, msg};
   }
 
   status = scheduler_->Build(*this);
   if (!status) {
-    auto msg = "build scheduler failed.";
+    const auto *msg = "build scheduler failed.";
     MBLOG_FATAL << msg;
     return {status, msg};
   }
@@ -1158,7 +1152,7 @@ Status Graph::InitScheduler() {
 
 Status Graph::Run() {
   if (scheduler_ == nullptr) {
-    auto message = "scheduler is not initialized.";
+    const auto *message = "scheduler is not initialized.";
     return {STATUS_SHUTDOWN, message};
   }
 
@@ -1171,7 +1165,7 @@ Status Graph::Run() {
 
 void Graph::RunAsync() {
   if (scheduler_ == nullptr) {
-    auto message = "scheduler is not initialized.";
+    const auto *message = "scheduler is not initialized.";
     StatusError = {STATUS_SHUTDOWN, message};
     return;
   }
@@ -1185,7 +1179,7 @@ void Graph::RunAsync() {
 
 Status Graph::Wait(int64_t milliseconds, Status *ret_val) {
   if (scheduler_ == nullptr) {
-    auto message = "scheduler is not initialized.";
+    const auto *message = "scheduler is not initialized.";
     return {STATUS_SHUTDOWN, message};
   }
 

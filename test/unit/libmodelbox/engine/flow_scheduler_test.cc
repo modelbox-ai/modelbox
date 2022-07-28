@@ -59,7 +59,9 @@ TEST_F(FlowSchedulerTest, ShowScheduleStatus) {
   auto flowunit_mgr = FlowUnitManager::GetInstance();
   auto device_mgr = DeviceManager::GetInstance();
 
-  std::shared_ptr<Node> node_a = nullptr, node_b = nullptr, node_c = nullptr;
+  std::shared_ptr<Node> node_a = nullptr;
+  std::shared_ptr<Node> node_b = nullptr;
+  std::shared_ptr<Node> node_c = nullptr;
 
   {
     ConfigurationBuilder configbuilder;

@@ -785,7 +785,7 @@ TEST_F(DeviceMemoryTest, CudaMemoryAppend) {
   // cuda meta
   device_->SetMemQuota(1024);
   auto mem1 = device_->MemAlloc(100, (size_t)100, 0);
-  auto ptr = mem1->GetPtr<uint8_t>().get();
+  auto *ptr = mem1->GetPtr<uint8_t>().get();
   ptr[1] = 13;
   ptr[5] = 53;
   ptr[9] = 93;
@@ -806,7 +806,7 @@ TEST_F(DeviceMemoryTest, CudaMemoryAppend) {
   EXPECT_NE(mem2, nullptr);
   ret = mem2->ReadFrom(cuda_mem2, 0, 20);
   EXPECT_EQ(ret, STATUS_SUCCESS);
-  auto ptr2 = mem2->GetConstPtr<uint8_t>().get();
+  const auto *ptr2 = mem2->GetConstPtr<uint8_t>().get();
   EXPECT_EQ(ptr2[1], 13);
   EXPECT_EQ(ptr2[5], 53);
   EXPECT_EQ(ptr2[9], 93);
@@ -955,7 +955,7 @@ TEST_F(DeviceMemoryTest, DeviceMemoryContiguous) {
 TEST_F(DeviceMemoryTest, DeviceMemoryAcquire) {
   device_->SetMemQuota(1024);
 
-  auto data = new uint8_t[100];
+  auto *data = new uint8_t[100];
   data[33] = 33;
   data[44] = 44;
   data[55] = 55;
@@ -964,7 +964,7 @@ TEST_F(DeviceMemoryTest, DeviceMemoryAcquire) {
   auto dev_mem = device_->MemAcquire(
       (void *)data, 100, [](void *ptr) { delete[](uint8_t *) ptr; });
   EXPECT_NE(dev_mem, nullptr);
-  auto ptr = dev_mem->GetConstPtr<uint8_t>().get();
+  const auto *ptr = dev_mem->GetConstPtr<uint8_t>().get();
   EXPECT_NE(ptr, nullptr);
   EXPECT_EQ(ptr[33], 33);
   EXPECT_EQ(ptr[44], 44);
@@ -972,7 +972,7 @@ TEST_F(DeviceMemoryTest, DeviceMemoryAcquire) {
   EXPECT_EQ(ptr[66], 66);
 
   std::shared_ptr<uint8_t> data2(new uint8_t[100],
-                                 [](uint8_t *ptr) { delete[] ptr; });
+                                 [](const uint8_t *ptr) { delete[] ptr; });
   data2.get()[33] = 33;
   data2.get()[44] = 44;
   data2.get()[55] = 55;
@@ -980,7 +980,7 @@ TEST_F(DeviceMemoryTest, DeviceMemoryAcquire) {
 
   auto dev_mem2 = device_->MemAcquire(data2, 100);
   EXPECT_NE(dev_mem2, nullptr);
-  auto ptr2 = dev_mem2->GetConstPtr<uint8_t>().get();
+  const auto *ptr2 = dev_mem2->GetConstPtr<uint8_t>().get();
   EXPECT_NE(ptr2, nullptr);
   EXPECT_EQ(ptr2[33], 33);
   EXPECT_EQ(ptr2[44], 44);
@@ -1107,7 +1107,7 @@ TEST_F(DeviceMemoryTest, AscendStreamTest) {
         EXPECT_NE(unit1_output, nullptr);
         {
           // unit1
-          uint32_t *host_data = new uint32_t[5]{1, 2, 3, 4, 5};
+          auto *host_data = new uint32_t[5]{1, 2, 3, 4, 5};
           auto size = 5 * sizeof(uint32_t);
           auto mem1 = ascend_device->MemWrite(host_data, size);
           delete []host_data;
@@ -1151,7 +1151,7 @@ TEST_F(DeviceMemoryTest, AscendMemoryAppend) {
   // ascend meta
   device_->SetMemQuota(1024);
   auto mem1 = device_->MemAlloc(100, (size_t)100, 0);
-  auto ptr = mem1->GetPtr<uint8_t>().get();
+  auto *ptr = mem1->GetPtr<uint8_t>().get();
   ptr[1] = 13;
   ptr[5] = 53;
   ptr[9] = 93;
@@ -1172,7 +1172,7 @@ TEST_F(DeviceMemoryTest, AscendMemoryAppend) {
   EXPECT_NE(mem2, nullptr);
   ret = mem2->ReadFrom(ascend_mem2, 0, 20);
   EXPECT_EQ(ret, STATUS_SUCCESS);
-  auto ptr2 = mem2->GetConstPtr<uint8_t>().get();
+  const auto *ptr2 = mem2->GetConstPtr<uint8_t>().get();
   EXPECT_EQ(ptr2[1], 13);
   EXPECT_EQ(ptr2[5], 53);
   EXPECT_EQ(ptr2[9], 93);

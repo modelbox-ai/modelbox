@@ -31,7 +31,7 @@ static int CheckTimeout(void *ctx) {
     MBLOG_ERROR << "CheckTimeout: ctx is nullptr!";
     return 1;
   }
-  FfmpegReader *p = (FfmpegReader *)ctx;
+  auto *p = (FfmpegReader *)ctx;
   if (p->IsTimeout()) {
     MBLOG_INFO << "CheckTimeout: ffmpeg read timeout !";
     return 1;

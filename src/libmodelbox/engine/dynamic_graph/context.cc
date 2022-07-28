@@ -107,7 +107,7 @@ Status InputContext::PushData(const std::string &key,
     }
 
     if (data_map_[key]->Size() > MAX_INPUT_QUEUE_SIZE) {
-      auto msg =
+      const auto *msg =
           "temp bufferlist store too many buffers,please use it firstly.";
       MBLOG_ERROR << msg;
       return {STATUS_INVALID, msg};

@@ -47,7 +47,7 @@ Status CpuMemory::Verify() const {
     return STATUS_OK;
   }
 
-  auto magic_code = (uint64_t *)((uint8_t *)device_mem_ptr_.get() + mem_size);
+  auto *magic_code = (uint64_t *)((uint8_t *)device_mem_ptr_.get() + mem_size);
   if (MEM_MAGIC_CODE != *magic_code) {
     MBLOG_ERROR << "Host memory verify failed, magic code wrong";
     return STATUS_FAULT;
@@ -79,7 +79,7 @@ void CpuMemoryPool::OnTimer() {
 }
 
 void *CpuMemoryPool::MemAlloc(size_t size) {
-  auto cpu_mem_ptr = (uint8_t *)malloc(size);
+  auto *cpu_mem_ptr = (uint8_t *)malloc(size);
   if (cpu_mem_ptr == nullptr) {
     MBLOG_ERROR << "cpu_mem_ptr is null";
   }
@@ -150,8 +150,8 @@ Status CpuMemoryManager::DeviceMemoryCopy(
     const std::shared_ptr<DeviceMemory> &dest_memory, size_t dest_offset,
     const std::shared_ptr<const DeviceMemory> &src_memory, size_t src_offset,
     size_t src_size, DeviceMemoryCopyKind copy_kind) {
-  auto dest_ptr = dest_memory->GetPtr<uint8_t>().get() + dest_offset;
-  auto src_ptr = src_memory->GetConstPtr<uint8_t>().get() + src_offset;
+  auto *dest_ptr = dest_memory->GetPtr<uint8_t>().get() + dest_offset;
+  const auto *src_ptr = src_memory->GetConstPtr<uint8_t>().get() + src_offset;
   auto ret = memcpy_s(dest_ptr, src_size, src_ptr, src_size);
   if (EOK != ret) {
     MBLOG_ERROR << "Cpu memcpy failed, ret " << ret << ", src size " << src_size

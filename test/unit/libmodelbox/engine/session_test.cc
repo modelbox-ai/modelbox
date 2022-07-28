@@ -45,7 +45,6 @@ TEST_F(SessionTest, SessionManage) {
 
 class TestSessionIO : public SessionIO {
  public:
- public:
   virtual Status SetOutputMeta(const std::string &port_name,
                                std::shared_ptr<DataMeta> meta) {
     return STATUS_OK;

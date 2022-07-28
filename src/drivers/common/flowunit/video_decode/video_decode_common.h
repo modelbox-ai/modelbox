@@ -44,8 +44,8 @@ extern const std::map<std::string, AVPixelFormat> g_av_pix_fmt_map;
 modelbox::Status GetBufferSize(int32_t width, int32_t height,
                              const std::string &pix_fmt, size_t &size);
 
-void UpdateStatsInfo(std::shared_ptr<modelbox::DataContext> &ctx, int32_t width,
-                     int32_t height);
+void UpdateStatsInfo(std::shared_ptr<modelbox::DataContext> &data_ctx,
+                     int32_t width, int32_t height);
 }  // namespace videodecode
 
 #endif  // MODELBOX_FLOWUNIT_VIDEO_DECODE_COMMON_H_

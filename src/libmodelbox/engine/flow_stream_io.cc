@@ -48,7 +48,7 @@ Status FlowStreamIO::Recv(const std::string &output_name,
     }
 
     for (auto &port_item : map_buffer_list) {
-      auto &port_name = port_item.first;
+      const auto &port_name = port_item.first;
       auto &port_buffer_list = port_item.second;
       auto &data_cache = port_data_cache_map_[port_name];
       data_cache.insert(data_cache.end(), port_buffer_list->begin(),

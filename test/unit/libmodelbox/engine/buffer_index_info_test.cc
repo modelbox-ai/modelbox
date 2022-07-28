@@ -59,7 +59,7 @@ TEST_F(BufferIndexInfoTest, ProcessInfoTest) {
   auto b_buffer = std::make_shared<BufferIndexInfo>();
   process_info->SetParentBuffers("a", {a_buffer});
   process_info->SetParentBuffers("b", {b_buffer});
-  auto &buffers = process_info->GetParentBuffers();
+  const auto &buffers = process_info->GetParentBuffers();
   ASSERT_EQ(buffers.size(), 2);
   ASSERT_EQ(buffers.at("a").size(), 1);
   ASSERT_EQ(buffers.at("b").size(), 1);

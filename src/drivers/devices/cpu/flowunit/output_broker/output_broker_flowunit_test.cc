@@ -200,7 +200,7 @@ modelbox::Status OutputBrokerFlowUnitTest::HandleFunc(
 TEST_F(OutputBrokerFlowUnitTest, WebhookOutputTest) {
   auto driver_flow = RunDriverFlow();
 
-  std::string output_data = "{\"output data webhook\":\"a\"}";
+  std::string output_data = R"({"output data webhook":"a"})";
   std::string output_broker_cfg = R"({
     "brokers": [
       {
@@ -260,11 +260,11 @@ void OutputBrokerFlowUnitTest::PreparationToGetCert() {
   auto conf_builder = std::make_shared<ConfigurationBuilder>();
   std::shared_ptr<Configuration> config_file =
       conf_builder->Build(TEST_ASSETS + std::string("/auth/auth_info.toml"));
-  std::string ak(config_file->GetString("base.ak").c_str());
-  std::string sk(config_file->GetString("base.sk").c_str());
-  std::string domain_id(config_file->GetString("base.domain_id").c_str());
-  std::string project_id(config_file->GetString("base.project_id").c_str());
-  std::string iam_host(config_file->GetString("base.iam_host").c_str());
+  std::string ak(config_file->GetString("base.ak"));
+  std::string sk(config_file->GetString("base.sk"));
+  std::string domain_id(config_file->GetString("base.domain_id"));
+  std::string project_id(config_file->GetString("base.project_id"));
+  std::string iam_host(config_file->GetString("base.iam_host"));
 
   modelbox::IAMAuth::GetInstance()->SetIAMHostAddress(iam_host);
 

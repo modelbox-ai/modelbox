@@ -88,10 +88,10 @@ modelbox::Status PaddingFlowUnit::Open(
 }
 
 modelbox::Status PaddingFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   MBLOG_DEBUG << "process padding";
-  auto input_buffer_list = ctx->Input("in_image");
-  auto output_buffer_list = ctx->Output("out_image");
+  auto input_buffer_list = data_ctx->Input("in_image");
+  auto output_buffer_list = data_ctx->Output("out_image");
   auto image_count = input_buffer_list->Size();
   if (image_count == 0) {
     MBLOG_ERROR << "input buffer count is zero";
@@ -148,7 +148,8 @@ modelbox::Status PaddingFlowUnit::PaddingOneImage(
   cv::Mat dest_roi;
 
   // calculate offset and wid, height，get the resized img
-  struct dest_roi_proportions drp, *p_drp = nullptr;
+  struct dest_roi_proportions drp;
+  struct dest_roi_proportions *p_drp = nullptr;
   p_drp = &drp;
   drp.dest_roi_width = 0;
   drp.dest_roi_height = 0;

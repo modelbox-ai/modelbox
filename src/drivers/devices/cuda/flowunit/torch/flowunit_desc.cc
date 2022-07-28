@@ -40,7 +40,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetType(modelbox::DEVICE_TYPE);
   desc->SetDescription(FLOWUNIT_DESC);
   desc->SetDeepBind(true);
-  return;
 }
 
 modelbox::Status DriverInit() {

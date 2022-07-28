@@ -139,7 +139,7 @@ class ExternalDataSelect
 
   Status SelectExternalData(
       std::list<std::shared_ptr<ExternalDataMap>>& external_list,
-      std::chrono::duration<long, std::milli> timeout =
+      std::chrono::duration<long, std::milli> waittime =
           std::chrono::milliseconds(-1));
 
   bool IsExternalDataReady();

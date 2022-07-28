@@ -61,19 +61,19 @@ modelbox::Status HTTPServerReplySync::Open(
 modelbox::Status HTTPServerReplySync::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status HTTPServerReplySync::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  auto session_ctx = ctx->GetSessionContext();
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto session_ctx = data_ctx->GetSessionContext();
   auto reply =
       std::static_pointer_cast<ReplyHandle>(session_ctx->GetPrivate("reply"));
   if (reply == nullptr) {
-    auto err_msg = "http reply handler is nullptr.";
+    const auto *err_msg = "http reply handler is nullptr.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  auto input_data = ctx->Input("in_reply_info")->At(0);
+  auto input_data = data_ctx->Input("in_reply_info")->At(0);
   if (input_data == nullptr) {
-    auto err_msg = "http reply flowunit get input data failed.";
+    const auto *err_msg = "http reply flowunit get input data failed.";
     MBLOG_ERROR << err_msg;
     reply->Reply(
         web::http::status_codes::InternalError,
@@ -83,7 +83,7 @@ modelbox::Status HTTPServerReplySync::Process(
   }
 
   auto bytes = input_data->GetBytes();
-  auto data = input_data->ConstData();
+  const auto *data = input_data->ConstData();
   std::string ss((char*)data, bytes);
   auto resp_body =
       concurrency::streams::bytestream::open_istream<std::string>(ss);

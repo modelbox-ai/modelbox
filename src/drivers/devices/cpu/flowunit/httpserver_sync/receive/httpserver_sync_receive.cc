@@ -90,7 +90,7 @@ modelbox::Status HTTPServerReceiveSync::HandleTask(
   std::vector<std::size_t> shape = {size};
   output_buf->Build(shape);
   if (size > 0) {
-    auto outmem = output_buf->MutableBufferData(0);
+    auto *outmem = output_buf->MutableBufferData(0);
     if (outmem == nullptr) {
       MBLOG_ERROR << "outmem buffer is nullptr.";
       return_ret = modelbox::STATUS_NOMEM;
@@ -259,9 +259,9 @@ modelbox::Status HTTPServerReceiveSync::Close() {
 }
 
 modelbox::Status HTTPServerReceiveSync::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  auto output_buf = ctx->Output("out_request_info");
-  auto input_buf = ctx->External();
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto output_buf = data_ctx->Output("out_request_info");
+  auto input_buf = data_ctx->External();
 
   for (auto &buf : *input_buf) {
     output_buf->PushBack(buf);

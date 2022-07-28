@@ -237,7 +237,7 @@ std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddFunction(
   std::string flowunit_name =
       "register_func_" + std::to_string(function_node_idx_);
   ++function_node_idx_;
-  auto device = "cpu";
+  const auto *device = "cpu";
   // register flowunit
   auto flowunit_factory = std::make_shared<RegisterFlowUnitFactory>(
       flowunit_name, input_name_list, output_name_list, func);
@@ -315,9 +315,9 @@ void FlowGraphDesc::GenGCEdges(std::shared_ptr<GCGraph> gcgraph) {
   for (auto &node_desc : node_desc_list_) {
     auto dest_node_name = node_desc->GetNodeName();
     const auto &input_links = node_desc->GetInputLinks();
-    for (auto &link_item : input_links) {
-      auto &dest_port = link_item.first;
-      auto &src_node_port = link_item.second;
+    for (const auto &link_item : input_links) {
+      const auto &dest_port = link_item.first;
+      const auto &src_node_port = link_item.second;
       auto dest_node = gcgraph->GetNode(dest_node_name);
       auto src_node = gcgraph->GetNode(src_node_port->node_name_);
       dest_node->SetInputPort(dest_port);
@@ -387,7 +387,7 @@ bool FlowGraphDesc::FormatInputLinks(
     input_names.insert(input_desc.GetPortName());
   }
   size_t port_idx = 0;
-  for (auto &source_node_port_item : origin_source_node_ports) {
+  for (const auto &source_node_port_item : origin_source_node_ports) {
     auto my_input_port_name = source_node_port_item.first;
     if (!my_input_port_name.empty() &&
         input_names.find(my_input_port_name) == input_names.end()) {
@@ -426,8 +426,8 @@ bool FlowGraphDesc::CheckInputLinks(
     input_names.insert(input_name);
   }
 
-  for (auto &link_item : input_links) {
-    auto &port_name = link_item.first;
+  for (const auto &link_item : input_links) {
+    const auto &port_name = link_item.first;
     if (input_names.find(port_name) == input_names.end()) {
       MBLOG_ERROR << "function node, source_node_ports connect to a port ["
                   << port_name << "] not defined";

@@ -35,7 +35,7 @@ ThreadHandler::~ThreadHandler() {
 }
 
 void *ThreadHandler::ThreadFunc(void *arg) {
-  ThreadHandler *thread_handler = (ThreadHandler *)arg;
+  auto *thread_handler = (ThreadHandler *)arg;
   auto ret = aclrtSetDevice(thread_handler->device_id_);
   if (ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "acl set device " << thread_handler->device_id_ << " failed";
@@ -163,7 +163,7 @@ void AscendVideoDecoder::Callback(acldvppStreamDesc *input,
     return;
   }
 
-  DvppVideoDecodeContext *ctx = (DvppVideoDecodeContext *)userData;
+  auto *ctx = (DvppVideoDecodeContext *)userData;
   auto queue = ctx->GetCacheQueue();
 
   auto dvpp_frame = std::make_shared<DvppFrame>();

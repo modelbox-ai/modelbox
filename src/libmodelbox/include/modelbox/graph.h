@@ -59,17 +59,17 @@ class Graph {
 
   Status AddNode(std::shared_ptr<NodeBase> node);
 
-  std::shared_ptr<NodeBase> GetNode(const std::string &node) const;
+  std::shared_ptr<NodeBase> GetNode(const std::string &nodeName) const;
 
-  std::shared_ptr<InPort> GetInPort(const std::string &node,
-                                    const std::string &port) const;
+  std::shared_ptr<InPort> GetInPort(const std::string &nodeName,
+                                    const std::string &portName) const;
 
   const std::unordered_map<std::shared_ptr<NodeBase>,
                            std::vector<std::shared_ptr<IPort>>>
   GetNotifyPort() const;
 
-  std::shared_ptr<OutPort> GetOutPort(const std::string &node,
-                                      const std::string &port) const;
+  std::shared_ptr<OutPort> GetOutPort(const std::string &nodeName,
+                                      const std::string &portName) const;
 
   Status AddLink(const std::string &srcNodeName, const std::string &srcPortName,
                  const std::string &dstNodeName,
@@ -103,7 +103,7 @@ class Graph {
 
   virtual Status Shutdown();
 
-  Status Wait(int64_t milliseconds = 0, Status *retval = nullptr);
+  Status Wait(int64_t milliseconds = 0, Status *ret_val = nullptr);
 
   std::string GetId() const;
 

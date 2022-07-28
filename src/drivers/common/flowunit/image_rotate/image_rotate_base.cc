@@ -45,9 +45,9 @@ modelbox::Status ImageRotateFlowUnitBase::Close() {
 }
 
 modelbox::Status ImageRotateFlowUnitBase::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  auto input_bufs = ctx->Input("in_image");
-  auto output_bufs = ctx->Output("out_image");
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto input_bufs = data_ctx->Input("in_image");
+  auto output_bufs = data_ctx->Output("out_image");
   if (input_bufs->Size() <= 0) {
     auto errMsg = "input images batch is " + std::to_string(input_bufs->Size());
     MBLOG_ERROR << errMsg;
@@ -76,11 +76,13 @@ modelbox::Status ImageRotateFlowUnitBase::Process(
       return check_ret;
     }
 
-    int32_t width, height;
+    int32_t width;
+    int32_t height;
     buffer->Get("width", width);
     buffer->Get("height", height);
 
-    int32_t output_width(width), output_height(height);
+    int32_t output_width(width);
+    int32_t output_height(height);
     if (rotate_angle == 90 || rotate_angle == 270) {
       output_width = height;
       output_height = width;

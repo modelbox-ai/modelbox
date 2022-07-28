@@ -89,7 +89,7 @@ std::string StatisticsValue::ToString() {
 
 std::string StatisticsNotifyCfg::GetRootPath() const {
   auto pos = path_pattern_.find('.');
-  if (pos == path_pattern_.npos) {
+  if (pos == std::string::npos) {
     return path_pattern_;
   }
 
@@ -98,7 +98,7 @@ std::string StatisticsNotifyCfg::GetRootPath() const {
 
 std::string StatisticsNotifyCfg::GetSubPath() const {
   auto pos = path_pattern_.find('.');
-  if (pos == path_pattern_.npos) {
+  if (pos == std::string::npos) {
     return "";
   }
 
@@ -118,7 +118,7 @@ StatisticsNotifyConsumers::~StatisticsNotifyConsumers() { Clear(); }
 
 modelbox::Status StatisticsNotifyConsumers::AddConsumer(
     const std::shared_ptr<StatisticsNotifyCfg>& cfg) {
-  for (auto& type : cfg->type_set_) {
+  for (const auto& type : cfg->type_set_) {
     std::lock_guard<std::mutex> lck(*cfg_map_lock_[type]);
     cfg_map_[type].push_back(cfg);
   }
@@ -128,7 +128,7 @@ modelbox::Status StatisticsNotifyConsumers::AddConsumer(
 
 modelbox::Status StatisticsNotifyConsumers::DelConsumer(
     const std::shared_ptr<StatisticsNotifyCfg>& cfg) {
-  for (auto& type : cfg->type_set_) {
+  for (const auto& type : cfg->type_set_) {
     std::lock_guard<std::mutex> lck(*cfg_map_lock_[type]);
     auto& consumers_for_one_type = cfg_map_[type];
     consumers_for_one_type.remove_if(
@@ -225,7 +225,7 @@ std::shared_ptr<StatisticsItem> StatisticsItem::AddItemInner(
     return nullptr;
   }
 
-  auto child_ptr = new StatisticsItem(path_, name, shared_from_this());
+  auto* child_ptr = new StatisticsItem(path_, name, shared_from_this());
   std::shared_ptr<StatisticsItem> child(child_ptr);
   child->thread_pool_ = thread_pool_;
   child->notify_timer_ = notify_timer_;
@@ -262,7 +262,7 @@ std::shared_ptr<StatisticsItem> StatisticsItem::GetItem(
   auto child_name = child_path;
   std::string sub_path;
   auto pos = child_path.find('.');
-  if (pos != child_path.npos) {
+  if (pos != std::string::npos) {
     child_name = child_path.substr(0, pos);
     sub_path = child_path.substr(pos + 1);
   }
@@ -310,7 +310,7 @@ void StatisticsItem::ClearItem() {
     children_name_set = children_name_set_;
   }
 
-  for (auto& name : children_name_set) {
+  for (const auto& name : children_name_set) {
     DelItem(name);
   }
 }
@@ -432,7 +432,7 @@ modelbox::Status StatisticsItem::Notify(const StatisticsNotifyType& type) {
   }
 
   auto notify_action = [consumer_list, msg]() {
-    for (auto& cfg : consumer_list) {
+    for (const auto& cfg : consumer_list) {
       cfg->func_(msg);
     }
   };

@@ -44,8 +44,8 @@ Status IFlowUnit::DataGroupPost(std::shared_ptr<DataContext> data_ctx) {
   return STATUS_OK;
 }
 
-void FlowUnit::SetFlowUnitDesc(std::shared_ptr<FlowUnitDesc> flowunit_desc) {
-  flowunit_desc_ = flowunit_desc;
+void FlowUnit::SetFlowUnitDesc(std::shared_ptr<FlowUnitDesc> desc) {
+  flowunit_desc_ = desc;
 }
 
 void FlowUnit::SetBindDevice(std::shared_ptr<Device> device) {
@@ -112,7 +112,7 @@ Status FlowUnitDesc::CheckGroupType(const std::string &group_type) {
     return {STATUS_INVALID, err_msg};
   }
 
-  if (group_type.find("/") == group_type.npos) {
+  if (group_type.find("/") == std::string::npos) {
     return modelbox::STATUS_SUCCESS;
   }
 

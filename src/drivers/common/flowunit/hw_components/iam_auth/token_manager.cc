@@ -192,9 +192,9 @@ modelbox::Status TokenManager::SaveUserAgencyCredential(
 
 modelbox::Status TokenManager::SaveUserAgencyToken(
     const AgencyInfo &agency_info, const ProjectInfo &project_info,
-    UserAgencyToken &token) {
+    UserAgencyToken &agency_token) {
   std::lock_guard<std::mutex> lock(token_lock_);
-  user_token_map_[agency_info][project_info] = token;
+  user_token_map_[agency_info][project_info] = agency_token;
   return modelbox::STATUS_OK;
 }
 

@@ -77,7 +77,7 @@ modelbox::Status RestfulSourceParser::GetRestfulInfo(
 
     if (config_json.contains("params")) {
       auto brokers_json = config_json["params"];
-      std::string encode_params = "";
+      std::string encode_params;
       for (auto &broker_json : brokers_json) {
         auto param_key = broker_json["param_key"].get<std::string>();
         auto param_value = broker_json["param_value"].get<std::string>();

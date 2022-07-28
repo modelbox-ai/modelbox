@@ -116,7 +116,7 @@ class DvppVideoDecodeContext {
 class AscendVideoDecoder {
  public:
   AscendVideoDecoder(int instance_id, int device_id, int32_t rate_num,
-                     int32_t rate_den, int32_t format_, int32_t entype_);
+                     int32_t rate_den, int32_t format, int32_t entype);
   virtual ~AscendVideoDecoder();
 
   modelbox::Status Init(std::shared_ptr<modelbox::DataContext> data_ctx);

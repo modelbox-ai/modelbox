@@ -88,7 +88,7 @@ TEST_F(CommonYoloboxFlowUintTest, Process) {
     auto layer15_conv = ext_data->CreateBufferList();
     layer15_conv->Build({36000});
     layer15_conv->Set("shape", std::vector<size_t>({24, 15, 25}));
-    auto data = (char *)layer15_conv->MutableData();
+    auto *data = (char *)layer15_conv->MutableData();
     ReadFile(TEST_ASSETS "/yolobox/data_36000_0", data, 36000);
     auto status = ext_data->Send("input1", layer15_conv);
     EXPECT_EQ(status, STATUS_OK);
@@ -113,7 +113,7 @@ TEST_F(CommonYoloboxFlowUintTest, Process) {
     for (size_t batch_idx = 0; batch_idx < buffer_list->Size(); ++batch_idx) {
       auto bbox_count =
           buffer_list->At(batch_idx)->GetBytes() / sizeof(BoundingBox);
-      auto boxes = static_cast<const BoundingBox *>(
+      const auto *boxes = static_cast<const BoundingBox *>(
           buffer_list->At(batch_idx)->ConstData());
       std::vector<std::vector<float>> result{
           {741.81, 0.0, 219.01, 229.03, 0.998},

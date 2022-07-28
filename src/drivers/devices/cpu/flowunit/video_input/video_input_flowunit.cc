@@ -67,8 +67,8 @@ modelbox::Status VideoInputFlowUnit::Open(
 modelbox::Status VideoInputFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status VideoInputFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  auto output_buf = ctx->Output("out_video_url");
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto output_buf = data_ctx->Output("out_video_url");
   std::vector<size_t> shape(1, 1);
   output_buf->Build(shape);
   return modelbox::STATUS_OK;

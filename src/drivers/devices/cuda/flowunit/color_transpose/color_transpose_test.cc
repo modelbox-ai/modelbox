@@ -176,12 +176,12 @@ TEST_F(ColorTransposeFlowUnitTest, ColorTransposeTest) {
         EXPECT_EQ(buffer_list->Size(), 1);
         EXPECT_EQ(buffer_list->GetBytes(),
                   img_list[j].total() * img_list[j].elemSize());
-        std::string out_pix_fmt = "";
+        std::string out_pix_fmt;
         buffer_list->At(0)->Get("pix_fmt", out_pix_fmt);
         EXPECT_EQ(out_pix_fmt, pix_fmt_list[j]);
-        uint8_t* opencv_data = (uint8_t*)img_list[j].data;
+        auto* opencv_data = (uint8_t*)img_list[j].data;
 
-        uint8_t* out_data = (uint8_t*)(buffer_list->ConstBufferData(0));
+        auto* out_data = (uint8_t*)(buffer_list->ConstBufferData(0));
         for (size_t k = 0; k < buffer_list->GetBytes(); ++k) {
           // TODO don't skip GRAY
           if (j == 2) {

@@ -15,7 +15,9 @@
  */
 
 #include "video_decoder_flowunit.h"
+
 #include <securec.h>
+
 #include "ffmpeg_color_converter.h"
 #include "ffmpeg_video_decoder.h"
 #include "modelbox/flowunit.h"
@@ -48,16 +50,16 @@ modelbox::Status VideoDecoderFlowUnit::Open(
 modelbox::Status VideoDecoderFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status VideoDecoderFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto video_decoder = std::static_pointer_cast<FfmpegVideoDecoder>(
-      ctx->GetPrivate(DECODER_CTX));
+      data_ctx->GetPrivate(DECODER_CTX));
   if (video_decoder == nullptr) {
     MBLOG_ERROR << "Video decoder is not init";
     return modelbox::STATUS_FAULT;
   }
 
   std::vector<std::shared_ptr<AVPacket>> pkt_list;
-  auto ret = ReadData(ctx, pkt_list);
+  auto ret = ReadData(data_ctx, pkt_list);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Read av_packet input failed";
     return modelbox::STATUS_FAULT;
@@ -73,7 +75,7 @@ modelbox::Status VideoDecoderFlowUnit::Process(
     }
   }
 
-  ret = WriteData(ctx, frame_list, decode_ret == modelbox::STATUS_NODATA);
+  ret = WriteData(data_ctx, frame_list, decode_ret == modelbox::STATUS_NODATA);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Send frame data failed";
     return modelbox::STATUS_FAULT;
@@ -88,9 +90,9 @@ modelbox::Status VideoDecoderFlowUnit::Process(
 }
 
 modelbox::Status VideoDecoderFlowUnit::ReadData(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<std::shared_ptr<AVPacket>> &pkt_list) {
-  auto video_packet_input = ctx->Input(VIDEO_PACKET_INPUT);
+  auto video_packet_input = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (video_packet_input == nullptr) {
     MBLOG_ERROR << "video packet input is null";
     return modelbox::STATUS_FAULT;
@@ -126,13 +128,14 @@ modelbox::Status VideoDecoderFlowUnit::ReadAVPacket(
     return modelbox::STATUS_SUCCESS;
   }
 
-  auto data = const_cast<void *>(packet_buffer->ConstData());
+  auto *data = const_cast<void *>(packet_buffer->ConstData());
   if (data == nullptr) {
     MBLOG_ERROR << "video_packet data is nullptr";
     return modelbox::STATUS_FAULT;
   }
 
-  int64_t pts = 0, dts = 0;
+  int64_t pts = 0;
+  int64_t dts = 0;
   packet_buffer->Get("pts", pts);
   packet_buffer->Get("dts", dts);
   return BuildAVPacket(pkt, size, (uint8_t *)data, pts, dts);
@@ -141,7 +144,7 @@ modelbox::Status VideoDecoderFlowUnit::ReadAVPacket(
 modelbox::Status VideoDecoderFlowUnit::BuildAVPacket(
     std::shared_ptr<AVPacket> &pkt, size_t size, uint8_t *data, int64_t pts,
     int64_t dts) {
-  auto pkt_ptr = av_packet_alloc();
+  auto *pkt_ptr = av_packet_alloc();
   if (pkt_ptr == nullptr) {
     MBLOG_ERROR << "av_packet_alloc failed";
     return modelbox::STATUS_FAULT;
@@ -159,18 +162,18 @@ modelbox::Status VideoDecoderFlowUnit::BuildAVPacket(
 }
 
 modelbox::Status VideoDecoderFlowUnit::WriteData(
-    std::shared_ptr<modelbox::DataContext> &ctx,
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::list<std::shared_ptr<AVFrame>> &frame_list, bool eos) {
   auto last_frame =
-      std::static_pointer_cast<AVFrame>(ctx->GetPrivate(LAST_FRAME));
-  ctx->SetPrivate(LAST_FRAME, nullptr);
-  auto color_cvt =
-      std::static_pointer_cast<FfmpegColorConverter>(ctx->GetPrivate(CVT_CTX));
-  auto frame_buff_list = ctx->Output(FRAME_INFO_OUTPUT);
+      std::static_pointer_cast<AVFrame>(data_ctx->GetPrivate(LAST_FRAME));
+  data_ctx->SetPrivate(LAST_FRAME, nullptr);
+  auto color_cvt = std::static_pointer_cast<FfmpegColorConverter>(
+      data_ctx->GetPrivate(CVT_CTX));
+  auto frame_buff_list = data_ctx->Output(FRAME_INFO_OUTPUT);
   if (!eos && !frame_list.empty()) {
-    // try save last frame in ctx, when demuxe end, we could set last
+    // try save last frame in data_ctx, when demuxe end, we could set last
     // frame eos to 'true'
-    ctx->SetPrivate(LAST_FRAME, frame_list.back());
+    data_ctx->SetPrivate(LAST_FRAME, frame_list.back());
     frame_list.pop_back();
   }
 
@@ -183,8 +186,8 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
   }
 
   auto frame_index =
-      std::static_pointer_cast<int64_t>(ctx->GetPrivate(FRAME_INDEX_CTX));
-  auto pack_buff_list = ctx->Input(VIDEO_PACKET_INPUT);
+      std::static_pointer_cast<int64_t>(data_ctx->GetPrivate(FRAME_INDEX_CTX));
+  auto pack_buff_list = data_ctx->Input(VIDEO_PACKET_INPUT);
   auto pack_buff = pack_buff_list->At(0);
   int32_t rate_num = 0;
   int32_t rate_den = 0;
@@ -210,11 +213,11 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
 
   frame_buff_list->Build(shape);
   size_t i = 0;
-  auto meta = ctx->GetInputMeta(VIDEO_PACKET_INPUT);
+  auto meta = data_ctx->GetInputMeta(VIDEO_PACKET_INPUT);
   auto source_url =
       std::static_pointer_cast<std::string>(meta->GetMeta(SOURCE_URL_META));
   for (auto &frame_ptr : frame_list) {
-    videodecode::UpdateStatsInfo(ctx, frame_ptr->width, frame_ptr->height);
+    videodecode::UpdateStatsInfo(data_ctx, frame_ptr->width, frame_ptr->height);
     auto frame_buff = frame_buff_list->At(i);
     ++i;
     auto ret = color_cvt->CvtColor(
@@ -311,7 +314,7 @@ MODELBOX_FLOWUNIT(VideoDecoderFlowUnit, desc) {
   desc.SetInputContiguous(false);
   std::map<std::string, std::string> pix_fmt_list;
 
-  for (auto &item : g_supported_pix_fmt) {
+  for (const auto &item : g_supported_pix_fmt) {
     pix_fmt_list[item] = item;
   }
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(

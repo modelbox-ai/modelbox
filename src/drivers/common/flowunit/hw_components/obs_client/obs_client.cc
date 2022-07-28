@@ -147,7 +147,7 @@ modelbox::Status ObsClient::GetAuthInfo(const std::string &domain_name,
                                         std::string &access_key,
                                         std::string &secret_key,
                                         std::string &security_token) {
-  std::string err_msg = "";
+  std::string err_msg;
 
   modelbox::AgencyInfo agent_info;
   agent_info.user_domain_name = domain_name;
@@ -184,7 +184,7 @@ modelbox::Status ObsClient::GetUpdatedAuthInfo(const std::string &domain_name,
   agency_info.user_domain_name = domain_name;
   agency_info.xrole_name = xrole_name;
 
-  std::string err_msg = "";
+  std::string err_msg;
   auto hw_auth = modelbox::IAMAuth::GetInstance();
   if (hw_auth == nullptr) {
     err_msg = "Failed to get hw_auth instance!";
@@ -213,7 +213,7 @@ modelbox::Status ObsClient::NotifyToUpdateAuthInfo(
   agency_info.user_domain_name = domain_name;
   agency_info.xrole_name = xrole_name;
 
-  std::string err_msg = "";
+  std::string err_msg;
   auto hw_auth = modelbox::IAMAuth::GetInstance();
   if (hw_auth == nullptr) {
     err_msg = "Failed to update Auth info";
@@ -389,7 +389,7 @@ modelbox::Status ObsClient::GetObjectsList(
                 << ", try count: " << retry_count;
   }
 
-  std::string err_msg = "";
+  std::string err_msg;
   if (retry_count >= MAX_RETRY_COUNTS) {
     err_msg = "Failed to list objects after " + std::to_string(retry_count) +
               " tries!";
@@ -402,7 +402,7 @@ modelbox::Status ObsClient::GetObjectsList(
 
 modelbox::Status ObsClient::GetObject(const ObsOptions &opt,
                                       const std::string &file_local_path) {
-  std::string err_msg = "";
+  std::string err_msg;
   if (!IsValidOptionIncludingPath(opt) || file_local_path.empty()) {
     err_msg = "Failed to download obs object: Invalid parameters! file key: " +
               file_local_path;
@@ -424,7 +424,7 @@ modelbox::Status ObsClient::GetObject(const ObsOptions &opt,
   init_obs_options(&option);
   SetObsOption(opt, ak, sk, security_token, option);
 
-  obs_object_info object_info = {0};
+  obs_object_info object_info = {nullptr};
   object_info.key = const_cast<char *>(opt.path.c_str());
 
   GetObjectCallbackData data;
@@ -449,8 +449,8 @@ modelbox::Status ObsClient::GetObject(const ObsOptions &opt,
       &GetObjectDataCallback};
 
   // download
-  get_object(&option, &object_info, &get_condition, 0, &get_object_handler,
-             &data);
+  get_object(&option, &object_info, &get_condition, nullptr,
+             &get_object_handler, &data);
 
   if (NeedUpdateAuthInfo(data.ret_status)) {
     MBLOG_WARN
@@ -462,8 +462,8 @@ modelbox::Status ObsClient::GetObject(const ObsOptions &opt,
     } else {
       // try to get object again.
       SetObsOption(opt, ak, sk, security_token, option);
-      get_object(&option, &object_info, &get_condition, 0, &get_object_handler,
-                 &data);
+      get_object(&option, &object_info, &get_condition, nullptr,
+                 &get_object_handler, &data);
     }
   }
 
@@ -483,9 +483,9 @@ modelbox::Status ObsClient::GetObject(const ObsOptions &opt,
 
 modelbox::Status ObsClient::GetBuffer(ObsOptions &opt, unsigned char *buf,
                                       uint64_t size, uint64_t offset) {
-  std::string err_msg = "";
+  std::string err_msg;
 
-  obs_object_info object_info = {0};
+  obs_object_info object_info = {nullptr};
   object_info.key = const_cast<char *>(opt.path.c_str());
 
   GetBufferCallbackData data;
@@ -517,8 +517,8 @@ modelbox::Status ObsClient::GetBuffer(ObsOptions &opt, unsigned char *buf,
       {&GetPropertiesCallback, &GetBufferCompleteCallback}, &GetBufferCallback};
 
   // download
-  get_object(&option, &object_info, &get_condition, 0, &get_object_handler,
-             &data);
+  get_object(&option, &object_info, &get_condition, nullptr,
+             &get_object_handler, &data);
 
   if (NeedUpdateAuthInfo(data.ret_status)) {
     MBLOG_WARN
@@ -530,8 +530,8 @@ modelbox::Status ObsClient::GetBuffer(ObsOptions &opt, unsigned char *buf,
     } else {
       // try to get object again.
       SetObsOption(opt, opt.ak, opt.sk, opt.token, option);
-      get_object(&option, &object_info, &get_condition, 0, &get_object_handler,
-                 &data);
+      get_object(&option, &object_info, &get_condition, nullptr,
+                 &get_object_handler, &data);
     }
   }
 
@@ -548,9 +548,9 @@ modelbox::Status ObsClient::GetBuffer(ObsOptions &opt, unsigned char *buf,
 }
 
 uint64_t ObsClient::GetObjectSize(ObsOptions &opt) {
-  std::string err_msg = "";
+  std::string err_msg;
 
-  obs_object_info object_info = {0};
+  obs_object_info object_info = {nullptr};
   object_info.key = const_cast<char *>(opt.path.c_str());
 
   GetObejectSizeCallbackData data;
@@ -574,7 +574,7 @@ uint64_t ObsClient::GetObjectSize(ObsOptions &opt) {
   obs_response_handler response_handler = {&GetObjectSizeCallback,
                                            &GetObjectSizeCompleteCallback};
 
-  get_object_metadata(&option, &object_info, 0, &response_handler, &data);
+  get_object_metadata(&option, &object_info, nullptr, &response_handler, &data);
 
   if (NeedUpdateAuthInfo(data.ret_status)) {
     MBLOG_WARN
@@ -586,7 +586,8 @@ uint64_t ObsClient::GetObjectSize(ObsOptions &opt) {
     } else {
       // try to get object again.
       SetObsOption(opt, opt.ak, opt.sk, opt.token, option);
-      get_object_metadata(&option, &object_info, 0, &response_handler, &data);
+      get_object_metadata(&option, &object_info, nullptr, &response_handler,
+                          &data);
     }
   }
 
@@ -603,7 +604,7 @@ uint64_t ObsClient::GetObjectSize(ObsOptions &opt) {
 
 modelbox::Status ObsClient::PutObject(const ObsOptions &opt, const char *data,
                                       size_t data_size) {
-  std::string err_msg = "";
+  std::string err_msg;
   if (!IsValidOptionIncludingPath(opt)) {
     err_msg = "Failed to output obs data: Invalid obs options!";
     return {modelbox::STATUS_INVALID, err_msg};
@@ -634,7 +635,7 @@ modelbox::Status ObsClient::PutObject(const ObsOptions &opt, const char *data,
   init_put_properties(&put_properties);
 
   // initialize put
-  PutBufferObjectCallbackData data_to_put = {0};
+  PutBufferObjectCallbackData data_to_put = {nullptr};
   data_to_put.put_buffer = const_cast<char *>(data);
   data_to_put.buffer_size = data_size;
 
@@ -644,7 +645,7 @@ modelbox::Status ObsClient::PutObject(const ObsOptions &opt, const char *data,
       &PutBufferDataCallback};
 
   put_object(&option, const_cast<char *>(opt.path.c_str()), data_size,
-             &put_properties, 0, &putobjectHandler, &data_to_put);
+             &put_properties, nullptr, &putobjectHandler, &data_to_put);
 
   if (NeedUpdateAuthInfo(data_to_put.ret_status)) {
     MBLOG_WARN

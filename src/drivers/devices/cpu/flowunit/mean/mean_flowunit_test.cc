@@ -84,7 +84,7 @@ Status MeanCpuFlowUnitTest::AddMockFlowUnit() {
 
               auto buffer_list = ext_data->CreateBufferList();
               buffer_list->Build({10 * sizeof(int)});
-              auto data = (int*)buffer_list->MutableData();
+              auto *data = (int *)buffer_list->MutableData();
               for (size_t i = 0; i < 10; i++) {
                 data[i] = i;
               }
@@ -126,12 +126,16 @@ Status MeanCpuFlowUnitTest::AddMockFlowUnit() {
               auto output_buf_1 = op_ctx->Output("Out_1");
               std::vector<size_t> data_1_shape = {5 * 4 * 3 * sizeof(uint8_t)};
               output_buf_1->Build(data_1_shape);
-              auto dev_data_1 =
-                  static_cast<uint8_t*>(output_buf_1->At(0)->MutableData());
+              auto *dev_data_1 =
+                  static_cast<uint8_t *>(output_buf_1->At(0)->MutableData());
               for (size_t i = 0; i < 3; ++i) {
                 for (size_t j = 0; j < 5; j++) {
-                  for (size_t k = 0; k < 4; k++)
-                    dev_data_1[i * 20 + j * 4 + k] = static_cast<uint8_t>(100);
+                  for (size_t k = 0; k < 4; k++) {
+                    {
+                      dev_data_1[i * 20 + j * 4 + k] =
+                          static_cast<uint8_t>(100);
+                    }
+                  }
                 }
               }
 
@@ -209,8 +213,8 @@ Status MeanCpuFlowUnitTest::AddMockFlowUnit() {
                 EXPECT_EQ(width, 5);
                 EXPECT_EQ(height, 4);
 
-                const auto in_data =
-                    static_cast<const float*>(input_buf->ConstData());
+                const auto *const in_data =
+                    static_cast<const float *>(input_buf->ConstData());
                 for (size_t c = 0; c < 3; c++) {
                   for (size_t j = 0; j < width; j++) {
                     for (size_t k = 0; k < height; k++) {

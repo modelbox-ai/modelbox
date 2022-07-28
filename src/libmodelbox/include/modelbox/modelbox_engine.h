@@ -45,27 +45,28 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
    * @brief create input stream for external input
    * @return datahandler bind to extern input
    */
-  std::shared_ptr<DataHandler> CreateInput(const std::set<std::string> &ports);
+  std::shared_ptr<DataHandler> CreateInput(
+      const std::set<std::string> &port_map);
 
   /**
    * @brief  choose right node to create graph and run graph
    * @param name flowunit name
-   * @param config flowunit config
+   * @param config_map flowunit config
    * @param data input data
    * @return process result
    */
   std::shared_ptr<DataHandler> Execute(
-      const std::string &name, std::map<std::string, std::string> config,
+      const std::string &name, std::map<std::string, std::string> config_map,
       const std::shared_ptr<DataHandler> &data = nullptr);
   /**
    * @brief choose right node to create graph and run graph
    * @param name flowunit name
-   * @param config flowunit config
+   * @param config_map flowunit config
    * @param data input data map
    * @return process result
    */
   std::shared_ptr<DataHandler> Execute(
-      const std::string &name, std::map<std::string, std::string> config,
+      const std::string &name, std::map<std::string, std::string> config_map,
       const std::map<std::string, std::shared_ptr<DataHandler>> &data);
 
   /**
@@ -109,13 +110,13 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
 
   std::shared_ptr<NodeBase> CreateDynamicNormalNode(
       const std::string &name,
-      const std::map<std::string, std::string> &config);
+      const std::map<std::string, std::string> &config_map);
 
   /*
    feed data to graph
    */
   Status FeedData(std::shared_ptr<DynamicGraph> &dynamic_graph,
-                  std::shared_ptr<GCGraph> &graph);
+                  std::shared_ptr<GCGraph> &gcgraph);
   /*
   create a graph for gcgraph
   */

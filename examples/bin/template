@@ -553,18 +553,18 @@ setup_flowunit_cpp_source() {
 	fi
 
 	# add input port information
-	space=$(grep "auto input_bufs = ctx->Input" "$SOURCE_FILE" | sed 's/\([ |\t]*\)auto input_bufs = ctx->Input.*/\1/g')
+	space=$(grep "auto input_bufs = data_ctx->Input" "$SOURCE_FILE" | sed 's/\([ |\t]*\)auto input_bufs = data_ctx->Input.*/\1/g')
 	space_desc=$(grep "desc.AddFlowUnitInput(modelbox::FlowUnitInput" "$SOURCE_FILE" | sed 's/\([ |\t]*\)desc.AddFlowUnitInput(modelbox::FlowUnitInput.*/\1/g')
 	input_flag="// input data"
 	input_port_flag="// input port"
-	sed -i "s#auto input_bufs = ctx->Input.*#${input_flag}#" "$SOURCE_FILE"
+	sed -i "s#auto input_bufs = data_ctx->Input.*#${input_flag}#" "$SOURCE_FILE"
 	sed -i "s#desc.AddFlowUnitInput(modelbox::FlowUnitInput.*#${input_port_flag}#" "$SOURCE_FILE"
 	i=1
 	for port in "${flowunit_input_names[@]}"; do
 		if [ ${#flowunit_inputs[@]} -eq 1 ]; then
-			line="auto input_bufs = ctx->Input(\"${port}\");"
+			line="auto input_bufs = data_ctx->Input(\"${port}\");"
 		else
-			line="auto input_bufs_${i} = ctx->Input(\"${port}\");"
+			line="auto input_bufs_${i} = data_ctx->Input(\"${port}\");"
 		fi
 		sed -i "\#${input_flag}#a \\${space}${line}" "$SOURCE_FILE"
 		i=$((i+1))
@@ -576,14 +576,14 @@ setup_flowunit_cpp_source() {
 	# add output port information
 	output_flag="// output data"
 	output_port_flag="// output port"
-	sed -i "s#auto output_bufs = ctx->Output.*#${output_flag}#" "$SOURCE_FILE"
+	sed -i "s#auto output_bufs = data_ctx->Output.*#${output_flag}#" "$SOURCE_FILE"
 	sed -i "s#desc.AddFlowUnitOutput(modelbox::FlowUnitOutput.*#${output_port_flag}#" "$SOURCE_FILE"
 	i=1
 	for port in "${flowunit_output_names[@]}"; do
 		if [ ${#flowunit_outputs[@]} -eq 1 ]; then
-			line="auto output_bufs = ctx->Output(\"${port}\");"
+			line="auto output_bufs = data_ctx->Output(\"${port}\");"
 		else
-			line="auto output_bufs_${i} = ctx->Output(\"${port}\");"
+			line="auto output_bufs_${i} = data_ctx->Output(\"${port}\");"
 		fi
 
 		sed -i "\#${output_flag}#a \\${space}${line}" "$SOURCE_FILE"

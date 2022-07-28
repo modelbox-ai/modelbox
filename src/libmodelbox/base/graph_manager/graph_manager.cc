@@ -213,7 +213,7 @@ std::map<std::string, const std::shared_ptr<GCNode>> GCGraph::GetAllNodes()
 }
 
 void GCGraph::ShowAllNode() const {
-  for (auto &elem : nodes_) {
+  for (const auto &elem : nodes_) {
     MBLOG_INFO << "node name : " << elem.second->GetNodeName();
 
     std::shared_ptr<const std::set<std::string>> input_ports;
@@ -224,11 +224,10 @@ void GCGraph::ShowAllNode() const {
 
     std::shared_ptr<const std::set<std::string>> output_ports;
     output_ports = elem.second->GetOutputPorts();
-    for (auto &output_port : *output_ports) {
+    for (const auto &output_port : *output_ports) {
       MBLOG_INFO << "output port : " << output_port;
     }
   }
-  return;
 }
 
 Status GCGraph::AddEdge(std::shared_ptr<GCEdge> edge) {
@@ -254,13 +253,12 @@ std::map<std::string, const std::shared_ptr<GCEdge>> GCGraph::GetAllEdges()
 }
 
 void GCGraph::ShowAllEdge() const {
-  for (auto &elem : edges_) {
+  for (const auto &elem : edges_) {
     MBLOG_DEBUG << elem.second->GetHeadNode()->GetNodeName() << ":"
                 << elem.second->GetHeadOutPort() << "->"
                 << elem.second->GetTailNode()->GetNodeName() << ":"
                 << elem.second->GetTailInPort();
   }
-  return;
 }
 
 const std::shared_ptr<Configuration> GCGraph::GetConfiguration() const {

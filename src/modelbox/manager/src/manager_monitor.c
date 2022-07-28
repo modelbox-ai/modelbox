@@ -405,10 +405,10 @@ int app_start(const char *name, const char *cmdline, const char *pidfile,
     goto errout;
   }
 
-  strncpy(app->name, name, APP_NAME_LEN);
-  strncpy(app->cmdline, cmdline, PATH_MAX);
+  strncpy(app->name, name, APP_NAME_LEN - 1);
+  strncpy(app->cmdline, cmdline, PATH_MAX - 1);
   if (pidfile) {
-    strncpy(app->pid_file, pidfile, PATH_MAX);
+    strncpy(app->pid_file, pidfile, PATH_MAX - 1);
   } else {
     app->pid_file[0] = 0;
   }

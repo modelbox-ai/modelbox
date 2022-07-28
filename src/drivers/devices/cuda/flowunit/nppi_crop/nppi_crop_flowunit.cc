@@ -31,8 +31,8 @@ modelbox::Status NppiCropFlowUnit::Open(
 }
 
 modelbox::Status NppiCropFlowUnit::CudaProcess(
-    std::shared_ptr<modelbox::DataContext> ctx, cudaStream_t stream) {
-  auto input_img_bufs = ctx->Input("in_image");
+    std::shared_ptr<modelbox::DataContext> data_ctx, cudaStream_t stream) {
+  auto input_img_bufs = data_ctx->Input("in_image");
   if (input_img_bufs->Size() <= 0) {
     auto errMsg =
         "input images size is " + std::to_string(input_img_bufs->Size());
@@ -40,7 +40,7 @@ modelbox::Status NppiCropFlowUnit::CudaProcess(
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
-  auto input_box_bufs = ctx->Input("in_region");
+  auto input_box_bufs = data_ctx->Input("in_region");
   if (input_box_bufs->Size() <= 0) {
     auto errMsg =
         "in_region roi box batch is " + std::to_string(input_box_bufs->Size());
@@ -56,7 +56,7 @@ modelbox::Status NppiCropFlowUnit::CudaProcess(
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
-  auto output_bufs = ctx->Output("out_image");
+  auto output_bufs = data_ctx->Output("out_image");
 
   std::vector<size_t> shape_vector;
   int32_t channel = RGB_CHANNLES;

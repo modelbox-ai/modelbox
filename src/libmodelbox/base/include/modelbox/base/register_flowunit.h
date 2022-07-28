@@ -60,7 +60,7 @@ class RegisterFlowUnitFactory : public modelbox::FlowUnitFactory {
 
   const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
   std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
-      const std::string &unit_name, const std::string &unit_type) override;
+      const std::string &name, const std::string &unit_type) override;
 
  private:
   Status Init();

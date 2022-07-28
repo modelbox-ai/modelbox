@@ -132,7 +132,7 @@ class Driver {
   std::shared_ptr<DriverDesc> desc_ = std::make_shared<DriverDesc>();
 
  private:
-  int GetMode(bool no_delete, bool global, bool deep_mind);
+  int GetMode(bool no_delete, bool global, bool deep_bind);
   void CloseFactory();
   bool is_virtual_ = false;
   void *driver_handler_{nullptr};
@@ -165,7 +165,7 @@ class VirtualDriverManager : public DriverFactory {
  public:
   VirtualDriverManager();
   virtual ~VirtualDriverManager();
-  virtual Status Add(const std::string &path);
+  virtual Status Add(const std::string &file);
   virtual Status Init(Drivers &driver);
   virtual Status Scan(std::vector<std::string> scan_dirs);
   virtual Status Scan(const std::string &path);

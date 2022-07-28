@@ -31,9 +31,9 @@ using namespace web::http::client;
 
 namespace modelbox {
 bool IAMApi::validate_certificates_ = false;
-std::string IAMApi::request_host_ = "";
-std::string IAMApi::request_token_uri_ = "";
-std::string IAMApi::request_credential_uri_ = "";
+std::string IAMApi::request_host_;
+std::string IAMApi::request_token_uri_;
+std::string IAMApi::request_credential_uri_;
 std::string IAMApi::cert_file_ = "/etc/ssl/certs/ca-certificates.crt";
 std::string IAMApi::cert_file_path_ = "/etc/ssl/certs";
 
@@ -203,8 +203,7 @@ modelbox::Status IAMApi::GetAgencyProjectCredentialWithAK(
   token_request.set_method(methods::POST);
   token_request.set_body(U(request_self->getPayload()));
   for (auto header : *request_self->getHeaders()) {
-    token_request.headers()[U(header.getKey().c_str())] =
-        U(header.getValue().c_str());
+    token_request.headers()[header.getKey()] = header.getValue();
   }
 
   web::http::http_response response_data;
@@ -267,8 +266,7 @@ modelbox::Status IAMApi::GetAgencyProjectTokenWithAK(
   token_request.set_method(methods::POST);
   token_request.set_body(U(request_self->getPayload()));
   for (auto header : *request_self->getHeaders()) {
-    token_request.headers()[U(header.getKey().c_str())] =
-        U(header.getValue().c_str());
+    token_request.headers()[header.getKey()] = header.getValue();
   }
 
   web::http::http_response response_data;

@@ -139,7 +139,7 @@ TEST_F(TimerTest, ThreadLocalTaskGet) {
   {
     std::shared_ptr<TimerTask> task;
     task = std::make_shared<TimerTask>();
-    auto task_ptr = task.get();
+    auto *task_ptr = task.get();
     task->Callback(
         [&, task_ptr](const char *id) {
           EXPECT_LE(count, loop);
@@ -321,7 +321,7 @@ TEST_F(TimerTest, TakeOwnerShipStopBeforeHit) {
     // trigger here
     std::shared_ptr<TimerTask> task;
     task = std::make_shared<TimerTask>();
-    auto task_ptr = task.get();
+    auto *task_ptr = task.get();
     task->Callback([&, task_ptr]() {
       count++;
       EXPECT_TRUE(true);
@@ -335,7 +335,7 @@ TEST_F(TimerTest, TakeOwnerShipStopBeforeHit) {
     // no trigger
     std::shared_ptr<TimerTask> task;
     task = std::make_shared<TimerTask>();
-    auto task_ptr = task.get();
+    auto *task_ptr = task.get();
     task->Callback([&, task_ptr]() {
       count++;
       EXPECT_TRUE(true);

@@ -22,14 +22,14 @@ MeanFlowUnit::MeanFlowUnit(){};
 MeanFlowUnit::~MeanFlowUnit(){};
 
 modelbox::Status MeanFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  const auto input_bufs = ctx->Input("in_data");
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  const auto input_bufs = data_ctx->Input("in_data");
   if (!CheckBufferListValid(input_bufs)) {
     MBLOG_ERROR << "mean flowunit in_image invalied";
     return modelbox::STATUS_FAULT;
   }
 
-  auto output_bufs = ctx->Output("out_data");
+  auto output_bufs = data_ctx->Output("out_data");
   if (!BuildOutputBufferList(input_bufs, output_bufs)) {
     MBLOG_ERROR << "build out_image BufferList failed";
     return modelbox::STATUS_FAULT;
@@ -74,7 +74,7 @@ void MeanFlowUnit::Process(const T *input_data,
   size_t size = (input_buf->GetBytes() / sizeof(T)) / CHANNEL_NUM;
   out_buff->CopyMeta(input_buf);
   out_buff->Set("type", modelbox::ModelBoxDataType::MODELBOX_FLOAT);
-  auto out_data = static_cast<float *>(out_buff->MutableData());
+  auto *out_data = static_cast<float *>(out_buff->MutableData());
   if (out_data == nullptr) {
     MBLOG_ERROR << "output is null";
     return;

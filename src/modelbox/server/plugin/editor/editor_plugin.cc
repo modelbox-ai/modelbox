@@ -88,7 +88,8 @@ const std::string ModelboxGetMimeType(const std::string& file) {
 }
 
 bool ModelboxEditorPlugin::CheckBlackDir(std::string dir) {
-  if ((dir.find("\r") != dir.npos) || (dir.find("\n") != dir.npos)) {
+  if ((dir.find("\r") != std::string::npos) ||
+      (dir.find("\n") != std::string::npos)) {
     return true;
   }
   const std::string filter_dir =
@@ -199,8 +200,6 @@ void ModelboxEditorPlugin::SetUpResponse(httplib::Response& response,
 
   AddSafeHeader(response);
   response.set_content(ResultMsg(status), JSON);
-
-  return;
 }
 
 bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
@@ -313,8 +312,6 @@ void ModelboxEditorPlugin::HandlerFlowUnitCreate(
   if (ret == modelbox::STATUS_OK) {
     response.status = HttpStatusCodes::CREATED;
   }
-
-  return;
 }
 
 void ModelboxEditorPlugin::HandlerSaveGraph(const httplib::Request& request,
@@ -324,8 +321,6 @@ void ModelboxEditorPlugin::HandlerSaveGraph(const httplib::Request& request,
   if (ret == modelbox::STATUS_OK) {
     response.status = HttpStatusCodes::CREATED;
   }
-
-  return;
 }
 
 modelbox::Status ModelboxEditorPlugin::SaveGraph(
@@ -401,7 +396,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
       return;
     }
 
-    std::string project_path = "";
+    std::string project_path;
     project_path = request.params.find("path")->second;
     MBLOG_INFO << "loading project: " << project_path;
 
@@ -630,7 +625,6 @@ void ModelboxEditorPlugin::HandlerProjectTemplateListGet(
   AddSafeHeader(response);
   response.status = HttpStatusCodes::OK;
   response.set_content(response_json.dump(), JSON);
-  return;
 }
 
 void ModelboxEditorPlugin::HandlerProjectListGet(
@@ -654,7 +648,7 @@ void ModelboxEditorPlugin::HandlerProjectListGet(
       return;
     }
 
-    std::string list_path = "";
+    std::string list_path;
     list_path = request.params.find("path")->second;
     MBLOG_DEBUG << "list path: " << list_path;
     ret = ListFiles(list_path, "*", &listfiles, LIST_FILES_DIR);
@@ -684,7 +678,6 @@ void ModelboxEditorPlugin::HandlerProjectListGet(
 
   AddSafeHeader(response);
   response.set_content(response_json.dump(), JSON);
-  return;
 }
 
 bool ModelboxEditorPlugin::IsModelboxProjectDir(std::string& path) {
@@ -788,8 +781,8 @@ void ModelboxEditorPlugin::SendFile(const std::string& file_name,
 
   size_t data_size = 4096;
   auto data = std::shared_ptr<char>(new (std::nothrow) char[data_size],
-                                    [](char* ptr) { delete[] ptr; });
-  if (data.get() == nullptr) {
+                                    [](const char* ptr) { delete[] ptr; });
+  if (data == nullptr) {
     rspret = {STATUS_FAULT, HTTP_RESP_ERR_CANNOT_READ};
     return;
   }
@@ -874,7 +867,6 @@ void ModelboxEditorPlugin::HanderBasicInfoGet(const httplib::Request& request,
   AddSafeHeader(response);
   response.status = HttpStatusCodes::OK;
   response.set_content(response_json.dump(), JSON);
-  return;
 }
 
 void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
@@ -950,7 +942,6 @@ void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
   AddSafeHeader(response);
   response.status = HttpStatusCodes::OK;
   response.set_content(response_json.dump(), JSON);
-  return;
 }
 
 void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
@@ -1006,8 +997,6 @@ void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
               std::string(HTTP_RESP_ERR_GETINFO_FAILED) + e.what()};
     return;
   }
-
-  return;
 }
 
 void ModelboxEditorPlugin::HandlerPassEncode(const httplib::Request& request,
@@ -1084,8 +1073,6 @@ void ModelboxEditorPlugin::HandlerPassEncode(const httplib::Request& request,
   AddSafeHeader(response);
   response.status = HttpStatusCodes::OK;
   response.set_content(response_json.dump(), JSON);
-
-  return;
 }
 
 void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,

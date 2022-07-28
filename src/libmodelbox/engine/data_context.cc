@@ -158,7 +158,7 @@ void FlowUnitDataContext::SetCurrentInputData(
   std::set<size_t> error_index_set;
   std::set<size_t> valid_index_set;
   for (auto &port_data_item : *cur_input_) {
-    auto &port_name = port_data_item.first;
+    const auto &port_name = port_data_item.first;
     auto &data_list = port_data_item.second;
     size_t index = 0;
     for (auto &buffer : data_list) {
@@ -198,7 +198,7 @@ void FlowUnitDataContext::SetCurrentInputData(
 
   // push each port error/valid buffer
   for (auto &port_data_item : *cur_input_) {
-    auto &port_name = port_data_item.first;
+    const auto &port_name = port_data_item.first;
     auto &data_list = port_data_item.second;
     size_t index = 0;
     for (auto &buffer : data_list) {
@@ -230,7 +230,7 @@ void FlowUnitDataContext::SetCurrentInputData(
     // save data for next event trigger, will not clear
     last_input_valid_data_.clear();
     for (auto &in_port_data : cur_input_valid_data_) {
-      auto &port_name = in_port_data.first;
+      const auto &port_name = in_port_data.first;
       auto &port_data_list = in_port_data.second;
       last_input_valid_data_[port_name].push_back(port_data_list.back());
     }
@@ -372,7 +372,7 @@ std::shared_ptr<Configuration> FlowUnitDataContext::GetSessionConfig() {
   auto node_prop_name = CONFIG_NODE + node_->GetName();
   auto flowunit_prop_name =
       CONFIG_FLOWUNIT + node_->GetFlowUnitDesc()->GetFlowUnitName();
-  auto all_node_prop_name = CONFIG_NODES;
+  const auto *all_node_prop_name = CONFIG_NODES;
 
   auto all_node_config = config->GetSubConfig(all_node_prop_name);
   auto flowunit_config = config->GetSubConfig(flowunit_prop_name);
@@ -533,7 +533,7 @@ Status FlowUnitDataContext::AppendEndFlag() {
   }
 
   std::vector<std::shared_ptr<BufferProcessInfo>> process_info_list;
-  auto end_flag_parent = &cur_input_end_flag_;
+  auto *end_flag_parent = &cur_input_end_flag_;
   if (end_flag_parent->empty()) {
     // need append a new end flag. inherit input directly. in case expand
     end_flag_parent = &cur_input_valid_data_;
@@ -560,7 +560,7 @@ Status FlowUnitDataContext::AppendEndFlag() {
         return container[idx];
       },
       process_info_list);
-  for (auto &port_name : node_->GetOutputNames()) {
+  for (const auto &port_name : node_->GetOutputNames()) {
     auto &port_data_list = cur_output_[port_name];
     auto buffer = std::make_shared<Buffer>();
     auto index_info = BufferManageView::GetIndexInfo(buffer);
@@ -607,7 +607,7 @@ void FlowUnitDataContext::FillPlaceholderOutput(bool from_valid_input,
     output_num = input_num;
   }
 
-  for (auto &port_name : node_->GetOutputNames()) {
+  for (const auto &port_name : node_->GetOutputNames()) {
     auto &port_data_list = cur_output_placeholder_[port_name];
     if (is_condition && !first_port) {
       port_data_list.resize(output_num, nullptr);
@@ -631,7 +631,7 @@ void FlowUnitDataContext::FillErrorOutput(bool from_valid,
                                           const std::string &error_code,
                                           const std::string &error_msg,
                                           bool same_with_input_num) {
-  auto cur_parent = &cur_input_error_;
+  auto *cur_parent = &cur_input_error_;
   if (from_valid) {
     cur_parent = &cur_input_valid_data_;
   }
@@ -670,7 +670,7 @@ void FlowUnitDataContext::FillErrorOutput(bool from_valid,
       continue;
     }
 
-    for (auto &input_port_name : node_->GetInputNames()) {
+    for (const auto &input_port_name : node_->GetInputNames()) {
       auto &input_port_data_list = (*cur_parent)[input_port_name];
       if (input_port_data_list[i]->HasError()) {
         error_list.push_back(
@@ -680,7 +680,7 @@ void FlowUnitDataContext::FillErrorOutput(bool from_valid,
     }
   }
 
-  for (auto &port_name : node_->GetOutputNames()) {
+  for (const auto &port_name : node_->GetOutputNames()) {
     auto &port_data_list = cur_output_error_[port_name];
     if (is_condition && !first_port) {
       port_data_list.resize(port_data_list.size() + output_num, nullptr);
@@ -724,7 +724,7 @@ size_t FlowUnitDataContext::GetOutputBufferNum() {
 }
 
 Status FlowUnitDataContext::GenerateOutput() {
-  for (auto &port_name : node_->GetOutputNames()) {
+  for (const auto &port_name : node_->GetOutputNames()) {
     auto &valid_data_list = cur_output_valid_data_[port_name];
     if (valid_data_list == nullptr) {
       // no output
@@ -805,7 +805,7 @@ std::shared_ptr<BufferProcessInfo> FlowUnitDataContext::GetCurNodeProcessInfo(
   }
   cur_node_process_info = std::make_shared<BufferProcessInfo>();
   for (auto &in_port_data_item : cur_event_input_data_) {
-    auto &in_port_name = in_port_data_item.first;
+    const auto &in_port_name = in_port_data_item.first;
     auto &in_port_data_list = in_port_data_item.second;
     std::list<std::shared_ptr<BufferIndexInfo>> index_info_list;
     for (auto &in_buffer : in_port_data_list) {
@@ -897,7 +897,7 @@ FlowUnitDataContext::GetOutputPortStreamMeta() {
 
 void FlowUnitDataContext::UpdateInputInfo() {
   for (auto &input_item : *cur_input_) {
-    auto &input_port_name = input_item.first;
+    const auto &input_port_name = input_item.first;
     auto &input_port_data_list = input_item.second;
     if (input_port_data_list.empty()) {
       continue;
@@ -1049,7 +1049,7 @@ Status LoopNormalFlowUnitDataContext::GenerateOutput() {
   if (HasValidOutput()) {
     // has user output
     for (auto &port_data_item : cur_output_valid_data_) {
-      auto &port_name = port_data_item.first;
+      const auto &port_name = port_data_item.first;
       auto &port_data_list = port_data_item.second;
       if (port_data_list->Front() != nullptr) {
         output_port_for_this_loop_ = port_name;
@@ -1059,7 +1059,7 @@ Status LoopNormalFlowUnitDataContext::GenerateOutput() {
   }
 
   for (auto &port_data_item : cur_output_placeholder_) {
-    auto &port_name = port_data_item.first;
+    const auto &port_name = port_data_item.first;
     auto &port_data_list = port_data_item.second;
     auto &cached_port_data_list = cached_output_placeholder_[port_name];
     cached_port_data_list.insert(cached_port_data_list.end(),
@@ -1110,7 +1110,7 @@ Status LoopNormalFlowUnitDataContext::CheckOutputData() {
   }
 
   for (auto iter = cur_output_.begin(); iter != cur_output_.end();) {
-    auto &port_name = iter->first;
+    const auto &port_name = iter->first;
     if (port_name != output_port_for_this_loop_) {
       iter = cur_output_.erase(iter);
     } else {
@@ -1246,7 +1246,7 @@ StreamExpandFlowUnitDataContext::ReadFirstInCache() {
 
   auto first_data = std::make_shared<PortDataMap>();
   for (auto &port_data : *front_cache) {
-    auto &port_name = port_data.first;
+    const auto &port_name = port_data.first;
     auto &data_list = port_data.second;
     (*first_data)[port_name].push_back(
         data_list[cur_data_pose_in_first_cache_]);
@@ -1463,7 +1463,7 @@ void StreamCollapseFlowUnitDataContext::AppendToCache(
 
   auto &cache_stream_data = cache_item->second;
   for (auto &port_item : *stream_data_map) {
-    auto &port_name = port_item.first;
+    const auto &port_name = port_item.first;
     auto &port_new_data = port_item.second;
     auto &old_data = (*cache_stream_data)[port_name];
     old_data.insert(old_data.end(), port_new_data.begin(), port_new_data.end());

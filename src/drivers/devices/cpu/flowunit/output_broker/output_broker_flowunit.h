@@ -159,7 +159,7 @@ class OutputBrokerFlowUnit : public modelbox::FlowUnit {
   modelbox::Status InitBrokers(std::shared_ptr<modelbox::DataContext> &data_ctx,
                                const nlohmann::json &brokers_json);
 
-  void AddBroker(std::shared_ptr<BrokerInstances> &broker_handles,
+  void AddBroker(std::shared_ptr<BrokerInstances> &broker_instances,
                  std::shared_ptr<BrokerNames> &broker_names,
                  const nlohmann::json &broker_json);
 

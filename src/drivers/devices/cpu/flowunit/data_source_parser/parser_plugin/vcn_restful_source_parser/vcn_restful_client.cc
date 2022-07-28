@@ -56,7 +56,7 @@ modelbox::Status VcnRestfulClient::Init() {
 
 modelbox::Status VcnRestfulClient::AddVcnStream(
     VcnInfo &info, std::shared_ptr<VcnStreamRestful> &stream) {
-  std::string errmsg = "";
+  std::string errmsg;
   const std::string errmsg_prefix = "Failed to add vcn stream: ";
   if (!IsVcnInfoValid(info)) {
     errmsg = errmsg_prefix + "invalid info.";
@@ -97,7 +97,7 @@ modelbox::Status VcnRestfulClient::AddVcnStream(
 }
 
 modelbox::Status VcnRestfulClient::RemoveVcnStream(VcnStreamRestful *stream) {
-  std::string errmsg = "";
+  std::string errmsg;
   const std::string errmsg_prefix = "Failed to remove vcn restful stream: ";
   if (nullptr == stream) {
     MBLOG_ERROR << errmsg_prefix + "stream ptr is nullptr.";
@@ -236,7 +236,7 @@ modelbox::Status VcnRestfulClient::KeepAliveProcess() {
   }
 
   for (auto &account : vcn_accounts_) {
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     if (now - account->GetKeepAliveTime() < keep_alive_interval_) {
       continue;
     }

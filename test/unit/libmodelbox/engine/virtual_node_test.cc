@@ -102,8 +102,8 @@ class VirtualNodeTest : public testing::Test {
                   output_bufs->Build(shape);
 
                   for (size_t i = 0; i < shape.size(); ++i) {
-                    auto input_data_1 = (int*)(*input_bufs_1)[i]->ConstData();
-                    auto output_data = (int*)(*output_bufs)[i]->MutableData();
+                    auto *input_data_1 = (int *)(*input_bufs_1)[i]->ConstData();
+                    auto *output_data = (int *)(*output_bufs)[i]->MutableData();
                     auto data_size = shape[i] / sizeof(int);
                     for (size_t j = 0; j < data_size; ++j) {
                       output_data[j] = input_data_1[j] + 10;
@@ -166,8 +166,8 @@ TEST_F(VirtualNodeTest, VirtualNode_ONE_INPUT) {
     int len = 10;
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({len * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
-    std::string dataStr("");
+    auto *data = (int *)buffer_list->MutableData();
+    std::string dataStr;
     for (auto i = 0; i < len; ++i) {
       data[i] = i;
       dataStr += std::to_string(data[i]) + ",";
@@ -192,9 +192,9 @@ TEST_F(VirtualNodeTest, VirtualNode_ONE_INPUT) {
       auto buffer_list = buffer_list_iter.second;
       auto buffer_size = buffer_list->Size();
 
-      std::string dataStr("");
+      std::string dataStr;
       for (size_t i = 0; i < buffer_size; ++i) {
-        auto data = (int*)buffer_list->At(i)->ConstData();
+        auto *data = (int *)buffer_list->At(i)->ConstData();
         auto data_size = buffer_list->At(i)->GetBytes();
         for (size_t j = 0; j < data_size / sizeof(int); ++j) {
           dataStr += std::to_string(data[j]) + ",";
@@ -211,8 +211,8 @@ TEST_F(VirtualNodeTest, VirtualNode_ONE_INPUT) {
     int len = 10;
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({len * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
-    std::string dataStr("");
+    auto *data = (int *)buffer_list->MutableData();
+    std::string dataStr;
     for (auto i = 0; i < len; ++i) {
       data[i] = i + 100;
       dataStr += std::to_string(data[i]) + ",";
@@ -237,9 +237,9 @@ TEST_F(VirtualNodeTest, VirtualNode_ONE_INPUT) {
       auto buffer_list = buffer_list_iter.second;
       auto buffer_size = buffer_list->Size();
 
-      std::string dataStr("");
+      std::string dataStr;
       for (size_t i = 0; i < buffer_size; ++i) {
-        auto data = (int*)buffer_list->At(i)->ConstData();
+        auto *data = (int *)buffer_list->At(i)->ConstData();
         auto data_size = buffer_list->At(i)->GetBytes();
         for (size_t j = 0; j < data_size / sizeof(int); ++j) {
           EXPECT_EQ(data[j], 110 + j);
@@ -286,8 +286,8 @@ TEST_F(VirtualNodeTest, VirtualNode_MULTI_INPUT) {
     int len = 10;
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({len * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
-    std::string dataStr("");
+    auto *data = (int *)buffer_list->MutableData();
+    std::string dataStr;
     for (auto i = 0; i < len; ++i) {
       data[i] = i;
       dataStr += std::to_string(data[i]) + ",";
@@ -310,9 +310,9 @@ TEST_F(VirtualNodeTest, VirtualNode_MULTI_INPUT) {
       auto buffer_list = buffer_list_iter.second;
       auto buffer_size = buffer_list->Size();
 
-      std::string dataStr("");
+      std::string dataStr;
       for (size_t i = 0; i < buffer_size; ++i) {
-        auto data = (int*)buffer_list->At(i)->ConstData();
+        auto *data = (int *)buffer_list->At(i)->ConstData();
         auto data_size = buffer_list->At(i)->GetBytes();
         for (size_t j = 0; j < data_size / sizeof(int); ++j) {
           EXPECT_EQ(data[j], 2 * j);
@@ -341,9 +341,9 @@ TEST_F(VirtualNodeTest, VirtualNode_MULTI_INPUT) {
       auto buffer_list = buffer_list_iter.second;
       auto buffer_size = buffer_list->Size();
 
-      std::string dataStr("");
+      std::string dataStr;
       for (size_t i = 0; i < buffer_size; ++i) {
-        auto data = (int*)buffer_list->At(i)->ConstData();
+        auto *data = (int *)buffer_list->At(i)->ConstData();
         auto data_size = buffer_list->At(i)->GetBytes();
         for (size_t j = 0; j < data_size / sizeof(int); ++j) {
           EXPECT_EQ(data[j], 2 * j);
@@ -392,7 +392,7 @@ TEST_F(VirtualNodeTest, VirtualNode_NO_OUTPUT) {
 
     auto output_buf = ext_data->CreateBufferList();
     output_buf->Build({3 * sizeof(int)});
-    auto data = (int*)output_buf->MutableData();
+    auto *data = (int *)output_buf->MutableData();
     data[0] = 0;
     data[1] = 25000;
     data[2] = 3;
@@ -414,7 +414,7 @@ TEST_F(VirtualNodeTest, VirtualNode_NO_OUTPUT) {
 
     auto output_buf = ext_data->CreateBufferList();
     output_buf->Build({3 * sizeof(int)});
-    auto data = (int*)output_buf->MutableData();
+    auto *data = (int *)output_buf->MutableData();
     data[0] = 0;
     data[1] = 25000;
     data[2] = 3;
@@ -463,7 +463,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop) {
 
     auto output_buf = ext_data->CreateBufferList();
     output_buf->Build({3 * sizeof(int)});
-    auto data = (int*)output_buf->MutableData();
+    auto *data = (int *)output_buf->MutableData();
     data[0] = 0;
     data[1] = 25000;
     data[2] = 3;
@@ -526,7 +526,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop_2) {
     auto output_buf = ext_data->CreateBufferList();
     std::vector<size_t> shape(1, 3 * sizeof(int));
     output_buf->Build(shape);
-    auto data = (int*)output_buf->MutableData();
+    auto *data = (int *)output_buf->MutableData();
     data[0] = 0;
     data[1] = 25000;
     data[2] = 3;
@@ -586,7 +586,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop_3) {
 
     auto output_buf_1 = ext_data_1->CreateBufferList();
     output_buf_1->Build({3 * sizeof(int)});
-    auto data_1 = (int*)output_buf_1->MutableData();
+    auto *data_1 = (int *)output_buf_1->MutableData();
     data_1[0] = 0;
     data_1[1] = 25000;
     data_1[2] = 3;
@@ -659,7 +659,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
 
     auto output_buf_1 = ext_data_1->CreateBufferList();
     output_buf_1->Build({3 * sizeof(int)});
-    auto data_1 = (int*)output_buf_1->MutableData();
+    auto *data_1 = (int *)output_buf_1->MutableData();
     data_1[0] = 0;
     data_1[1] = 25000;
     data_1[2] = 3;
@@ -674,7 +674,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
 
     auto output_buf_2 = ext_data_2->CreateBufferList();
     output_buf_2->Build({3 * sizeof(int)});
-    auto data_2 = (int*)output_buf_2->MutableData();
+    auto *data_2 = (int *)output_buf_2->MutableData();
     data_2[0] = 0;
     data_2[1] = 25000;
     data_2[2] = 3;
@@ -754,7 +754,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Select_Timeout) {
 
     auto output_buf = ext_data->CreateBufferList();
     output_buf->Build({3 * sizeof(int)});
-    auto data = (int*)output_buf->MutableData();
+    auto *data = (int *)output_buf->MutableData();
     data[0] = 0;
     data[1] = 25000;
     data[2] = 3;
@@ -810,7 +810,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Muliti_Output) {
 
     auto output_buf_1 = ext_data_1->CreateBufferList();
     output_buf_1->Build({3 * sizeof(int)});
-    auto data_1 = (int*)output_buf_1->MutableData();
+    auto *data_1 = (int *)output_buf_1->MutableData();
     data_1[0] = 0;
     data_1[1] = 25000;
     data_1[2] = 3;

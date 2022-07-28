@@ -63,7 +63,7 @@ void BuildDataQueue(
 
   auto buf_1 = std::make_shared<Buffer>(device);
   buf_1->Build(10 * sizeof(int));
-  auto dev_data_1 = (int*)buf_1->MutableData();
+  auto *dev_data_1 = (int *)buf_1->MutableData();
   for (size_t i = 0; i < data_1.size(); ++i) {
     dev_data_1[i] = data_1[i];
   }
@@ -76,7 +76,7 @@ void BuildDataQueue(
 
   auto buf_2 = std::make_shared<Buffer>(device);
   buf_2->Build(10 * sizeof(int));
-  auto dev_data_2 = (int*)buf_2->MutableData();
+  auto *dev_data_2 = (int *)buf_2->MutableData();
   for (size_t i = 0; i < data_2.size(); ++i) {
     dev_data_2[i] = data_2[i];
   }
@@ -304,7 +304,7 @@ class NodeRunTest : public testing::Test {
  public:
   NodeRunTest() {}
   void TestAdd(std::string add_flowunit_name);
-  void TestWrongAdd(std::string add_flowunit_name, Status run_status);
+  void TestWrongAdd(std::string flowunit_name, Status run_status);
 
  protected:
   std::shared_ptr<MockFlow> flow_;
@@ -925,12 +925,12 @@ void NodeRunTest::TestAdd(std::string add_flowunit_name) {
   EXPECT_EQ(buffer_vecort_0[0]->GetBytes(), 40);
   EXPECT_EQ(buffer_vecort_0[1]->GetBytes(), 40);
 
-  auto data_result = (int*)buffer_vecort_0[0]->ConstData();
+  auto *data_result = (int *)buffer_vecort_0[0]->ConstData();
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(data_result[i], 10 + 2 * i);
   }
 
-  auto data_result_2 = (int*)buffer_vecort_0[1]->ConstData();
+  auto *data_result_2 = (int *)buffer_vecort_0[1]->ConstData();
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(data_result_2[i], 10 + 2 * i);
   }
@@ -1210,8 +1210,8 @@ TEST_F(NodeRunTest, NodeOutput) {
   EXPECT_TRUE(BufferManageView::GetIndexInfo(p2_b2)->IsEndFlag());
   EXPECT_EQ(p1_b1->GetBytes(), 40);
   EXPECT_EQ(p2_b1->GetBytes(), 40);
-  auto p1_b1_ptr = (const int32_t*)p1_b1->ConstData();
-  auto p2_b1_ptr = (const int32_t*)p2_b1->ConstData();
+  const auto *p1_b1_ptr = (const int32_t *)p1_b1->ConstData();
+  const auto *p2_b1_ptr = (const int32_t *)p2_b1->ConstData();
   for (size_t i = 0; i < 10; ++i) {
     EXPECT_EQ(p1_b1_ptr[i], i);
     EXPECT_EQ(p2_b1_ptr[i], i + 10);
@@ -1264,7 +1264,7 @@ TEST_F(NodeRunTest, GartherScatterRun) {
   queue_1->PopBatch(&buffer_vector);
   EXPECT_EQ(buffer_vector.size(), 11);
   for (int i = 0; i < 10; i++) {
-    auto data_result = (int*)buffer_vector[i]->ConstData();
+    auto *data_result = (int *)buffer_vector[i]->ConstData();
     if (i % 2 == 0) {
       EXPECT_EQ(data_result[0], 20 + 6 * i);
     } else {
@@ -1357,11 +1357,13 @@ TEST_F(NodeRunTest, StreamGartherScatterRun) {
   auto queue_1 = gather_node->GetInputPort("In_1")->GetQueue();
   queue_1->PopBatch(&buffer_vector);
   EXPECT_EQ(buffer_vector.size(), 12);
-  auto s1 = BufferManageView::GetIndexInfo(buffer_vector[0])->GetStream().get();
-  auto s2 = BufferManageView::GetIndexInfo(buffer_vector[1])->GetStream().get();
+  auto *s1 =
+      BufferManageView::GetIndexInfo(buffer_vector[0])->GetStream().get();
+  auto *s2 =
+      BufferManageView::GetIndexInfo(buffer_vector[1])->GetStream().get();
   EXPECT_EQ(s1, s2);
   for (int i = 0; i < 10; i++) {
-    auto data_result = (int*)buffer_vector[i]->ConstData();
+    auto *data_result = (int *)buffer_vector[i]->ConstData();
     EXPECT_EQ(data_result[0], i);
   }
   queue_1->PushBatch(&buffer_vector);
@@ -1380,7 +1382,7 @@ TEST_F(NodeRunTest, StreamGartherScatterRun) {
   EXPECT_EQ(buffer_vector_one[0]->GetBytes(), 40);
   EXPECT_EQ(buffer_vector_two[0]->GetBytes(), 40);
 
-  auto data_result = (int*)buffer_vector_one[0]->ConstData();
+  auto *data_result = (int *)buffer_vector_one[0]->ConstData();
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(data_result[i], i);
   }
@@ -1395,7 +1397,7 @@ TEST_F(NodeRunTest, StreamGartherScatterRun) {
   queue_4->PopBatch(&final_buffer_vector);
   EXPECT_EQ(final_buffer_vector.size(), 2);
   EXPECT_EQ(final_buffer_vector[0]->GetBytes(), 40);
-  auto add_data_result = (int*)final_buffer_vector[0]->ConstData();
+  auto *add_data_result = (int *)final_buffer_vector[0]->ConstData();
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(add_data_result[i], 10 + 2 * i);
   }
@@ -1466,7 +1468,7 @@ TEST_F(NodeRunTest, ConditionRun) {
   EXPECT_EQ(final_buffer_vector[0]->GetBytes(), 40);
   EXPECT_TRUE(
       BufferManageView::GetIndexInfo(final_buffer_vector[1])->IsEndFlag());
-  auto add_data_result = (int*)final_buffer_vector[0]->ConstData();
+  auto *add_data_result = (int *)final_buffer_vector[0]->ConstData();
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(add_data_result[i], 10 + 2 * i);
   }
@@ -1493,7 +1495,7 @@ TEST_F(NodeRunTest, LoopRunBatchTwice) {
   auto output_0_1_port = output_node->GetOutputPort("Out_1");
   EXPECT_TRUE(output_0_1_port->ConnectPort(loop_node->GetInputPort("In_1")));
   auto input_ports = output_0_1_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(0);
   }
 
@@ -1503,12 +1505,12 @@ TEST_F(NodeRunTest, LoopRunBatchTwice) {
   EXPECT_TRUE(
       output_loop_end_port->ConnectPort(end_node->GetInputPort("In_1")));
   input_ports = output_loop_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(1);
   }
 
   input_ports = output_loop_end_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(1);
   }
 
@@ -1552,7 +1554,7 @@ TEST_F(NodeRunTest, LoopRunBatch) {
   auto output_0_1_port = output_node->GetOutputPort("Out_1");
   EXPECT_TRUE(output_0_1_port->ConnectPort(loop_node->GetInputPort("In_1")));
   auto input_ports = output_0_1_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(0);
   }
 
@@ -1562,12 +1564,12 @@ TEST_F(NodeRunTest, LoopRunBatch) {
   EXPECT_TRUE(
       output_loop_end_port->ConnectPort(end_node->GetInputPort("In_1")));
   input_ports = output_loop_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(1);
   }
 
   input_ports = output_loop_end_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(1);
   }
 
@@ -1603,7 +1605,7 @@ TEST_F(NodeRunTest, LoopRunBatchMultiFlowUnit) {
   auto output_0_1_port = output_node->GetOutputPort("Out_1");
   EXPECT_TRUE(output_0_1_port->ConnectPort(loop_node->GetInputPort("In_1")));
   auto input_ports = output_0_1_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(0);
   }
 
@@ -1614,12 +1616,12 @@ TEST_F(NodeRunTest, LoopRunBatchMultiFlowUnit) {
   EXPECT_TRUE(
       output_loop_output2_port->ConnectPort(end_node->GetInputPort("In_1")));
   input_ports = output_loop_output1_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(1);
   }
 
   input_ports = output_loop_output2_port->GetConnectInPort();
-  for (auto& input_port : input_ports) {
+  for (const auto &input_port : input_ports) {
     input_port->SetPriority(1);
   }
 
@@ -1671,7 +1673,7 @@ TEST_F(NodeRunTest, StreamInfo) {
   queue_2->PopBatch(&start_buffer_vector);
   EXPECT_EQ(start_buffer_vector.size(), 5);
   for (int i = 0; i < 5; i++) {
-    auto data_result = (int*)start_buffer_vector[i]->ConstData();
+    auto *data_result = (int *)start_buffer_vector[i]->ConstData();
     EXPECT_EQ(data_result[0], i);
   }
   auto stream =
@@ -1694,8 +1696,8 @@ TEST_F(NodeRunTest, StreamInfo) {
   auto queue_3 = stream_end_node->GetInputPort("In_1")->GetQueue();
   queue_3->PopBatch(&mid_buffer_vector);
   EXPECT_EQ(mid_buffer_vector.size(), 2);
-  auto data_result_0 = (int*)mid_buffer_vector[0]->ConstData();
-  auto data_result_1 = (int*)mid_buffer_vector[1]->ConstData();
+  auto *data_result_0 = (int *)mid_buffer_vector[0]->ConstData();
+  auto *data_result_1 = (int *)mid_buffer_vector[1]->ConstData();
 
   auto data_group_meta_1 = BufferManageView::GetIndexInfo(mid_buffer_vector[0])
                                ->GetStream()
@@ -1718,7 +1720,7 @@ TEST_F(NodeRunTest, StreamInfo) {
 
   EXPECT_EQ(start_buffer_vector.size(), 5);
   for (int i = 0; i < 5; i++) {
-    auto data_result = (int*)start_buffer_vector[i]->ConstData();
+    auto *data_result = (int *)start_buffer_vector[i]->ConstData();
     EXPECT_EQ(data_result[0], i + 5);
   }
 
@@ -1733,7 +1735,7 @@ TEST_F(NodeRunTest, StreamInfo) {
     if (BufferManageView::GetIndexInfo(start_buffer_vector[i])->IsEndFlag()) {
       continue;
     }
-    auto data_result = (int*)start_buffer_vector[i]->ConstData();
+    auto *data_result = (int *)start_buffer_vector[i]->ConstData();
     EXPECT_EQ(data_result[0], base_v + 5);
     ++base_v;
   }
@@ -1749,7 +1751,7 @@ TEST_F(NodeRunTest, StreamInfo) {
     if (index->IsEndFlag()) {
       continue;
     }
-    auto data_result = (int*)mid_buffer_vector[i]->ConstData();
+    auto *data_result = (int *)mid_buffer_vector[i]->ConstData();
     EXPECT_EQ(data_result[0], index->GetIndex() * 3);
   }
   queue_3->PushBatch(&mid_buffer_vector);
@@ -1760,7 +1762,7 @@ TEST_F(NodeRunTest, StreamInfo) {
   std::vector<std::shared_ptr<Buffer>> end_buffer_vector;
   queue_4->PopBatch(&end_buffer_vector);
   EXPECT_EQ(end_buffer_vector.size(), 2);
-  auto final_result = (int*)end_buffer_vector[0]->ConstData();
+  auto *final_result = (int *)end_buffer_vector[0]->ConstData();
   EXPECT_EQ(final_result[0], 30);
 }
 
@@ -1898,7 +1900,7 @@ TEST_F(NodeRunTest, DISABLED_RunPriority) {
     EXPECT_EQ(buffer_vector.size(), data_size);
     for (size_t i = 0; i < data_size; i++) {
       EXPECT_EQ(buffer_vector[i]->GetBytes(), 1 * sizeof(int));
-      auto data_result = (int*)buffer_vector[i]->ConstData();
+      auto *data_result = (int *)buffer_vector[i]->ConstData();
       if (i == data_size - 1) {
         EXPECT_EQ(data_result[i], 0);
       } else {
@@ -3461,7 +3463,7 @@ TEST_F(NodeRunTest, Dynamic_Config) {
   auto queue_1 = dynamic_get_config_node_2->GetInputPort("In_1")->GetQueue();
   std::vector<std::shared_ptr<Buffer>> buffer_vector_1;
   queue_1->PopBatch(&buffer_vector_1);
-  std::string test_1 = "";
+  std::string test_1;
   buffer_vector_1[0]->Get("test", test_1);
   EXPECT_EQ(test_1, "node.dynamic_get_config_1.test");
   queue_1->PushBatch(&buffer_vector_1);
@@ -3470,7 +3472,7 @@ TEST_F(NodeRunTest, Dynamic_Config) {
   std::vector<std::shared_ptr<Buffer>> buffer_vector_2;
   auto queue_2 = dynamic_get_config_node_3->GetInputPort("In_1")->GetQueue();
   queue_2->PopBatch(&buffer_vector_2);
-  std::string test_2 = "";
+  std::string test_2;
   buffer_vector_2[0]->Get("test", test_2);
   EXPECT_EQ(test_2, "flowunit.dynamic_get_config.test");
   queue_2->PushBatch(&buffer_vector_2);
@@ -3479,7 +3481,7 @@ TEST_F(NodeRunTest, Dynamic_Config) {
   auto queue_3 = dynamic_get_config_node_4->GetInputPort("In_1")->GetQueue();
   std::vector<std::shared_ptr<Buffer>> buffer_vector_3;
   queue_3->PopBatch(&buffer_vector_3);
-  std::string test_3 = "";
+  std::string test_3;
   buffer_vector_3[0]->Get("test", test_3);
   EXPECT_EQ(test_3, "nodes.test");
   queue_3->PushBatch(&buffer_vector_3);
@@ -3552,7 +3554,7 @@ TEST_F(NodeRunTest, ConditionSwitchRun) {
   EXPECT_EQ(final_buffer_vector[0]->GetBytes(), 40);
   EXPECT_TRUE(
       BufferManageView::GetIndexInfo(final_buffer_vector[1])->IsEndFlag());
-  auto add_data_result = (int*)final_buffer_vector[0]->ConstData();
+  auto *add_data_result = (int *)final_buffer_vector[0]->ConstData();
   for (int i = 0; i < 10; i++) {
     EXPECT_EQ(add_data_result[i], 10 + 2 * i);
   }

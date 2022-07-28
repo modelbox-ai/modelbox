@@ -32,12 +32,12 @@ modelbox::Status VideoDemuxerFlowUnit::Open(
 modelbox::Status VideoDemuxerFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status VideoDemuxerFlowUnit::Reconnect(
-    Status &status, std::shared_ptr<modelbox::DataContext> &ctx) {
+    Status &status, std::shared_ptr<modelbox::DataContext> &data_ctx) {
   auto ret = modelbox::STATUS_CONTINUE;
   DeferCond { return ret == modelbox::STATUS_SUCCESS; };
-  DeferCondAdd { WriteEnd(ctx); };
+  DeferCondAdd { WriteEnd(data_ctx); };
   auto source_context = std::static_pointer_cast<SourceContext>(
-      ctx->GetPrivate(DEMUX_RETRY_CONTEXT));
+      data_ctx->GetPrivate(DEMUX_RETRY_CONTEXT));
   if (source_context == nullptr) {
     if (status == modelbox::STATUS_NODATA) {
       ret = modelbox::STATUS_SUCCESS;
@@ -53,17 +53,17 @@ modelbox::Status VideoDemuxerFlowUnit::Reconnect(
   } else if (retry_status == RETRY_STOP) {
     ret = modelbox::STATUS_SUCCESS;
   } else {
-    auto timer_task =
-        std::static_pointer_cast<TimerTask>(ctx->GetPrivate(DEMUX_TIMER_TASK));
+    auto timer_task = std::static_pointer_cast<TimerTask>(
+        data_ctx->GetPrivate(DEMUX_TIMER_TASK));
     TimerGlobal::Schedule(timer_task, source_context->GetRetryInterval(), 0);
   }
   return ret;
 }
 
 modelbox::Status VideoDemuxerFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto video_demuxer = std::static_pointer_cast<FfmpegVideoDemuxer>(
-      ctx->GetPrivate(DEMUXER_CTX));
+      data_ctx->GetPrivate(DEMUXER_CTX));
   Status demux_status = modelbox::STATUS_FAULT;
   std::shared_ptr<AVPacket> pkt;
   if (video_demuxer != nullptr) {
@@ -71,24 +71,24 @@ modelbox::Status VideoDemuxerFlowUnit::Process(
   }
 
   if (demux_status == modelbox::STATUS_OK) {
-    auto ret = WriteData(ctx, pkt, video_demuxer);
+    auto ret = WriteData(data_ctx, pkt, video_demuxer);
     if (!ret) {
       return ret;
     }
 
     auto event = std::make_shared<FlowUnitEvent>();
-    ctx->SendEvent(event);
+    data_ctx->SendEvent(event);
     return STATUS_CONTINUE;
   }
 
-  return Reconnect(demux_status, ctx);
+  return Reconnect(demux_status, data_ctx);
 }
 
 void VideoDemuxerFlowUnit::WriteEnd(
-    std::shared_ptr<modelbox::DataContext> &ctx) {
+    std::shared_ptr<modelbox::DataContext> &data_ctx) {
   auto video_demuxer = std::static_pointer_cast<FfmpegVideoDemuxer>(
-      ctx->GetPrivate(DEMUXER_CTX));
-  auto video_packet_output = ctx->Output(VIDEO_PACKET_OUTPUT);
+      data_ctx->GetPrivate(DEMUXER_CTX));
+  auto video_packet_output = data_ctx->Output(VIDEO_PACKET_OUTPUT);
   video_packet_output->Build({1});
   auto end_packet = video_packet_output->At(0);
   int32_t rate_num;
@@ -103,9 +103,10 @@ void VideoDemuxerFlowUnit::WriteEnd(
 }
 
 modelbox::Status VideoDemuxerFlowUnit::WriteData(
-    std::shared_ptr<modelbox::DataContext> &ctx, std::shared_ptr<AVPacket> &pkt,
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
+    std::shared_ptr<AVPacket> &pkt,
     std::shared_ptr<FfmpegVideoDemuxer> video_demuxer) {
-  auto video_packet_output = ctx->Output(VIDEO_PACKET_OUTPUT);
+  auto video_packet_output = data_ctx->Output(VIDEO_PACKET_OUTPUT);
   std::vector<size_t> shape(1, (size_t)pkt->size);
   if (pkt->size == 0) {
     // Tell decoder end of stream
@@ -152,10 +153,10 @@ modelbox::Status VideoDemuxerFlowUnit::CreateRetryTask(
   data_ctx->SetPrivate(DEMUX_RETRY_CONTEXT, source_context);
   source_context->SetLastProcessStatus(modelbox::STATUS_FAULT);
   std::weak_ptr<VideoDemuxerFlowUnit> flowunit = shared_from_this();
-  std::weak_ptr<modelbox::DataContext> ctx = data_ctx;
-  auto timer_task = std::make_shared<TimerTask>([flowunit, ctx]() {
+  std::weak_ptr<modelbox::DataContext> data_ctx_weak = data_ctx;
+  auto timer_task = std::make_shared<TimerTask>([flowunit, data_ctx_weak]() {
     std::shared_ptr<VideoDemuxerFlowUnit> flow_unit_ = flowunit.lock();
-    std::shared_ptr<modelbox::DataContext> data_context = ctx.lock();
+    std::shared_ptr<modelbox::DataContext> data_context = data_ctx_weak.lock();
     if (flow_unit_ == nullptr || data_context == nullptr) {
       return;
     }
@@ -242,9 +243,9 @@ modelbox::Status VideoDemuxerFlowUnit::DataPre(
 }
 
 void VideoDemuxerFlowUnit::UpdateStatsInfo(
-    const std::shared_ptr<modelbox::DataContext> &ctx,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     const std::shared_ptr<FfmpegVideoDemuxer> &demuxer) {
-  auto stats = ctx->GetStatistics();
+  auto stats = data_ctx->GetStatistics();
   int32_t frame_rate_num = 0;
   int32_t frame_rate_den = 0;
   demuxer->GetFrameRate(frame_rate_num, frame_rate_den);
@@ -253,7 +254,7 @@ void VideoDemuxerFlowUnit::UpdateStatsInfo(
 }
 
 modelbox::Status VideoDemuxerFlowUnit::InitDemuxer(
-    std::shared_ptr<modelbox::DataContext> &ctx,
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::shared_ptr<std::string> &source_url) {
   auto reader = std::make_shared<FfmpegReader>();
   auto ret = reader->Open(*source_url);
@@ -273,8 +274,8 @@ modelbox::Status VideoDemuxerFlowUnit::InitDemuxer(
   auto codec_id = video_demuxer->GetCodecID();
   auto profile_id = video_demuxer->GetProfileID();
   // reset meta value
-  auto meta =
-      std::static_pointer_cast<DataMeta>(ctx->GetPrivate(VIDEO_PACKET_OUTPUT));
+  auto meta = std::static_pointer_cast<DataMeta>(
+      data_ctx->GetPrivate(VIDEO_PACKET_OUTPUT));
   auto code_meta = std::static_pointer_cast<int>(meta->GetMeta(CODEC_META));
   *code_meta = codec_id;
   auto profile_meta =
@@ -284,10 +285,10 @@ modelbox::Status VideoDemuxerFlowUnit::InitDemuxer(
       std::static_pointer_cast<std::string>(meta->GetMeta(SOURCE_URL));
   *uri_meta = *source_url;
 
-  ctx->SetPrivate(DEMUXER_CTX, video_demuxer);
-  ctx->SetPrivate(SOURCE_URL, source_url);
+  data_ctx->SetPrivate(DEMUXER_CTX, video_demuxer);
+  data_ctx->SetPrivate(SOURCE_URL, source_url);
 
-  UpdateStatsInfo(ctx, video_demuxer);
+  UpdateStatsInfo(data_ctx, video_demuxer);
   return STATUS_SUCCESS;
 }
 

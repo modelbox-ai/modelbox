@@ -63,7 +63,7 @@ class IAMApi {
    */
   static modelbox::Status GetAgencyProjectTokenWithAK(
       const ConsigneeInfo &consignee_info, const AgencyInfo &agency_info,
-      const ProjectInfo &project_info, UserAgencyToken &user_agency_token);
+      const ProjectInfo &project_info, UserAgencyToken &project_agency_token);
 
   /*
    * @brief  Get agency token
@@ -74,7 +74,7 @@ class IAMApi {
    * @return successful or fault
    */
   static modelbox::Status GetAgencyProjectTokenWithToken(
-      const AgentToken &token, const AgencyInfo &agency_info,
+      const AgentToken &agent_token, const AgencyInfo &agency_info,
       const ProjectInfo &project_info, UserAgencyToken &user_agency_token);
 
   /*
@@ -118,7 +118,7 @@ class IAMApi {
    */
   static std::shared_ptr<void> CreateSignerRequest(
       const ConsigneeInfo &consignee_info, const AgencyInfo &agency_info,
-      const ProjectInfo &project_info, int32_t token_type);
+      const ProjectInfo &project_info, int32_t token_flag);
 
   static std::string request_host_;
   static std::string request_credential_uri_;

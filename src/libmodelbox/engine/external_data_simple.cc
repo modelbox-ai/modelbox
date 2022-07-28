@@ -80,7 +80,7 @@ Status ExternalDataSimple::PushData(
   }
 
   auto buffer = input_buffer->At(0);
-  auto buffer_data = buffer->MutableData();
+  auto* buffer_data = buffer->MutableData();
   if (data_len > 0) {
     auto ret = memcpy_s(buffer_data, data_len, data, data_len);
     if (ret < 0) {
@@ -89,7 +89,7 @@ Status ExternalDataSimple::PushData(
     }
   }
 
-  for (auto& iter : meta) {
+  for (const auto& iter : meta) {
     buffer->Set(iter.first, iter.second);
   }
 

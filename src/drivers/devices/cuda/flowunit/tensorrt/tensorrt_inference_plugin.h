@@ -33,17 +33,17 @@ class TensorRTInferencePlugin {
       std::shared_ptr<modelbox::Configuration> config) = 0;
 
   virtual modelbox::Status PreProcess(
-      std::shared_ptr<modelbox::DataContext> ctx) = 0;
+      std::shared_ptr<modelbox::DataContext> data_ctx) = 0;
 
   virtual modelbox::Status PostProcess(
-      std::shared_ptr<modelbox::DataContext> ctx) = 0;
+      std::shared_ptr<modelbox::DataContext> data_ctx) = 0;
 
-  virtual modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> ctx) {
+  virtual modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx) {
     return modelbox::STATUS_OK;
   }
 
   virtual modelbox::Status DataPost(
-      std::shared_ptr<modelbox::DataContext> ctx) {
+      std::shared_ptr<modelbox::DataContext> data_ctx) {
     return modelbox::STATUS_OK;
   }
 };

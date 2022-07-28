@@ -84,7 +84,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
               auto spt = mock_flowunit_wp.lock();
               auto ext_data = spt->CreateExternalData();
               if (!ext_data) {
-                auto err_msg = "can not get external data.";
+                const auto* err_msg = "can not get external data.";
                 modelbox::Status ret = {modelbox::STATUS_NODATA, err_msg};
                 MBLOG_ERROR << err_msg;
                 return ret;
@@ -139,7 +139,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
               std::string gimg_path =
                   std::string((char*)(*external)[0]->ConstData());
 
-              cv::Mat gimg_data = cv::imread(gimg_path.c_str());
+              cv::Mat gimg_data = cv::imread(gimg_path);
 
               MBLOG_INFO << "gimage col " << gimg_data.cols << "  grow "
                          << gimg_data.rows
@@ -157,7 +157,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
 
               for (size_t i = 0; i < 5; ++i) {
                 std::string img_path = gimg_path;
-                cv::Mat img_data = cv::imread(img_path.c_str());
+                cv::Mat img_data = cv::imread(img_path);
                 MBLOG_INFO << "image col " << img_data.cols << "  row "
                            << img_data.rows
                            << " channel:" << img_data.channels();
@@ -170,7 +170,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
                 output_bufs->At(i)->Set("height", rows);
                 output_bufs->At(i)->Set("channel", channels);
 
-                auto output_data =
+                auto* output_data =
                     static_cast<uchar*>(output_bufs->MutableBufferData(i));
                 memcpy_s(output_data, output_bufs->At(i)->GetBytes(),
                          img_data.data, img_data.total() * img_data.elemSize());
@@ -242,7 +242,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
                 input_buf->At(i)->Get("width", cols);
                 input_buf->At(i)->Get("height", rows);
                 input_buf->At(i)->Get("channel", channels);
-                auto input_data =
+                const auto* input_data =
                     static_cast<const uchar*>(input_buf->ConstBufferData(i));
 
                 cv::Mat img_data(cv::Size(cols, rows), CV_8UC3);
@@ -251,7 +251,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
 
                 std::string name = std::string(TEST_DATA_DIR) + "/test" +
                                    std::to_string(i) + ".jpg";
-                cv::imwrite(name.c_str(), img_data);
+                cv::imwrite(name, img_data);
               }
 
               return modelbox::STATUS_OK;

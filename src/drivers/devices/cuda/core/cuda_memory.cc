@@ -149,9 +149,9 @@ CudaMemory::CudaMemory(const std::shared_ptr<Device> &device,
 CudaMemory::~CudaMemory() {}
 
 Status CudaMemory::BindStream(
-    const std::shared_ptr<CudaStream> &cuda_stream_ptr) {
+    const std::shared_ptr<CudaStream> &stream_ptr) {
   if (cuda_stream_ptr_ != nullptr) {
-    if (cuda_stream_ptr_ == cuda_stream_ptr) {
+    if (cuda_stream_ptr_ == stream_ptr) {
       return STATUS_SUCCESS;
     }
     // Change stream to another is not allowed
@@ -159,9 +159,9 @@ Status CudaMemory::BindStream(
   }
 
   Status ret = STATUS_SUCCESS;
-  if (cuda_stream_ptr != nullptr) {
-    if (cuda_stream_ptr->IsInDevice(device_->GetDeviceID())) {
-      cuda_stream_ptr_ = cuda_stream_ptr;
+  if (stream_ptr != nullptr) {
+    if (stream_ptr->IsInDevice(device_->GetDeviceID())) {
+      cuda_stream_ptr_ = stream_ptr;
       return STATUS_SUCCESS;
     }
     // We need create a new stream when cross gpu device, so bind failed in fact
@@ -430,7 +430,7 @@ Status CudaMemoryManager::DeviceMemoryCopy(
   }
 
   cudaStream_t cuda_stream =
-      cuda_stream_ptr == nullptr ? 0 : cuda_stream_ptr->Get();
+      cuda_stream_ptr == nullptr ? nullptr : cuda_stream_ptr->Get();
   auto dest_device = dest_memory->GetDevice();
   auto src_device = src_memory->GetDevice();
   auto dest_ptr = dest_memory->GetPtr<uint8_t>().get() + dest_offset;

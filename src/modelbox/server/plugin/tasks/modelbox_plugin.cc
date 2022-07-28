@@ -110,7 +110,7 @@ bool ModelboxPlugin::Stop() {
 bool ModelboxPlugin::CheckJobIdValid(std::string job_id) {
   constexpr int max_id_length = 64;
   const std::string valid_char =
-      "^[0-9a-zA-Z\\-\\+\\~\\_][0-9a-zA-Z\\-\\+\\~\\_\\.]+";
+      R"(^[0-9a-zA-Z\-\+\~\_][0-9a-zA-Z\-\+\~\_\.]+)";
   std::regex valid_str(valid_char);
 
   if (job_id.length() > max_id_length) {
@@ -355,8 +355,7 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
     }
 
     MBLOG_ERROR << "Create task failed, " << error_msg;
-    const auto& response_content =
-        BuildErrorResponse(error_code.c_str(), error_msg);
+    const auto& response_content = BuildErrorResponse(error_code, error_msg);
     response.status = HttpStatusCodes::BAD_REQUEST;
     response.set_content(response_content, JSON);
   };
@@ -424,7 +423,6 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
   }
 
   response.status = HttpStatusCodes::CREATED;
-  return;
 }
 
 void ModelboxPlugin::HandlerGet(const httplib::Request& request,
@@ -485,8 +483,6 @@ void ModelboxPlugin::HandlerGet(const httplib::Request& request,
     response.set_content(response_content, JSON);
     return;
   }
-
-  return;
 }
 
 void ModelboxPlugin::HandlerDel(const httplib::Request& request,
@@ -521,5 +517,4 @@ void ModelboxPlugin::HandlerDel(const httplib::Request& request,
   }
 
   response.status = HttpStatusCodes::NO_CONTENT;
-  return;
 }

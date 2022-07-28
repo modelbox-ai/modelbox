@@ -50,12 +50,12 @@ modelbox::Status ImageDecoderFlowUnit::Open(
 modelbox::Status ImageDecoderFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status ImageDecoderFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   MBLOG_DEBUG << "process image decode";
 
   // get input
-  auto input_bufs = ctx->Input("in_encoded_image");
-  auto output_bufs = ctx->Output("out_image");
+  auto input_bufs = data_ctx->Input("in_encoded_image");
+  auto output_bufs = data_ctx->Output("out_image");
   if (input_bufs->Size() <= 0) {
     auto errMsg = "input images batch is " + std::to_string(input_bufs->Size());
     MBLOG_ERROR << errMsg;
@@ -66,12 +66,12 @@ modelbox::Status ImageDecoderFlowUnit::Process(
   std::vector<cv::Mat> output_img_list;
   std::vector<size_t> output_shape;
   for (auto &buffer : *input_bufs) {
-    auto input_data = static_cast<const u_char *>(buffer->ConstData());
+    const auto *input_data = static_cast<const u_char *>(buffer->ConstData());
     std::vector<u_char> input_data2(
         input_data, input_data + buffer->GetBytes() / sizeof(u_char));
 
     cv::Mat img_bgr = cv::imdecode(input_data2, cv::IMREAD_COLOR);
-    if (img_bgr.data == nullptr || img_bgr.size == 0) {
+    if (img_bgr.data == nullptr || img_bgr.size == nullptr) {
       std::string error_msg = "input image buffer is invalid, imdecode failed.";
       MBLOG_ERROR << error_msg;
       auto buffer = std::make_shared<modelbox::Buffer>();
@@ -102,9 +102,9 @@ modelbox::Status ImageDecoderFlowUnit::Process(
                 << "channles : " << img_bgr.channels();
 
     // build output_buffer
-    output_bufs->EmplaceBack(img_dest.data,
-                             img_dest.total() * img_dest.elemSize(),
-                             [img_dest](void *) { /* hold img dest*/ });
+    output_bufs->EmplaceBack(
+        img_dest.data, img_dest.total() * img_dest.elemSize(),
+        [img_dest](void *unused) { /* hold img dest*/ });
     auto output_buffer = output_bufs->Back();
     output_buffer->Set("width", (int32_t)img_bgr.cols);
     output_buffer->Set("height", (int32_t)img_bgr.rows);

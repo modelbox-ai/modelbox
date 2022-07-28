@@ -62,7 +62,9 @@ class TestNumber {
   const bool operator<(const TestNumber& t) const { return num_ < t.num_; }
   const bool operator>(const TestNumber& t) const { return num_ > t.num_; }
   const bool operator<=(const TestNumber& t) const {
-    if (num_ == t.num_) return private_num_ >= t.private_num_;
+    if (num_ == t.num_) {
+      return private_num_ >= t.private_num_;
+    }
     return num_ <= t.num_;
   }
   const std::string ToString() const {
@@ -938,7 +940,8 @@ TEST_F(PriorityBlockingQueueTest, ConsumerProducerBatch) {
 TEST_F(PriorityBlockingQueueTest, Perf) {
   int total_count = 0;
   int expect_count = 0;
-  unsigned long begin, end;
+  unsigned long begin;
+  unsigned long end;
   bool stop = false;
 
   PriorityBlockingQueue<TestNumber> queue(8192);

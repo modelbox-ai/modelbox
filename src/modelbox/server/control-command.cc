@@ -33,9 +33,9 @@ enum MODELBOX_SERVER_COMMAND_LOG {
 };
 
 static struct option server_log_options[] = {
-    {"getlevel", no_argument, NULL, MODELBOX_SERVER_COMMAND_LOG_GET},
-    {"setlevel", required_argument, NULL, MODELBOX_SERVER_COMMAND_LOG_SET},
-    {0, 0, 0, 0},
+    {"getlevel", no_argument, nullptr, MODELBOX_SERVER_COMMAND_LOG_GET},
+    {"setlevel", required_argument, nullptr, MODELBOX_SERVER_COMMAND_LOG_SET},
+    {nullptr, 0, nullptr, 0},
 };
 
 ToolCommandLog::ToolCommandLog() {}
@@ -93,8 +93,9 @@ enum MODELBOX_SERVER_COMMAND_SLAB {
 };
 
 static struct option server_slab_options[] = {
-    {"device", no_argument, NULL, MODELBOX_SERVER_COMMAND_SLAB_INFO_DEVICE_GET},
-    {0, 0, 0, 0},
+    {"device", no_argument, nullptr,
+     MODELBOX_SERVER_COMMAND_SLAB_INFO_DEVICE_GET},
+    {nullptr, 0, nullptr, 0},
 };
 
 enum AFILOG_SERVER_COMMAND_SLAB_DEVICE {
@@ -103,11 +104,11 @@ enum AFILOG_SERVER_COMMAND_SLAB_DEVICE {
 };
 
 static struct option server_slab_device_options[] = {
-    {"type", required_argument, NULL,
+    {"type", required_argument, nullptr,
      MODELBOX_SERVER_COMMAND_SLAB_INFO_DEVICE_TYPE},
-    {"id", required_argument, NULL,
+    {"id", required_argument, nullptr,
      MODELBOX_SERVER_COMMAND_SLAB_INFO_DEVICE_ID},
-    {0, 0, 0, 0},
+    {nullptr, 0, nullptr, 0},
 };
 
 constexpr const char *CPU_MEMPOOL_TYPE = "cpu";
@@ -302,9 +303,9 @@ enum MODELBOX_SERVER_COMMAND_STATISTICS {
 };
 
 static struct option server_statistics_options[] = {
-    {"all", no_argument, NULL, MODELBOX_SERVER_COMMAND_STAT_All},
-    {"node", required_argument, NULL, MODELBOX_SERVER_COMMAND_STAT_NODE},
-    {0, 0, 0, 0},
+    {"all", no_argument, nullptr, MODELBOX_SERVER_COMMAND_STAT_All},
+    {"node", required_argument, nullptr, MODELBOX_SERVER_COMMAND_STAT_NODE},
+    {nullptr, 0, nullptr, 0},
 };
 
 ToolCommandStatistics::ToolCommandStatistics() {}
@@ -350,7 +351,7 @@ int ToolCommandStatistics::Run(int argc, char *argv[]) {
     } break;
 
     case MODELBOX_SERVER_COMMAND_STAT_NODE: {
-      auto name = optarg;
+      auto *name = optarg;
       bool if_found = false;
       root->ForEach(
           [&](const std::shared_ptr<modelbox::StatisticsItem> &item,

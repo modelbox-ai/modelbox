@@ -53,7 +53,9 @@ DeferGuard::DeferGuard(DeferGuard &&other) : fn_(std::move(other.fn_)) {
 }
 
 DeferGuard::~DeferGuard() {
-  if (fn_) fn_();
+  if (fn_) {
+    fn_();
+  }
 }
 
 DeferGuardChain::DeferGuardChain(DeferGuardChain &&other)
@@ -93,7 +95,7 @@ Status ListFiles(const std::string &path, const std::string &filter,
   glob_t glob_result;
   std::string path_pattern = path + "/" + filter;
 
-  auto ret = glob(path_pattern.c_str(), GLOB_TILDE, NULL, &glob_result);
+  auto ret = glob(path_pattern.c_str(), GLOB_TILDE, nullptr, &glob_result);
   if (ret != 0) {
     if (ret == GLOB_NOMATCH) {
       return STATUS_OK;
@@ -160,7 +162,7 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
     }
   };
 
-  while ((ptr = readdir(pDir)) != 0) {
+  while ((ptr = readdir(pDir)) != nullptr) {
     std::string temp_path = path + "/" + std::string(ptr->d_name);
     if (stat(temp_path.c_str(), &buffer) == -1) {
       MBLOG_WARN << "stat " << temp_path
@@ -183,16 +185,16 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
   return STATUS_OK;
 }
 
-Status CreateDirectory(const std::string &directory_path) {
-  std::string path = directory_path + "/";
-  uint32_t dir_path_len = path.length();
+Status CreateDirectory(const std::string &path) {
+  std::string directory_path = path + "/";
+  uint32_t dir_path_len = directory_path.length();
   if (dir_path_len > PATH_MAX) {
     return STATUS_INVALID;
   }
 
   char dir_path[PATH_MAX] = {0};
   for (uint32_t i = 0; i < dir_path_len; ++i) {
-    dir_path[i] = path[i];
+    dir_path[i] = directory_path[i];
     if (dir_path[i] != '/') {
       continue;
     }
@@ -320,7 +322,7 @@ std::string DemangleCPPSymbol(const char *symbol) {
   std::string symbolname;
   char *name;
 
-  name = abi::__cxa_demangle(symbol, 0, 0, &ret);
+  name = abi::__cxa_demangle(symbol, nullptr, nullptr, &ret);
   if (ret == -2 || ret == -3 || name == nullptr) {
     symbolname = symbol;
   } else if (ret == 0) {
@@ -350,7 +352,7 @@ std::tuple<void *, std::string> GetSymbol(void *addr) {
 
     os << symname;
     if (info.dli_fname) {
-      void *offset = (void *)((char *)(addr) - (char *)(info.dli_fbase));
+      auto *offset = (void *)((char *)(addr) - (char *)(info.dli_fbase));
       os << " from " << info.dli_fname << "+" << offset;
     }
   } else {
@@ -399,8 +401,11 @@ std::string GetBytesReadable(size_t size) {
   double double_size = size;
 
   if (size >= 1024) {
-    for (i = 0; (size / 1024) > 0 && i < length - 1; i++, size /= 1024)
-      double_size = size / 1024.0;
+    for (i = 0; (size / 1024) > 0 && i < length - 1; i++, size /= 1024) {
+      {
+        double_size = size / 1024.0;
+      }
+    }
   }
 
   char output[32];
@@ -436,7 +441,7 @@ uint64_t GetBytesFromReadable(const std::string &size) {
   return (uint64_t)ret;
 }
 
-unsigned long GetTickCount(void) {
+unsigned long GetTickCount() {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
@@ -461,14 +466,14 @@ bool IsAbsolutePath(const std::string &path) {
 std::string GetDirName(const std::string &path) {
   std::vector<char> path_data(path.begin(), path.end());
   path_data.push_back(0);
-  auto result = dirname(path_data.data());
+  auto *result = dirname(path_data.data());
   return result;
 }
 
 std::string GetBaseName(const std::string &path) {
   std::vector<char> path_data(path.begin(), path.end());
   path_data.push_back(0);
-  auto result = basename(path_data.data());
+  auto *result = basename(path_data.data());
   if (result == nullptr) {
     return "";
   }
@@ -563,8 +568,12 @@ std::string StrError(int errnum) {
 
 void GetCompiledTime(struct tm *compiled_time) {
   char s_month[5];
-  int month, day, year;
-  int hour, min, sec;
+  int month;
+  int day;
+  int year;
+  int hour;
+  int min;
+  int sec;
   static const char *month_names = "JanFebMarAprMayJunJulAugSepOctNovDec";
 
   sscanf_s(__DATE__, "%4s %d %d", s_month, 4, &day, &year);
@@ -579,7 +588,7 @@ void GetCompiledTime(struct tm *compiled_time) {
   compiled_time->tm_sec = sec;
 }
 
-const char *GetModelBoxVersion(void) {
+const char *GetModelBoxVersion() {
   static char str_ver[64] = {0};
   struct tm tm;
   GetCompiledTime(&tm);

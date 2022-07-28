@@ -80,8 +80,8 @@ modelbox::Status WebhookOutputBroker::Write(
     MBLOG_ERROR << "Invalid buffer: buffer is nullptr!";
     return modelbox::STATUS_NODATA;
   }
-  
-  auto buffer_data = buffer->ConstData();
+
+  const auto *buffer_data = buffer->ConstData();
   if (buffer_data == nullptr) {
     MBLOG_ERROR << "Invalid buffer: buffer is nullptr!";
     return modelbox::STATUS_NODATA;

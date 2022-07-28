@@ -116,13 +116,13 @@ class VideoDecodeFlowUnit : public modelbox::FlowUnit {
       std::shared_ptr<modelbox::DataContext> data_ctx, int32_t &rate_num,
       int32_t &rate_den, int32_t &encode_type);
   modelbox::Status ReadData(
-      std::shared_ptr<modelbox::DataContext> ctx,
+      std::shared_ptr<modelbox::DataContext> data_ctx,
       std::vector<std::shared_ptr<DvppPacket>> &dvpp_packet_list);
   modelbox::Status ReadDvppStreamDesc(
       std::shared_ptr<modelbox::Buffer> packet_buffer,
       std::shared_ptr<DvppPacket> &dvpp_packet);
   modelbox::Status SetUpTheLastPacket(std::shared_ptr<DvppPacket> &dvpp_packet);
-  modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> ctx,
+  modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> data_ctx,
                              std::shared_ptr<AscendVideoDecoder> video_decoder,
                              std::shared_ptr<DvppVideoDecodeContext> dvpp_ctx);
   void InitInstanceId();

@@ -114,11 +114,11 @@ class InferenceVirtualDriverManager : public modelbox::VirtualDriverManager {
   virtual ~InferenceVirtualDriverManager() = default;
 
   modelbox::Status Scan(const std::string &path);
-  modelbox::Status Add(const std::string &path);
+  modelbox::Status Add(const std::string &file);
   modelbox::Status Init(modelbox::Drivers &driver);
 
  private:
-  modelbox::Status BindBaseDriver(modelbox::Drivers &drivers);
+  modelbox::Status BindBaseDriver(modelbox::Drivers &driver);
   std::vector<std::shared_ptr<modelbox::Driver>>
       inference_flowunit_driver_list_;
 };
