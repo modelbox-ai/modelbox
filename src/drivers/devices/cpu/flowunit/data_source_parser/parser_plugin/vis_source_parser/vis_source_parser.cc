@@ -165,9 +165,7 @@ modelbox::Status VisSourceParser::GetVisInfo(VisInputInfo &input_info,
     std::string::size_type idx;
     std::string https_endpoint = "https://";
     idx = end_point.find(https_endpoint);
-    if (idx == 0) {
-      end_point = end_point;
-    } else {
+    if (idx != 0) {
       end_point = "https://" + end_point;
     }
     input_info.end_point = end_point;

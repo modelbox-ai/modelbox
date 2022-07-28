@@ -294,6 +294,10 @@ Status HmacGetRootKey(const std::string &en_key,
   std::vector<unsigned char> raw_key;
 
   auto ret = Base64Decode(en_key, &raw_key);
+  if (raw_key.size() < sizeof(struct key_gen_info)) {
+    return {STATUS_INVALID, "enkey is invalid."};
+  }
+
   keyGenInfo = (struct key_gen_info *)raw_key.data();
 
   for (i = 0; i < sizeof(keyGenInfo->rootKey); ++i) {
@@ -443,7 +447,7 @@ Status Decrypt(const std::string &ciphername, unsigned char *input,
    * IV size for *most* modes is the same as the block size. For AES this
    * is 128 bits */
   if (1 != EVP_DecryptInit_ex(ctx.get(), cipher, NULL, key, iv)) {
-    std::string msg = "decrypt failed." + EvpGetErrorMsg();
+    std::string msg = "decrypt failed, " + EvpGetErrorMsg();
     return {STATUS_FAULT, msg};
   }
 
@@ -451,7 +455,7 @@ Status Decrypt(const std::string &ciphername, unsigned char *input,
    * EVP_DecryptUpdate can be called multiple times if necessary
    */
   if (1 != EVP_DecryptUpdate(ctx.get(), output, &len, input, input_len)) {
-    std::string msg = "decrypt update failed." + EvpGetErrorMsg();
+    std::string msg = "decrypt update failed, " + EvpGetErrorMsg();
     return {STATUS_FAULT, msg};
   }
 
@@ -461,7 +465,7 @@ Status Decrypt(const std::string &ciphername, unsigned char *input,
    * this stage.
    */
   if (1 != EVP_DecryptFinal_ex(ctx.get(), output + *output_len, &len)) {
-    std::string msg = "decrypt final failed." + EvpGetErrorMsg();
+    std::string msg = "decrypt final failed, " + EvpGetErrorMsg();
     return {STATUS_FAULT, msg};
   }
 

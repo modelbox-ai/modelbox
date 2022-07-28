@@ -180,7 +180,7 @@ class StatisticsNotifyCfg {
     const size_t second_to_milli = 1000;
     delay_ = delay * second_to_milli;
     if (delay_ < minimum_notify_time) {
-      delay = minimum_notify_time;
+      delay_ = minimum_notify_time;
     }
 
     interval_ = interval * second_to_milli;
@@ -641,6 +641,8 @@ class Statistics {
    * @brief Get global statistics item
    */
   static std::shared_ptr<StatisticsItem> GetGlobalItem();
+
+  static void ReleaseGlobalItem();
 
  private:
   static std::once_flag fix_item_init_flag_;

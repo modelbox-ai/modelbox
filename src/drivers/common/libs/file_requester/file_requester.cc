@@ -38,7 +38,7 @@ std::shared_ptr<FileRequester> FileRequester::GetInstance() {
       [](std::shared_ptr<FileRequester> server) {
         auto ret = server->Init();
         if (modelbox::STATUS_FAULT == ret) {
-          server == nullptr;
+          server = nullptr;
         }
       },
       server);

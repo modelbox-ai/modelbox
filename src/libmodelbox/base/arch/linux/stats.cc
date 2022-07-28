@@ -143,7 +143,7 @@ std::string LinuxOSInfo::GetSystemID() {
   std::string result;
   std::ifstream file("/etc/machine-id");
   if (!file.fail()) {
-    MBLOG_INFO << result;
+    getline(file, result);
     if (result.length() > 0) {
       return result;
     }

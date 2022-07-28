@@ -144,10 +144,12 @@ void ThreadPool::SetName(const std::string &name) { name_ = name; }
 void ThreadPool::Shutdown(bool force) {
   work_queue_->Shutdown();
   if (force) {
+    work_queue_->Close();
     StopWokers();
   }
 
   std::unique_lock<std::mutex> lock(lock_);
+  thread_size_ = 0;
   exit_cond_.wait(lock, [&]() { return workers_.size() <= 0; });
 }
 
@@ -235,7 +237,7 @@ Status ThreadPool::AddWorker(bool core_worker) {
       std::make_shared<ThreadWorker>(this, id, core_worker);
   worker->SetName(name_);
   lock_.lock();
-  workers_.push_back(worker);
+  workers_.emplace_back(worker);
   lock_.unlock();
   worker->Start();
   worker->SetCore(core_worker);
@@ -244,6 +246,7 @@ Status ThreadPool::AddWorker(bool core_worker) {
 
 bool ThreadPool::SubmitTask(ThreadFunction &task) {
   bool is_queued = false;
+
   if (worker_num_++ < thread_size_) {
     AddWorker(true);
   }
@@ -255,6 +258,10 @@ bool ThreadPool::SubmitTask(ThreadFunction &task) {
     if ((!work_queue_->Full() && thread_size_ > 0) || available_num_ > 0) {
       return ret;
     }
+  }
+
+  if (work_queue_->IsShutdown()) {
+    return false;
   }
 
   // expand extend thread pool
@@ -274,8 +281,12 @@ bool ThreadPool::SubmitTask(ThreadFunction &task) {
 
   do {
     ret = work_queue_->Push(task, 0);
-    if (ret == false && errno == EINTR) {
-      continue;
+    if (ret == false) {
+      std::this_thread::yield();
+      if (errno == EINTR || errno == ETIMEDOUT) {
+        continue;
+      }
+      break;
     }
   } while (ret == false);
 
@@ -298,8 +309,8 @@ void ThreadPool::SetThreadSize(size_t size) {
 
   int thread_num = 0;
   lock_.lock();
-  for (size_t i = 0; i < workers_.size(); i++) {
-    if (workers_[i]->IsCore() == false) {
+  for (auto &worker : workers_) {
+    if (worker->IsCore() == false) {
       continue;
     }
 
@@ -308,7 +319,7 @@ void ThreadPool::SetThreadSize(size_t size) {
       continue;
     }
 
-    workers_[i]->SetCore(false);
+    worker->SetCore(false);
   }
   lock_.unlock();
   work_queue_->Wakeup();
@@ -331,7 +342,7 @@ void ThreadPool::SetKeepAlive(uint32_t timeout) {
   } else {
     keep_alive_ = timeout;
   }
-  
+
   work_queue_->Wakeup();
 }
 

@@ -30,44 +30,49 @@ namespace modelbox {
  */
 template <typename func, typename... ts>
 Status SubProcessRun(func &&fun, ts &&...params) {
-  auto pid = fork();
-  if (pid == 0) {
-    Status ret = fun(params...);
-    if (!ret) {
-      _exit(0);
+  const char *enable_debug = getenv("MODELBOX_DEBUG_DRIVER_SCAN");
+  if (enable_debug == nullptr) {
+    auto pid = fork();
+    if (pid == 0) {
+      Status ret = fun(params...);
+      if (!ret) {
+        _exit(0);
+      }
+
+      _exit(1);
     }
 
-    _exit(1);
-  }
+    if (pid == -1) {
+      MBLOG_ERROR << "fork subprocess failed";
+      return STATUS_FAULT;
+    }
 
-  if (pid == -1) {
-    MBLOG_ERROR << "fork subprocess failed";
-    return STATUS_FAULT;
-  }
+    MBLOG_INFO << "wait for subprocess " << pid << " process finished";
+    int status;
+    auto ret = waitpid(pid, &status, 0);
+    if (ret < 0) {
+      auto err_msg =
+          "subprocess run failed, wait error, ret:" + std::to_string(errno) +
+          ", msg: " + StrError(errno);
+      MBLOG_ERROR << err_msg;
+      return {STATUS_FAULT, err_msg};
+    }
 
-  MBLOG_INFO << "wait for subprocess " << pid << " process finished";
-  int status;
-  auto ret = waitpid(pid, &status, 0);
-  if (ret < 0) {
-    auto err_msg =
-        "subprocess run failed, wait error, ret:" + std::to_string(errno) +
-        ", msg: " + StrError(errno);
-    MBLOG_ERROR << err_msg;
-    return {STATUS_FAULT, err_msg};
-  }
-
-  if (WIFSIGNALED(status)) {
-    auto err_msg = "killed by signal " + WTERMSIG(status);
-    MBLOG_ERROR << err_msg;
-    return {STATUS_FAULT, err_msg};
-  } else if(WIFSTOPPED(status)) {
-    auto err_msg = "stopped by signal " + WSTOPSIG(status);
-    MBLOG_ERROR << err_msg;
-    return {STATUS_FAULT, err_msg};
+    if (WIFSIGNALED(status)) {
+      auto err_msg = "killed by signal " + WTERMSIG(status);
+      MBLOG_ERROR << err_msg;
+      return {STATUS_FAULT, err_msg};
+    } else if (WIFSTOPPED(status)) {
+      auto err_msg = "stopped by signal " + WSTOPSIG(status);
+      MBLOG_ERROR << err_msg;
+      return {STATUS_FAULT, err_msg};
+    }
+  } else {
+    return fun(params...);
   }
 
   return STATUS_OK;
-};
+}
 
 /**
  * @brief generate sha256 key from a check_sum

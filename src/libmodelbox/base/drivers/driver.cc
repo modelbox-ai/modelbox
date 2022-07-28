@@ -47,7 +47,6 @@ Driver::~Driver() {
   }
 }
 
-
 std::string Drivers::default_scan_path_ = MODELBOX_DEFAULT_DRIVER_PATH;
 std::string Drivers::default_driver_info_path_ = DEFAULT_SCAN_INFO;
 
@@ -531,34 +530,33 @@ Status Drivers::GatherScanInfo(const std::string &scan_path) {
                    std::istreambuf_iterator<char>());
     dump_json = nlohmann::json::parse(ss);
 
+    auto driver_json_arr = dump_json["scan_drivers"];
+    for (auto &driver_info : driver_json_arr) {
+      if (!driver_info["load_success"]) {
+        continue;
+      }
+
+      auto driver = std::make_shared<Driver>();
+      auto desc = driver->GetDriverDesc();
+      desc->SetClass(driver_info["class"]);
+      desc->SetType(driver_info["type"]);
+      desc->SetName(driver_info["name"]);
+      desc->SetDescription(driver_info["description"]);
+      desc->SetVersion(driver_info["version"]);
+      desc->SetFilePath(driver_info["file_path"]);
+      desc->SetNodelete(driver_info["no_delete"]);
+      desc->SetGlobal(driver_info["global"]);
+      desc->SetDeepBind(driver_info["deep_bind"]);
+      auto tmp_driver = GetDriver(driver_info["class"], driver_info["type"],
+                                  driver_info["name"], driver_info["version"]);
+      if (tmp_driver == nullptr) {
+        drivers_list_.push_back(driver);
+      }
+    }
   } catch (const std::exception &e) {
     auto err_msg = "gather scan info failed, err: " + std::string(e.what());
     MBLOG_ERROR << err_msg;
     return {STATUS_FAULT, err_msg};
-  }
-
-  auto driver_json_arr = dump_json["scan_drivers"];
-  for (auto &driver_info : driver_json_arr) {
-    if (!driver_info["load_success"]) {
-      continue;
-    }
-
-    auto driver = std::make_shared<Driver>();
-    auto desc = driver->GetDriverDesc();
-    desc->SetClass(driver_info["class"]);
-    desc->SetType(driver_info["type"]);
-    desc->SetName(driver_info["name"]);
-    desc->SetDescription(driver_info["description"]);
-    desc->SetVersion(driver_info["version"]);
-    desc->SetFilePath(driver_info["file_path"]);
-    desc->SetNodelete(driver_info["no_delete"]);
-    desc->SetGlobal(driver_info["global"]);
-    desc->SetDeepBind(driver_info["deep_bind"]);
-    auto tmp_driver = GetDriver(driver_info["class"], driver_info["type"],
-                                driver_info["name"], driver_info["version"]);
-    if (tmp_driver == nullptr) {
-      drivers_list_.push_back(driver);
-    }
   }
 
   MBLOG_INFO << "Gather scan info success, drivers count "
@@ -566,13 +564,13 @@ Status Drivers::GatherScanInfo(const std::string &scan_path) {
   return STATUS_OK;
 }
 
-void Drivers::FillCheckInfo(std::string &file_check_node,
-                            std::unordered_map<std::string, bool> &file_map,
-                            int64_t &ld_cache_time) {
+Status Drivers::FillCheckInfo(std::string &file_check_node,
+                              std::unordered_map<std::string, bool> &file_map,
+                              int64_t &ld_cache_time) {
   std::ifstream scan_info(default_driver_info_path_);
   if (!scan_info.is_open()) {
     MBLOG_ERROR << "open " << default_driver_info_path_ << " failed.";
-    return;
+    return {STATUS_FAULT, "scan info file is not found"};
   }
 
   nlohmann::json dump_json;
@@ -580,21 +578,24 @@ void Drivers::FillCheckInfo(std::string &file_check_node,
     std::string ss((std::istreambuf_iterator<char>(scan_info)),
                    std::istreambuf_iterator<char>());
     dump_json = nlohmann::json::parse(ss);
+
+    file_check_node = dump_json["check_code"];
+    ld_cache_time = dump_json["ld_cache_time"];
+    auto driver_json_arr = dump_json["scan_drivers"];
+    for (const auto &driver_info : driver_json_arr) {
+      if (file_map.find(driver_info["file_path"]) != file_map.end()) {
+        continue;
+      }
+      file_map[driver_info["file_path"]] = true;
+    }
   } catch (const std::exception &e) {
-    MBLOG_ERROR << "filee check info parse " << default_driver_info_path_
-                << " failed, err: " << e.what();
-    return;
+    MBLOG_WARN << "filee check info parse " << default_driver_info_path_
+               << " failed, err: " << e.what();
+    return {STATUS_INVALID,
+            std::string("parser scan info file failed, ") + e.what()};
   }
 
-  file_check_node = dump_json["check_code"];
-  ld_cache_time = dump_json["ld_cache_time"];
-  auto driver_json_arr = dump_json["scan_drivers"];
-  for (const auto &driver_info : driver_json_arr) {
-    if (file_map.find(driver_info["file_path"]) != file_map.end()) {
-      continue;
-    }
-    file_map[driver_info["file_path"]] = true;
-  }
+   return STATUS_SUCCESS;
 }
 
 bool Drivers::CheckPathAndMagicCode() {
@@ -611,8 +612,13 @@ bool Drivers::CheckPathAndMagicCode() {
 
   std::string file_check_node;
   std::unordered_map<std::string, bool> file_map;
-  int64_t ld_cache_time;
-  FillCheckInfo(file_check_node, file_map, ld_cache_time);
+  int64_t ld_cache_time = 0;
+  auto ret = FillCheckInfo(file_check_node, file_map, ld_cache_time);
+  if (ret != STATUS_SUCCESS) {
+    MBLOG_DEBUG << "get check info failed, file: " << default_driver_info_path_
+                << " error:" << ret.Errormsg();
+    return false;
+  }
 
   if (ld_cache_time != buffer.st_mtim.tv_sec) {
     return false;
@@ -709,27 +715,27 @@ void Drivers::PrintScanResults(const std::string &scan_path) {
                    std::istreambuf_iterator<char>());
     dump_json = nlohmann::json::parse(ss);
 
+    nlohmann::json dump_driver_json_arr = nlohmann::json::array();
+    dump_driver_json_arr = dump_json["scan_drivers"];
+
+    std::list<std::string> load_success_info;
+    std::map<std::string, std::string> load_failed_info;
+
+    for (auto &dump_json : dump_driver_json_arr) {
+      if (dump_json["load_success"]) {
+        load_success_info.push_back(dump_json["file_path"]);
+        continue;
+      }
+
+      load_failed_info.emplace(dump_json["file_path"], dump_json["err_msg"]);
+    }
+
+    PrintScanResult(load_success_info, load_failed_info);
+
   } catch (const std::exception &e) {
     MBLOG_ERROR << "print scan result failed, err: " << e.what();
     return;
   }
-
-  nlohmann::json dump_driver_json_arr = nlohmann::json::array();
-  dump_driver_json_arr = dump_json["scan_drivers"];
-
-  std::list<std::string> load_success_info;
-  std::map<std::string, std::string> load_failed_info;
-
-  for (auto &dump_json : dump_driver_json_arr) {
-    if (dump_json["load_success"]) {
-      load_success_info.push_back(dump_json["file_path"]);
-      continue;
-    }
-
-    load_failed_info.emplace(dump_json["file_path"], dump_json["err_msg"]);
-  }
-
-  PrintScanResult(load_success_info, load_failed_info);
 }
 
 Status Drivers::Scan() {

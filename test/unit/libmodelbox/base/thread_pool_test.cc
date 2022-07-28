@@ -120,6 +120,29 @@ TEST_F(ThreadPoolTest, MaxThreadSize) {
   EXPECT_LE(pool.GetThreadsNum(), max_thread_size);
 }
 
+TEST_F(ThreadPoolTest, Shutdown) {
+  int thread_size = 4;
+  int max_thread_size = 10;
+  std::vector<std::future<int>> future_queue;
+  modelbox::ThreadPool pool(thread_size, max_thread_size, 1);
+  for (size_t i = 0; i < 20000; i++) {
+    auto fut = pool.Submit(compute, 10, 21000);
+    if (i == 1000) {
+      pool.Shutdown();
+    }
+
+    if (i > 1000) {
+      EXPECT_FALSE(fut.valid());
+    } else {
+      EXPECT_TRUE(fut.valid());
+    }
+    future_queue.emplace_back(std::move(fut));
+  }
+
+  future_queue.clear();
+  EXPECT_EQ(pool.GetThreadsNum(), 0);
+}
+
 TEST_F(ThreadPoolTest, GetMaxThreadsNum) {
   int thread_size = 4;
   int max_thread_size = 10;

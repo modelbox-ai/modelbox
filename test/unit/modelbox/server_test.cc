@@ -678,6 +678,7 @@ TEST_F(ModelboxServerTest, Stat) {
   server.Start();
 
   auto root = modelbox::Statistics::GetGlobalItem();
+  Defer {Statistics::ReleaseGlobalItem();};
   // FlowUnit
   auto flow_item = root->AddItem(modelbox::STATISTICS_ITEM_FLOW);
   auto session_item = flow_item->AddItem("SessionId");
@@ -796,6 +797,7 @@ TEST_F(ModelboxServerTest, JSPlugin) {
   ret = server.Start();
   ASSERT_EQ(ret, modelbox::STATUS_OK);
   auto stats = modelbox::Statistics::GetGlobalItem();
+  Defer {Statistics::ReleaseGlobalItem();};
 
   // graph init
   auto flow_stats = stats->GetItem(STATISTICS_ITEM_FLOW);

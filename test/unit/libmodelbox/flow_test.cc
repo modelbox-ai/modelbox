@@ -524,6 +524,7 @@ TEST_F(FlowTest, Statistics) {
 
   auto profiler = flow->GetProfiler();
   auto statistics = Statistics::GetGlobalItem();
+  Defer {Statistics::ReleaseGlobalItem();};
   std::atomic<std::uint32_t> change_notify_count = {0};
   std::atomic<std::uint32_t> timer_notify_count = {0};
   const std::string path_pattern = "flow.*.*.statistic_test.test_key";
