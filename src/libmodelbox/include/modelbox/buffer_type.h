@@ -59,7 +59,7 @@ class BufferTypeTree {
   bool AddRootType(std::string root_type);
   bool AddType(std::string type, std::string parent_type);
   bool RemoveType(std::string type);
-  bool IsCompatible(std::string self_type, std::string ancestor_type);
+  bool IsCompatible(std::string type, std::string ancestor_type);
   std::shared_ptr<BufferType> GetType(std::string type);
   static BufferTypeTree *GetInstance() {
     if (NULL == instance_.get()) {

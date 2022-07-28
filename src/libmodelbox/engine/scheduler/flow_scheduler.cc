@@ -194,8 +194,6 @@ void FlowScheduler::RunWapper(std::shared_ptr<NodeBase> node, RunType type,
   if (is_wait_stop_) {
     cv_.notify_one();
   }
-
-  return;
 }
 
 Status FlowScheduler::RunNode(std::shared_ptr<PriorityPort> active_port) {
@@ -276,7 +274,6 @@ void FlowScheduler::WaitNodeFinish() {
   is_wait_stop_ = true;
 
   cv_.wait(lock, pred);
-  return;
 }
 
 void FlowScheduler::CheckScheduleStatus(const bool &printlog) {

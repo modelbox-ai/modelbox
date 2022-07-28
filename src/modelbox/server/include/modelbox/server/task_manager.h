@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_SERVER_TASK_MANAGER_H_
 #define MODELBOX_SERVER_TASK_MANAGER_H_
 

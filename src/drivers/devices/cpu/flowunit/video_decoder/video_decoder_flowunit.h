@@ -93,13 +93,13 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
   };
 
  private:
-  modelbox::Status ReadData(std::shared_ptr<modelbox::DataContext> ctx,
-                            std::vector<std::shared_ptr<AVPacket>> &pkt);
+  modelbox::Status ReadData(std::shared_ptr<modelbox::DataContext> data_ctx,
+                            std::vector<std::shared_ptr<AVPacket>> &pkt_list);
   modelbox::Status ReadAVPacket(std::shared_ptr<modelbox::Buffer> packet_buffer,
                                 std::shared_ptr<AVPacket> &pkt);
   modelbox::Status BuildAVPacket(std::shared_ptr<AVPacket> &pkt, size_t size,
                                  uint8_t *data, int64_t pts, int64_t dts);
-  modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> &ctx,
+  modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> &data_ctx,
                              std::list<std::shared_ptr<AVFrame>> &frame_list,
                              bool eos);
 

@@ -55,7 +55,7 @@ TEST_F(BaseUtilsTest, Volume) {
 }
 
 TEST_F(BaseUtilsTest, RegexMatch) {
-  auto test = "aaa=000 bbb=111   ccc=222     ddd=333";
+  const auto *test = "aaa=000 bbb=111   ccc=222     ddd=333";
   EXPECT_TRUE(RegexMatch(test, ".*111.*"));
   EXPECT_TRUE(RegexMatch(test, ".*333$"));
   EXPECT_TRUE(RegexMatch(test, "^aaa.*"));
@@ -63,7 +63,7 @@ TEST_F(BaseUtilsTest, RegexMatch) {
 }
 
 TEST_F(BaseUtilsTest, StringSplit) {
-  auto test = "aaa=000 bbb=111   ccc=222     ddd=333";
+  const auto *test = "aaa=000 bbb=111   ccc=222     ddd=333";
   auto split_test = StringSplit(test, ' ');
   for (size_t i = 0; i < split_test.size(); ++i) {
     switch (i) {

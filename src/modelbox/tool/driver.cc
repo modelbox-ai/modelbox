@@ -32,8 +32,8 @@ enum MODELBOX_TOOL_DRIVER_COMMAND {
 };
 
 static struct option driver_options[] = {
-    {"info", 0, 0, MODELBOX_TOOL_DRIVER_INFO},
-    {0, 0, 0, 0},
+    {"info", 0, nullptr, MODELBOX_TOOL_DRIVER_INFO},
+    {nullptr, 0, nullptr, 0},
 };
 
 enum MODELBOX_TOOL_DRIVER_INFO_COMMAND {
@@ -46,13 +46,13 @@ enum MODELBOX_TOOL_DRIVER_INFO_COMMAND {
 };
 
 static struct option driver_info_options[] = {
-    {"path", 1, 0, MODELBOX_TOOL_DRIVER_INFO_PATH},
-    {"conf", 1, 0, MODELBOX_TOOL_DRIVER_INFO_FROM_CONF},
-    {"details", 0, 0, MODELBOX_TOOL_DRIVER_INFO_DETAILS},
-    {"name", 1, 0, MODELBOX_TOOL_DRIVER_INFO_DETAILS_FILTER_NAME},
-    {"format-json", 0, 0, MODELBOX_TOOL_DRIVER_INFO_FORMAT_JSON},
-    {"type", 1, 0, MODELBOX_TOOL_DRIVER_INFO_TYPE},
-    {0, 0, 0, 0},
+    {"path", 1, nullptr, MODELBOX_TOOL_DRIVER_INFO_PATH},
+    {"conf", 1, nullptr, MODELBOX_TOOL_DRIVER_INFO_FROM_CONF},
+    {"details", 0, nullptr, MODELBOX_TOOL_DRIVER_INFO_DETAILS},
+    {"name", 1, nullptr, MODELBOX_TOOL_DRIVER_INFO_DETAILS_FILTER_NAME},
+    {"format-json", 0, nullptr, MODELBOX_TOOL_DRIVER_INFO_FORMAT_JSON},
+    {"type", 1, nullptr, MODELBOX_TOOL_DRIVER_INFO_TYPE},
+    {nullptr, 0, nullptr, 0},
 };
 
 REG_MODELBOX_TOOL_COMMAND(ToolCommandDriver)
@@ -375,17 +375,17 @@ Status ToolCommandDriver::DisplayFlowunitInList(
   return STATUS_OK;
 }
 
-void ToolCommandDriver::DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flow) {
-  auto driverdesc = flow->GetDriverDesc();
+void ToolCommandDriver::DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flowunit) {
+  auto driverdesc = flowunit->GetDriverDesc();
   printf("--------------------------------------\n");
-  printf("flowunit name\t: %s\n", flow->GetFlowUnitName().c_str());
+  printf("flowunit name\t: %s\n", flowunit->GetFlowUnitName().c_str());
   printf("type\t\t: %s\n", driverdesc->GetType().c_str());
   printf("driver name\t: %s\n", driverdesc->GetName().c_str());
   printf("version\t\t: %s\n", driverdesc->GetVersion().c_str());
-  printf("descryption\t: %s\n", flow->GetDescription().c_str());
+  printf("descryption\t: %s\n", flowunit->GetDescription().c_str());
   printf("group\t\t: %s\n",
          [&]() -> std::string {
-           auto type = flow->GetGroupType();
+           auto type = flowunit->GetGroupType();
            if (type.empty()) {
              return "Generic";
            }
@@ -395,7 +395,7 @@ void ToolCommandDriver::DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flow) {
                       .c_str());
 
   int index = 0;
-  for (const auto &input : flow->GetFlowUnitInput()) {
+  for (const auto &input : flowunit->GetFlowUnitInput()) {
     index++;
     if (index == 1) {
       printf("inputs\t\t:\n");
@@ -407,7 +407,7 @@ void ToolCommandDriver::DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flow) {
   }
 
   index = 0;
-  for (const auto &output : flow->GetFlowUnitOutput()) {
+  for (const auto &output : flowunit->GetFlowUnitOutput()) {
     index++;
     if (index == 1) {
       printf("outputs\t\t:\n");
@@ -418,7 +418,7 @@ void ToolCommandDriver::DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flow) {
   }
 
   index = 0;
-  for (auto &option : flow->GetFlowUnitOption()) {
+  for (auto &option : flowunit->GetFlowUnitOption()) {
     index++;
     if (index == 1) {
       printf("options\t\t:\n");

@@ -90,9 +90,9 @@ modelbox::Status PaddingFlowUnit::Open(
 }
 
 modelbox::Status PaddingFlowUnit::CudaProcess(
-    std::shared_ptr<modelbox::DataContext> ctx, cudaStream_t stream) {
-  auto input_buffer_list = ctx->Input("in_image");
-  auto output_buffer_list = ctx->Output("out_image");
+    std::shared_ptr<modelbox::DataContext> data_ctx, cudaStream_t stream) {
+  auto input_buffer_list = data_ctx->Input("in_image");
+  auto output_buffer_list = data_ctx->Output("out_image");
   auto image_count = input_buffer_list->Size();
   if (image_count == 0) {
     MBLOG_ERROR << "input buffer count is zero";

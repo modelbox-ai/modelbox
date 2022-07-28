@@ -188,7 +188,7 @@ class Status {
   std::shared_ptr<Status> wrap_status_;
 };
 
-std::ostream& operator<<(std::ostream& os, const Status& x);
+std::ostream& operator<<(std::ostream& os, const Status& s);
 
 /**
  * @brief Status success, for performance usage

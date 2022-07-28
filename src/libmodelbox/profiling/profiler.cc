@@ -120,7 +120,8 @@ Profiler::~Profiler() {
 }
 
 Status Profiler::OnInit() {
-  bool profile_enable = false, trace_enable = false;
+  bool profile_enable = false;
+  bool trace_enable = false;
   bool session_enable = false;
 
   profile_enable = config_->GetBool("profile.profile");
@@ -147,7 +148,7 @@ Status Profiler::OnInit() {
 }
 
 Status Profiler::InitProfilerDir() {
-  auto profile_dir_path = getenv(PROFILE_PATH_ENV);
+  auto* profile_dir_path = getenv(PROFILE_PATH_ENV);
   if (profile_dir_path == nullptr) {
     output_dir_path_ = config_->GetString("profile.dir", PROFILE_DEFAULT_PATH);
   } else {

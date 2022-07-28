@@ -53,7 +53,7 @@ class DvppVideoDecoderFlowUnitTest : public testing::Test {
  public:
   std::shared_ptr<MockFlow> flow_;
 
-  void StartFlow(const std::string& graph, const uint64_t millisecond);
+  void StartFlow(const std::string& graph, uint64_t millisecond);
 
  private:
   Status AddMockFlowUnit();

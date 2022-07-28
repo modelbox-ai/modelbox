@@ -384,7 +384,7 @@ TEST_F(GraphCheckerTest, SinglePortMatch_SingleOutPortLinkMultiInPort) {
 */
 
 TEST_F(GraphCheckerTest, SinglePortNotMatch_SingleOutPortLinkSingleInPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -409,7 +409,7 @@ TEST_F(GraphCheckerTest, SinglePortNotMatch_SingleOutPortLinkSingleInPort) {
 */
 
 TEST_F(GraphCheckerTest, MuliPortMatch_MultiOutPortLinkMultiInPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0]
@@ -438,7 +438,7 @@ TEST_F(GraphCheckerTest, MuliPortMatch_MultiOutPortLinkMultiInPort) {
 */
 
 TEST_F(GraphCheckerTest, MuliPortNotMatch_MultiOutPortLinkSingleInPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0]
@@ -456,7 +456,7 @@ TEST_F(GraphCheckerTest, MuliPortNotMatch_MultiOutPortLinkSingleInPort) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_OneInPortThreeOutPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -479,7 +479,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_OneInPortThreeOutPort) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_OutConditionInMultiPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0]
@@ -502,7 +502,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_OutConditionInMultiPort) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_MutiConditionInSinglePort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -525,7 +525,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_MutiConditionInSinglePort) {
 }
 
 TEST_F(GraphCheckerTest, ConditionNotMatch_AllOutPortLinkDifferenceInPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -548,7 +548,7 @@ TEST_F(GraphCheckerTest, ConditionNotMatch_AllOutPortLinkDifferenceInPort) {
 }
 
 TEST_F(GraphCheckerTest, ConditionNotMatch_MultiOutPortLinkInPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -571,7 +571,7 @@ TEST_F(GraphCheckerTest, ConditionNotMatch_MultiOutPortLinkInPort) {
 }
 
 TEST_F(GraphCheckerTest, ConditionNotMatch_SinglePortConditionNotMatch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -590,7 +590,7 @@ TEST_F(GraphCheckerTest, ConditionNotMatch_SinglePortConditionNotMatch) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_SinglePortMatch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -609,7 +609,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_SinglePortMatch) {
 }
 
 TEST_F(GraphCheckerTest, LoopMatch_LoopSelf) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -625,7 +625,7 @@ TEST_F(GraphCheckerTest, LoopMatch_LoopSelf) {
 }
 
 TEST_F(GraphCheckerTest, LoopMatch_LoopHasNode) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -643,7 +643,7 @@ TEST_F(GraphCheckerTest, LoopMatch_LoopHasNode) {
 }
 
 TEST_F(GraphCheckerTest, LoopNotMatch_OverHierarchyLink) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -662,7 +662,7 @@ TEST_F(GraphCheckerTest, LoopNotMatch_OverHierarchyLink) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseMatch_NormalFlow) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -681,7 +681,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseMatch_NormalFlow) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseMatch_OnlyExpand) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -696,7 +696,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseMatch_OnlyExpand) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_OnlyCollapse) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -711,7 +711,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_OnlyCollapse) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseMatch_OverMatchArch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -737,7 +737,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseMatch_OverMatchArch) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_ExpandInMatchArch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -763,7 +763,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_ExpandInMatchArch) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseMatch_ExpandIsMatchNode) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -786,7 +786,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseMatch_ExpandIsMatchNode) {
 
 TEST_F(GraphCheckerTest,
        ExpandCollapseMatch_MultiOutputExpandDirectConnectCollapse) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -804,7 +804,7 @@ TEST_F(GraphCheckerTest,
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseMatch_CollapseIsMatchNode) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -828,7 +828,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseMatch_CollapseIsMatchNode) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_CollapseIsMatchNode) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -850,7 +850,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_CollapseIsMatchNode) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_CollapseInMatchArch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -873,7 +873,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_CollapseInMatchArch) {
 
 TEST_F(GraphCheckerTest,
        ExpandCollapseNotMatch_CollapseInMatchArch_SinglePathMatch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -895,7 +895,7 @@ TEST_F(GraphCheckerTest,
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_OneExpandMultiCollapse) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -917,7 +917,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_OneExpandMultiCollapse) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseMatch_MultiArch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -943,7 +943,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseMatch_MultiArch) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_OverHierarchyLink_FromOutToIn) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0, label="<Out_1>"] 
@@ -963,7 +963,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_OverHierarchyLink_FromOutToIn) {
 }
 
 TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_OverHierarchyLink_FromInToOut) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0, label="<Out_1>"] 
@@ -983,7 +983,7 @@ TEST_F(GraphCheckerTest, ExpandCollapseNotMatch_OverHierarchyLink_FromInToOut) {
 }
 
 TEST_F(GraphCheckerTest, ConditionNotMatch_OverHierarchyLink_FromOutToIn) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0] 
@@ -1006,7 +1006,7 @@ TEST_F(GraphCheckerTest, ConditionNotMatch_OverHierarchyLink_FromOutToIn) {
 }
 
 TEST_F(GraphCheckerTest, ConditionNotMatch_OverHierarchyLink_FromInToOut) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -1029,7 +1029,7 @@ TEST_F(GraphCheckerTest, ConditionNotMatch_OverHierarchyLink_FromInToOut) {
 }
 
 TEST_F(GraphCheckerTest, ConditionNotAddition_MultiConditionLinkSameOut) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -1052,7 +1052,7 @@ TEST_F(GraphCheckerTest, ConditionNotAddition_MultiConditionLinkSameOut) {
 }
 
 TEST_F(GraphCheckerTest, ConditionNotAddition_EndifAndInOtherMultiPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_2, device=cpu, deviceid=0] 
@@ -1071,7 +1071,7 @@ TEST_F(GraphCheckerTest, ConditionNotAddition_EndifAndInOtherMultiPort) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_EndifAndCollapseInOnePort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -1097,7 +1097,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_EndifAndCollapseInOnePort) {
 }
 
 TEST_F(GraphCheckerTest, ConditionAddition_ConditionInExpandCollapse) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -1118,7 +1118,7 @@ TEST_F(GraphCheckerTest, ConditionAddition_ConditionInExpandCollapse) {
 }
 
 TEST_F(GraphCheckerTest, BranchCollapseMatch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -1138,7 +1138,7 @@ TEST_F(GraphCheckerTest, BranchCollapseMatch) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_SinglePortLinkMultiPortThroughNode) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           httpserver_sync_receive[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 
@@ -1175,7 +1175,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_SinglePortLinkMultiPortThroughNode) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoCondition) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           begin[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -1204,7 +1204,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoCondition) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoExpand) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           begin[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -1233,7 +1233,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoExpand) {
 }
 
 TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoCollapse) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           begin[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -1261,7 +1261,7 @@ TEST_F(GraphCheckerTest, ConditionMatch_EndIfNodeIsAlsoCollapse) {
 }
 
 TEST_F(GraphCheckerTest, MultiNotMatch_MultiExpandSingleCollapseInBranch) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           begin[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -1284,7 +1284,7 @@ TEST_F(GraphCheckerTest, MultiNotMatch_MultiExpandSingleCollapseInBranch) {
 }
 
 TEST_F(GraphCheckerTest, Bicycle) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -1361,7 +1361,7 @@ TEST_F(GraphCheckerTest, Bicycle) {
 }
 
 TEST_F(GraphCheckerTest, Park) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -1398,7 +1398,7 @@ TEST_F(GraphCheckerTest, Park) {
 }
 
 TEST_F(GraphCheckerTest, Road) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -1489,7 +1489,7 @@ TEST_F(GraphCheckerTest, Road) {
 }
 
 TEST_F(GraphCheckerTest, NodeHasSameNameInInputOutputPort) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0]
@@ -1525,7 +1525,7 @@ TEST_F(GraphCheckerTest, NodeHasSameNameInInputOutputPort) {
 }
 
 TEST_F(GraphCheckerTest, GetSetMatchNode) {
-  auto conf_file_value =
+  const auto *conf_file_value =
       R"(
         digraph demo {
           a[type=flowunit, flowunit=test_0_1, device=cpu, deviceid=0] 

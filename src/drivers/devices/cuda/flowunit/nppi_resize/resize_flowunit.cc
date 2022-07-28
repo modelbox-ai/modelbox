@@ -71,9 +71,9 @@ modelbox::Status NppiResizeFlowUnit::Open(
 }
 
 modelbox::Status NppiResizeFlowUnit::CudaProcess(
-    std::shared_ptr<modelbox::DataContext> ctx, cudaStream_t stream) {
-  auto input_bufs = ctx->Input("in_image");
-  auto output_bufs = ctx->Output("out_image");
+    std::shared_ptr<modelbox::DataContext> data_ctx, cudaStream_t stream) {
+  auto input_bufs = data_ctx->Input("in_image");
+  auto output_bufs = data_ctx->Output("out_image");
 
   if (input_bufs->Size() <= 0) {
     auto errMsg = "input images size is " + std::to_string(input_bufs->Size());

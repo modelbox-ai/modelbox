@@ -83,8 +83,7 @@ bool PortCompare::operator()(const std::shared_ptr<PriorityPort>& left,
   return left->port_ < right->port_;
 }
 
-DefaultDataHub::DefaultDataHub()
-    : priority_ports_(), active_ports_(), active_mutex_(), cv_() {}
+DefaultDataHub::DefaultDataHub() {}
 
 DefaultDataHub::~DefaultDataHub() {
   std::lock_guard<std::mutex> guard(active_mutex_);

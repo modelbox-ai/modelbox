@@ -42,4 +42,4 @@ size_t GetDataTypeSize(ModelBoxDataType type) {
   }
 #undef CASE
 }
-}
+}  // namespace modelbox

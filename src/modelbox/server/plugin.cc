@@ -41,7 +41,7 @@ modelbox::Status PluginMsgRouter::RouteMsg(
                            const std::string &msg_name,
                            const std::shared_ptr<const void> &msg_data,
                            size_t msg_len) {
-    for (auto &func : func_list) {
+    for (const auto &func : func_list) {
       func(msg_name, msg_data, msg_len);
     }
   };

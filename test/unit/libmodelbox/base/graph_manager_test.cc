@@ -145,11 +145,11 @@ TEST_F(GraphManagerTest, NodeStr) {
   EXPECT_NE(node0, nullptr);
 
   auto outputPort = node0->GetOutputPorts();
-  std::string node0_output_port0 = outputPort->begin()->data();
+  std::string node0_output_port0 = *outputPort->begin();
   MBLOG_INFO << "node0 outputPort0 : " << node0_output_port0;
   EXPECT_EQ(node0_output_port0, "f0");
 
-  std::string node0_output_port1 = (++outputPort->begin())->data();
+  std::string node0_output_port1 = *(++outputPort->begin());
   MBLOG_INFO << "node0 outputPort1 : " << node0_output_port1;
   EXPECT_EQ(node0_output_port1, "f2");
 
@@ -170,7 +170,7 @@ TEST_F(GraphManagerTest, NodeStr) {
   EXPECT_NE(node2, nullptr);
 
   auto inputPorts = node2->GetInputPorts();
-  std::string node2_input_port0 = inputPorts->begin()->data();
+  std::string node2_input_port0 = *inputPorts->begin();
   MBLOG_INFO << "node2 inputPort0 : " << node2_input_port0;
   EXPECT_EQ(node2_input_port0, "f1");
 

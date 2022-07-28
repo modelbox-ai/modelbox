@@ -55,9 +55,9 @@ modelbox::Status GetBufferSize(int32_t width, int32_t height,
   return modelbox::STATUS_SUCCESS;
 }
 
-void UpdateStatsInfo(std::shared_ptr<modelbox::DataContext> &ctx, int32_t width,
+void UpdateStatsInfo(std::shared_ptr<modelbox::DataContext> &data_ctx, int32_t width,
                      int32_t height) {
-  auto stats = ctx->GetStatistics();
+  auto stats = data_ctx->GetStatistics();
   stats->AddItem("frame_width", width, true);
   stats->AddItem("frame_height", height, true);
   uint64_t one_frame = 1;

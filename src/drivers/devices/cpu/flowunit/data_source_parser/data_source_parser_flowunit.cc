@@ -69,14 +69,14 @@ modelbox::Status DataSourceParserFlowUnit::Close() {
 }
 
 modelbox::Status DataSourceParserFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  auto session_ctx = ctx->GetSessionContext();
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto session_ctx = data_ctx->GetSessionContext();
   if (!session_ctx) {
-    MBLOG_ERROR << "Session ctx is null";
+    MBLOG_ERROR << "Session data_ctx is null";
     return modelbox::STATUS_FAULT;
   }
 
-  auto input_buffer_list = ctx->Input(INPUT_DATA_SOURCE_CFG);
+  auto input_buffer_list = data_ctx->Input(INPUT_DATA_SOURCE_CFG);
   std::string source_type;
   std::vector<std::string> uri_list;
   if (input_buffer_list->Size() != 1) {
@@ -85,7 +85,7 @@ modelbox::Status DataSourceParserFlowUnit::Process(
   }
 
   auto buffer = input_buffer_list->At(0);
-  const char *inbuff_data = (const char *)buffer->ConstData();
+  const auto *inbuff_data = (const char *)buffer->ConstData();
   if (inbuff_data == nullptr) {
     return {modelbox::STATUS_INVALID, "input buffer is invalid."};
   }
@@ -103,7 +103,8 @@ modelbox::Status DataSourceParserFlowUnit::Process(
     MBLOG_ERROR << "Parse data source " << source_type << " failed";
   }
 
-  auto ret = WriteData(ctx, uri, source_type, data_source_cfg, source_context);
+  auto ret =
+      WriteData(data_ctx, uri, source_type, data_source_cfg, source_context);
   if (!ret) {
     return ret;
   }
@@ -161,18 +162,18 @@ std::shared_ptr<DataSourceParserPlugin> DataSourceParserFlowUnit::GetPlugin(
 }
 
 modelbox::Status DataSourceParserFlowUnit::WriteData(
-    std::shared_ptr<modelbox::DataContext> &ctx,
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
     const std::shared_ptr<std::string> &uri, const std::string &source_type,
     const std::string &data_source_cfg,
     std::shared_ptr<modelbox::SourceContext> &source_context) {
-  auto input_buffer_list = ctx->Input(INPUT_DATA_SOURCE_CFG);
+  auto input_buffer_list = data_ctx->Input(INPUT_DATA_SOURCE_CFG);
   auto buffer = input_buffer_list->At(0);
   auto data_meta = std::make_shared<modelbox::DataMeta>();
   data_meta->SetMeta(STREAM_META_SOURCE_URL, uri);
   data_meta->SetMeta(PARSER_RETRY_CONTEXT, source_context);
-  ctx->SetOutputMeta(OUTPUT_STREAM_META, data_meta);
+  data_ctx->SetOutputMeta(OUTPUT_STREAM_META, data_meta);
 
-  auto buffer_list = ctx->Output(OUTPUT_STREAM_META);
+  auto buffer_list = data_ctx->Output(OUTPUT_STREAM_META);
   buffer_list->Build({1});
   return modelbox::STATUS_OK;
 }

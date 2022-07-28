@@ -108,8 +108,8 @@ class YoloBoxVirtualDriverManager : public modelbox::VirtualDriverManager {
   virtual ~YoloBoxVirtualDriverManager() = default;
 
   modelbox::Status Scan(const std::string &path) override;
-  modelbox::Status Add(const std::string &path) override;
-  modelbox::Status Init(modelbox::Drivers &drivers) override;
+  modelbox::Status Add(const std::string &file) override;
+  modelbox::Status Init(modelbox::Drivers &driver) override;
 
  private:
   modelbox::Status GetTargetDriverList(modelbox::Drivers &drivers);

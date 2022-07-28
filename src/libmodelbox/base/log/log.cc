@@ -94,7 +94,7 @@ void Logger::Vprint(LogLevel level, const char *file, int lineno,
   auto ret = vsnprintf_s(buff, sizeof(buff), sizeof(buff) - 1, format, ap);
   if (ret < 0) {
     int huge_buff_size = LOG_BUFF_SIZE * 8;
-    char *huge_buff = (char *)malloc(huge_buff_size);
+    auto *huge_buff = (char *)malloc(huge_buff_size);
     if (huge_buff == nullptr) {
       return;
     }

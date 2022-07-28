@@ -43,9 +43,6 @@ using namespace modelbox;
 #define MODELBOX_SERVER_LOG_PATH "/var/log/modelbox/modelbox.log"
 #define MODELBOX_SERVER_PID_FILE "/var/run/modelbox.pid"
 
-extern char *program_invocation_name;
-extern char *program_invocation_short_name;
-
 static int g_sig_list[] = {
     SIGIO,   SIGPWR,    SIGSTKFLT, SIGPROF, SIGINT,  SIGTERM,
     SIGBUS,  SIGVTALRM, SIGTRAP,   SIGXCPU, SIGXFSZ, SIGILL,
@@ -69,10 +66,10 @@ static struct option options[] = {
     {"get-conf-value", 1, &option_flag, MODELBOX_SERVER_ARG_GETCONF},
     {"get-modelbox-root", 0, &option_flag,
      MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT},
-    {0, 0, 0, 0},
+    {nullptr, 0, nullptr, 0},
 };
 
-static void showhelp(void) {
+static void showhelp() {
   /* clang-format off */
     char help[] = ""
         "Usage: modelbox [OPTION]...\n"
@@ -126,7 +123,7 @@ static void modelbox_sig_handler(int volatile sig_no, siginfo_t *sig_info,
   _exit(1);
 }
 
-static int modelbox_reg_signal(void) {
+static int modelbox_reg_signal() {
   if (modelbox_sig_register(g_sig_list, g_sig_num, modelbox_sig_handler) != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
@@ -135,7 +132,7 @@ static int modelbox_reg_signal(void) {
   return 0;
 }
 
-int modelbox_init_log(void) {
+int modelbox_init_log() {
   std::shared_ptr<ModelboxServerLogger> logger =
       std::make_shared<ModelboxServerLogger>();
 
@@ -162,7 +159,7 @@ int modelbox_init_log(void) {
   return 0;
 }
 
-int modelbox_init(void) {
+int modelbox_init() {
   if (modelbox_reg_signal() != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
@@ -191,12 +188,12 @@ int modelbox_init(void) {
   return 0;
 }
 
-void modelbox_hung_check(void) {
+void modelbox_hung_check() {
   int is_status_ok = 1;
   auto root = modelbox::Statistics::GetGlobalItem();
 
   auto flowitem = root->GetItem("flow");
-  if (flowitem == NULL) {
+  if (flowitem == nullptr) {
     app_monitor_heartbeat();
     return;
   }
@@ -222,7 +219,6 @@ void modelbox_hung_check(void) {
   }
 
   app_monitor_heartbeat();
-  
 }
 
 int modelbox_run(std::shared_ptr<Server> server) {
@@ -242,7 +238,7 @@ int modelbox_run(std::shared_ptr<Server> server) {
   heart_beattask->Callback(modelbox_hung_check);
 
   auto future = std::async(std::launch::async, [heart_beattask]() {
-    if (app_monitor_init(NULL, NULL) != 0) {
+    if (app_monitor_init(nullptr, nullptr) != 0) {
       return;
     }
 
@@ -280,7 +276,7 @@ int GetConfig(const std::string key) {
 
 int CheckPort(const std::string host) {
   struct addrinfo hints;
-  struct addrinfo *result = NULL;
+  struct addrinfo *result = nullptr;
 
   memset_s(&hints, sizeof(hints), 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -325,7 +321,7 @@ int CheckPort(const std::string host) {
   return 0;
 }
 
-static void onexit(void) {}
+static void onexit() {}
 
 #ifdef BUILD_TEST
 int modelbox_server_main(int argc, char *argv[])

@@ -307,9 +307,9 @@ AscendMemory::AscendMemory(const std::shared_ptr<Device> &device,
 AscendMemory::~AscendMemory() {}
 
 Status AscendMemory::BindStream(
-    const std::shared_ptr<AscendStream> &ascend_stream_ptr) {
+    const std::shared_ptr<AscendStream> &stream_ptr) {
   if (ascend_stream_ptr_ != nullptr) {
-    if (ascend_stream_ptr_ == ascend_stream_ptr) {
+    if (ascend_stream_ptr_ == stream_ptr) {
       return STATUS_SUCCESS;
     }
     // Change stream to another is not allowed
@@ -317,9 +317,9 @@ Status AscendMemory::BindStream(
   }
 
   Status ret = STATUS_SUCCESS;
-  if (ascend_stream_ptr != nullptr) {
-    if (ascend_stream_ptr->IsInDevice(device_->GetDeviceID())) {
-      ascend_stream_ptr_ = ascend_stream_ptr;
+  if (stream_ptr != nullptr) {
+    if (stream_ptr->IsInDevice(device_->GetDeviceID())) {
+      ascend_stream_ptr_ = stream_ptr;
       return STATUS_SUCCESS;
     }
     // We need create a new stream when cross gpu device, so bind failed in fact

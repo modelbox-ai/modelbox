@@ -43,7 +43,7 @@ Status InputVirtualNode::Init(const std::set<std::string>& input_port_names,
 
   extern_ports_.clear();
   auto ext_queue_size = config->GetUint64("queue_size_external", queue_size_);
-  for (auto& output_port_name : output_port_names) {
+  for (const auto& output_port_name : output_port_names) {
     auto port = std::make_shared<InPort>(
         output_port_name,
         std::dynamic_pointer_cast<NodeBase>(shared_from_this()), GetPriority(),
@@ -208,7 +208,7 @@ Status OutputVirtualNode::Run(RunType type) {
     OutputBufferList output;
     std::shared_ptr<FlowUnitError> last_error;
     for (auto& port_data : *stream_data_map) {
-      auto& port_name = port_data.first;
+      const auto& port_name = port_data.first;
       auto& data_list = port_data.second;
       std::vector<std::shared_ptr<Buffer>> valid_output;
       for (auto& data : data_list) {
@@ -295,7 +295,7 @@ std::shared_ptr<FlowUnitError> SessionUnmatchCache::GetLastError() {
 Status SessionUnmatchCache::PopCache(OutputBufferList& output_buffer_list) {
   size_t empty_port = 0;
   for (auto& port_streams_item : port_streams_map_) {
-    auto& port_name = port_streams_item.first;
+    const auto& port_name = port_streams_item.first;
     auto& port_streams = port_streams_item.second;
     if (port_streams.empty()) {
       output_buffer_list[port_name] = std::make_shared<BufferList>();
@@ -387,7 +387,7 @@ Status OutputUnmatchVirtualNode::Run(RunType type) {
 
   for (auto iter = session_cache_map_.begin();
        iter != session_cache_map_.end();) {
-    auto& session = iter->first;
+    const auto& session = iter->first;
     auto& cache = iter->second;
     auto io =
         std::dynamic_pointer_cast<ExternalDataMapImpl>(session->GetSessionIO());

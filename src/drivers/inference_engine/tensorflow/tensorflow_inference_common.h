@@ -89,11 +89,11 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
   modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
 
  private:
-  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> ctx,
+  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
                               std::vector<TF_Tensor *> &input_tf_tensor_list);
 
-  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> ctx,
-                               std::vector<TF_Tensor *> &input_tf_tensor_list);
+  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
+                               std::vector<TF_Tensor *> &output_tf_tensor_list);
   modelbox::Status SetUpInferencePlugin(
       std::shared_ptr<modelbox::Configuration> config);
   modelbox::Status SetUpDynamicLibrary(
@@ -117,7 +117,8 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
       const std::vector<modelbox::FlowUnitInput> &flowunit_input_list);
   modelbox::Status FillOutput(
       const std::vector<modelbox::FlowUnitOutput> &flowunit_output_list);
-  modelbox::Status NewSession(bool save_model, const std::string &model_entry);
+  modelbox::Status NewSession(bool is_save_model,
+                              const std::string &model_entry);
   bool IsSaveModelType(const std::string &model_path);
   InferenceTensorflowParams params_;
   std::string plugin_;

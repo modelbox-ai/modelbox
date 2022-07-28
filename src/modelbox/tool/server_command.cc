@@ -48,10 +48,10 @@ enum MODELBOX_TOOL_SERVER_COMMAND {
 };
 
 static struct option server_options[] = {
-    {"conn", 1, 0, MODELBOX_TOOL_SERVER_CONNECT},
-    {"conf", 1, 0, MODELBOX_TOOL_SERVER_INFO_FROM_CONF},
-    {"h", 0, 0, MODELBOX_TOOL_SERVER_HELP},
-    {0, 0, 0, 0},
+    {"conn", 1, nullptr, MODELBOX_TOOL_SERVER_CONNECT},
+    {"conf", 1, nullptr, MODELBOX_TOOL_SERVER_INFO_FROM_CONF},
+    {"h", 0, nullptr, MODELBOX_TOOL_SERVER_HELP},
+    {nullptr, 0, nullptr, 0},
 };
 
 ToolCommandServer::ToolCommandServer() {

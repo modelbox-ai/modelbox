@@ -40,13 +40,12 @@ class MeanFlowUnit : public MeanFlowUnitBase {
   MeanFlowUnit();
   virtual ~MeanFlowUnit();
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> ctx);
+  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
 
  private:
   template <typename T>
-  void Process(const T *input_data,
-               std::shared_ptr<modelbox::Buffer> intput_buf,
-               std::shared_ptr<modelbox::Buffer> output_buf);
+  void Process(const T *input_data, std::shared_ptr<modelbox::Buffer> input_buf,
+               std::shared_ptr<modelbox::Buffer> out_buff);
 };
 
 #endif  // MODELBOX_FLOWUNIT_MEAN_H_

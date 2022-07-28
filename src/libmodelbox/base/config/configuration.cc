@@ -29,7 +29,7 @@ class TomlConfigParser : public ConfigParser {
       const std::function<void(const std::string key,
                                const std::string &basic_value)> &collector);
 
-  Status Parse(std::shared_ptr<Configuration> &config, std::istream &stream,
+  Status Parse(std::shared_ptr<Configuration> &config, std::istream &is,
                const std::string &fname = "unknown file") override;
   Status Parse(std::shared_ptr<Configuration> &config,
                const std::string &file) override;
@@ -41,12 +41,12 @@ void ConfigStore::WriteProperty(const std::string &key,
 
   auto prefix_key = key;
   auto period_pos = prefix_key.find_last_of('.');
-  while (period_pos != key.npos) {
+  while (period_pos != std::string::npos) {
     auto sub_key = prefix_key.substr(period_pos + 1);
     prefix_key = prefix_key.substr(0, period_pos);
 
     if (sub_key_index_.find(prefix_key) != sub_key_index_.end()) {
-      period_pos = prefix_key.npos;
+      period_pos = std::string::npos;
     } else {
       period_pos = prefix_key.find_last_of('.', period_pos);
     }
@@ -540,7 +540,7 @@ void Configuration::StringSplit(const std::string &str,
   auto str_with_delimiter = str + delimiter;
   auto begin = 0;
   auto end = str_with_delimiter.find(delimiter, begin);
-  while (end != str.npos) {
+  while (end != std::string::npos) {
     auto sub_str = str_with_delimiter.substr(begin, end - begin);
     sub_str_list.push_back(sub_str);
     begin = end + 1;

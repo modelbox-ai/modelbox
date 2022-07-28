@@ -16,10 +16,11 @@
 
 #include "modelbox/manager/manager_monitor_client.h"
 
+#include <stdlib.h>
+
 #include "manager_common.h"
 #include "manager_conf.h"
 #include "manager_monitor.h"
-#include <stdlib.h>
 
 char g_key_file[PATH_MAX];
 
@@ -73,7 +74,7 @@ int app_monitor_init(const char *name, const char *keyfile) {
     }
   }
 
-  strncpy(app_info.name, name, APP_NAME_LEN);
+  strncpy(app_info.name, name, APP_NAME_LEN - 1);
   app_info.pid = getpid();
   _app_monitor_reset_msgkey();
   if (strlen(g_key_file) <= 0) {
@@ -87,21 +88,16 @@ int app_monitor_init(const char *name, const char *keyfile) {
   return 0;
 }
 
-int app_monitor_keepalive_time(void)
-{
-  return g_keepalive_time;
-}
+int app_monitor_keepalive_time(void) { return g_keepalive_time; }
 
-int app_monitor_heartbeat_interval(void) {
-  return g_heartbeat_interval;
-}
+int app_monitor_heartbeat_interval(void) { return g_heartbeat_interval; }
 
 int app_monitor_keyfile(char *file) {
   if (file == NULL) {
     return -1;
   }
 
-  strncpy(g_key_file, file, PATH_MAX);
+  strncpy(g_key_file, file, PATH_MAX - 1);
   _app_monitor_reset_msgkey();
 
   return 0;

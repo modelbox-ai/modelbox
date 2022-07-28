@@ -138,8 +138,9 @@ Status MeanGpuFlowUnitTest::AddMockFlowUnit() {
                   static_cast<uint8_t*>(output_buf_1->At(0)->MutableData());
               for (size_t i = 0; i < 3; ++i) {
                 for (size_t j = 0; j < 5; j++) {
-                  for (size_t k = 0; k < 4; k++)
+                  for (size_t k = 0; k < 4; k++) {
                     dev_data_1[i * 20 + j * 4 + k] = static_cast<uint8_t>(100);
+                  }
                 }
               }
 

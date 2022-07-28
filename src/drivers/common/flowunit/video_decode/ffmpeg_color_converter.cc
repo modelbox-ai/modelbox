@@ -43,7 +43,7 @@ modelbox::Status FfmpegColorConverter::CvtColor(
 
   int32_t linesize[4];
   GetLineSize(out_pix_fmt, width, linesize, 4);
-  uint8_t *data[4] = {0};
+  uint8_t *data[4] = {nullptr};
   data[0] = out_frame_data;
   if (out_pix_fmt == AVPixelFormat::AV_PIX_FMT_NV12) {
     data[1] = out_frame_data + width * height;  // For UV plane
@@ -77,11 +77,11 @@ bool FfmpegColorConverter::SupportCvtPixFmt(AVPixelFormat pix_fmt) {
 Status FfmpegColorConverter::InitSwsCtx(int32_t width, int32_t height,
                                         AVPixelFormat src_pix_fmt,
                                         AVPixelFormat dest_pix_fmt) {
-  auto sws_ctx = sws_getContext(width, height, src_pix_fmt, width, height,
-                                dest_pix_fmt, 0, nullptr, nullptr, nullptr);
+  auto *sws_ctx = sws_getContext(width, height, src_pix_fmt, width, height,
+                                 dest_pix_fmt, 0, nullptr, nullptr, nullptr);
   if (sws_ctx == nullptr) {
     auto fmt_name = std::to_string(dest_pix_fmt);
-    auto name_c = av_get_pix_fmt_name(dest_pix_fmt);
+    const auto *name_c = av_get_pix_fmt_name(dest_pix_fmt);
     if (name_c) {
       fmt_name = name_c;
     }

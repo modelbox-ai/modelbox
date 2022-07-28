@@ -206,7 +206,8 @@ TEST_F(SlabTest, Perf) {
   std::vector<std::thread> threads;
   std::atomic<unsigned long> number;
   bool stop = false;
-  unsigned long begin, end;
+  unsigned long begin;
+  unsigned long end;
   int cpu_num = std::thread::hardware_concurrency() * 2;
 
   number = 0;

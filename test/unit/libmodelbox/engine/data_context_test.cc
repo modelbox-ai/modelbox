@@ -60,7 +60,7 @@ class DataContextTest : public testing::Test {
       data_count = 1;
     }
     auto data = std::make_shared<PortDataMap>();
-    for (auto& port_name : in_port_names_) {
+    for (const auto& port_name : in_port_names_) {
       auto& port_data_list = (*data)[port_name];
       for (size_t i = 0; i < data_count; ++i) {
         auto buffer = std::make_shared<Buffer>();
@@ -98,7 +98,7 @@ class DataContextTest : public testing::Test {
     auto process_info = std::make_shared<BufferProcessInfo>();
     process_info->SetType(type);
 
-    for (auto& input_name : in_port_names_) {
+    for (const auto& input_name : in_port_names_) {
       auto inputs = data_ctx->Input(input_name);
       ASSERT_EQ(inputs->Size(), expect_input_count);
       std::list<std::shared_ptr<BufferIndexInfo>> input_index_list;
@@ -111,7 +111,7 @@ class DataContextTest : public testing::Test {
 
     auto output_map = data_ctx->Output();
     ASSERT_NE(output_map, nullptr);
-    for (auto& output_name : out_port_names_) {
+    for (const auto& output_name : out_port_names_) {
       auto output_list = std::make_shared<BufferList>();
       (*output_map)[output_name] = output_list;
       for (size_t i = 0; i < output_count; ++i) {

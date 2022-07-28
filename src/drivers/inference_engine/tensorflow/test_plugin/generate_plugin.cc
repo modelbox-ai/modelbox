@@ -53,8 +53,9 @@ modelbox::Status OriginInferencePlugin::CreateOutputBufferList(
     output_buffer_list->Set("type", modelbox::MODELBOX_UINT8);
   } else if (type_output_temp == "long") {
     output_buffer_list->Set("type", modelbox::MODELBOX_INT16);
-  } else
+  } else {
     return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
+  }
 
   if (status != modelbox::STATUS_OK) {
     auto err_msg = "output buffer list builds error: " + status.WrapErrormsgs();
@@ -124,12 +125,12 @@ modelbox::Status OriginInferencePlugin::SetUpInputOutput(
 }
 
 modelbox::Status OriginInferencePlugin::PreProcess(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<TF_Tensor *> &input_tf_tensor_list) {
   int index = 0;
   modelbox::Status status;
   for (const auto &input_name : input_name_list_) {
-    const auto input_buf = ctx->Input(input_name);
+    const auto input_buf = data_ctx->Input(input_name);
 
     std::string type = input_type_list_[index++];
     std::transform(type.begin(), type.end(), type.begin(), ::toupper);
@@ -177,7 +178,7 @@ modelbox::Status OriginInferencePlugin::PreProcess(
 }
 
 modelbox::Status OriginInferencePlugin::PostProcess(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<TF_Tensor *> &output_tf_tensor_list) {
   int index = 0;
   for (const auto &output_name : output_name_list_) {
@@ -201,7 +202,7 @@ modelbox::Status OriginInferencePlugin::PostProcess(
       return {modelbox::STATUS_INVALID, "output tensor dim is zero"};
     }
 
-    auto output_buf = ctx->Output(output_name);
+    auto output_buf = data_ctx->Output(output_name);
     auto single_bytes = tensor_byte / num;
     std::vector<size_t> shape_vector(num, single_bytes);
     auto status = CreateOutputBufferList(output_buf, shape_vector, tensor_data,

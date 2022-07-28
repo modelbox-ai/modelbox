@@ -81,21 +81,21 @@ modelbox::Status OriginInferencePlugin::SetUpInputOutput(
 }
 
 modelbox::Status OriginInferencePlugin::PreProcess(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status OriginInferencePlugin::PostProcess(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status OriginInferencePlugin::DataPre(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status OriginInferencePlugin::DataPost(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   return modelbox::STATUS_OK;
 }

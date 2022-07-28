@@ -68,7 +68,7 @@ class DataSourceParserFlowUnitTest : public testing::Test {
     remove(cert_.c_str());
   };
   std::shared_ptr<MockFlow> GetDriverFlow();
-  std::shared_ptr<MockFlow> RunDriverFlow(const std::string mock_flowunit_name);
+  std::shared_ptr<MockFlow> RunDriverFlow(std::string mock_flowunit_name);
   modelbox::Status SendDataSourceCfg(std::shared_ptr<MockFlow> &driver_flow,
                                    const std::string &data_source_cfg,
                                    const std::string &source_type);
@@ -296,11 +296,11 @@ void DataSourceParserFlowUnitTest::PreparationToGetCert() {
   std::shared_ptr<Configuration> config_file =
       conf_builder->Build(TEST_ASSETS + std::string("/auth/auth_info.toml"));
 
-  std::string ak(config_file->GetString("base.ak").c_str());
-  std::string sk(config_file->GetString("base.sk").c_str());
-  std::string domain_id(config_file->GetString("base.domain_id").c_str());
-  std::string project_id(config_file->GetString("base.project_id").c_str());
-  std::string iam_host(config_file->GetString("base.iam_host").c_str());
+  std::string ak(config_file->GetString("base.ak"));
+  std::string sk(config_file->GetString("base.sk"));
+  std::string domain_id(config_file->GetString("base.domain_id"));
+  std::string project_id(config_file->GetString("base.project_id"));
+  std::string iam_host(config_file->GetString("base.iam_host"));
 
   modelbox::IAMAuth::GetInstance()->SetIAMHostAddress(iam_host);
   if (modelbox::STATUS_OK != modelbox::IAMAuth::GetInstance()->SetConsigneeInfo(

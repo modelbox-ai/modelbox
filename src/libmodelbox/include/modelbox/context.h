@@ -39,7 +39,7 @@ class GraphState {
 class HandlerContext {
  public:
   friend class ModelBoxEngine;
-  HandlerContext(std::weak_ptr<ModelBoxEngine> &data_handler);
+  HandlerContext(std::weak_ptr<ModelBoxEngine> &env);
   virtual ~HandlerContext() {}
 
   virtual Status PushData(const std::string &key,

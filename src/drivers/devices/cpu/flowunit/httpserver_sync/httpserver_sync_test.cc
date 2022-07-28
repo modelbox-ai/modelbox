@@ -66,7 +66,8 @@ Status HttpServerSyncFlowUnitTest::AddMockFlowUnit() {
       input_buf->At(0)->Get("endpoint", request_url);
       EXPECT_EQ(REQUEST_URL_HTTPS, request_url);
 
-      auto input_data = static_cast<const char*>(input_buf->ConstBufferData(0));
+      const auto* input_data =
+          static_cast<const char*>(input_buf->ConstBufferData(0));
       std::string request_body(input_data, input_buf->At(0)->GetBytes());
       const utf8string& response_body = "response_body: " + request_body;
       auto size = response_body.size();
@@ -101,7 +102,7 @@ Status HttpServerSyncFlowUnitTest::AddMockFlowUnit() {
         EXPECT_EQ(body_post, request_body);
         EXPECT_EQ("/restdemo_post", uri);
       } else if (method == "GET") {
-        std::string body_get = "";
+        std::string body_get;
         EXPECT_EQ(body_get, request_body);
         EXPECT_EQ("/restdemo_get", uri);
       } else if (method == "DELETE") {
@@ -134,7 +135,8 @@ Status HttpServerSyncFlowUnitTest::AddMockFlowUnit() {
       input_buf->At(0)->Get("endpoint", request_url);
       EXPECT_EQ(REQUEST_URL_HTTP, request_url);
 
-      auto input_data = static_cast<const char*>(input_buf->ConstBufferData(0));
+      const auto* input_data =
+          static_cast<const char*>(input_buf->ConstBufferData(0));
       std::string request_body(input_data, input_buf->At(0)->GetBytes());
       const utf8string& response_body = "response_body: " + request_body;
       auto size = response_body.size();
@@ -190,8 +192,7 @@ void PutRequestSync(web::http::uri uri,
   msg_put.headers() = headers_put;
   auto putvalue = web::json::value::object();
   putvalue["param"] = web::json::value::string(
-      "{\"image_id\":0,\"algorithm\":\"face_detection\",\"alg_threshold\":12."
-      "0}");
+      R"({"image_id":0,"algorithm":"face_detection","alg_threshold":12.0})");
   putvalue["image"] = web::json::value::string("image base 64 data string put");
   msg_put.set_body(putvalue);
   try {

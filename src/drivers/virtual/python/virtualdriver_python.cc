@@ -91,7 +91,12 @@ modelbox::Status PythonVirtualDriverManager::Scan(const std::string &path) {
 }
 
 modelbox::Status PythonVirtualDriverManager::Add(const std::string &file) {
-  std::string name, type, version, description, entry, flowunit_type;
+  std::string name;
+  std::string type;
+  std::string version;
+  std::string description;
+  std::string entry;
+  std::string flowunit_type;
   std::shared_ptr<ConfigurationBuilder> builder =
       std::make_shared<ConfigurationBuilder>();
   std::shared_ptr<Configuration> config = builder->Build(file);
@@ -161,7 +166,7 @@ modelbox::Status PythonVirtualDriverManager::Add(const std::string &file) {
 
 modelbox::Status PythonVirtualDriverManager::BindBaseDriver(
     modelbox::Drivers &driver) {
-  for (auto &bind_type : BIND_PYTHON_FLOWUNIT_TYPE) {
+  for (const auto &bind_type : BIND_PYTHON_FLOWUNIT_TYPE) {
     auto tmp_driver = driver.GetDriver(modelbox::DRIVER_CLASS_FLOWUNIT,
                                        bind_type, BIND_PYTHON_FLOWUNIT_NAME,
                                        BIND_PYTHON_FLOWUNIT_VERSION);
@@ -189,7 +194,9 @@ modelbox::Status VirtualPythonFlowUnitFactory::FillInput(
   }
 
   for (unsigned int i = 1; i <= input.size(); ++i) {
-    std::string input_device, input_name, input_type;
+    std::string input_device;
+    std::string input_name;
+    std::string input_type;
     auto key = "input.input" + std::to_string(i);
     auto input_item_table = config->GetSubKeys(key);
     if (input_item_table.empty()) {
@@ -229,7 +236,9 @@ modelbox::Status VirtualPythonFlowUnitFactory::FillOutput(
   }
 
   for (unsigned int i = 1; i <= output.size(); ++i) {
-    std::string output_device, output_name, output_type;
+    std::string output_device;
+    std::string output_name;
+    std::string output_type;
     auto key = "output.output" + std::to_string(i);
     auto output_item_table = config->GetSubKeys(key);
     if (output_item_table.empty()) {

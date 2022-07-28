@@ -77,7 +77,6 @@ void *ModelBoxFuseOperation::FuseInit(struct fuse_conn_info *conn) {
 
 void ModelBoxFuseOperation::FuseDestroy(void *eh) {
   CurrentModleBoxFuse()->FuseDestroy(eh);
-  return;
 }
 
 int ModelBoxFuseOperation::GetAttr(const char *path, struct stat *stbuf) {
@@ -275,8 +274,8 @@ Status ModelBoxFuse::RmvFuseFile(const std::string &path) {
 
 std::string ModelBoxFuse::GetMountPoint() { return mount_point_; }
 
-void *ModelBoxFuse::FuseInit(struct fuse_conn_info *conn) { return 0; }
-void ModelBoxFuse::FuseDestroy(void *eh) { return; }
+void *ModelBoxFuse::FuseInit(struct fuse_conn_info *conn) { return nullptr; }
+void ModelBoxFuse::FuseDestroy(void *eh) {}
 int ModelBoxFuse::GetAttr(const char *path, struct stat *stbuf) {
   auto entry = root_entry_->LookUp(path);
   if (entry == nullptr) {
@@ -363,23 +362,21 @@ int ModelBoxFuse::OpenDir(const char *path, struct fuse_file_info *fi) {
     return -ENOENT;
   }
 
-  std::shared_ptr<ModelBoxDEntry> *holder = new std::shared_ptr<ModelBoxDEntry>;
+  auto *holder = new std::shared_ptr<ModelBoxDEntry>;
   *holder = entry;
   fi->fh = (uint64_t)holder;
   return 0;
 }
 
 int ModelBoxFuse::ReleaseDir(const char *path, struct fuse_file_info *fi) {
-  std::shared_ptr<ModelBoxDEntry> *entry =
-      (std::shared_ptr<ModelBoxDEntry> *)(fi->fh);
+  auto *entry = (std::shared_ptr<ModelBoxDEntry> *)(fi->fh);
   delete entry;
   return 0;
 }
 
 int ModelBoxFuse::ReadDir(const char *path, void *buff, fuse_fill_dir_t filler,
                           off_t offset, struct fuse_file_info *fi) {
-  std::shared_ptr<ModelBoxDEntry> *entry =
-      (std::shared_ptr<ModelBoxDEntry> *)(fi->fh);
+  auto *entry = (std::shared_ptr<ModelBoxDEntry> *)(fi->fh);
 
   for (auto child : (*entry)->Children()) {
     struct stat st;
@@ -457,16 +454,14 @@ int ModelBoxFuse::Open(const char *path, struct fuse_file_info *fi) {
     return ret;
   }
 
-  std::shared_ptr<ModelBoxFuseFile> *holder =
-      new std::shared_ptr<ModelBoxFuseFile>;
+  auto *holder = new std::shared_ptr<ModelBoxFuseFile>;
   *holder = file_ops;
   fi->fh = (uint64_t)holder;
   return 0;
 }
 
 int ModelBoxFuse::Release(const char *path, struct fuse_file_info *fi) {
-  std::shared_ptr<ModelBoxFuseFile> *fuse_file =
-      (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
+  auto *fuse_file = (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
   int ret = (*fuse_file)->Release();
   delete fuse_file;
   MBLOG_DEBUG << "close file: " << path;
@@ -475,28 +470,24 @@ int ModelBoxFuse::Release(const char *path, struct fuse_file_info *fi) {
 
 int ModelBoxFuse::Read(const char *path, char *buff, size_t size, off_t off,
                        struct fuse_file_info *fi) {
-  std::shared_ptr<ModelBoxFuseFile> *fuse_file =
-      (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
+  auto *fuse_file = (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
   return (*fuse_file)->Read(buff, size, off);
 }
 
 int ModelBoxFuse::Write(const char *path, const char *buff, size_t size,
                         off_t off, struct fuse_file_info *fi) {
-  std::shared_ptr<ModelBoxFuseFile> *fuse_file =
-      (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
+  auto *fuse_file = (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
   return (*fuse_file)->Write(buff, size, off);
 }
 
 int ModelBoxFuse::FSync(const char *path, int isdatasync,
                         struct fuse_file_info *fi) {
-  std::shared_ptr<ModelBoxFuseFile> *fuse_file =
-      (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
+  auto *fuse_file = (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
   return (*fuse_file)->FSync(isdatasync);
 }
 
 int ModelBoxFuse::Flush(const char *path, struct fuse_file_info *fi) {
-  std::shared_ptr<ModelBoxFuseFile> *fuse_file =
-      (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
+  auto *fuse_file = (std::shared_ptr<ModelBoxFuseFile> *)(fi->fh);
   return (*fuse_file)->Flush();
 }
 

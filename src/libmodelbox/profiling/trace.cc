@@ -175,9 +175,9 @@ Status Trace::WriteTrace() {
     return STATUS_SUCCESS;
   }
 
-  time_t current_time = time(0);
+  time_t current_time = time(nullptr);
   char buf[64] = {0};
-  auto local_tm = localtime(&current_time);
+  auto* local_tm = localtime(&current_time);
   if (local_tm) {
     strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", local_tm);
   }

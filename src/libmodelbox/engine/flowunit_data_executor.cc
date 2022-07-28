@@ -50,14 +50,14 @@ FlowUnitExecData::FlowUnitExecData(std::shared_ptr<FlowUnit> fu) : fu_(fu) {
 
 void FlowUnitExecData::ReserveCache(size_t buffer_count, DataType type) {
   auto data = in_data_;
-  auto cache = &in_data_cache_;
+  auto *cache = &in_data_cache_;
   if (type == OUT_DATA) {
     data = out_data_;
     cache = &out_data_cache_;
   }
 
   for (auto &port_item : *data) {
-    auto &port_name = port_item.first;
+    const auto &port_name = port_item.first;
     auto &cache_buffer_list = (*cache)[port_name];
     cache_buffer_list.clear();
     cache_buffer_list.reserve(buffer_count);
@@ -68,14 +68,14 @@ void FlowUnitExecData::AppendToCache(std::shared_ptr<FlowUnitExecData> src,
                                      size_t start_idx, size_t count,
                                      DataType type) {
   auto src_data = src->in_data_;
-  auto cache = &in_data_cache_;
+  auto *cache = &in_data_cache_;
   if (type == OUT_DATA) {
     cache = &out_data_cache_;
     src_data = src->out_data_;
   }
 
   for (auto &port_item : *src_data) {
-    auto &port_name = port_item.first;
+    const auto &port_name = port_item.first;
     auto &port_data = port_item.second;
     auto &cache_buffer_list = (*cache)[port_name];
     auto end_idx = start_idx + count;
@@ -93,14 +93,14 @@ void FlowUnitExecData::AppendToCache(std::shared_ptr<FlowUnitExecData> src,
 
 void FlowUnitExecData::FlushCache(DataType type) {
   auto data = in_data_;
-  auto cache = &in_data_cache_;
+  auto *cache = &in_data_cache_;
   if (type == OUT_DATA) {
     data = out_data_;
     cache = &out_data_cache_;
   }
 
   for (auto &port_item : *data) {
-    auto &port_name = port_item.first;
+    const auto &port_name = port_item.first;
     auto &port_data = port_item.second;
     auto &cache_buffer_list = (*cache)[port_name];
     port_data->Swap(cache_buffer_list);
@@ -346,7 +346,7 @@ Status FlowUnitExecData::SaveProcessOneToOne(
   }
 
   for (auto &in_item : *parent_data) {
-    auto &port_name = in_item.first;
+    const auto &port_name = in_item.first;
     auto &port_data_list = in_item.second;
     for (size_t i = 0; i < port_data_list->Size(); ++i) {
       auto process_info = process_info_list[i];
@@ -374,7 +374,7 @@ Status FlowUnitExecData::SaveProcessNToM(
   // input n, output m
   auto process_info = std::make_shared<BufferProcessInfo>();
   for (auto &in_item : *parent_data) {
-    auto &port_name = in_item.first;
+    const auto &port_name = in_item.first;
     auto &port_data_list = in_item.second;
     std::list<std::shared_ptr<BufferIndexInfo>> in_port_buffer_index_info_list;
     for (auto &buffer : *port_data_list) {
@@ -411,8 +411,8 @@ void FlowUnitExecDataMapper::LoadDataFromExecCtx() {
         std::make_shared<FlowUnitExecData>(exec_ctx->GetFlowUnit());
     const auto &inputs = exec_ctx->GetDataCtx()->GetInputs();
     for (const auto &item : inputs) {
-      auto &port_name = item.first;
-      auto &port_data_list = item.second;
+      const auto &port_name = item.first;
+      const auto &port_data_list = item.second;
       if (port_data_list.empty()) {
         continue;
       }
@@ -990,7 +990,7 @@ Status FlowUnitExecDataView::PackLoadTasks(
   executors.reserve(mapper_of_flowunit_.size());
   tasks.reserve(mapper_of_flowunit_.size());
   for (auto &item : mapper_of_flowunit_) {
-    auto &flowunit = item.first;
+    const auto &flowunit = item.first;
     auto device = flowunit->GetBindDevice();
     if (device == nullptr) {
       MBLOG_ERROR << "Get bind device failed";
@@ -1096,7 +1096,7 @@ Status FlowUnitExecDataView::PackSaveTasks(
   executors.reserve(mapper_of_flowunit_.size());
   tasks.reserve(mapper_of_flowunit_.size());
   for (auto &mapper_item : mapper_of_flowunit_) {
-    auto flowunit = mapper_item.first;
+    auto *flowunit = mapper_item.first;
     auto device = flowunit->GetBindDevice();
     if (device == nullptr) {
       MBLOG_ERROR << "Get bind device failed";
@@ -1144,8 +1144,8 @@ FlowUnitDataExecutor::FlowUnitDataExecutor(std::weak_ptr<Node> node_ref,
 Status FlowUnitDataExecutor::DataCtxExecuteFunc(
     FlowUnit *flowunit, const BatchedFUExecDataCtxList &process_data,
     size_t data_ctx_idx) {
-  auto &batched_fu_data_ctx = process_data[data_ctx_idx];
-  for (auto &data_ctx : batched_fu_data_ctx) {
+  const auto &batched_fu_data_ctx = process_data[data_ctx_idx];
+  for (const auto &data_ctx : batched_fu_data_ctx) {
     Status status = STATUS_FAULT;
     try {
       status = flowunit->Process(data_ctx);
@@ -1245,7 +1245,7 @@ Status FlowUnitDataExecutor::Execute(FlowUnitExecDataView &exec_view) {
   std::list<std::future<Status>> status_list;
   // each flowunit has a device executor which manages thread pool
   const auto &flowunits = exec_view.GetFlowUnits();
-  for (auto &flowunit : flowunits) {
+  for (const auto &flowunit : flowunits) {
     const auto &process_data = exec_view.GetFlowUnitProcessData(flowunit);
     auto data_ctx_count = process_data.size();
     auto exec_func = std::bind(&FlowUnitDataExecutor::DataCtxExecuteFunc, this,

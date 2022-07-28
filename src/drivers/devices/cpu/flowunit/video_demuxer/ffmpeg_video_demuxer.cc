@@ -126,7 +126,7 @@ int64_t FfmpegVideoDemuxer::GetDuration() {
 
 Status FfmpegVideoDemuxer::ReadPacket(std::shared_ptr<AVPacket> &av_packet) {
   int32_t ret = 0;
-  auto packet_ptr = av_packet_alloc();
+  auto *packet_ptr = av_packet_alloc();
   if (packet_ptr == nullptr) {
     MBLOG_ERROR << "ReadPacket alloc packet failed";
     return STATUS_FAULT;
@@ -251,7 +251,7 @@ Status FfmpegVideoDemuxer::GetStreamCodecID() {
 }
 
 Status FfmpegVideoDemuxer::GetStreamTimeInfo() {
-  auto entry =
+  auto *entry =
       av_dict_get(format_ctx_->metadata, "creation_timestamp", nullptr, 0);
   if (entry != nullptr) {
     creation_time_ = atol(entry->value);
@@ -269,8 +269,8 @@ Status FfmpegVideoDemuxer::GetStreamFrameInfo() {
   frame_rate_numerator_ = format_ctx_->streams[stream_id_]->avg_frame_rate.num;
   frame_rate_denominator_ =
       format_ctx_->streams[stream_id_]->avg_frame_rate.den;
-  auto entry = av_dict_get(format_ctx_->streams[stream_id_]->metadata, "rotate",
-                           nullptr, 0);
+  auto *entry = av_dict_get(format_ctx_->streams[stream_id_]->metadata,
+                            "rotate", nullptr, 0);
   if (entry != nullptr) {
     frame_rotate_ = (atol(entry->value) % 360 + 360) % 360;
   } else {
@@ -298,7 +298,7 @@ void FfmpegVideoDemuxer::RescaleFrameRate(int32_t &frame_rate_numerator,
 }
 
 Status FfmpegVideoDemuxer::GetStreamBsfInfo() {
-  auto extra_data = format_ctx_->streams[stream_id_]->codecpar->extradata;
+  auto *extra_data = format_ctx_->streams[stream_id_]->codecpar->extradata;
   auto extra_size = format_ctx_->streams[stream_id_]->codecpar->extradata_size;
   std::stringstream extra_data_log;
   for (int i = 0; i < extra_size; ++i) {
@@ -347,7 +347,8 @@ modelbox::Status FfmpegVideoDemuxer::GetBsfName(uint32_t codec_tag,
   return STATUS_SUCCESS;
 }
 
-bool FfmpegVideoDemuxer::IsAnnexb(uint8_t *extra_data, size_t extra_size) {
+bool FfmpegVideoDemuxer::IsAnnexb(const uint8_t *extra_data,
+                                  size_t extra_size) {
   auto size_test = !extra_size;
   auto start_code1 = extra_size >= 3 && extra_data[0] == 0 &&
                      extra_data[1] == 0 && extra_data[2] == 1;
@@ -359,7 +360,7 @@ bool FfmpegVideoDemuxer::IsAnnexb(uint8_t *extra_data, size_t extra_size) {
 
 std::shared_ptr<AVBSFContext> FfmpegVideoDemuxer::CreateBsfCtx(
     const std::string &bsf_name, AVDictionary **options) {
-  auto bsf = av_bsf_get_by_name(bsf_name.c_str());
+  const auto *bsf = av_bsf_get_by_name(bsf_name.c_str());
   if (!bsf) {
     MBLOG_ERROR << "Get bit stream filter failed, name " << bsf_name;
     return nullptr;

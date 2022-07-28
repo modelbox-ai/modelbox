@@ -72,7 +72,7 @@ PYBIND11_MODULE(_flowunit, m) {
 modelbox::Status PythonInterpreter::InitModule() {
   py::gil_scoped_acquire acquire{};
 
-  auto m = PyImport_AddModule("_flowunit");
+  auto *m = PyImport_AddModule("_flowunit");
   if (m == nullptr) {
     MBLOG_ERROR << "Add python module failed.";
     return modelbox::STATUS_FAULT;

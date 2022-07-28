@@ -29,17 +29,17 @@ modelbox::Status DrawBBoxFlowUnit::Open(
 modelbox::Status DrawBBoxFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status DrawBBoxFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   MBLOG_INFO << "process image draw bbox on cpu";
 
-  auto input1_bufs = ctx->Input("in_region");
+  auto input1_bufs = data_ctx->Input("in_region");
   if (input1_bufs->Size() <= 0) {
     auto errMsg = "in_region batch is " + std::to_string(input1_bufs->Size());
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
-  auto input2_bufs = ctx->Input("in_image");
+  auto input2_bufs = data_ctx->Input("in_image");
   if (input2_bufs->Size() <= 0) {
     auto errMsg = "in_image batch is " + std::to_string(input2_bufs->Size());
     MBLOG_ERROR << errMsg;
@@ -54,7 +54,7 @@ modelbox::Status DrawBBoxFlowUnit::Process(
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
-  auto output_bufs = ctx->Output("out_image");
+  auto output_bufs = data_ctx->Output("out_image");
 
   std::vector<size_t> shape;
   for (size_t i = 0; i < input2_bufs->Size(); ++i) {
@@ -80,7 +80,11 @@ modelbox::Status DrawBBoxFlowUnit::Process(
     }
 
     // get images
-    int32_t width, height, channel, rate_den, rate_num;
+    int32_t width;
+    int32_t height;
+    int32_t channel;
+    int32_t rate_den;
+    int32_t rate_num;
     input2_bufs->At(i)->Get("width", width);
     input2_bufs->At(i)->Get("height", height);
     input2_bufs->At(i)->Get("channel", channel);
@@ -108,7 +112,7 @@ modelbox::Status DrawBBoxFlowUnit::Process(
 
     // output data
     auto output_buffer = output_bufs->At(i);
-    auto output_data = output_buffer->MutableData();
+    auto *output_data = output_buffer->MutableData();
     memcpy_s(output_data, output_buffer->GetBytes(), image.data,
              image.total() * image.elemSize());
     output_buffer->Set("width", width);

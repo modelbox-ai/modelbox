@@ -49,10 +49,10 @@ modelbox::Status ColorTransposeFlowUnit::CheckParam(
 }
 
 modelbox::Status ColorTransposeFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   MBLOG_DEBUG << "color_transpose process begin";
-  auto input_buf = ctx->Input("in_image");
-  auto output_buf = ctx->Output("out_image");
+  auto input_buf = data_ctx->Input("in_image");
+  auto output_buf = data_ctx->Output("out_image");
 
   std::vector<size_t> shape_vector;
   for (size_t i = 0; i < input_buf->Size(); ++i) {
@@ -77,7 +77,7 @@ modelbox::Status ColorTransposeFlowUnit::Process(
     metaresult = input_buf->At(i)->Get("layout", layout) ? metaresult : false;
 
     if (metaresult == false) {
-      auto msg = "buffer meta is invalid.";
+      const auto *msg = "buffer meta is invalid.";
       MBLOG_ERROR << msg;
       return {modelbox::STATUS_BADCONF, msg};
     }
@@ -90,9 +90,9 @@ modelbox::Status ColorTransposeFlowUnit::Process(
 
     size_t elem_size = width * height;
 
-    auto input_data =
+    const auto *input_data =
         static_cast<const u_char *>(input_buf->ConstBufferData(i));
-    auto output_data = static_cast<u_char *>(output_buf->MutableBufferData(i));
+    auto *output_data = static_cast<u_char *>(output_buf->MutableBufferData(i));
     if (input_data == nullptr || output_data == nullptr) {
       return {modelbox::STATUS_NOMEM};
     }

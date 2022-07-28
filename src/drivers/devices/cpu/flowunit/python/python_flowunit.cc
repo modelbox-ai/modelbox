@@ -105,7 +105,7 @@ modelbox::Status PythonFlowUnit::Open(
                                         " failed: " + ex.what()};
   }
 
-  auto fu = obj_.cast<modelbox::FlowUnit*>();
+  auto* fu = obj_.cast<modelbox::FlowUnit*>();
   fu->SetBindDevice(GetBindDevice());
   fu->SetExternalData(GetCreateExternalDataFunc());
   fu->SetFlowUnitDesc(GetFlowUnitDesc());

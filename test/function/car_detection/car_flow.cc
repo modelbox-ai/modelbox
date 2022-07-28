@@ -66,10 +66,7 @@ Status CarFlow::Init(const std::string& graphFilePath) {
 
 Status CarFlow::Build() { return flow_->Build(); }
 
-void CarFlow::Run() {
-  flow_->RunAsync();
-  return;
-}
+void CarFlow::Run() { flow_->RunAsync(); }
 
 void CarFlow::Wait(const uint64_t millisecond) { flow_->Wait(millisecond); }
 

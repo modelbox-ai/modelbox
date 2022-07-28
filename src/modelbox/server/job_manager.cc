@@ -20,14 +20,14 @@
 namespace modelbox {
 
 std::shared_ptr<modelbox::Job> JobManager::CreateJob(
-    const std::string& job_name, const std::string& graphFilePath) {
+    const std::string& job_name, const std::string& graph_file_path) {
   std::lock_guard<std::mutex> lock(job_lock_);
   if (jobs_.find(job_name) != jobs_.end()) {
     MBLOG_WARN << "job " << job_name << " is running";
     modelbox::StatusError = {modelbox::STATUS_ALREADY, "job already running"};
     return nullptr;
   }
-  auto job = std::make_shared<modelbox::Job>(job_name, graphFilePath);
+  auto job = std::make_shared<modelbox::Job>(job_name, graph_file_path);
   jobs_.emplace(std::make_pair(job_name, job));
   return job;
 }

@@ -34,7 +34,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetType(modelbox::DRIVER_TYPE_VIRTUAL);
   desc->SetVersion(BIND_INFERENCE_FLOWUNIT_VERSION);
   desc->SetNodelete(true);
-  return;
 }
 
 modelbox::Status DriverInit() {

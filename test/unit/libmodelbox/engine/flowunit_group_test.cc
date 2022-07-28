@@ -39,7 +39,7 @@ std::shared_ptr<FlowUnitDataContext> BuildFlowUnitDataContext(
     for (size_t i = 0; i < size; ++i) {
       auto buffer = std::make_shared<Buffer>(device);
       buffer->Build(sizeof(int32_t));
-      auto ptr = (int32_t*)buffer->MutableData();
+      auto* ptr = (int32_t*)buffer->MutableData();
       *ptr = begin_data + i;
       data_list.push_back(buffer);
     }
@@ -51,20 +51,20 @@ std::shared_ptr<FlowUnitDataContext> BuildFlowUnitDataContext(
   return data_ctx;
 }
 
-void PrintDataContext(const std::shared_ptr<FlowUnitDataContext>& ctx) {
-  const auto& input = ctx->GetInputs();
+void PrintDataContext(const std::shared_ptr<FlowUnitDataContext>& data_ctx) {
+  const auto& input = data_ctx->GetInputs();
   for (const auto& in : input) {
     MBLOG_DEBUG << in.first;
-    for (auto& data : in.second) {
+    for (const auto& data : in.second) {
       MBLOG_DEBUG << *((int*)data->ConstData());
     }
   }
 }
 
 template <typename FuncImpl>
-void CheckDataContext(const std::shared_ptr<FlowUnitDataContext>& ctx,
+void CheckDataContext(const std::shared_ptr<FlowUnitDataContext>& data_ctx,
                       Node* node, FuncImpl func) {
-  const auto& outputs = ctx->GetOutputs();
+  const auto& outputs = data_ctx->GetOutputs();
   for (const auto& out : outputs) {
     auto buffer_list = out.second;
     for (auto& data : *buffer_list) {
@@ -109,14 +109,15 @@ TEST_F(FlowUnitGroupTest, Run2_In_1) {
   FlowUnitGroup fug("iflow_add_1", "cpu", "0", config, nullptr);
   fug.Init({"In_1"}, {"Out_1"}, flowunit_mgr_);
   fug.SetNode(node_);
-  fug.Open([](std::shared_ptr<Device>) -> std::shared_ptr<ExternalData> {
-    return nullptr;
-  });
+  fug.Open(
+      [](std::shared_ptr<Device> /*unused*/) -> std::shared_ptr<ExternalData> {
+        return nullptr;
+      });
   fug.Run(data_ctx_list);
 
   int check_data = 0;
-  for (const auto& ctx : data_ctx_list) {
-    CheckDataContext(ctx, node_.get(), [&](int data) -> bool {
+  for (const auto& data_ctx : data_ctx_list) {
+    CheckDataContext(data_ctx, node_.get(), [&](int data) -> bool {
       return data == (1 + check_data++);
     });
   }
@@ -145,14 +146,15 @@ TEST_F(FlowUnitGroupTest, Run2_In_2) {
   FlowUnitGroup fug("add", "cpu", "0", config, nullptr);
   fug.Init({"In_1", "In_2"}, {"Out_1"}, flowunit_mgr_);
   fug.SetNode(node_);
-  fug.Open([](std::shared_ptr<Device>) -> std::shared_ptr<ExternalData> {
-    return nullptr;
-  });
+  fug.Open(
+      [](std::shared_ptr<Device> /*unused*/) -> std::shared_ptr<ExternalData> {
+        return nullptr;
+      });
   fug.Run(data_ctx_list);
 
   int check_data = 0;
-  for (const auto& ctx : data_ctx_list) {
-    CheckDataContext(ctx, node_.get(), [&](int data) -> bool {
+  for (const auto& data_ctx : data_ctx_list) {
+    CheckDataContext(data_ctx, node_.get(), [&](int data) -> bool {
       MBLOG_DEBUG << data << " = " << check_data << " + " << check_data;
       return data == (2 * check_data++);
     });
@@ -182,9 +184,10 @@ TEST_F(FlowUnitGroupTest, Run2_Status_Error) {
   FlowUnitGroup fug("add_1_and_error", "cpu", "0", config, nullptr);
   fug.Init({"In_1"}, {"Out_1"}, flowunit_mgr_);
   fug.SetNode(node_);
-  fug.Open([](std::shared_ptr<Device>) -> std::shared_ptr<ExternalData> {
-    return nullptr;
-  });
+  fug.Open(
+      [](std::shared_ptr<Device> /*unused*/) -> std::shared_ptr<ExternalData> {
+        return nullptr;
+      });
   fug.Run(data_ctx_list);
 
   int check_data = 0;
@@ -195,8 +198,8 @@ TEST_F(FlowUnitGroupTest, Run2_Status_Error) {
     return data == (1 + check_data++);
   };
 
-  for (const auto& ctx : data_ctx_list) {
-    const auto& outputs = ctx->GetOutputs();
+  for (const auto& data_ctx : data_ctx_list) {
+    const auto& outputs = data_ctx->GetOutputs();
 
     for (const auto& out : outputs) {
       auto buffer_list = out.second;
@@ -240,17 +243,18 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
   FlowUnitGroup fug("test_condition", "cpu", "0", config, nullptr);
   fug.Init({"In_1"}, {"Out_1", "Out_2"}, flowunit_mgr_);
   fug.SetNode(node_);
-  fug.Open([](std::shared_ptr<Device>) -> std::shared_ptr<ExternalData> {
-    return nullptr;
-  });
+  fug.Open(
+      [](std::shared_ptr<Device> /*unused*/) -> std::shared_ptr<ExternalData> {
+        return nullptr;
+      });
   fug.Run(data_ctx_list);
 
   int check_data = 0;
   int idx = 0;
 
-  for (const auto& ctx : data_ctx_list) {
-    EXPECT_FALSE(ctx->HasError());
-    const auto& outputs = ctx->GetOutputs();
+  for (const auto& data_ctx : data_ctx_list) {
+    EXPECT_FALSE(data_ctx->HasError());
+    const auto& outputs = data_ctx->GetOutputs();
     const auto& output_1 = outputs.at("Out_1");
     const auto& output_2 = outputs.at("Out_2");
 
@@ -264,7 +268,7 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
           continue;
         }
         EXPECT_NE(output_1->At(i), nullptr);
-        auto data = (int*)output_1->ConstBufferData(i);
+        auto* data = (int*)output_1->ConstBufferData(i);
         EXPECT_EQ(*data, check_data++);
       } else {
         if (output_2->At(i) == nullptr) {
@@ -273,7 +277,7 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
         }
         EXPECT_NE(output_2->At(i), nullptr);
         if (!output_2->At(i)->HasError()) {
-          auto data = (int*)output_2->ConstBufferData(i);
+          auto* data = (int*)output_2->ConstBufferData(i);
           EXPECT_EQ(*data, check_data);
         }
         ++check_data;

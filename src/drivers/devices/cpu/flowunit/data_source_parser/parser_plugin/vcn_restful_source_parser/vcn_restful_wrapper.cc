@@ -139,7 +139,7 @@ modelbox::Status VcnRestfulWrapper::ParseRestfulLoginResult(
       return {modelbox::STATUS_FAULT, msg};
     }
 
-    uint64_t result_code = result_json["resultCode"].get<uint64_t>();
+    auto result_code = result_json["resultCode"].get<uint64_t>();
     if (result_code != IVS_RESULT_SUCCESS &&
         result_code != IVS_RESULT_PWD_EXPIRED &&
         result_code != IVS_RESULT_FIRST_LOGIN) {
@@ -229,7 +229,7 @@ modelbox::Status VcnRestfulWrapper::Logout(const VcnRestfulInfo &restful_info) {
       return {modelbox::STATUS_FAULT, msg};
     }
 
-    uint64_t result_code = result_json["resultCode"].get<uint64_t>();
+    auto result_code = result_json["resultCode"].get<uint64_t>();
     if (result_code != IVS_RESULT_SUCCESS) {
       std::string msg =
           "Failed to parse logout, result code:" + std::to_string(result_code);
@@ -322,7 +322,7 @@ modelbox::Status VcnRestfulWrapper::ParseRestfulGetUrlResult(
       return {modelbox::STATUS_FAULT, msg};
     }
 
-    uint64_t result_code = result_json["resultCode"].get<uint64_t>();
+    auto result_code = result_json["resultCode"].get<uint64_t>();
     if (result_code != IVS_RESULT_SUCCESS) {
       std::string msg = "Failed to parse get url result, result code:" +
                         std::to_string(result_code);
@@ -397,7 +397,7 @@ modelbox::Status VcnRestfulWrapper::KeepAlive(
       return {modelbox::STATUS_FAULT, msg};
     }
 
-    uint64_t result_code = result_json["resultCode"].get<uint64_t>();
+    auto result_code = result_json["resultCode"].get<uint64_t>();
     if (result_code != IVS_RESULT_SUCCESS) {
       std::string msg = "Failed to restful keep alive, result code:" +
                         std::to_string(result_code);

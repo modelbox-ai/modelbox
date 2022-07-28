@@ -37,8 +37,6 @@
 #include "test_config.h"
 #include "thread"
 
-extern char **environ;
-
 namespace modelbox {
 
 class ModelboxServerTest : public testing::Test {
@@ -67,7 +65,7 @@ TEST_F(ModelboxServerTest, Post) {
 
 nlohmann::json GetCreateJobMsg(const std::string &name) {
   const std::string test_lib_dir = TEST_LIB_DIR;
-  auto graph = R"(
+  const auto *graph = R"(
       digraph demo {
       IN[flowunit=test_0_2]
       OUT[flowunit=test_ok_2_0]
@@ -98,7 +96,7 @@ nlohmann::json GetCreateJobMsg(const std::string &name) {
 
 nlohmann::json GetCreateJobFail(const std::string &name) {
   const std::string test_lib_dir = TEST_LIB_DIR;
-  auto graph = R"(
+  const auto *graph = R"(
       digraph demo {
       IN[flowunit=not_exist_in]
       OUT[flowunit=not_exist_out]

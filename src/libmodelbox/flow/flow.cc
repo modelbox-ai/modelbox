@@ -80,14 +80,14 @@ Status Flow::GetInputArgs(
   if (!sub_keys.empty()) {
     auto args_config = config->GetSubConfig("args");
     args_ = std::make_shared<std::unordered_map<std::string, std::string>>();
-    for (auto& key : sub_keys) {
+    for (const auto& key : sub_keys) {
       auto value = args_config->GetSubConfig(key)->GetString("default");
       args_->insert({key, value});
     }
   }
 
   // get final args
-  for (auto& input_arg : input_args) {
+  for (const auto& input_arg : input_args) {
     if (args_ == nullptr || args_->find(input_arg.first) == args_->end()) {
       MBLOG_ERROR << "input args key:" << input_arg.first
                   << " is not in the flow.";
@@ -492,7 +492,7 @@ Status Flow::Build() {
     for (auto& node : nodes) {
       auto node_config = node.second->GetConfiguration();
       auto node_keys = node_config->GetKeys();
-      for (auto& key : node_keys) {
+      for (const auto& key : node_keys) {
         auto value = node_config->GetString(key);
         auto value_name = value.substr(1, value.size());
         if (std::regex_match(value, std::regex("^\\$.*")) &&

@@ -81,14 +81,14 @@ modelbox::Status IPACL::IsMatch(const std::string &ipaddr) {
 }
 
 uint32_t IPACL::GetIPV4Addr(std::shared_ptr<struct addrinfo> addrinfo) {
-  struct sockaddr_in *in4 = (struct sockaddr_in *)addrinfo->ai_addr;
+  auto *in4 = (struct sockaddr_in *)addrinfo->ai_addr;
   uint32_t ip = ntohl(in4->sin_addr.s_addr);
   return ip;
 }
 
 std::shared_ptr<struct addrinfo> IPACL::GetAddrInfo(const std::string &host) {
   struct addrinfo hints;
-  struct addrinfo *result = NULL;
+  struct addrinfo *result = nullptr;
 
   memset_s(&hints, sizeof(hints), 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -109,14 +109,14 @@ Status SplitIPPort(const std::string host, std::string &ip, std::string &port) {
   auto pos = host.find_last_of(':');
 
   if (pos == std::string::npos) {
-    auto msg = "invalid ip address, please try ip:port";
+    const auto *msg = "invalid ip address, please try ip:port";
     return {STATUS_INVALID, msg};
   }
 
   port = host.substr(pos + 1, host.length());
   int n_port = atol(port.c_str());
   if (n_port <=0 || n_port > 65535) {
-    auto msg = "invalid port";
+    const auto *msg = "invalid port";
     return {STATUS_INVALID, msg};
   }
 

@@ -129,7 +129,7 @@ TEST_F(LogTest, LoggerWithID) {
 
 TEST_F(LogTest, LoggerCallBackPrint) {
   std::string origin_msg = "this is message";
-  std::string expect_msg = "";
+  std::string expect_msg;
   RegLogPrint([&](LogLevel level, const char *file, int lineno,
                   const char *func, const char *msg) { expect_msg = msg; });
   MBLOG_ERROR << origin_msg;
@@ -138,7 +138,7 @@ TEST_F(LogTest, LoggerCallBackPrint) {
 
 TEST_F(LogTest, LoggerCallBackVprint) {
   std::string origin_msg = "this is message";
-  std::string expect_msg = "";
+  std::string expect_msg;
   RegLogVprint([&](LogLevel level, const char *file, int lineno,
                    const char *func, const char *format, va_list ap) {
     char buff[4096];

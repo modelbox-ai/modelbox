@@ -163,7 +163,7 @@ const std::string Status::WrapOnlyErrormsgs(bool with_code) const {
     return wrap_status_->WrapOnlyErrormsgs(with_code);
   }
 
-  auto& msg = wrap_status_->WrapOnlyErrormsgs(with_code);
+  const auto& msg = wrap_status_->WrapOnlyErrormsgs(with_code);
   if (msg.length() > 0) {
     return ErrorCodeMsgs(with_code) + " -> " + msg;
   }

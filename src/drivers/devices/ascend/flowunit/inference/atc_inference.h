@@ -29,8 +29,8 @@ class AtcInference {
  public:
   modelbox::Status Init(const std::string &model_file,
                         const std::shared_ptr<modelbox::Configuration> &config,
-                        std::vector<std::string> input_name_list_,
-                        std::vector<std::string> output_name_list_,
+                        std::vector<std::string> unit_input_list,
+                        std::vector<std::string> unit_output_list,
                         std::shared_ptr<modelbox::Drivers> drivers_ptr);
 
   modelbox::Status Infer(std::shared_ptr<modelbox::DataContext> &data_ctx,

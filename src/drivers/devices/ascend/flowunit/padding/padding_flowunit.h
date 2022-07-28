@@ -108,7 +108,7 @@ class PaddingFlowUnit : public modelbox::AscendFlowUnit {
   modelbox::Status CropResizeAndPaste(ResizeCropParam &param,
                                       aclrtStream stream);
 
-  modelbox::Status FillDestRoi(ImageSize &in_image_size, Rect &dest_rect,
+  modelbox::Status FillDestRoi(ImageSize &in_image_size, Rect &dest_roi,
                                std::shared_ptr<acldvppRoiConfig> &crop_area,
                                std::shared_ptr<acldvppRoiConfig> &paste_area);
 

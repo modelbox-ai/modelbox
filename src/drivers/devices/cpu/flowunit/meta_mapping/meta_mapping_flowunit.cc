@@ -119,7 +119,7 @@ void MetaMappingFlowUnit::InitBufferMetaSetters() {
 
 modelbox::Status MetaMappingFlowUnit::ParseRules(
     const std::vector<std::string> &rules) {
-  for (auto &rule : rules) {
+  for (const auto &rule : rules) {
     auto rule_v = modelbox::StringSplit(rule, '=');
     if (rule_v.size() != 2) {
       return modelbox::STATUS_BADCONF;
@@ -136,7 +136,7 @@ modelbox::Status MetaMappingFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status MetaMappingFlowUnit::ToString(modelbox::Any *any,
                                                std::string &val) {
-  auto &type = any->type();
+  const auto &type = any->type();
   auto caster_item = to_string_casters_.find(type.hash_code());
   if (caster_item == to_string_casters_.end()) {
     MBLOG_ERROR << "Not support meta type " << type.name();
@@ -174,9 +174,9 @@ modelbox::Status MetaMappingFlowUnit::SetValue(
 }
 
 modelbox::Status MetaMappingFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  auto input_buffer_list = ctx->Input(INPUT_DATA);
-  auto output_buffer_list = ctx->Output(OUTPUT_DATA);
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto input_buffer_list = data_ctx->Input(INPUT_DATA);
+  auto output_buffer_list = data_ctx->Output(OUTPUT_DATA);
   for (auto &buffer : *input_buffer_list) {
     output_buffer_list->PushBack(buffer);
     modelbox::Any *src_val = nullptr;

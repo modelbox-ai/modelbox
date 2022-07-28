@@ -36,7 +36,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetType(FLOWUNIT_TYPE);
   desc->SetDescription(FLOWUNIT_DESC);
   desc->SetVersion("1.0.0");
-  return;
 }
 
 modelbox::Status DriverInit() {

@@ -93,7 +93,7 @@ TEST_F(TaskManagerTest, CreateTask) {
   EXPECT_EQ(WAITING, task_1->GetTaskStatus());
   auto output_buf = task_1->CreateBufferList();
   output_buf->Build({3 * sizeof(int)});
-  auto data = (int*)output_buf->MutableData();
+  auto *data = (int *)output_buf->MutableData();
   data[0] = 0;
   data[1] = 30000;
   data[2] = 3;
@@ -126,7 +126,7 @@ TEST_F(TaskManagerTest, StopTask) {
   EXPECT_EQ(WAITING, task_1->GetTaskStatus());
   auto output_buf = task_1->CreateBufferList();
   output_buf->Build({3 * sizeof(int)});
-  auto data = (int*)output_buf->MutableData();
+  auto *data = (int *)output_buf->MutableData();
   data[0] = 0;
   data[1] = 30000;
   data[2] = 3;
@@ -158,7 +158,7 @@ TEST_F(TaskManagerTest, DeleteTaskById) {
   EXPECT_EQ(WAITING, task->GetTaskStatus());
   auto output_buf = task->CreateBufferList();
   output_buf->Build({3 * sizeof(int)});
-  auto data = (int*)output_buf->MutableData();
+  auto *data = (int *)output_buf->MutableData();
   data[0] = 0;
   data[1] = 30000;
   data[2] = 3;
@@ -190,7 +190,7 @@ TEST_F(TaskManagerTest, TaskInQueue) {
     EXPECT_EQ(WAITING, task->GetTaskStatus());
     auto output_buf = task->CreateBufferList();
     output_buf->Build({3 * sizeof(int)});
-    auto data = (int*)output_buf->MutableData();
+    auto *data = (int *)output_buf->MutableData();
     data[0] = 0;
     data[1] = 40000;
     data[2] = 3;

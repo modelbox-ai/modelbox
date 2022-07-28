@@ -107,15 +107,12 @@ class ManagerTestApp {
 
   void SetPauseAfterCount(int pause_time) { pause_after_count_ = pause_time; }
 
-  static void SignalSegHandler(int sig) {
-    printf("handle signal %d\n", sig);
-    return;
-  }
+  static void SignalSegHandler(int sig) { printf("handle signal %d\n", sig); }
 
   static void SignalSegHandleExist(int sig) { _exit(1); }
 
   static int Run(struct Test_App *app, int count, const char *name) {
-    class ManagerTestApp *test_app = (ManagerTestApp *)app->arg1;
+    auto *test_app = (ManagerTestApp *)app->arg1;
     if (test_app->ignore_segv_) {
       signal(SIGSEGV, SignalSegHandler);
     } else {
@@ -163,10 +160,10 @@ TEST_F(ManagerTest, DISABLED_Start) {
 TEST_F(ManagerTest, DISABLED_Start_dup) {
   ManagerTestServer server;
   server.Start();
-  EXPECT_EQ(0, app_start("1", "test", NULL, 1, 60, 5));
-  EXPECT_EQ(0, app_start("2", "test", NULL, 1, 60, 5));
-  EXPECT_EQ(0, app_start("3", "test", NULL, 1, 60, 5));
-  EXPECT_NE(0, app_start("2", "test", NULL, 1, 60, 5));
+  EXPECT_EQ(0, app_start("1", "test", nullptr, 1, 60, 5));
+  EXPECT_EQ(0, app_start("2", "test", nullptr, 1, 60, 5));
+  EXPECT_EQ(0, app_start("3", "test", nullptr, 1, 60, 5));
+  EXPECT_NE(0, app_start("2", "test", nullptr, 1, 60, 5));
 }
 
 TEST_F(ManagerTest, DISABLED_Start_many) {

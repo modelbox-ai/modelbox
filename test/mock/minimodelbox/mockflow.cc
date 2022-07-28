@@ -123,11 +123,11 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
           *mock_flowunit,
           DataGroupPost(testing::An<std::shared_ptr<modelbox::DataContext>>()))
           .WillByDefault(
-              testing::Invoke([=](std::shared_ptr<DataContext> ctx) -> Status {
+              testing::Invoke([=](std::shared_ptr<DataContext> data_ctx) -> Status {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataGroupPost";
                 if (data_group_post_func_ && mock_flowunit_lock != nullptr) {
-                  return data_group_post_func_(ctx, mock_flowunit_lock);
+                  return data_group_post_func_(data_ctx, mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -236,7 +236,7 @@ void MockFlow::Register_Test_0_2_Flowunit() {
 
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({10 * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
+    auto *data = (int *)buffer_list->MutableData();
     for (size_t i = 0; i < 10; i++) {
       data[i] = i;
     }
@@ -258,11 +258,11 @@ void MockFlow::Register_Test_0_2_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
-    auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+    auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
 
     auto external = data_ctx->External();
-    auto external_data_1 = (int*)(*external)[0]->ConstData();
+    auto *external_data_1 = (int *)(*external)[0]->ConstData();
     auto bytes = external->GetBytes();
 
     auto output_buf_1 = data_ctx->Output("Out_1");
@@ -270,14 +270,14 @@ void MockFlow::Register_Test_0_2_Flowunit() {
 
     std::vector<size_t> data_1_shape({bytes});
     output_buf_1->Build(data_1_shape);
-    auto dev_data_1 = (int*)(output_buf_1->MutableData());
+    auto *dev_data_1 = (int *)(output_buf_1->MutableData());
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
       dev_data_1[i] = external_data_1[i];
     }
 
     std::vector<size_t> data_2_shape({bytes});
     output_buf_2->Build({data_2_shape});
-    auto dev_data_2 = (int*)(output_buf_2->MutableData());
+    auto *dev_data_2 = (int *)(output_buf_2->MutableData());
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
       dev_data_2[i] = external_data_1[i] + 10;
     }
@@ -312,7 +312,7 @@ void MockFlow::Register_Test_0_1_Flowunit() {
 
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({10 * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
+    auto *data = (int *)buffer_list->MutableData();
     for (size_t i = 0; i < 10; i++) {
       data[i] = i;
     }
@@ -334,18 +334,18 @@ void MockFlow::Register_Test_0_1_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
-    auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+    auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
 
     auto external = data_ctx->External();
-    auto external_data_1 = (int*)(*external)[0]->ConstData();
+    auto *external_data_1 = (int *)(*external)[0]->ConstData();
     auto bytes = external->GetBytes();
 
     auto output_buf_1 = data_ctx->Output("Out_1");
 
     std::vector<size_t> data_1_shape({bytes});
     output_buf_1->Build(data_1_shape);
-    auto dev_data_1 = (int*)(output_buf_1->MutableData());
+    auto *dev_data_1 = (int *)(output_buf_1->MutableData());
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
       dev_data_1[i] = external_data_1[i];
     }
@@ -376,7 +376,7 @@ void MockFlow::Register_Test_1_0_Flowunit() {
   };
 
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     return modelbox::STATUS_STOP;
   };
@@ -411,7 +411,7 @@ void MockFlow::Register_Test_0_1_Batch_Flowunit() {
     std::vector<size_t> buffer_shape(10, sizeof(int));
     buffer_list->Build(buffer_shape);
     for (size_t i = 0; i < 10; i++) {
-      auto data = (int*)buffer_list->At(i)->MutableData();
+      auto *data = (int *)buffer_list->At(i)->MutableData();
       *data = i;
     }
 
@@ -432,7 +432,7 @@ void MockFlow::Register_Test_0_1_Batch_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
-    auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+    auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
 
     auto external = data_ctx->External();
@@ -443,7 +443,7 @@ void MockFlow::Register_Test_0_1_Batch_Flowunit() {
     std::vector<size_t> data_1_shape(bytes / sizeof(int), sizeof(int));
     output_buf_1->Build(data_1_shape);
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
-      auto dev_data_1 = (int*)(output_buf_1->At(i)->MutableData());
+      auto *dev_data_1 = (int *)(output_buf_1->At(i)->MutableData());
       *dev_data_1 = *((int*)(external->At(i)->ConstData()));
     }
 
@@ -489,7 +489,7 @@ void MockFlow::Register_Test_0_1_Batch_Thread_Flowunit() {
         std::vector<size_t> buffer_shape(10, sizeof(int));
         buffer_list->Build(buffer_shape);
         for (size_t i = 0; i < 10; i++) {
-          auto data = (int*)buffer_list->At(i)->MutableData();
+          auto *data = (int *)buffer_list->At(i)->MutableData();
           *data = i;
         }
 
@@ -514,7 +514,7 @@ void MockFlow::Register_Test_0_1_Batch_Thread_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
-    auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+    auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
 
     auto external = data_ctx->External();
@@ -525,7 +525,7 @@ void MockFlow::Register_Test_0_1_Batch_Thread_Flowunit() {
     std::vector<size_t> data_1_shape(bytes / sizeof(int), sizeof(int));
     output_buf_1->Build(data_1_shape);
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
-      auto dev_data_1 = (int*)(output_buf_1->At(i)->MutableData());
+      auto *dev_data_1 = (int *)(output_buf_1->At(i)->MutableData());
       *dev_data_1 = *((int*)(external->At(i)->ConstData()));
     }
 
@@ -566,7 +566,7 @@ void MockFlow::Register_Test_1_0_Batch_Flowunit() {
   };
 
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     return modelbox::STATUS_STOP;
   };
@@ -607,7 +607,7 @@ void MockFlow::Register_Test_1_0_Batch_Thread_Flowunit() {
   };
 
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     if (MAX_COUNT < run_count) {
       MBLOG_DEBUG << "check reach max running times, should stop.";
@@ -627,7 +627,7 @@ void MockFlow::Register_Test_2_0_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("test_2_0", {"In_1", "In_2"}, {});
   mock_desc->SetFlowType(STREAM);
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     return modelbox::STATUS_STOP;
   };
@@ -640,7 +640,7 @@ void MockFlow::Register_Test_OK_2_0_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("test_ok_2_0", {"In_1", "In_2"}, {});
   mock_desc->SetFlowType(STREAM);
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     return modelbox::STATUS_OK;
   };
@@ -657,7 +657,7 @@ void MockFlow::Register_Test_Orgin_0_2_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto external = data_ctx->External();
-    auto external_data_1 = (int*)(*external)[0]->ConstData();
+    auto *external_data_1 = (int *)(*external)[0]->ConstData();
     auto bytes = external->GetBytes();
 
     auto output_buf_1 = data_ctx->Output("Out_1");
@@ -665,14 +665,14 @@ void MockFlow::Register_Test_Orgin_0_2_Flowunit() {
 
     std::vector<size_t> data_1_shape(10, 4);
     output_buf_1->Build(data_1_shape);
-    auto dev_data_1 = (int*)(output_buf_1->MutableData());
+    auto *dev_data_1 = (int *)(output_buf_1->MutableData());
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
       dev_data_1[i] = external_data_1[i];
     }
 
     std::vector<size_t> data_2_shape(10, 4);
     output_buf_2->Build(data_2_shape);
-    auto dev_data_2 = (int*)(output_buf_2->MutableData());
+    auto *dev_data_2 = (int *)(output_buf_2->MutableData());
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
       dev_data_2[i] = external_data_1[i] + 10;
     }
@@ -689,7 +689,7 @@ void MockFlow::Register_Test_Orgin_0_2_Flowunit() {
 
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({10 * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
+    auto *data = (int *)buffer_list->MutableData();
     for (size_t i = 0; i < 10; i++) {
       data[i] = i;
     }
@@ -718,18 +718,18 @@ void MockFlow::Register_Loop_End_Flowunit() {
   mock_desc->SetFlowType(NORMAL);
   mock_desc->SetDefaultBatchSize(1);
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
 
     auto device = mock_flowunit->GetBindDevice();
 
     for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
-      auto input_data = (int*)(*input_bufs_1)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs_1)[i]->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       output_data[0] = input_data[0] * 2;
 
       output_bufs_1->PushBack(buffer_ptr);
@@ -783,7 +783,7 @@ void MockFlow::Register_Listen_Flowunit() {
 
         constexpr int BUFF_SIZE = 10;
         ext_tl.Build<int>({BUFF_SIZE, {1}});
-        auto dev_data = ext_tl.MutableData<int>();
+        auto *dev_data = ext_tl.MutableData<int>();
         for (size_t i = 0; i < BUFF_SIZE; ++i) {
           dev_data[i] = i;
         }
@@ -823,9 +823,9 @@ void MockFlow::Register_Listen_Flowunit() {
     output_tl_1.Build<int>(ext_tl_1.GetShape());
     output_tl_2.Build<int>(ext_tl_1.GetShape());
 
-    const auto dev_data = ext_tl_1.ConstData<int>();
-    auto out_data_1 = output_tl_1.MutableData<int>();
-    auto out_data_2 = output_tl_2.MutableData<int>();
+    const auto *const dev_data = ext_tl_1.ConstData<int>();
+    auto *out_data_1 = output_tl_1.MutableData<int>();
+    auto *out_data_2 = output_tl_2.MutableData<int>();
     for (size_t i = 0; i < ext_tl_1.Size(); ++i) {
       out_data_1[i] = dev_data[i];
       out_data_2[i] = dev_data[i] + 10;
@@ -875,7 +875,7 @@ void MockFlow::Register_ExternData_Flowunit() {
 
         auto buffer_list = ext_data->CreateBufferList();
         buffer_list->Build({1, 10 * sizeof(int)});
-        auto data = (int*)buffer_list->MutableData();
+        auto *data = (int *)buffer_list->MutableData();
         for (size_t i = 0; i < 10; i++) {
           data[i] = i;
         }
@@ -947,13 +947,13 @@ void MockFlow::Register_Loop_Flowunit() {
   mock_desc->SetFlowType(NORMAL);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
+    auto input_bufs_1 = data_ctx->Input("In_1");
     int ending;
 
-    auto output_bufs_1 = ctx->Output("Out_1");
-    auto output_bufs_2 = ctx->Output("Out_2");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
+    auto output_bufs_2 = data_ctx->Output("Out_2");
 
     auto device = mock_flowunit->GetBindDevice();
     for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
@@ -961,10 +961,10 @@ void MockFlow::Register_Loop_Flowunit() {
       if (!flag) {
         ending = 0;
       }
-      auto input_data = (int*)(*input_bufs_1)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs_1)[i]->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       output_data[0] = input_data[0] + 1;
       if (ending == 9) {
         output_bufs_2->PushBack(buffer_ptr);
@@ -993,19 +993,19 @@ void MockFlow::Register_Condition_Flowunit() {
   mock_desc->SetConditionType(IF_ELSE);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
-    auto output_bufs_2 = ctx->Output("Out_2");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
+    auto output_bufs_2 = data_ctx->Output("Out_2");
 
     auto device = mock_flowunit->GetBindDevice();
 
     for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
-      auto input_data = (int*)(*input_bufs_1)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs_1)[i]->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       output_data[0] = input_data[0];
       if (input_data[0] % 2 == 0) {
         output_bufs_1->PushBack(buffer_ptr);
@@ -1025,20 +1025,20 @@ void MockFlow::Register_Switch_Case_Flowunit() {
   mock_desc->SetConditionType(IF_ELSE);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
-    auto output_bufs_2 = ctx->Output("Out_2");
-    auto output_bufs_3 = ctx->Output("Out_3");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
+    auto output_bufs_2 = data_ctx->Output("Out_2");
+    auto output_bufs_3 = data_ctx->Output("Out_3");
 
     auto device = mock_flowunit->GetBindDevice();
 
     for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
-      auto input_data = (int*)(*input_bufs_1)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs_1)[i]->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       output_data[0] = input_data[0];
       if (input_data[0] % 3 == 0) {
         output_bufs_1->PushBack(buffer_ptr);
@@ -1060,19 +1060,19 @@ void MockFlow::Register_Half_Condition_Flowunit() {
   mock_desc->SetConditionType(IF_ELSE);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
-    auto output_bufs_2 = ctx->Output("Out_2");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
+    auto output_bufs_2 = data_ctx->Output("Out_2");
 
     auto device = mock_flowunit->GetBindDevice();
 
     for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
-      auto input_data = (int*)(*input_bufs_1)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs_1)[i]->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       output_data[0] = input_data[0];
       if (input_data[0] >= 5) {
         output_bufs_1->PushBack(buffer_ptr);
@@ -1092,19 +1092,19 @@ void MockFlow::Register_Normal_Condition_Flowunit() {
   mock_desc->SetConditionType(IF_ELSE);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
-    auto output_bufs_2 = ctx->Output("Out_2");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
+    auto output_bufs_2 = data_ctx->Output("Out_2");
 
     auto device = mock_flowunit->GetBindDevice();
 
     for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
-      auto input_data = (int*)(*input_bufs_1)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs_1)[i]->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       output_data[0] = input_data[0];
       if (input_data[0] >= 5) {
         output_bufs_1->PushBack(buffer_ptr);
@@ -1123,20 +1123,20 @@ void MockFlow::Register_Expand_Normal_Flowunit() {
   mock_desc->SetOutputType(EXPAND);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto session_ctx = ctx->GetSessionContext();
+    auto session_ctx = data_ctx->GetSessionContext();
     session_ctx->SetPrivate("session", std::make_shared<std::string>("111"));
     auto res = session_ctx->GetPrivate("session");
     MBLOG_INFO << "res normal expand: " << res;
 
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
 
-    auto input_data = (int*)(*input_bufs_1)[0]->ConstData();
+    auto *input_data = (int *)(*input_bufs_1)[0]->ConstData();
     std::vector<size_t> data_shape(5, 4);
     output_bufs_1->Build(data_shape);
-    auto output_data = (int*)output_bufs_1->MutableData();
+    auto *output_data = (int *)output_bufs_1->MutableData();
     for (uint32_t j = 0; j < 5; j++) {
       output_data[j] = input_data[0] + j;
     }
@@ -1154,14 +1154,14 @@ void MockFlow::Register_Collapse_Normal_Flowunit() {
 
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
     std::vector<size_t> data_shape(1, 4);
     output_bufs_1->Build(data_shape);
-    auto output_data = (int*)output_bufs_1->MutableData();
-    auto input_data = (int*)input_bufs_1->ConstData();
+    auto *output_data = (int *)output_bufs_1->MutableData();
+    auto *input_data = (int *)input_bufs_1->ConstData();
     output_data[0] = 0;
     for (uint32_t j = 0; j < 5; j++) {
       output_data[0] += input_data[j];
@@ -1179,15 +1179,15 @@ void MockFlow::Register_Expand_Stream_Flowunit() {
   mock_desc->SetFlowType(STREAM);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
 
-    auto input_data = (int*)(*input_bufs_1)[0]->ConstData();
+    auto *input_data = (int *)(*input_bufs_1)[0]->ConstData();
     std::vector<size_t> data_shape(5, 4);
     output_bufs_1->Build(data_shape);
-    auto output_data = (int*)output_bufs_1->MutableData();
+    auto *output_data = (int *)output_bufs_1->MutableData();
     for (uint32_t j = 0; j < 5; j++) {
       output_data[j] = input_data[0] + j;
     }
@@ -1206,14 +1206,14 @@ void MockFlow::Register_Collapse_Stream_Flowunit() {
 
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
+    auto input_bufs_1 = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
     std::vector<size_t> data_shape(1, 4);
     output_bufs_1->Build(data_shape);
-    auto output_data = (int*)output_bufs_1->MutableData();
-    auto input_data = (int*)input_bufs_1->ConstData();
+    auto *output_data = (int *)output_bufs_1->MutableData();
+    auto *input_data = (int *)input_bufs_1->ConstData();
     output_data[0] = 0;
     for (uint32_t j = 0; j < 5; j++) {
       output_data[0] += input_data[j];
@@ -1225,11 +1225,11 @@ void MockFlow::Register_Collapse_Stream_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
 }
 
-Status Add_Funciton(std::shared_ptr<DataContext> ctx,
+Status Add_Funciton(std::shared_ptr<DataContext> data_ctx,
                     std::shared_ptr<MockFlowUnit> mock_flowunit) {
-  auto input_bufs_1 = ctx->Input("In_1");
-  auto input_bufs_2 = ctx->Input("In_2");
-  auto output_bufs = ctx->Output("Out_1");
+  auto input_bufs_1 = data_ctx->Input("In_1");
+  auto input_bufs_2 = data_ctx->Input("In_2");
+  auto output_bufs = data_ctx->Output("Out_1");
 
   if (input_bufs_1->Size() <= 0 || input_bufs_2->Size() <= 0) {
     return STATUS_FAULT;
@@ -1239,9 +1239,9 @@ Status Add_Funciton(std::shared_ptr<DataContext> ctx,
                             (*input_bufs_1)[0]->GetBytes());
   output_bufs->Build(shape);
   for (size_t i = 0; i < input_bufs_1->Size(); ++i) {
-    auto input_data_1 = (int*)(*input_bufs_1)[i]->ConstData();
-    auto input_data_2 = (int*)(*input_bufs_2)[i]->ConstData();
-    auto output_data = (int*)(*output_bufs)[i]->MutableData();
+    auto *input_data_1 = (int *)(*input_bufs_1)[i]->ConstData();
+    auto *input_data_2 = (int *)(*input_bufs_2)[i]->ConstData();
+    auto *output_data = (int *)(*output_bufs)[i]->MutableData();
     auto data_size = (*input_bufs_1)[i]->GetBytes() / sizeof(int);
     for (size_t j = 0; j < data_size; ++j) {
       output_data[j] = input_data_1[j] + input_data_2[j];
@@ -1268,11 +1268,11 @@ void MockFlow::Register_Add_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
 }
 
-Status Wrong_Add_Funciton(std::shared_ptr<DataContext> ctx,
+Status Wrong_Add_Funciton(std::shared_ptr<DataContext> data_ctx,
                           std::shared_ptr<MockFlowUnit> mock_flowunit) {
-  auto input_bufs_1 = ctx->Input("In_1");
-  auto input_bufs_2 = ctx->Input("In_2");
-  auto output_bufs = ctx->Output("Out_1");
+  auto input_bufs_1 = data_ctx->Input("In_1");
+  auto input_bufs_2 = data_ctx->Input("In_2");
+  auto output_bufs = data_ctx->Output("Out_1");
 
   if (input_bufs_1->Size() <= 0 || input_bufs_2->Size() <= 0) {
     return STATUS_FAULT;
@@ -1282,9 +1282,9 @@ Status Wrong_Add_Funciton(std::shared_ptr<DataContext> ctx,
                             (*input_bufs_1)[0]->GetBytes());
   output_bufs->Build(shape);
   for (size_t i = 0; i < input_bufs_1->Size(); ++i) {
-    auto input_data_1 = (int*)(*input_bufs_1)[i]->ConstData();
-    auto input_data_2 = (int*)(*input_bufs_2)[i]->ConstData();
-    auto output_data = (int*)(*output_bufs)[i]->MutableData();
+    auto *input_data_1 = (int *)(*input_bufs_1)[i]->ConstData();
+    auto *input_data_2 = (int *)(*input_bufs_2)[i]->ConstData();
+    auto *output_data = (int *)(*output_bufs)[i]->MutableData();
     auto data_size = (*input_bufs_1)[i]->GetBytes() / sizeof(int);
     for (size_t j = 0; j < data_size; ++j) {
       output_data[j] = input_data_1[j] + input_data_2[j];
@@ -1317,20 +1317,20 @@ void MockFlow::Register_Scatter_Flowunit() {
   mock_desc->SetOutputType(EXPAND);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs = ctx->Input("In_1");
-    auto output_bufs = ctx->Output("Out_1");
+    auto input_bufs = data_ctx->Input("In_1");
+    auto output_bufs = data_ctx->Output("Out_1");
 
     if (input_bufs->Size() != 1) {
       return STATUS_FAULT;
     }
 
     auto size_byte = (*input_bufs)[0]->GetBytes() / sizeof(int);
-    auto input_data_1 = (int*)(*input_bufs)[0]->ConstData();
+    auto *input_data_1 = (int *)(*input_bufs)[0]->ConstData();
     std::vector<size_t> output_shape(size_byte, 1 * sizeof(int));
     output_bufs->Build(output_shape);
-    auto output_data_2 = (int*)(output_bufs->MutableData());
+    auto *output_data_2 = (int *)(output_bufs->MutableData());
     for (uint32_t i = 0; i < size_byte; i++) {
       output_data_2[i] = input_data_1[i];
     }
@@ -1341,7 +1341,7 @@ void MockFlow::Register_Scatter_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
-    auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+    auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
     return modelbox::STATUS_OK;
   };
@@ -1355,10 +1355,10 @@ void MockFlow::Register_Scatter_Flowunit() {
 std::function<Status(std::shared_ptr<DataContext> data_ctx,
                      std::shared_ptr<MockFlowUnit>)>
 Generate_Garther_function(int32_t i) {
-  return [=](std::shared_ptr<DataContext> ctx,
+  return [=](std::shared_ptr<DataContext> data_ctx,
              std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs = ctx->Input("In_1");
-    auto output_bufs = ctx->Output("Out_1");
+    auto input_bufs = data_ctx->Input("In_1");
+    auto output_bufs = data_ctx->Output("Out_1");
 
     uint32_t total_size = 0;
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
@@ -1366,12 +1366,12 @@ Generate_Garther_function(int32_t i) {
     }
     std::vector<size_t> output_shape(i, total_size);
     output_bufs->Build(output_shape);
-    auto out_data = (int*)(output_bufs->MutableData());
+    auto *out_data = (int *)(output_bufs->MutableData());
 
     size_t z = 0;
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
       auto size_byte = (*input_bufs)[i]->GetBytes() / sizeof(int);
-      auto input_data = (int*)(*input_bufs)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[i]->ConstData();
       for (uint32_t j = 0; j < size_byte; j++) {
         out_data[z] = input_data[j];
         z++;
@@ -1417,13 +1417,13 @@ void MockFlow::Register_Print_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    const auto input_bufs = ctx->Input("In_1");
+    const auto input_bufs = data_ctx->Input("In_1");
 
     std::stringstream ostr;
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)(*input_bufs)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[i]->ConstData();
       auto data_size = (*input_bufs)[i]->GetBytes() / sizeof(int);
       for (size_t j = 0; j < data_size; ++j) {
         ostr << input_data[j] << " ";
@@ -1462,11 +1462,11 @@ void MockFlow::Register_Check_Print_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("IN1");
-    auto input_bufs_2 = ctx->Input("IN2");
-    auto input_bufs_3 = ctx->Input("IN3");
+    auto input_bufs_1 = data_ctx->Input("IN1");
+    auto input_bufs_2 = data_ctx->Input("IN2");
+    auto input_bufs_3 = data_ctx->Input("IN3");
 
     if (input_bufs_1->Size() == 0 || input_bufs_2->Size() == 0 ||
         input_bufs_3->Size() == 0 ||
@@ -1476,9 +1476,9 @@ void MockFlow::Register_Check_Print_Flowunit() {
     }
 
     for (size_t i = 0; i < input_bufs_1->Size(); ++i) {
-      const auto in_data_1 = (int*)input_bufs_1->ConstBufferData(i);
-      const auto in_data_2 = (int*)input_bufs_2->ConstBufferData(i);
-      const auto in_data_3 = (int*)input_bufs_3->ConstBufferData(i);
+      auto *const in_data_1 = (int *)input_bufs_1->ConstBufferData(i);
+      auto *const in_data_2 = (int *)input_bufs_2->ConstBufferData(i);
+      auto *const in_data_3 = (int *)input_bufs_3->ConstBufferData(i);
       if (in_data_3[0] != in_data_1[0] + in_data_2[0]) {
         return STATUS_SHUTDOWN;
       }
@@ -1531,7 +1531,7 @@ void MockFlow::Register_Dynamic_Config_Flowunit() {
 
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({3 * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
+    auto *data = (int *)buffer_list->MutableData();
     data[0] = 0;
     data[1] = 15;
     data[2] = 3;
@@ -1555,12 +1555,12 @@ void MockFlow::Register_Dynamic_Config_Flowunit() {
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto external = data_ctx->External();
-    auto external_data_1 = (int*)(*external)[0]->ConstData();
+    auto *external_data_1 = (int *)(*external)[0]->ConstData();
     auto bytes = external->GetBytes();
 
     std::vector<size_t> data_1_shape({bytes});
     output_bufs->Build(data_1_shape);
-    auto dev_data_1 = (int*)(output_bufs->MutableData());
+    auto *dev_data_1 = (int *)(output_bufs->MutableData());
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
       dev_data_1[i] = external_data_1[i];
     }
@@ -1591,10 +1591,10 @@ void MockFlow::Register_Dynamic_Get_Config_Flowunit() {
 
     for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
       auto input_buffer = (*input_bufs_1)[i];
-      auto input_data = (int*)input_buffer->ConstData();
+      auto *input_data = (int *)input_buffer->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       buffer_ptr->Set("test", test);
       output_data[0] = input_data[0];
       output_bufs_1->PushBack(buffer_ptr);
@@ -1625,11 +1625,11 @@ void MockFlow::Register_Dynamic_Get_Config_Other_Flowunit() {
 
     for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
       auto input_buffer = (*input_bufs_1)[i];
-      auto input_data = (int*)input_buffer->ConstData();
+      auto *input_data = (int *)input_buffer->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
       buffer_ptr->Set("test", test);
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       output_data[0] = input_data[0];
       output_bufs_1->PushBack(buffer_ptr);
     }
@@ -1662,7 +1662,7 @@ Genrate_Stream_Open(uint32_t i) {
 
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({3 * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
+    auto *data = (int *)buffer_list->MutableData();
     data[0] = 0;
     data[1] = i;
     data[2] = 3;
@@ -1685,17 +1685,17 @@ Genrate_Stream_Open(uint32_t i) {
 Status Stream_Process(std::shared_ptr<DataContext> data_ctx,
                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
   auto session_ctx = data_ctx->GetSessionContext();
-  auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+  auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
   MBLOG_INFO << "session_content is " << session_content[0];
 
   auto output_bufs = data_ctx->Output("Out_1");
   auto external = data_ctx->External();
-  auto external_data_1 = (int*)(*external)[0]->ConstData();
+  auto *external_data_1 = (int *)(*external)[0]->ConstData();
   auto bytes = external->GetBytes();
 
   std::vector<size_t> data_1_shape({bytes});
   output_bufs->Build(data_1_shape);
-  auto dev_data_1 = (int*)(output_bufs->MutableData());
+  auto *dev_data_1 = (int *)(output_bufs->MutableData());
   for (size_t i = 0; i < bytes / sizeof(int); ++i) {
     dev_data_1[i] = external_data_1[i];
   }
@@ -1750,7 +1750,7 @@ void MockFlow::Register_Stream_Normal_Info_2_Flowunit() {
 
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({8, 8});
-    auto data = (int*)buffer_list->MutableData();
+    auto *data = (int *)buffer_list->MutableData();
     data[0] = 0;
     data[1] = 5;
 
@@ -1776,12 +1776,12 @@ void MockFlow::Register_Stream_Normal_Info_2_Flowunit() {
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto external = data_ctx->External();
-    auto external_data_1 = (int*)(*external)[0]->ConstData();
+    auto *external_data_1 = (int *)(*external)[0]->ConstData();
     auto bytes = external->GetBytes();
 
     std::vector<size_t> data_1_shape(2, 8);
     output_bufs->Build(data_1_shape);
-    auto dev_data_1 = (int*)(output_bufs->MutableData());
+    auto *dev_data_1 = (int *)(output_bufs->MutableData());
     for (size_t i = 0; i < bytes / sizeof(int); ++i) {
       dev_data_1[i] = external_data_1[i];
     }
@@ -1814,7 +1814,7 @@ void MockFlow::Register_Stream_Start_Flowunit() {
     std::vector<size_t> shape(5, sizeof(int));
     output_bufs->Build(shape);
     for (size_t i = 0; i < 5; ++i) {
-      auto output_data = (int*)(*output_bufs)[i]->MutableData();
+      auto *output_data = (int *)(*output_bufs)[i]->MutableData();
       output_data[0] = now_index + i;
     }
     now_index = now_index + 5;
@@ -1833,11 +1833,11 @@ void MockFlow::Register_Stream_Start_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
-    auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+    auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
 
     auto input_bufs = data_ctx->Input("In_1");
-    auto input_data = (int*)(*input_bufs)[0]->ConstData();
+    auto *input_data = (int *)(*input_bufs)[0]->ConstData();
     auto start_index = input_data[0];
     auto end_index = input_data[1];
     auto interval = input_data[2];
@@ -1876,7 +1876,7 @@ void MockFlow::Register_Normal_Expand_Start_Flowunit() {
     auto event = data_ctx->Event();
     if (event == nullptr) {
       auto input_bufs = data_ctx->Input("In_1");
-      auto input_data = (int*)(*input_bufs)[0]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[0]->ConstData();
       auto start_index = input_data[0];
       auto end_index = input_data[1];
       auto start_index_content = std::make_shared<int>(start_index);
@@ -1894,7 +1894,7 @@ void MockFlow::Register_Normal_Expand_Start_Flowunit() {
     std::vector<size_t> shape(5, sizeof(int));
     output_bufs->Build(shape);
     for (size_t i = 0; i < 5; ++i) {
-      auto output_data = (int*)(*output_bufs)[i]->MutableData();
+      auto *output_data = (int *)(*output_bufs)[i]->MutableData();
       output_data[0] = now_index + i;
     }
     now_index = now_index + 5;
@@ -1930,11 +1930,11 @@ void MockFlow::Register_Stream_Tail_Filter_Flowunit() {
         std::static_pointer_cast<int>(data_ctx->GetPrivate("end_index")).get());
 
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)(*input_bufs)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[i]->ConstData();
       if (input_data[0] < 10) {
         auto buffer_ptr = std::make_shared<Buffer>(device);
         buffer_ptr->Build(1 * sizeof(int));
-        auto output_data = (int*)buffer_ptr->MutableData();
+        auto *output_data = (int *)buffer_ptr->MutableData();
         output_data[0] = input_data[0];
         output_bufs->PushBack(buffer_ptr);
       }
@@ -1985,11 +1985,11 @@ void MockFlow::Register_Stream_Mid_Flowunit() {
         std::static_pointer_cast<int>(data_ctx->GetPrivate("end_index")).get());
 
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)(*input_bufs)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[i]->ConstData();
       if (input_data[0] % interval == 0) {
         auto buffer_ptr = std::make_shared<Buffer>(device);
         buffer_ptr->Build(1 * sizeof(int));
-        auto output_data = (int*)buffer_ptr->MutableData();
+        auto *output_data = (int *)buffer_ptr->MutableData();
         output_data[0] = input_data[0];
         output_bufs->PushBack(buffer_ptr);
       }
@@ -2005,7 +2005,7 @@ void MockFlow::Register_Stream_Mid_Flowunit() {
       [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
-    auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+    auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     auto meta = data_ctx->GetInputMeta("In_1");
 
     std::shared_ptr<Device> device;
@@ -2051,14 +2051,14 @@ void MockFlow::Register_Stream_End_Flowunit() {
               .get());
 
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)(*input_bufs)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[i]->ConstData();
       total_count += input_data[0];
       if (input_data[0] == 12) {
         auto output_bufs = data_ctx->Output("Out_1");
         auto device = mock_flowunit->GetBindDevice();
         auto buffer_ptr = std::make_shared<Buffer>(device);
         buffer_ptr->Build(1 * sizeof(int));
-        auto output_data = (int*)buffer_ptr->MutableData();
+        auto *output_data = (int *)buffer_ptr->MutableData();
         output_data[0] = total_count;
         output_bufs->PushBack(buffer_ptr);
         return modelbox::STATUS_OK;
@@ -2077,7 +2077,7 @@ void MockFlow::Register_Stream_End_Flowunit() {
                << "DataGroupPre";
     auto session_ctx = data_ctx->GetSessionContext();
     if (session_ctx->GetPrivate("session") != nullptr) {
-      auto session_content = (int*)(session_ctx->GetPrivate("session").get());
+      auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
       MBLOG_INFO << "session_content is " << session_content[0];
     }
     auto data_meta = data_ctx->GetInputGroupMeta("In_1");
@@ -2100,10 +2100,10 @@ void MockFlow::Register_Add_1_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    const auto input_bufs = ctx->Input("In_1");
-    auto output_bufs = ctx->Output("Out_1");
+    const auto input_bufs = data_ctx->Input("In_1");
+    auto output_bufs = data_ctx->Output("Out_1");
 
     if (input_bufs->Size() <= 0) {
       return STATUS_FAULT;
@@ -2112,8 +2112,8 @@ void MockFlow::Register_Add_1_Flowunit() {
     std::vector<size_t> shape(input_bufs->Size(), 1 * sizeof(int));
     output_bufs->Build(shape);
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)input_bufs->At(i)->ConstData();
-      auto output_data = (int*)output_bufs->At(i)->MutableData();
+      auto *input_data = (int *)input_bufs->At(i)->ConstData();
+      auto *output_data = (int *)output_bufs->At(i)->MutableData();
       *output_data = *input_data + 1;
     }
     return modelbox::STATUS_OK;
@@ -2141,8 +2141,8 @@ void MockFlow::Register_Iflow_Add_1_Flowunit() {
     std::vector<size_t> shape(input_bufs->Size(), 1 * sizeof(int));
     output_bufs->Build(shape);
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)((*input_bufs)[i]->ConstData());
-      auto output_data = (int*)output_bufs->At(i)->MutableData();
+      auto *input_data = (int *)((*input_bufs)[i]->ConstData());
+      auto *output_data = (int *)output_bufs->At(i)->MutableData();
       *output_data = *input_data + 1;
     }
 
@@ -2158,20 +2158,20 @@ void MockFlow::Register_Add_1_And_Error_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("add_1_and_error", {"In_1"}, {"Out_1"});
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    const auto input_bufs = ctx->Input("In_1");
-    auto output_bufs = ctx->Output("Out_1");
+    const auto input_bufs = data_ctx->Input("In_1");
+    auto output_bufs = data_ctx->Output("Out_1");
 
     std::vector<size_t> shape(input_bufs->Size(), 1 * sizeof(int));
     output_bufs->Build(shape);
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)input_bufs->At(i)->ConstData();
+      auto *input_data = (int *)input_bufs->At(i)->ConstData();
       if (*input_data == 10) {
         return modelbox::STATUS_INVALID;
       }
 
-      auto output_data = (int*)output_bufs->At(i)->MutableData();
+      auto *output_data = (int *)output_bufs->At(i)->MutableData();
       *output_data = *input_data + 1;
     }
 
@@ -2188,18 +2188,18 @@ void MockFlow::Register_Test_Condition_Flowunit() {
       GenerateFlowunitDesc("test_condition", {"In_1"}, {"Out_1", "Out_2"});
   mock_desc->SetConditionType(IF_ELSE);
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs = ctx->Input("In_1");
-    auto output_bufs_1 = ctx->Output("Out_1");
-    auto output_bufs_2 = ctx->Output("Out_2");
+    auto input_bufs = data_ctx->Input("In_1");
+    auto output_bufs_1 = data_ctx->Output("Out_1");
+    auto output_bufs_2 = data_ctx->Output("Out_2");
 
     auto device = mock_flowunit->GetBindDevice();
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)input_bufs->At(i)->ConstData();
+      auto *input_data = (int *)input_bufs->At(i)->ConstData();
       auto buffer = std::make_shared<Buffer>(device);
       buffer->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer->MutableData();
+      auto *output_data = (int *)buffer->MutableData();
       *output_data = *input_data;
 
       if (*input_data == 10) {
@@ -2312,7 +2312,7 @@ void MockFlow::Register_Normal_Start_Flowunit() {
 
     auto buffer_list = ext_data->CreateBufferList();
     buffer_list->Build({2 * sizeof(int)});
-    auto data = (int*)buffer_list->MutableData();
+    auto *data = (int *)buffer_list->MutableData();
     data[0] = 0;
     data[1] = 16;
 
@@ -2335,14 +2335,14 @@ void MockFlow::Register_Normal_Start_Flowunit() {
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto external = data_ctx->External();
-    auto external_data_1 = (uint32_t*)(*external)[0]->ConstData();
+    auto *external_data_1 = (uint32_t *)(*external)[0]->ConstData();
 
     auto start = external_data_1[0];
     auto end = external_data_1[1];
 
     std::vector<size_t> data_1_shape(4, {(end - start) * sizeof(uint32_t) / 4});
     output_bufs->Build(data_1_shape);
-    auto dev_data_1 = (int*)(output_bufs->MutableData());
+    auto *dev_data_1 = (int *)(output_bufs->MutableData());
     for (size_t i = 0; i < (end - start); ++i) {
       dev_data_1[i] = i;
     }
@@ -2376,7 +2376,7 @@ Status Expand_Process_Error(std::shared_ptr<DataContext> data_ctx,
   auto input_bufs_1 = data_ctx->Input("In_1");
   auto output_bufs_1 = data_ctx->Output("Out_1");
   auto device = mock_flowunit->GetBindDevice();
-  auto input_data = (int*)(input_bufs_1->At(0)->ConstData());
+  auto *input_data = (int *)(input_bufs_1->At(0)->ConstData());
   auto input_count = input_bufs_1->At(0)->GetBytes() / sizeof(int);
 
   if (input_data[0] == 4) {
@@ -2386,7 +2386,7 @@ Status Expand_Process_Error(std::shared_ptr<DataContext> data_ctx,
     for (uint32_t i = 0; i < input_count; i++) {
       auto buffer_ptr = std::make_shared<Buffer>(device);
       buffer_ptr->Build(1 * sizeof(int));
-      auto output_data = (int*)buffer_ptr->MutableData();
+      auto *output_data = (int *)buffer_ptr->MutableData();
       output_data[0] = input_data[i];
       output_bufs_1->PushBack(buffer_ptr);
     }
@@ -2427,13 +2427,13 @@ Status Expand_Process(std::shared_ptr<DataContext> data_ctx,
   auto output_bufs_1 = data_ctx->Output("Out_1");
   auto device = mock_flowunit->GetBindDevice();
 
-  auto input_data = (int*)(input_buffer->ConstData());
+  auto *input_data = (int *)(input_buffer->ConstData());
   auto input_count = input_buffer->GetBytes() / sizeof(int);
 
   for (uint32_t i = 0; i < input_count; i++) {
     auto buffer_ptr = std::make_shared<Buffer>(device);
     buffer_ptr->Build(1 * sizeof(int));
-    auto output_data = (int*)buffer_ptr->MutableData();
+    auto *output_data = (int *)buffer_ptr->MutableData();
     output_data[0] = input_data[i];
     output_bufs_1->PushBack(buffer_ptr);
   }
@@ -2512,16 +2512,16 @@ void MockFlow::Register_Simple_Error_Flowunit() {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto device = mock_flowunit->GetBindDevice();
-    auto input_data = (int*)(*input_bufs_1)[0]->ConstData();
+    auto *input_data = (int *)(*input_bufs_1)[0]->ConstData();
     if (input_data[0] < 2) {
       MBLOG_ERROR << "return invalid";
       return modelbox::STATUS_INVALID;
     } else {
       for (uint32_t i = 0; i < input_bufs_1->Size(); i++) {
-        auto input_data = (int*)(*input_bufs_1)[i]->ConstData();
+        auto *input_data = (int *)(*input_bufs_1)[i]->ConstData();
         auto buffer_ptr = std::make_shared<Buffer>(device);
         buffer_ptr->Build(1 * sizeof(int));
-        auto output_data = (int*)buffer_ptr->MutableData();
+        auto *output_data = (int *)buffer_ptr->MutableData();
         output_data[0] = input_data[0];
         output_bufs_1->PushBack(buffer_ptr);
       }
@@ -2574,7 +2574,7 @@ void MockFlow::Register_Stream_In_Process_Error_Flowunit() {
       for (int i = 0; i < 5; i++) {
         auto buffer_ptr = std::make_shared<Buffer>(device);
         buffer_ptr->Build(1 * sizeof(int));
-        auto output_data = (int*)buffer_ptr->MutableData();
+        auto *output_data = (int *)buffer_ptr->MutableData();
         output_data[0] = 0;
         output_bufs_1->PushBack(buffer_ptr);
       }
@@ -2660,7 +2660,7 @@ void MockFlow::Register_Stream_Process_Flowunit() {
     auto device = mock_flowunit->GetBindDevice();
     auto buffer_ptr = std::make_shared<Buffer>(device);
     buffer_ptr->Build(1 * sizeof(int));
-    auto output_data = (int*)buffer_ptr->MutableData();
+    auto *output_data = (int *)buffer_ptr->MutableData();
     output_data[0] = 0;
     output_bufs_1->PushBack(buffer_ptr);
     return modelbox::STATUS_OK;
@@ -2875,7 +2875,7 @@ Status Collapse_Process(std::shared_ptr<DataContext> data_ctx,
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto buffer_ptr = std::make_shared<Buffer>(device);
     buffer_ptr->Build(1 * sizeof(int));
-    auto output_data = (int*)buffer_ptr->MutableData();
+    auto *output_data = (int *)buffer_ptr->MutableData();
     output_data[0] = 0;
     output_bufs_1->PushBack(buffer_ptr);
   } else {
@@ -2884,7 +2884,7 @@ Status Collapse_Process(std::shared_ptr<DataContext> data_ctx,
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto buffer_ptr = std::make_shared<Buffer>(device);
     buffer_ptr->Build(1 * sizeof(int));
-    auto output_data = (int*)buffer_ptr->MutableData();
+    auto *output_data = (int *)buffer_ptr->MutableData();
     output_data[0] = 0;
 
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
@@ -2893,7 +2893,7 @@ Status Collapse_Process(std::shared_ptr<DataContext> data_ctx,
         buffer_ptr->SetError(input_buffer->GetErrorMsg(), input_buffer->GetErrorCode());
         break;
       }
-      auto input_data = (int*)(*input_bufs)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[i]->ConstData();
       auto buffer_ptr = std::make_shared<Buffer>(device);
       output_data[0] += input_data[0];
     }
@@ -2938,7 +2938,7 @@ void MockFlow::Register_Virtual_Stream_Start_Flowunit() {
 
     if (event == nullptr) {
       auto output_meta = std::make_shared<DataMeta>();
-      auto input_data = (int*)(*input_bufs)[0]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[0]->ConstData();
       auto start_index = input_data[0];
       auto end_index = input_data[1];
       auto interval = input_data[2];
@@ -2961,7 +2961,7 @@ void MockFlow::Register_Virtual_Stream_Start_Flowunit() {
     std::vector<size_t> shape(5, sizeof(int));
     output_bufs->Build(shape);
     for (size_t i = 0; i < 5; ++i) {
-      auto output_data = (int*)(*output_bufs)[i]->MutableData();
+      auto *output_data = (int *)(*output_bufs)[i]->MutableData();
       output_data[0] = now_index + i;
     }
     now_index = now_index + 5;
@@ -2997,11 +2997,11 @@ void MockFlow::Register_Virtual_Stream_Mid_Flowunit() {
         std::static_pointer_cast<int>(data_ctx->GetPrivate("end_index")).get());
 
     for (size_t i = 0; i < input_bufs->Size(); ++i) {
-      auto input_data = (int*)(*input_bufs)[i]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[i]->ConstData();
       if (input_data[0] % interval == 0) {
         auto buffer_ptr = std::make_shared<Buffer>(device);
         buffer_ptr->Build(1 * sizeof(int));
-        auto output_data = (int*)buffer_ptr->MutableData();
+        auto *output_data = (int *)buffer_ptr->MutableData();
         output_data[0] = input_data[0];
         output_bufs->PushBack(buffer_ptr);
       }
@@ -3048,10 +3048,10 @@ void MockFlow::Register_Virtual_Expand_Flowunit() {
     auto output_bufs = data_ctx->Output("Out_1");
     auto input_bufs = data_ctx->Input("In_1");
     auto event = data_ctx->Event();
-    auto input_data = (int*)(*input_bufs)[0]->ConstData();
+    auto *input_data = (int *)(*input_bufs)[0]->ConstData();
     std::vector<size_t> shape(1, 3 * sizeof(int));
     output_bufs->Build(shape);
-    auto output_data = (int*)(*output_bufs)[0]->MutableData();
+    auto *output_data = (int *)(*output_bufs)[0]->MutableData();
     for (size_t i = 0; i < 3; ++i) {
       output_data[i] = input_data[i];
     }
@@ -3075,7 +3075,7 @@ void MockFlow::Register_Virtual_Stream_Flowunit() {
 
     if (event == nullptr) {
       auto output_meta = std::make_shared<DataMeta>();
-      auto input_data = (int*)(*input_bufs)[0]->ConstData();
+      auto *input_data = (int *)(*input_bufs)[0]->ConstData();
       auto start_index = input_data[0];
       auto end_index = input_data[1];
       auto interval = input_data[2];
@@ -3098,7 +3098,7 @@ void MockFlow::Register_Virtual_Stream_Flowunit() {
     std::vector<size_t> shape(5, sizeof(int));
     output_bufs->Build(shape);
     for (size_t i = 0; i < 5; ++i) {
-      auto output_data = (int*)(*output_bufs)[i]->MutableData();
+      auto *output_data = (int *)(*output_bufs)[i]->MutableData();
       output_data[0] = now_index + i;
     }
     now_index = now_index + 5;
@@ -3121,10 +3121,10 @@ void MockFlow::Register_Virtual_Stream_Flowunit() {
 void MockFlow::Register_Tensorlist_Test_1_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("tensorlist_test_1", {"IN1"}, {"OUT1"});
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs = ctx->Input("IN1");
-    auto output_bufs = ctx->Output("OUT1");
+    auto input_bufs = data_ctx->Input("IN1");
+    auto output_bufs = data_ctx->Output("OUT1");
 
     TensorList in_tl(input_bufs);
     TensorList out_tl(output_bufs);
@@ -3136,8 +3136,8 @@ void MockFlow::Register_Tensorlist_Test_1_Flowunit() {
     out_tl.Build<int>(in_tl.GetShape());
     for (size_t i = 0; i < in_tl.Size(); ++i) {
       auto tensor = in_tl[i];
-      const auto in_data = in_tl.ConstBufferData<int>(i);
-      auto out_data = out_tl.MutableBufferData<int>(i);
+      const auto *const in_data = in_tl.ConstBufferData<int>(i);
+      auto *out_data = out_tl.MutableBufferData<int>(i);
       out_data[0] = in_data[0] + 10;
     }
 
@@ -3153,11 +3153,11 @@ void MockFlow::Register_Tensorlist_Test_2_Flowunit() {
   auto mock_desc =
       GenerateFlowunitDesc("tensorlist_test_2", {"IN1", "IN2"}, {"OUT1"});
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto input_bufs_1 = ctx->Input("IN1");
-    auto input_bufs_2 = ctx->Input("IN2");
-    auto output_bufs_1 = ctx->Output("OUT1");
+    auto input_bufs_1 = data_ctx->Input("IN1");
+    auto input_bufs_2 = data_ctx->Input("IN2");
+    auto output_bufs_1 = data_ctx->Output("OUT1");
 
     TensorList in_tl_1(input_bufs_1);
     TensorList in_tl_2(input_bufs_2);
@@ -3170,9 +3170,9 @@ void MockFlow::Register_Tensorlist_Test_2_Flowunit() {
 
     out_tl_1.Build<int>(in_tl_1.GetShape());
     for (size_t i = 0; i < in_tl_1.Size(); ++i) {
-      const auto in_data_1 = in_tl_1.ConstBufferData<int>(i);
-      const auto in_data_2 = in_tl_2.ConstBufferData<int>(i);
-      auto out_data_1 = out_tl_1.MutableBufferData<int>(i);
+      const auto *const in_data_1 = in_tl_1.ConstBufferData<int>(i);
+      const auto *const in_data_2 = in_tl_2.ConstBufferData<int>(i);
+      auto *out_data_1 = out_tl_1.MutableBufferData<int>(i);
       out_data_1[0] = in_data_1[0] + in_data_2[0];
     }
 
@@ -3191,10 +3191,10 @@ void MockFlow::Register_Check_Tensorlist_Test_1_Flowunit() {
   static std::atomic<int64_t> run_count(0);
   static int64_t MAX_COUNT = 0;
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    const auto input_tl_1 = ctx->Input("IN1");
-    const auto input_tl_2 = ctx->Input("IN2");
+    const auto input_tl_1 = data_ctx->Input("IN1");
+    const auto input_tl_2 = data_ctx->Input("IN2");
 
     TensorList in_tl_1(input_tl_1);
     TensorList in_tl_2(input_tl_2);
@@ -3204,8 +3204,8 @@ void MockFlow::Register_Check_Tensorlist_Test_1_Flowunit() {
     }
 
     for (size_t i = 0; i < in_tl_1.Size(); ++i) {
-      const auto in_data_1 = in_tl_1.ConstBufferData<int>(i);
-      const auto in_data_2 = in_tl_2.ConstBufferData<int>(i);
+      const auto *const in_data_1 = in_tl_1.ConstBufferData<int>(i);
+      const auto *const in_data_2 = in_tl_2.ConstBufferData<int>(i);
       if (in_data_2[0] != in_data_1[0]) {
         return modelbox::STATUS_FAULT;
       }
@@ -3238,10 +3238,10 @@ void MockFlow::Register_Slow_Flowunit() {
   static std::atomic<int64_t> run_count(0);
   static int64_t MAX_COUNT = 0;
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    const auto input_tl_1 = ctx->Input("IN1");
-    const auto input_tl_2 = ctx->Input("IN2");
+    const auto input_tl_1 = data_ctx->Input("IN1");
+    const auto input_tl_2 = data_ctx->Input("IN2");
 
     TensorList in_tl_1(input_tl_1);
     TensorList in_tl_2(input_tl_2);
@@ -3255,8 +3255,8 @@ void MockFlow::Register_Slow_Flowunit() {
     MBLOG_INFO << "slow flow unit sleep 3s, run_count:" << run_count;
 
     for (size_t i = 0; i < in_tl_1.Size(); ++i) {
-      const auto in_data_1 = in_tl_1.ConstBufferData<int>(i);
-      const auto in_data_2 = in_tl_2.ConstBufferData<int>(i);
+      const auto *const in_data_1 = in_tl_1.ConstBufferData<int>(i);
+      const auto *const in_data_2 = in_tl_2.ConstBufferData<int>(i);
       if (in_data_2[0] != in_data_1[0]) {
         return modelbox::STATUS_FAULT;
       }
@@ -3290,11 +3290,11 @@ void MockFlow::Register_Check_Tensorlist_Test_2_Flowunit() {
   static std::atomic<int64_t> run_count(0);
   static int64_t MAX_COUNT = 0;
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    const auto input_tl_1 = ctx->Input("IN1");
-    const auto input_tl_2 = ctx->Input("IN2");
-    const auto input_tl_3 = ctx->Input("IN3");
+    const auto input_tl_1 = data_ctx->Input("IN1");
+    const auto input_tl_2 = data_ctx->Input("IN2");
+    const auto input_tl_3 = data_ctx->Input("IN3");
 
     TensorList in_tl_1(input_tl_1);
     TensorList in_tl_2(input_tl_2);
@@ -3306,9 +3306,9 @@ void MockFlow::Register_Check_Tensorlist_Test_2_Flowunit() {
     }
 
     for (size_t i = 0; i < in_tl_1.Size(); ++i) {
-      const auto in_data_1 = in_tl_1.ConstBufferData<int>(i);
-      const auto in_data_2 = in_tl_2.ConstBufferData<int>(i);
-      const auto in_data_3 = in_tl_3.ConstBufferData<int>(i);
+      const auto *const in_data_1 = in_tl_1.ConstBufferData<int>(i);
+      const auto *const in_data_2 = in_tl_2.ConstBufferData<int>(i);
+      const auto *const in_data_3 = in_tl_3.ConstBufferData<int>(i);
       if (in_data_3[0] != (in_data_1[0] + in_data_2[0])) {
         return modelbox::STATUS_FAULT;
       }
@@ -3339,9 +3339,9 @@ void MockFlow::Register_Statistic_Test_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("statistic_test", {"IN1"}, {"OUT1"});
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> ctx,
+      [=](std::shared_ptr<DataContext> data_ctx,
           std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
-    auto stats = ctx->GetStatistics();
+    auto stats = data_ctx->GetStatistics();
     EXPECT_NE(stats, nullptr);
     if (stats == nullptr) {
       return modelbox::STATUS_FAULT;
@@ -3358,7 +3358,7 @@ void MockFlow::Register_Statistic_Test_Flowunit() {
     test_stats->SetValue(test_val);  // notify cooldown test
     test_stats->SetValue(test_val);
     test_stats->SetValue(test_val);
-    auto output = ctx->Output("OUT1");
+    auto output = data_ctx->Output("OUT1");
     output->Build({1});
     return modelbox::STATUS_SUCCESS;
   };

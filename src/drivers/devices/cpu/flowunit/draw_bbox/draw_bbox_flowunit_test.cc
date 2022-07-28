@@ -96,7 +96,7 @@ Status DrawBBoxFlowUnitTest::AddMockFlowUnit() {
 
               auto buffer_list = ext_data->CreateBufferList();
               buffer_list->Build({10 * sizeof(int)});
-              auto data = (int*)buffer_list->MutableData();
+              auto *data = (int *)buffer_list->MutableData();
               for (size_t i = 0; i < 10; i++) {
                 data[i] = i;
               }
@@ -151,7 +151,7 @@ Status DrawBBoxFlowUnitTest::AddMockFlowUnit() {
               output_bufs->Build(shape);
 
               for (size_t i = 0; i < 5; ++i) {
-                auto output_data = output_bufs->MutableBufferData(i);
+                auto *output_data = output_bufs->MutableBufferData(i);
                 std::shared_ptr<BBox> b1 = std::make_shared<BBox>();
                 b1->w = 20;
                 b1->h = 20;
@@ -180,7 +180,7 @@ Status DrawBBoxFlowUnitTest::AddMockFlowUnit() {
               std::string gimg_path = std::string(TEST_ASSETS) + "/test.jpg";
 
               MBLOG_INFO << "images path: " << gimg_path;
-              cv::Mat img_data = cv::imread(gimg_path.c_str());
+              cv::Mat img_data = cv::imread(gimg_path);
 
               MBLOG_INFO << "gimage col " << img_data.cols << "  grow "
                          << img_data.rows
@@ -209,7 +209,7 @@ Status DrawBBoxFlowUnitTest::AddMockFlowUnit() {
                 output2_bufs->At(i)->Set("height", grows);
                 output2_bufs->At(i)->Set("channel", gchannels);
 
-                auto output2_data = output2_bufs->MutableBufferData(i);
+                auto *output2_data = output2_bufs->MutableBufferData(i);
                 memcpy_s(output2_data, output2_bufs->At(i)->GetBytes(),
                          img_data.data, img_data.total() * img_data.elemSize());
               }
@@ -277,7 +277,9 @@ Status DrawBBoxFlowUnitTest::AddMockFlowUnit() {
               auto input = op_ctx->Input("In_1");
 
               for (size_t i = 0; i < input->Size(); i++) {
-                int32_t width = 0, height = 0, channel = 0;
+                int32_t width = 0;
+                int32_t height = 0;
+                int32_t channel = 0;
                 input->At(i)->Get("width", width);
                 input->At(i)->Get("height", height);
                 input->At(i)->Get("channel", channel);
@@ -293,7 +295,7 @@ Status DrawBBoxFlowUnitTest::AddMockFlowUnit() {
                 std::string name = std::string(TEST_DATA_DIR) + "/test" +
                                    std::to_string(i) + ".jpg";
                 MBLOG_DEBUG << name;
-                cv::imwrite(name.c_str(), img_data);
+                cv::imwrite(name, img_data);
               }
               MBLOG_INFO << "finish test_1_0_draw_bbox process";
               return modelbox::STATUS_OK;

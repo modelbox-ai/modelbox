@@ -65,7 +65,7 @@ std::shared_ptr<FlowUnit> FlowUnitBalancer::FirstBind(
     ctx_to_flowunit_map_[data_ctx.get()] = fu;
   }
   std::weak_ptr<FlowUnitBalancer> balancer_ref = shared_from_this();
-  auto data_ctx_ptr = data_ctx.get();
+  auto* data_ctx_ptr = data_ctx.get();
   data_ctx->AddDestroyCallback([data_ctx_ptr, balancer_ref]() {
     auto balancer = balancer_ref.lock();
     if (balancer == nullptr) {
@@ -114,7 +114,7 @@ FlowUnitBalancerRegister::FlowUnitBalancerRegister(
 
 void FlowUnitBalancerUtil::Init(
     const std::vector<std::shared_ptr<FlowUnit>>& flowunits) {
-  for (auto& fu : flowunits) {
+  for (const auto& fu : flowunits) {
     device_to_fu_map_[fu->GetBindDevice().get()] = fu;
   }
 }
@@ -134,7 +134,7 @@ std::set<std::shared_ptr<Device>> FlowUnitBalancerUtil::GetInputDevices(
   const auto& inputs = data_ctx->GetInputs();
   std::set<std::shared_ptr<Device>> devices;
   for (const auto& port_item : inputs) {
-    auto& port_buffer_list = port_item.second;
+    const auto& port_buffer_list = port_item.second;
     if (port_buffer_list.empty()) {
       continue;
     }
@@ -170,7 +170,7 @@ std::shared_ptr<FlowUnit> FURoundRobinBalancer::BindFlowUnit(
     const std::shared_ptr<FlowUnitDataContext>& data_ctx) {
   std::list<std::shared_ptr<FlowUnit>> candidate_fu_list;
   auto devices = util.GetInputDevices(data_ctx);
-  for (auto& device : devices) {
+  for (const auto& device : devices) {
     auto fu = util.GetFlowUnitByDevice(device);
     if (fu == nullptr) {
       continue;

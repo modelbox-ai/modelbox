@@ -66,8 +66,7 @@ class PaddingFlowUnit : public modelbox::FlowUnit {
 
   modelbox::Status Close() override { return modelbox::STATUS_OK; };
 
-  modelbox::Status Process(
-      std::shared_ptr<modelbox::DataContext> data_ctx) override;
+  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   cv::InterpolationFlags GetCVResizeMethod(std::string resizeType);

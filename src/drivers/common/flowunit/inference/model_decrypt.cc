@@ -122,8 +122,7 @@ void ModelDecryption::GetInfoFromHeader(std::string& plugin_name,
   fmodel_.read(reinterpret_cast<char*>(&model_info), sizeof(PrefixInfo));
   
   std::string magic_str(model_info.magic, MAGIC_SIZE);
-  if (fmodel_.gcount() != sizeof(PrefixInfo) ||
-      magic_str.compare(MAGIC_FLAG) != 0) {
+  if (fmodel_.gcount() != sizeof(PrefixInfo) || magic_str != MAGIC_FLAG) {
     // here is plain model , not err , so do not log
     plugin_name = "";
     plugin_version = "";
@@ -147,7 +146,7 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
   }
 
   // tensorflow TF_Buffer seems a c-style code, here use std::malloc
-  uint8_t* model_buf = static_cast<uint8_t*>(malloc(fsize_));
+  auto* model_buf = static_cast<uint8_t*>(malloc(fsize_));
   if (!model_buf) {
     MBLOG_ERROR << "memory alloc fail with size =." << fsize_;
     modelbox::StatusError = {modelbox::STATUS_NOMEM, "Read file fail."};
@@ -166,7 +165,7 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
   if (model_state_ == MODEL_STATE_ENCRYPT && cur_plugin_ != nullptr) {
     int64_t raw_len = fsize_ - header_offset_;
     int64_t plain_len = raw_len + EVP_MAX_BLOCK_LENGTH + 1;
-    uint8_t* plain_buf = static_cast<uint8_t*>(malloc(raw_len));
+    auto* plain_buf = static_cast<uint8_t*>(malloc(raw_len));
     auto ret = cur_plugin_->ModelDecrypt(model_buf + header_offset_, raw_len,
                                          plain_buf, plain_len);
     free(model_buf);

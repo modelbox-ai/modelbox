@@ -45,7 +45,7 @@ modelbox::Status DataSourceGeneratorFlowUnit::Open(
   std::stringstream ss;
   ss << "{";
   std::unordered_set<std::string> output_keys;
-  for (auto &key : all_config_keys) {
+  for (const auto &key : all_config_keys) {
     if (g_predefined_keys.find(key) != g_predefined_keys.end()) {
       continue;
     }
@@ -53,7 +53,7 @@ modelbox::Status DataSourceGeneratorFlowUnit::Open(
     output_keys.insert(key);
     ss << "\"" << key << "\":\"" << opts->GetString(key) << "\",";
   }
-  ss.seekp(-1, ss.end);
+  ss.seekp(-1, std::stringstream::end);
   ss << "}";
 
   if (source_type.empty() || output_keys.empty()) {
@@ -95,9 +95,9 @@ modelbox::Status DataSourceGeneratorFlowUnit::Close() {
 }
 
 modelbox::Status DataSourceGeneratorFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
-  auto output_buffers = ctx->Output("out_data");
-  auto input_buffers = ctx->External();
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto output_buffers = data_ctx->Output("out_data");
+  auto input_buffers = data_ctx->External();
   for (auto &buffer : *input_buffers) {
     output_buffers->PushBack(buffer);
   }

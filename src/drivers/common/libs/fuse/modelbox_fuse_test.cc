@@ -155,8 +155,8 @@ TEST_F(ModelBoxFuseTest, FuseMountCheckFile) {
   int totalnum = 0;
   int dirnum = 0;
   int filenum = 0;
-  if ((dir = opendir(MOCK_FUSE_FILE)) != NULL) {
-    while ((ent = readdir(dir)) != NULL) {
+  if ((dir = opendir(MOCK_FUSE_FILE)) != nullptr) {
+    while ((ent = readdir(dir)) != nullptr) {
       struct stat stbuf;
       std::string path = MOCK_FUSE_FILE;
       path += "/";

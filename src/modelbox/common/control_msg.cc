@@ -44,7 +44,7 @@ SERVER_CONTROL_MSG_TYPE ControlMsg::GetMsgType() {
     return msg_type_;
   }
 
-  struct ControlMsgHead *msg_head = (struct ControlMsgHead *)data_buff_->data();
+  auto *msg_head = (struct ControlMsgHead *)data_buff_->data();
   return (SERVER_CONTROL_MSG_TYPE)msg_head->type;
 }
 
@@ -63,7 +63,7 @@ size_t ControlMsg::GetMsgDataLen() {
     return 0;
   }
 
-  struct ControlMsgHead *msg_head = (struct ControlMsgHead *)data_buff_->data();
+  auto *msg_head = (struct ControlMsgHead *)data_buff_->data();
   return msg_head->len;
 }
 
@@ -72,7 +72,7 @@ const uint8_t *ControlMsg::GetMsgData() {
     return nullptr;
   }
 
-  struct ControlMsgHead *msg_head = (struct ControlMsgHead *)data_buff_->data();
+  auto *msg_head = (struct ControlMsgHead *)data_buff_->data();
   return msg_head->msg;
 }
 
@@ -89,7 +89,7 @@ void ControlMsg::Flip() {
     return;
   }
 
-  struct ControlMsgHead *msg_head = (struct ControlMsgHead *)data_buff_->data();
+  auto *msg_head = (struct ControlMsgHead *)data_buff_->data();
   int data_msg_len = sizeof(*msg_head) + msg_head->len;
   int last_data_len = data_len_ - data_msg_len;
   if (last_data_len > 0) {
@@ -133,7 +133,7 @@ modelbox::Status ControlMsg::Unserialize() { return Unserialize(data_buff_); }
 
 modelbox::Status ControlMsg::Unserialize(
     std::shared_ptr<std::vector<uint8_t>> data_buff) {
-  struct ControlMsgHead *msg_head = (struct ControlMsgHead *)data_buff->data();
+  auto *msg_head = (struct ControlMsgHead *)data_buff->data();
 
   if (data_ready_ == true) {
     return modelbox::STATUS_OK;
@@ -166,7 +166,7 @@ void ControlMsg::Reset() {
 }
 
 modelbox::Status ControlMsg::Serialize() {
-  struct ControlMsgHead *msg_head = (struct ControlMsgHead *)data_buff_->data();
+  auto *msg_head = (struct ControlMsgHead *)data_buff_->data();
   auto msg_len =
       SerializeMsg(msg_head->msg, data_buff_->size() - sizeof(*msg_head));
   if (msg_len < 0) {
@@ -218,7 +218,7 @@ modelbox::Status ControlMsg::BuildFromOtherMsg(ControlMsg *from_control_msg) {
     from_control_msg->Unserialize();
   }
 
-  struct ControlMsgHead *msg_head = (struct ControlMsgHead *)data_buff_->data();
+  auto *msg_head = (struct ControlMsgHead *)data_buff_->data();
   return UnSerializeMsg(msg_head->msg, msg_head->len);
 }
 
@@ -252,7 +252,7 @@ size_t ControlMsgResult::SerializeMsg(uint8_t *buff, size_t buff_max_len) {
 modelbox::Status ControlMsgResult::UnSerializeMsg(uint8_t *buff,
                                                   size_t buff_len) {
   int *result;
-  result = NULL;
+  result = nullptr;
   if (buff_len < sizeof(*result)) {
     return modelbox::STATUS_NOBUFS;
   }
@@ -319,7 +319,7 @@ int ControlMsgCmd::GetArgc() { return argc_; }
 std::vector<std::string> ControlMsgCmd::GetArgv() { return argv_; }
 
 size_t ControlMsgCmd::SerializeMsg(uint8_t *buff, size_t buff_max_len) {
-  struct MsgCmdHead *cmd_head = (struct MsgCmdHead *)buff;
+  auto *cmd_head = (struct MsgCmdHead *)buff;
   if (buff_max_len < sizeof(*cmd_head)) {
     return -1;
   }
@@ -329,7 +329,7 @@ size_t ControlMsgCmd::SerializeMsg(uint8_t *buff, size_t buff_max_len) {
   char *cmd_data = cmd_head->args;
 
   for (auto &arg : argv_) {
-    struct MsgCmdArg *cmd_arg = (struct MsgCmdArg *)cmd_data;
+    auto *cmd_arg = (struct MsgCmdArg *)cmd_data;
     if (cmd_data_free_len < sizeof(*cmd_arg)) {
       return -1;
     }
@@ -356,7 +356,7 @@ size_t ControlMsgCmd::SerializeMsg(uint8_t *buff, size_t buff_max_len) {
 }
 
 modelbox::Status ControlMsgCmd::UnSerializeMsg(uint8_t *buff, size_t buff_len) {
-  struct MsgCmdHead *cmd_head = (struct MsgCmdHead *)buff;
+  auto *cmd_head = (struct MsgCmdHead *)buff;
   if (buff_len < sizeof(*cmd_head)) {
     return modelbox::STATUS_NOBUFS;
   }
@@ -377,7 +377,7 @@ modelbox::Status ControlMsgCmd::UnSerializeMsg(uint8_t *buff, size_t buff_len) {
       return modelbox::STATUS_NOBUFS;
     }
 
-    struct MsgCmdArg *cmd_arg = (struct MsgCmdArg *)cmd_data;
+    auto *cmd_arg = (struct MsgCmdArg *)cmd_data;
     left_data_len -= sizeof(*cmd_arg);
     if (cmd_arg->len > left_data_len || cmd_arg->len <= 0) {
       return modelbox::STATUS_NOBUFS;
@@ -415,12 +415,12 @@ void ControlMsgError::SetError(int err_code, const std::string &err_msg) {
   err_msg_ = err_msg;
 }
 
-std::string ControlMsgError::GetErrorMsg(void) { return err_msg_; }
+std::string ControlMsgError::GetErrorMsg() { return err_msg_; }
 
 int ControlMsgError::GetErrorCode() { return err_code_; }
 
 size_t ControlMsgError::SerializeMsg(uint8_t *buff, size_t buff_max_len) {
-  struct MsgErrorHead *err_msg_head = (struct MsgErrorHead *)buff;
+  auto *err_msg_head = (struct MsgErrorHead *)buff;
   if (buff_max_len < sizeof(*err_msg_head)) {
     return -1;
   }
@@ -443,7 +443,7 @@ size_t ControlMsgError::SerializeMsg(uint8_t *buff, size_t buff_max_len) {
 
 modelbox::Status ControlMsgError::UnSerializeMsg(uint8_t *buff,
                                                  size_t buff_len) {
-  struct MsgErrorHead *err_msg_head = (struct MsgErrorHead *)buff;
+  auto *err_msg_head = (struct MsgErrorHead *)buff;
   if (buff_len < sizeof(*err_msg_head)) {
     return modelbox::STATUS_NOBUFS;
   }

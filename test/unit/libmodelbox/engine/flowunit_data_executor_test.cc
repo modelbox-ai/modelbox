@@ -142,7 +142,7 @@ class FlowUnitExecutorTest : public testing::Test {
       const std::vector<std::shared_ptr<Device>> &devices) {
     std::vector<std::shared_ptr<FlowUnit>> flowunits;
     flowunits.reserve(devices.size());
-    for (auto &device : devices) {
+    for (const auto &device : devices) {
       auto fu = std::make_shared<ExecutorMockFlowUnit>();
       fu->SetBindDevice(device);
       flowunits.push_back(fu);
@@ -170,7 +170,7 @@ class FlowUnitExecutorTest : public testing::Test {
                  size_t port_num, size_t port_data_size) {
     size_t i = 0;
     for (auto &exec_ctx : exec_ctx_list) {
-      auto &device = devices[i % devices.size()];
+      const auto &device = devices[i % devices.size()];
       ++i;
       std::dynamic_pointer_cast<ExecutorMockDataContext>(exec_ctx->GetDataCtx())
           ->MockInput(device, port_num, port_data_size);
@@ -261,7 +261,7 @@ class FlowUnitExecutorTest : public testing::Test {
     FlowUnitExecDataView data_view(ctx_list);
     data_view.LoadInputFromExecCtx(true, is_stream, 8, false);
     auto data_flowunits = data_view.GetFlowUnits();
-    for (auto flowunit : data_flowunits) {
+    for (auto *flowunit : data_flowunits) {
       auto batched_exec_data_ctx_list =
           data_view.GetFlowUnitProcessData(flowunit);
       for (auto &batch_data_ctx : batched_exec_data_ctx_list) {
@@ -305,7 +305,7 @@ TEST_F(FlowUnitExecutorTest, EventInputTest) {
     auto output = data_ctx->Output("0");
     EXPECT_NE(output, nullptr);
     output->Build({1});
-    auto ptr = (uint8_t *)output->At(0)->MutableData();
+    auto *ptr = (uint8_t *)output->At(0)->MutableData();
     auto val =
         std::static_pointer_cast<uint8_t>(data_ctx->GetPrivate("test_val"));
     ptr[0] = *val;
@@ -327,14 +327,14 @@ TEST_F(FlowUnitExecutorTest, EventInputTest) {
           std::static_pointer_cast<uint8_t>(data_ctx->GetPrivate("test_val"));
       EXPECT_EQ(outputs->size(), 1);
       for (auto &out_item : *outputs) {
-        auto &port_name = out_item.first;
+        const auto &port_name = out_item.first;
         auto &port_data = out_item.second;
         EXPECT_EQ(port_name, "0");
         ASSERT_NE(port_data, nullptr);
         EXPECT_EQ(port_data->Size(), 1);
         auto buffer = port_data->At(0);
         ASSERT_NE(buffer, nullptr);
-        auto ptr = (uint8_t *)(buffer->MutableData());
+        auto *ptr = (uint8_t *)(buffer->MutableData());
         EXPECT_EQ(*ptr, *val);
       }
     }
@@ -367,7 +367,7 @@ TEST_F(FlowUnitExecutorTest, ExpandTest) {
     auto output2 = data_ctx->Output("1");
     EXPECT_NE(output2, nullptr);
     output1->Build({1, 1});
-    auto ptr = (uint8_t *)output1->At(0)->MutableData();
+    auto *ptr = (uint8_t *)output1->At(0)->MutableData();
     ptr[0] = 1;
     ptr = (uint8_t *)output1->At(1)->MutableData();
     ptr[0] = 2;
@@ -390,7 +390,7 @@ TEST_F(FlowUnitExecutorTest, ExpandTest) {
       for (size_t port_idx = 0; port_idx < outputs->size(); ++port_idx) {
         auto &buffer_list = outputs->at(std::to_string(port_idx));
         ASSERT_EQ(buffer_list->Size(), 2);
-        auto ptr = (uint8_t *)(buffer_list->At(0)->ConstData());
+        auto *ptr = (uint8_t *)(buffer_list->At(0)->ConstData());
         EXPECT_EQ(*ptr, val);
         ++val;
         ptr = (uint8_t *)(buffer_list->At(1)->ConstData());
@@ -428,7 +428,7 @@ TEST_F(FlowUnitExecutorTest, CollapseTest) {
     auto output = data_ctx->Output("0");
     EXPECT_NE(output, nullptr);
     output->Build({1});
-    auto ptr = (uint8_t *)output->At(0)->MutableData();
+    auto *ptr = (uint8_t *)output->At(0)->MutableData();
     ptr[0] = 1;
     return STATUS_OK;
   };
@@ -441,7 +441,7 @@ TEST_F(FlowUnitExecutorTest, CollapseTest) {
       auto outputs = data_ctx->Output();
       auto &buffer_list = outputs->at("0");
       ASSERT_EQ(buffer_list->Size(), 1);
-      auto ptr = (uint8_t *)(buffer_list->At(0)->ConstData());
+      auto *ptr = (uint8_t *)(buffer_list->At(0)->ConstData());
       EXPECT_EQ(*ptr, 1);
     }
   };

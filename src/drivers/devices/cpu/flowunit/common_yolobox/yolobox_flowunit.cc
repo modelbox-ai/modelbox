@@ -185,7 +185,7 @@ modelbox::Status YoloboxFlowUnit::SendBoxData(
   output_buffers->Build(shape);
   for (size_t batch_index = 0; batch_index < box_data.size(); ++batch_index) {
     auto &box_data_for_single_batch = box_data[batch_index];
-    auto box_buffer_ptr =
+    auto *box_buffer_ptr =
         (BoundingBox *)(output_buffers->At(batch_index)->MutableData());
     if (box_buffer_ptr == nullptr) {
       continue;

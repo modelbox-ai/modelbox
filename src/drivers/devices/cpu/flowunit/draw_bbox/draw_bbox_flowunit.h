@@ -65,7 +65,6 @@ class DrawBBoxFlowUnit : public modelbox::FlowUnit {
 
   /* run when processing data */
   modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
-
 };
 
 #endif  // MODELBOX_FLOWUNIT_DRAWBBOXFLOWUNIT_CPU_H_

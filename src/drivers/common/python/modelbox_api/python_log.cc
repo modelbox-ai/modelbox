@@ -10,7 +10,7 @@ static std::shared_ptr<FlowUnitPythonLog> kInst = nullptr;
 
 void FlowUnitPythonLog::Init() {
   if (!kInst) {
-    auto data = new FlowUnitPythonLog();
+    auto* data = new FlowUnitPythonLog();
     py::gil_scoped_acquire interpreter_guard{};
     data->inspect_module_ = py::module::import("inspect");
     kInst = std::shared_ptr<FlowUnitPythonLog>(
@@ -20,7 +20,7 @@ void FlowUnitPythonLog::Init() {
 
 void FlowUnitPythonLog::Finish() { kInst = nullptr; }
 
-FlowUnitPythonLog& FlowUnitPythonLog::Instance(void) {
+FlowUnitPythonLog& FlowUnitPythonLog::Instance() {
   if (!kInst) {
     Init();
   }

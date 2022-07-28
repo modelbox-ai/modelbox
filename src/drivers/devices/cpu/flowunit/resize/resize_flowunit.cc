@@ -45,7 +45,7 @@ modelbox::Status CVResizeFlowUnit::Open(
     dest_height_ = opts->GetUint32("image_height", 0);
   }
   if (dest_width_ <= 0 || dest_height_ <= 0) {
-    auto errMsg = "resize width or height is not configured or invalid.";
+    const auto *errMsg = "resize width or height is not configured or invalid.";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_BADCONF, errMsg};
   }
@@ -76,11 +76,11 @@ modelbox::Status CVResizeFlowUnit::Open(
 modelbox::Status CVResizeFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status CVResizeFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   MBLOG_DEBUG << "process image cvresize";
 
-  auto input_bufs = ctx->Input("in_image");
-  auto output_bufs = ctx->Output("out_image");
+  auto input_bufs = data_ctx->Input("in_image");
+  auto output_bufs = data_ctx->Output("out_image");
 
   if (input_bufs->Size() <= 0) {
     auto errMsg = "input images batch is " + std::to_string(input_bufs->Size());
@@ -128,7 +128,7 @@ modelbox::Status CVResizeFlowUnit::Process(
     MBLOG_DEBUG << "get " << width << " rows " << height << " channel "
                 << channel;
 
-    auto input_data =
+    const auto *input_data =
         static_cast<const u_char *>(input_bufs->ConstBufferData(i));
 
     cv::Mat img_data(cv::Size(width, height), CV_8UC3);
@@ -144,7 +144,7 @@ modelbox::Status CVResizeFlowUnit::Process(
     cv::resize(img_data, img_dest, destSize, 0, 0, interpolation_);
 
     // output resize image
-    auto output = static_cast<uchar *>(output_bufs->MutableBufferData(i));
+    auto *output = static_cast<uchar *>(output_bufs->MutableBufferData(i));
     memcpy_s(output, output_bufs->At(i)->GetBytes(), img_dest.data,
              img_dest.total() * img_dest.elemSize());
     output_bufs->At(i)->Set("width", (int32_t)dest_width_);

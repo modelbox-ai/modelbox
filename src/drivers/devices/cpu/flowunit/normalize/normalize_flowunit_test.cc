@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-
 #include <functional>
 #include <future>
 #include <random>
 #include <thread>
 
-#include "modelbox/base/log.h"
-#include "modelbox/base/utils.h"
-#include "modelbox/buffer.h"
 #include "driver_flow_test.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "modelbox/base/log.h"
+#include "modelbox/base/utils.h"
+#include "modelbox/buffer.h"
 
 using ::testing::_;
 
@@ -63,8 +62,9 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
     desc_flowunit.SetName("test_normalize_0");
     desc_flowunit.SetDescription("The test input data, 0 inputs 1 output");
     desc_flowunit.SetVersion("1.0.0");
-    std::string file_path_flowunit = std::string(TEST_DRIVER_DIR) +
-                                     "/libmodelbox-unit-cpu-test_normalize_0.so";
+    std::string file_path_flowunit =
+        std::string(TEST_DRIVER_DIR) +
+        "/libmodelbox-unit-cpu-test_normalize_0.so";
     desc_flowunit.SetFilePath(file_path_flowunit);
     auto mock_flowunit = std::make_shared<MockFlowUnit>();
     auto mock_flowunit_desc = std::make_shared<FlowUnitDesc>();
@@ -76,7 +76,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, Open(_))
         .WillRepeatedly(testing::Invoke(
-            [=](const std::shared_ptr<modelbox::Configuration>& flow_option) {
+            [=](const std::shared_ptr<modelbox::Configuration> &flow_option) {
               modelbox::Status ret = modelbox::STATUS_FAULT;
               auto spt = mock_flowunit_wp.lock();
               auto ext_data = spt->CreateExternalData();
@@ -87,7 +87,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
 
               auto buffer_list = ext_data->CreateBufferList();
               buffer_list->Build({10 * sizeof(int)});
-              auto data = (int*)buffer_list->MutableData();
+              auto *data = (int *)buffer_list->MutableData();
               for (size_t i = 0; i < 10; i++) {
                 data[i] = i;
               }
@@ -131,12 +131,13 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
               auto output_buf_1 = op_ctx->Output("Out_1");
               std::vector<size_t> data_1_shape = {5 * 4 * 3 * sizeof(float)};
               output_buf_1->Build(data_1_shape);
-              auto dev_data_1 =
-                  static_cast<float*>(output_buf_1->At(0)->MutableData());
+              auto *dev_data_1 =
+                  static_cast<float *>(output_buf_1->At(0)->MutableData());
               for (size_t i = 0; i < 3; ++i) {
                 for (size_t j = 0; j < 5; j++) {
-                  for (size_t k = 0; k < 4; k++)
+                  for (size_t k = 0; k < 4; k++) {
                     dev_data_1[i * 20 + j * 4 + k] = static_cast<float>(255);
+                  }
                 }
               }
 
@@ -166,8 +167,9 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
     desc_flowunit.SetName("test_normalize_1");
     desc_flowunit.SetDescription("The test output data, 1 input 0 outputs");
     desc_flowunit.SetVersion("1.0.0");
-    std::string file_path_flowunit = std::string(TEST_DRIVER_DIR) +
-                                     "/libmodelbox-unit-cpu-test_normalize_1.so";
+    std::string file_path_flowunit =
+        std::string(TEST_DRIVER_DIR) +
+        "/libmodelbox-unit-cpu-test_normalize_1.so";
     desc_flowunit.SetFilePath(file_path_flowunit);
     auto mock_flowunit = std::make_shared<MockFlowUnit>();
     auto mock_flowunit_desc = std::make_shared<FlowUnitDesc>();
@@ -179,7 +181,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, Open(_))
         .WillRepeatedly(testing::Invoke(
-            [=](const std::shared_ptr<modelbox::Configuration>& flow_option) {
+            [=](const std::shared_ptr<modelbox::Configuration> &flow_option) {
               return modelbox::STATUS_OK;
             }));
 
@@ -214,8 +216,8 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
                 EXPECT_EQ(width, 5);
                 EXPECT_EQ(height, 4);
 
-                const auto in_data =
-                    static_cast<const float*>(input_buf->ConstData());
+                const auto *const in_data =
+                    static_cast<const float *>(input_buf->ConstData());
                 for (size_t c = 0; c < 3; c++) {
                   for (size_t j = 0; j < width; j++) {
                     for (size_t k = 0; k < height; k++) {

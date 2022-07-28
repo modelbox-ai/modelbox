@@ -40,7 +40,6 @@ void DriverDescription(modelbox::DriverDesc* desc) {
   desc->SetType(DRIVER_TYPE);
   desc->SetDescription(DRIVER_DESC);
   desc->SetVersion(DRIVER_VERSION);
-  return;
 }
 
 modelbox::Status DriverInit() {

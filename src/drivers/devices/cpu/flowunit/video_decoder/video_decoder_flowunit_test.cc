@@ -43,7 +43,7 @@ class VideoDecoderFlowUnitTest : public testing::Test {
  public:
   std::shared_ptr<MockFlow> flow_;
 
-  void StartFlow(std::string& toml_content, const uint64_t millisecond);
+  void StartFlow(std::string& toml_content, uint64_t millisecond);
 };
 
 void VideoDecoderFlowUnitTest::StartFlow(std::string& toml_content,

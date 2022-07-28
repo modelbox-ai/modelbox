@@ -72,7 +72,7 @@ class DeviceDesc {
   void SetDeviceType(const std::string &device_type);
   void SetDeviceMemory(const std::string &device_memory);
   void SetDeviceVersion(const std::string &device_version);
-  void SetDeviceDesc(const std::string &device_description);
+  void SetDeviceDesc(const std::string &device_desc);
 
  protected:
   std::string device_id_;
@@ -102,7 +102,7 @@ class Device : public std::enable_shared_from_this<Device> {
 
   virtual const std::string GetType() const { return ""; };
 
-  void SetDeviceDesc(std::shared_ptr<DeviceDesc> desc);
+  void SetDeviceDesc(std::shared_ptr<DeviceDesc> device_desc);
 
   std::shared_ptr<DeviceDesc> GetDeviceDesc();
 

@@ -86,7 +86,7 @@ class VideoEncoderFlowUnit : public modelbox::FlowUnit {
 
   modelbox::Status ReadFrames(
       std::shared_ptr<FfmpegColorConverter> color_cvt,
-      std::shared_ptr<modelbox::DataContext> ctx,
+      std::shared_ptr<modelbox::DataContext> data_ctx,
       std::vector<std::shared_ptr<AVFrame>> &av_frame_list);
 
   modelbox::Status ReadFrameFromBuffer(

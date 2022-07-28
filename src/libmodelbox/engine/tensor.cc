@@ -19,7 +19,7 @@
 
 namespace modelbox {
 
-TensorBuffer::TensorBuffer() : Buffer() {}
+TensorBuffer::TensorBuffer() {}
 
 TensorBuffer::TensorBuffer(const std::shared_ptr<Device>& device)
     : Buffer(device) {}
@@ -51,7 +51,7 @@ std::shared_ptr<Buffer> TensorBuffer::DeepCopy() const {
 }
 
 Status TensorBuffer::DeepCopy(const TensorBuffer& other) {
-  auto other_buffer = dynamic_cast<const Buffer*>(&other);
+  const auto* other_buffer = dynamic_cast<const Buffer*>(&other);
   if (other_buffer == nullptr) {
     return {STATUS_INVALID, "tensor buffer is invalid."};
   }

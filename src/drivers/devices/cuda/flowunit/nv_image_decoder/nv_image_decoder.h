@@ -74,7 +74,7 @@ class NvImageDecoderFlowUnit : public modelbox::FlowUnit {
 
   bool DecodeJpeg(const std::shared_ptr<modelbox::Buffer> &input_buffer,
                   std::shared_ptr<modelbox::Buffer> &output_buffer,
-                  nvjpegJpegState_t &jpeg_handle_);
+                  nvjpegJpegState_t &jpeg_handle);
 
   bool DecodeOthers(const std::shared_ptr<modelbox::Buffer> &input_buffer,
                     std::shared_ptr<modelbox::Buffer> &output_buffer);

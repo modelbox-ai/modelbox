@@ -218,9 +218,9 @@ modelbox::Status VideoDecodeFlowUnit::Close() {
 }
 
 modelbox::Status VideoDecodeFlowUnit::ReadData(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<std::shared_ptr<DvppPacket>> &dvpp_packet_list) {
-  auto video_packet_input = ctx->Input(VIDEO_PACKET_INPUT);
+  auto video_packet_input = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (video_packet_input == nullptr) {
     MBLOG_ERROR << "video packet input is null";
     return modelbox::STATUS_FAULT;
@@ -394,13 +394,13 @@ modelbox::Status VideoDecodeFlowUnit::ReadDvppStreamDesc(
 }
 
 modelbox::Status VideoDecodeFlowUnit::WriteData(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::shared_ptr<AscendVideoDecoder> video_decoder,
     std::shared_ptr<DvppVideoDecodeContext> dvpp_ctx) {
   auto queue = dvpp_ctx->GetCacheQueue();
   size_t size;
 
-  auto output_bufs = ctx->Output(FRAME_INFO_OUTPUT);
+  auto output_bufs = data_ctx->Output(FRAME_INFO_OUTPUT);
   std::vector<std::shared_ptr<DvppFrame>> dvpp_frame;
   size = queue->PopBatch(&dvpp_frame, -1);
 
@@ -409,7 +409,7 @@ modelbox::Status VideoDecodeFlowUnit::WriteData(
   }
 
   auto frame_index =
-      std::static_pointer_cast<int64_t>(ctx->GetPrivate(FRAME_INDEX_CTX));
+      std::static_pointer_cast<int64_t>(data_ctx->GetPrivate(FRAME_INDEX_CTX));
   auto rate_num = video_decoder->GetRateNum();
   auto rate_den = video_decoder->GetRateDen();
 

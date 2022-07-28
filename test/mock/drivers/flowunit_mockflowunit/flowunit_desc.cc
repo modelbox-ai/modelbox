@@ -68,8 +68,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
       MockDriverFlowUnit::Instance()->GetDriverDesc()->GetVersion());
   desc->SetFilePath(
       MockDriverFlowUnit::Instance()->GetDriverDesc()->GetFilePath());
-
-  return;
 }
 
 modelbox::Status DriverInit() {

@@ -94,14 +94,14 @@ TEST_F(BufferListTest, Build) {
   EXPECT_EQ(buffer_list.Size(), shapes.size());
 
   size_t size = BATCH_NUM * Volume(shapes[0]);
-  auto data = (int *)buffer_list.MutableData();
+  auto *data = (int *)buffer_list.MutableData();
   for (size_t i = 0; i < size; ++i) {
     data[i] = i;
   }
 
   for (size_t i = 0; i < buffer_list.Size(); ++i) {
     auto buffer = buffer_list[i];
-    auto tensor_data = (int *)(buffer->ConstData());
+    auto *tensor_data = (int *)(buffer->ConstData());
     auto tensor_size = buffer->GetBytes() / sizeof(int);
     for (size_t j = 0; j < tensor_size; ++j) {
       EXPECT_EQ(tensor_data[j], i * tensor_size + j);
@@ -117,7 +117,7 @@ TEST_F(BufferListTest, Build) {
   for (size_t i = 0; i < buffer_list_2.Size(); ++i) {
     EXPECT_EQ(nullptr, buffer_list_2.ConstBufferData(i));
 
-    auto data = new int[6];
+    auto *data = new int[6];
     buffer_list_2[i]->Build(data, 6 * sizeof(int),
                             [](void *ptr) { delete[](int *) ptr; });
     data_list.push_back(data);
@@ -179,21 +179,21 @@ TEST_F(BufferListTest, EmplaceBack) {
   auto buffer1 = buffer_list.Front();
   EXPECT_EQ(buffer1->MutableData(), ptr.get());
 
-  buffer_list.EmplaceBack(ptr.get(), 1, [](void *) {});
+  buffer_list.EmplaceBack(ptr.get(), 1, [](void * /*unused*/) {});
   auto buffer2 = buffer_list.Back();
   EXPECT_EQ(buffer2->MutableData(), ptr.get());
 
   buffer_list.EmplaceBack(ptr.get(), 1);
   auto buffer3 = buffer_list.Back();
   EXPECT_NE(buffer3->MutableData(), ptr.get());
-  auto ptr3 = (uint8_t *)(buffer3->MutableData());
+  auto *ptr3 = (uint8_t *)(buffer3->MutableData());
   EXPECT_EQ(*ptr3, 123);
 
   *ptr = 234;
   buffer_list.EmplaceBackFromHost(ptr.get(), 1);
   auto buffer4 = buffer_list.Back();
   EXPECT_NE(buffer4->MutableData(), ptr.get());
-  auto ptr4 = (uint8_t *)(buffer4->MutableData());
+  auto *ptr4 = (uint8_t *)(buffer4->MutableData());
   EXPECT_EQ(*ptr4, 234);
 }
 

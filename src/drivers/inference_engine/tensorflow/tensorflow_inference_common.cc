@@ -322,7 +322,7 @@ static void StringHex2Hex(const std::vector<std::string> &string_vector,
   }
 
   for (auto &str : string_vector) {
-    auto num = std::stoul(str, 0, 16);
+    auto num = std::stoul(str, nullptr, 16);
     uint8_vector.push_back((uint8_t)num);
   }
 }
@@ -439,12 +439,12 @@ modelbox::Status InferenceTensorflowFlowUnit::SetUpInferencePlugin(
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<TF_Tensor *> &input_tf_tensor_list) {
   int index = 0;
   modelbox::Status status;
   for (const auto &input_name : params_.input_name_list_) {
-    const auto input_buf = ctx->Input(input_name);
+    const auto input_buf = data_ctx->Input(input_name);
 
     std::string type = params_.input_type_list_[index++];
     std::transform(type.begin(), type.end(), type.begin(), ::toupper);
@@ -496,7 +496,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::PostProcess(
-    std::shared_ptr<modelbox::DataContext> ctx,
+    std::shared_ptr<modelbox::DataContext> data_ctx,
     std::vector<TF_Tensor *> &output_tf_tensor_list) {
   int index = 0;
   for (const auto &output_name : params_.output_name_list_) {
@@ -520,7 +520,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PostProcess(
       return {modelbox::STATUS_FAULT, "dim is zero"};
     }
 
-    auto output_buf = ctx->Output(output_name);
+    auto output_buf = data_ctx->Output(output_name);
     auto single_bytes = tensor_byte / num;
     std::vector<size_t> shape_vector(num, single_bytes);
     auto status = CreateOutputBufferList(output_buf, shape_vector, tensor_data,
@@ -606,7 +606,7 @@ modelbox::Status InferenceTensorflowFlowUnit::SetUpDynamicLibrary(
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> ctx) {
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
   // TODO consider without N model and nhwc check
 
   std::vector<TF_Tensor *> input_tf_tensor_list;
@@ -615,7 +615,7 @@ modelbox::Status InferenceTensorflowFlowUnit::Process(
 
   Defer { ClearTensor(input_tf_tensor_list, output_tf_tensor_list); };
 
-  auto status = pre_process_(ctx, input_tf_tensor_list);
+  auto status = pre_process_(data_ctx, input_tf_tensor_list);
   if (status != modelbox::STATUS_OK) {
     auto err_msg =
         "tensorflow flowunit preprocess failed, " + status.WrapErrormsgs();
@@ -631,7 +631,7 @@ modelbox::Status InferenceTensorflowFlowUnit::Process(
     return {status, err_msg};
   }
 
-  status = post_process_(ctx, output_tf_tensor_list);
+  status = post_process_(data_ctx, output_tf_tensor_list);
   if (modelbox::STATUS_OK != status) {
     auto err_msg =
         "tensorflow flowunit postprocess failed, " + status.WrapErrormsgs();
@@ -659,8 +659,9 @@ modelbox::Status InferenceTensorflowFlowUnit::CreateOutputBufferList(
     output_buffer_list->Set("type", modelbox::MODELBOX_UINT8);
   } else if (type_output_temp == "long") {
     output_buffer_list->Set("type", modelbox::MODELBOX_INT64);
-  } else
-    return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
+  } else {
+    return { modelbox::STATUS_NOTSUPPORT, "unsupport output type." };
+  }
 
   if (status != modelbox::STATUS_OK) {
     auto err_msg = "output buffer list builds error: " + status.WrapErrormsgs();

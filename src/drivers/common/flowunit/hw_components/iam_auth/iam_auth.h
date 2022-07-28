@@ -57,9 +57,10 @@ class IAMAuth {
    * @param project_id - in, project id
    * @return successful or fault
    */
-  modelbox::Status SetConsigneeInfo(const std::string &ak, const std::string &sk,
-                                  const std::string &domain_id,
-                                  const std::string &project_id);
+  modelbox::Status SetConsigneeInfo(const std::string &service_ak,
+                                    const std::string &service_sk,
+                                    const std::string &domain_id,
+                                    const std::string &project_id);
   /**
    * @brief If service cert has been set, then you can get
    * user agency Project credential to access user cloud resource
@@ -80,9 +81,9 @@ class IAMAuth {
    * @param project_info - in, project info
    * @return successful or fault
    */
-  modelbox::Status GetUserAgencyProjectToken(
-      UserAgencyToken &agency_project_token, const AgencyInfo &agency_info,
-      const ProjectInfo &project_info);
+  modelbox::Status GetUserAgencyProjectToken(UserAgencyToken &agency_user_token,
+                                             const AgencyInfo &agency_info,
+                                             const ProjectInfo &project_info);
 
   /**
    * @brief If user agency Project credential expires,notice me

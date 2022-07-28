@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include <modelbox/base/log.h>
 
 #include <fstream>
@@ -57,7 +56,7 @@ Status JsonToTomlProcess(
       case nlohmann::json::value_t::object: {
         for (nlohmann::json::iterator obj = cur_value.begin();
              obj != cur_value.end(); obj++) {
-          auto value = new toml::value;
+          auto *value = new toml::value;
           std::string key = obj.key();
           std::shared_ptr<toml::value> toml_new(value, [=](toml::value *value) {
             if (value->is_uninitialized()) {
@@ -73,14 +72,14 @@ Status JsonToTomlProcess(
         break;
       }
       case nlohmann::json::value_t::array: {
-        auto array = new toml::array;
+        auto *array = new toml::array;
         std::shared_ptr<toml::array> array_new(array, [=](toml::array *array) {
           (*toml_key) = *array;
           delete array;
         });
 
         for (auto &item : cur_value) {
-          auto value = new toml::value;
+          auto *value = new toml::value;
           std::shared_ptr<toml::value> toml_new(value, [=](toml::value *value) {
             (*array_new).push_back(*value);
             delete value;
@@ -134,41 +133,19 @@ Status JsonToToml(const std::string &json_data, std::string *toml_data) {
 struct JsonSerializer {
   JsonSerializer(bool indent) : indent_(indent) {}
 
-  void operator()(toml::boolean v) {
-    oss_ << toml::value(v);
-    return;
-  }
-  void operator()(toml::integer v) {
-    oss_ << toml::value(v);
-    return;
-  }
-  void operator()(toml::floating v) {
-    oss_ << toml::value(v);
-    return;
-  }
+  void operator()(toml::boolean v) { oss_ << toml::value(v); }
+  void operator()(toml::integer v) { oss_ << toml::value(v); }
+  void operator()(toml::floating v) { oss_ << toml::value(v); }
   void operator()(const toml::string &v) {
     // since toml11 automatically convert string to multiline string that is
     // valid only in TOML, we need to format the string to make it valid in
     // JSON.
     oss_ << "\"" << this->escape_string(v.str) << "\"";
-    return;
   }
-  void operator()(const toml::local_time &v) {
-    oss_ << toml::value(v);
-    return;
-  }
-  void operator()(const toml::local_date &v) {
-    oss_ << toml::value(v);
-    return;
-  }
-  void operator()(const toml::local_datetime &v) {
-    oss_ << toml::value(v);
-    return;
-  }
-  void operator()(const toml::offset_datetime &v) {
-    oss_ << toml::value(v);
-    return;
-  }
+  void operator()(const toml::local_time &v) { oss_ << toml::value(v); }
+  void operator()(const toml::local_date &v) { oss_ << toml::value(v); }
+  void operator()(const toml::local_datetime &v) { oss_ << toml::value(v); }
+  void operator()(const toml::offset_datetime &v) { oss_ << toml::value(v); }
   void operator()(const toml::array &v) {
     bool has_data = false;
     if (!v.empty() && v.front().is_table()) {
@@ -201,7 +178,6 @@ struct JsonSerializer {
       IndentOut(has_data);
       oss_ << "]";
     }
-    return;
   }
   void operator()(const toml::table &v) {
     oss_ << '{';
@@ -220,7 +196,6 @@ struct JsonSerializer {
     }
     IndentOut(has_data);
     oss_ << '}';
-    return;
   }
 
   std::string escape_string(const std::string &s) const {
@@ -265,7 +240,7 @@ struct JsonSerializer {
   }
 
   std::string format_key(const std::string &s) const {
-    const auto quote("\"");
+    const auto *quote = "\"";
     return quote + escape_string(s) + quote;
   }
 

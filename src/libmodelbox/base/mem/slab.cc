@@ -45,7 +45,7 @@ Slab::Slab(SlabCache *cache, size_t obj_size, size_t mem_size) {
   }
 
   active_obj_num_ = 0;
-  last_alive_ = time(0);
+  last_alive_ = time(nullptr);
 }
 
 Slab::~Slab() {
@@ -88,7 +88,7 @@ bool Slab::Init() {
 
 time_t Slab::AliveTime() {
   if (active_obj_num_ > 0) {
-    return time(0);
+    return time(nullptr);
   }
 
   return last_alive_;
@@ -132,7 +132,7 @@ void Slab::Free(void *ptr) {
   active_obj_num_--;
 
   if (active_obj_num_ == 0) {
-    last_alive_ = time(0);
+    last_alive_ = time(nullptr);
   }
 }
 
@@ -364,7 +364,7 @@ void SlabCache::RemoveSlabs(ListHead *head, size_t count, time_t time_before) {
   Slab *s = nullptr;
   Slab *tmp = nullptr;
   size_t loop_count = count;
-  time_t now = time(0);
+  time_t now = time(nullptr);
 
   ListHead list_free;
   ListInit(&list_free);
@@ -402,7 +402,7 @@ void SlabCache::RemoveSlabs(ListHead *head, size_t count, time_t time_before) {
 bool SlabCache::GrowLocked(std::unique_lock<std::mutex> *lock) {
   try {
     lock->unlock();
-    Slab *s = new Slab(this, obj_size_, slab_size_);
+    auto *s = new Slab(this, obj_size_, slab_size_);
     if (s->Init() == false) {
       lock->lock();
       delete s;
@@ -466,7 +466,7 @@ void SlabCacheReclaimer::RmvSlabCache(SlabCache *slabcache) {
 void SlabCacheReclaimer::DoReclaim() {
   std::unique_lock<std::mutex> lock(cache_lock_);
   for (auto itr : slab_cache_list_) {
-    auto slabcache = itr.first;
+    auto *slabcache = itr.first;
     slabcache->Reclaim();
   }
 }

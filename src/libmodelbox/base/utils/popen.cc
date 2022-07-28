@@ -25,8 +25,6 @@
 #include <chrono>
 #include <iostream>
 
-extern char **environ;
-
 namespace modelbox {
 
 constexpr int POPEN_ERROR = -1;
@@ -172,7 +170,7 @@ Status Popen::Open(std::vector<std::string> args, int timeout, const char *mode,
     for (i = 0; i < args.size(); i++) {
       argv[i] = (char *)args[i].c_str();
     }
-    argv[args.size()] = 0;
+    argv[args.size()] = nullptr;
 
     // env
     auto envs = env.GetEnvs();
@@ -180,7 +178,7 @@ Status Popen::Open(std::vector<std::string> args, int timeout, const char *mode,
     for (i = 0; i < envs.size(); i++) {
       envp[i] = (char *)envs[i].c_str();
     }
-    envp[envs.size()] = 0;
+    envp[envs.size()] = nullptr;
 
     // exec command
     if (env.Changed()) {
@@ -326,7 +324,7 @@ void Popen::UpdateNewLinePos(struct stdfd *stdfd) {
   int len = stdfd->buffer_.size();
 
   for (int i = 0; i < len; i++) {
-    if (stdfd->buffer_.data()[i] == '\n' || stdfd->buffer_.data()[i] == '\0') {
+    if (stdfd->buffer_[i] == '\n' || stdfd->buffer_[i] == '\0') {
       stdfd->newline_pos_ = i + 1;
       return;
     }
@@ -422,7 +420,7 @@ int Popen::WriteString(const std::string &in) {
 
   struct sigaction act;
   struct sigaction old;
-  Defer { sigaction(SIGPIPE, &old, NULL); };
+  Defer { sigaction(SIGPIPE, &old, nullptr); };
 
   act.sa_handler = SIG_IGN;
   act.sa_flags = SA_RESTART;
@@ -618,7 +616,7 @@ void PopenEnv::LoadEnvFromList(const std::string &item_list) {
 
   for (auto const &env : envs) {
     const char *envp = env.c_str();
-    auto field = strstr(envp, "=");
+    const auto *field = strstr(envp, "=");
     if (field == nullptr) {
       continue;
     }
@@ -641,8 +639,8 @@ void PopenEnv::LoadInherit() {
   }
 
   load_inherit_ = true;
-  for (ep = environ; *ep != NULL; ep++) {
-    auto field = strstr(*ep, "=");
+  for (ep = environ; *ep != nullptr; ep++) {
+    auto *field = strstr(*ep, "=");
     if (field == nullptr) {
       continue;
     }

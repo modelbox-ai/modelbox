@@ -130,7 +130,7 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
   for output: save outport names
   */
   std::set<std::string> GetPortNames();
-  Status SetPortNames(std::set<std::string> &outport_names);
+  Status SetPortNames(std::set<std::string> &port_names);
 
   /*
   get and set bind node type: stream or normal

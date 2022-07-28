@@ -75,12 +75,12 @@ class NppiCropFlowUnit : public modelbox::CudaFlowUnit {
                                cudaStream_t stream) override;
 
  private:
-  modelbox::Status NppiCrop_u8_c3r(const u_char *pSrcData, ImageSize srcSize,
-                                   u_char *pDstData, RoiBox dstSize);
+  modelbox::Status NppiCrop_u8_c3r(const u_char *p_src_data, ImageSize src_size,
+                                   u_char *p_dst_data, RoiBox dst_size);
 
   modelbox::Status ProcessOneImage(
-      std::shared_ptr<modelbox::BufferList> &input_buffer_list,
-      std::shared_ptr<modelbox::BufferList> &input_box_bufs,
+      std::shared_ptr<modelbox::BufferList> &input_img_buffer_list,
+      std::shared_ptr<modelbox::BufferList> &input_box_buffer_list,
       std::shared_ptr<modelbox::BufferList> &output_buffer_list, int index);
 };
 

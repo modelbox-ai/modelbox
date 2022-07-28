@@ -145,9 +145,9 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
   /**
    * @brief Copy constructor, copy meta from other buffer
-   * @param buffer other buffer
+   * @param other other buffer
    */
-  Buffer(const Buffer& buffer);
+  Buffer(const Buffer& other);
 
   virtual ~Buffer() = default;
 
@@ -334,9 +334,9 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
   /**
    * @brief Set delayed copy destination device
-   * @param dev target device
+   * @param dest_device destination device
    */
-  void SetDelayedCopyDestinationDevice(std::shared_ptr<Device> dev);
+  void SetDelayedCopyDestinationDevice(std::shared_ptr<Device> dest_device);
 
   /**
    * @brief Set delayed copy destination device memory flag
@@ -351,10 +351,10 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
   /**
    * @brief Get whether need to delayed copy
-   * @param target_device destination device
+   * @param dest_device destination device
    * @return delayed copy flag.
    */
-  bool GetDelayedCopyFlag(std::shared_ptr<Device> target_device);
+  bool GetDelayedCopyFlag(std::shared_ptr<Device> dest_device);
 
   /**
    * @brief  copy buffer data to destination device

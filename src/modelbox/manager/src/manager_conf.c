@@ -15,12 +15,13 @@
  */
 
 #include "manager_conf.h"
-#include "util.h"
-#include <string.h>
+
 #include <stdlib.h>
+#include <string.h>
 
 #include "conf.h"
 #include "log.h"
+#include "util.h"
 
 static char g_conf_file[PATH_MAX];
 char pid_file_path[PATH_MAX];
@@ -69,14 +70,15 @@ int manager_load_app(void *item, int argc, char *argv[]) {
   conf_app = conf_apps + conf_apps_num;
   memset(conf_app, 0, sizeof(*conf_app));
 
-  while ((cmdtype = getopt_long_only(argc, argv, "", options, NULL)) != -1 && end_opt == 0) {
+  while ((cmdtype = getopt_long_only(argc, argv, "", options, NULL)) != -1 &&
+         end_opt == 0) {
     switch (cmdtype) {
       case 'n':
         if (_manager_is_app_exists(optarg) == 0) {
           manager_log(MANAGER_LOG_ERR, "app %s exists.", optarg);
           return -1;
         }
-        strncpy(conf_app->name, optarg, APP_NAME_LEN);
+        strncpy(conf_app->name, optarg, APP_NAME_LEN - 1);
         break;
       case 'k':
         conf_app->check_alive = 1;
@@ -88,7 +90,8 @@ int manager_load_app(void *item, int argc, char *argv[]) {
         conf_app->check_alive_time = atoi(optarg);
         break;
       case 'p':
-        strncpy(conf_app->pidfile, get_modelbox_full_path(optarg), PATH_MAX);
+        strncpy(conf_app->pidfile, get_modelbox_full_path(optarg),
+                PATH_MAX - 1);
         break;
       default:
         break;
@@ -104,8 +107,8 @@ int manager_load_app(void *item, int argc, char *argv[]) {
   }
 
   for (i = optind; i < argc; i++) {
-    strncat(conf_app->cmd, " ", PATH_MAX);
-    strncat(conf_app->cmd, get_modelbox_full_path(argv[i]), PATH_MAX);
+    strncat(conf_app->cmd, " ", PATH_MAX - 1);
+    strncat(conf_app->cmd, get_modelbox_full_path(argv[i]), PATH_MAX - 1);
   }
 
   if (strlen(conf_app->name) <= 0 || strlen(conf_app->cmd) <= 0) {
@@ -149,7 +152,8 @@ int manager_load_conf(const char *conf_file) {
     return -1;
   }
 
-  strncpy(g_conf_file, get_modelbox_full_path(conf_file), sizeof(g_conf_file));
+  strncpy(g_conf_file, get_modelbox_full_path(conf_file),
+          sizeof(g_conf_file) - 1);
 
   return load_conf(conf_parse_map, g_conf_file);
 }

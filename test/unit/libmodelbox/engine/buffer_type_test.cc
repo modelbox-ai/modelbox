@@ -24,17 +24,17 @@ class BufferTypeTest : public testing::Test {
 
  protected:
   virtual void SetUp(){
-      auto tree = BufferTypeTree::GetInstance();
-      tree->AddRootType("raw");
+    auto *tree = BufferTypeTree::GetInstance();
+    tree->AddRootType("raw");
   };
   virtual void TearDown(){
-    auto tree = BufferTypeTree::GetInstance();
+    auto *tree = BufferTypeTree::GetInstance();
     tree->RemoveType("raw");
   };
 };
 
 TEST_F(BufferTypeTest, AddRootType) {
-  auto tree = BufferTypeTree::GetInstance();
+  auto *tree = BufferTypeTree::GetInstance();
   EXPECT_EQ(true,tree->AddRootType("raw"));
   EXPECT_EQ(false,tree->AddRootType("unknow_node"));
   EXPECT_EQ(true,tree->RemoveType("raw"));
@@ -43,7 +43,7 @@ TEST_F(BufferTypeTest, AddRootType) {
 }
 
 TEST_F(BufferTypeTest, AddType) {
-  auto tree = BufferTypeTree::GetInstance();
+  auto *tree = BufferTypeTree::GetInstance();
   EXPECT_EQ(true, tree->AddType("tensor", "raw"));
   EXPECT_EQ("tensor", tree->GetType("tensor")->GetType());
   EXPECT_EQ(false, tree->AddType("tensor", "wrong_node"));
@@ -55,7 +55,7 @@ TEST_F(BufferTypeTest, AddType) {
 }
 
 TEST_F(BufferTypeTest, IsCompatible) {
-  auto tree = BufferTypeTree::GetInstance();
+  auto *tree = BufferTypeTree::GetInstance();
   tree->AddType("other_tensor", "raw");
   tree->AddType("tensor", "raw");
   tree->AddType("nhwc_tensor", "tensor");
@@ -68,7 +68,7 @@ TEST_F(BufferTypeTest, IsCompatible) {
 }
 
 TEST_F(BufferTypeTest, RemoveType) {
-  auto tree = BufferTypeTree::GetInstance();
+  auto *tree = BufferTypeTree::GetInstance();
   EXPECT_EQ(false, tree->RemoveType("unknow_format"));
   tree->AddType("other_tensor", "raw");
   tree->AddType("tensor", "raw");

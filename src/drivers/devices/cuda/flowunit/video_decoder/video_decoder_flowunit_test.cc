@@ -48,7 +48,7 @@ class VideoDecoderCudaFlowUnitTest : public testing::Test {
  public:
   std::shared_ptr<MockFlow> flow_;
 
-  void StartFlow(const std::string& toml_content, const uint64_t millisecond);
+  void StartFlow(const std::string& toml_content, uint64_t millisecond);
 };
 
 void VideoDecoderCudaFlowUnitTest::StartFlow(const std::string& toml_content,

@@ -84,7 +84,7 @@ Status HmacEncode(const std::string &algorithm, const void *input,
     return {STATUS_NOMEM, "create md ctx failed."};
   }
 
-  EVP_DigestInit_ex(mdctx, md, NULL);
+  EVP_DigestInit_ex(mdctx, md, nullptr);
   EVP_DigestUpdate(mdctx, input, input_len);
   EVP_DigestFinal_ex(mdctx, md_value, &md_len);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
@@ -382,7 +382,7 @@ Status Encrypt(const std::string &ciphername, unsigned char *input,
    * In this example we are using 256 bit AES (i.e. a 256 bit key). The
    * IV size for *most* modes is the same as the block size. For AES this
    * is 128 bits */
-  if (1 != EVP_EncryptInit_ex(ctx.get(), cipher, NULL, key, iv)) {
+  if (1 != EVP_EncryptInit_ex(ctx.get(), cipher, nullptr, key, iv)) {
     return {STATUS_FAULT, "encrypt init failed."};
   }
 
@@ -406,7 +406,7 @@ Status Encrypt(const std::string &ciphername, unsigned char *input,
 }
 
 std::string EvpGetErrorMsg() {
-  auto errmsg = ERR_reason_error_string(ERR_get_error());
+  const auto *errmsg = ERR_reason_error_string(ERR_get_error());
   if (errmsg == nullptr) {
     return "";
   }
@@ -446,7 +446,7 @@ Status Decrypt(const std::string &ciphername, unsigned char *input,
    * In this example we are using 256 bit AES (i.e. a 256 bit key). The
    * IV size for *most* modes is the same as the block size. For AES this
    * is 128 bits */
-  if (1 != EVP_DecryptInit_ex(ctx.get(), cipher, NULL, key, iv)) {
+  if (1 != EVP_DecryptInit_ex(ctx.get(), cipher, nullptr, key, iv)) {
     std::string msg = "decrypt failed, " + EvpGetErrorMsg();
     return {STATUS_FAULT, msg};
   }
@@ -505,7 +505,7 @@ Status PassEncrypt(const std::vector<char> &pass, bool sysrelated,
   }
 
   RAND_bytes(contex->iv, IV_LEN);
-  ret = Encrypt(ciphername.c_str(), (unsigned char *)pass.data(), pass.size(),
+  ret = Encrypt(ciphername, (unsigned char *)pass.data(), pass.size(),
                 contex->ciph, &cipher_len, MAX_PASSWORD_LEN, key.data(),
                 contex->iv);
   if (ret != STATUS_OK) {
@@ -541,7 +541,7 @@ Status PassDecrypt(const std::string &en_pass, const std::string &rootkey,
                                               contex->ciph + en_pass_len);
   pass->resize(en_pass.length() + EVP_MAX_BLOCK_LENGTH);
   int passwordlen = 0;
-  ret = Decrypt(ciphername.c_str(), contex->ciph, en_pass_len - IV_LEN,
+  ret = Decrypt(ciphername, contex->ciph, en_pass_len - IV_LEN,
                 (unsigned char *)pass->data(), &passwordlen, MAX_PASSWORD_LEN,
                 key.data(), contex->iv);
   if (!ret) {

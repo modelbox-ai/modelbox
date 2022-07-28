@@ -67,7 +67,8 @@ Status SingleNode::Init() {
     output_ports_.emplace_back(
         std::make_shared<OutPort>(output_port_name, shared_from_this()));
   }
-  std::set<std::string> input_ports_name, output_ports_name;
+  std::set<std::string> input_ports_name;
+  std::set<std::string> output_ports_name;
   auto status = flowunit_group_->Init(input_ports_name, output_ports_name,
                                       flowunit_manager_, false);
   if (status != STATUS_OK) {

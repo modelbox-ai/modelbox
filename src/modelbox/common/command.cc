@@ -76,15 +76,16 @@ std::vector<std::shared_ptr<ToolCommand>> ToolCommandList::GetAllCommands() {
   return cmds;
 }
 
-void ToolCommandGetOptReset(void) {
-  static struct option long_options[] = {{"-", 0, 0, 0}, {0, 0, 0, 0}};
+void ToolCommandGetOptReset() {
+  static struct option long_options[] = {{"-", 0, nullptr, 0},
+                                         {nullptr, 0, nullptr, 0}};
   int argc = 2;
   char const *argv[] = {"reset", "", nullptr};
 
   optind = 0;
   opterr = 0;
   optopt = 0;
-  getopt_long(argc, const_cast<char **>(argv), "", long_options, NULL);
+  getopt_long(argc, const_cast<char **>(argv), "", long_options, nullptr);
   optind = 0;
   opterr = 0;
   optopt = 0;

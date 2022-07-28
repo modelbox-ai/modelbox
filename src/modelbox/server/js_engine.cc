@@ -155,7 +155,7 @@ modelbox::Status JSCtx::LoadSource(const std::string &source_path) {
     return {STATUS_FAULT, err};
   }
 
-  file.seekg(0, file.end);
+  file.seekg(0, std::ifstream::end);
   size_t file_len = file.tellg();
   const size_t max_file_size = 1 * 1024 * 1024;
   if (file_len > max_file_size) {
@@ -173,7 +173,7 @@ modelbox::Status JSCtx::LoadSource(const std::string &source_path) {
     return {STATUS_FAULT, err};
   }
 
-  file.seekg(0, file.beg);
+  file.seekg(0, std::ifstream::beg);
   file.read(buf, file_len);
   file.close();
 

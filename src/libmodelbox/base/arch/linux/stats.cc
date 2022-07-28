@@ -162,7 +162,7 @@ std::string LinuxOSInfo::GetSystemID() {
 }
 
 std::string LinuxOSInfo::GetMacAddress(const std::string &nic) {
-  std::string mac = "";
+  std::string mac;
   struct ifreq ifr;
   struct ifconf ifc;
   char buf[1024];

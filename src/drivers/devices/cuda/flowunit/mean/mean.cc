@@ -34,7 +34,7 @@ int32_t Mean_PLANAR_32f_P3R(const float *pSrcPlanarData, int width, int height,
                             const cudaStream_t stream) {
   NppStatus status = NPP_ERROR;
 
-  if (NULL == pSrcPlanarData) {
+  if (nullptr == pSrcPlanarData) {
     MBLOG_ERROR << "Parma is Null.";
     return static_cast<int32_t>(status);
   }

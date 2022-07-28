@@ -61,7 +61,7 @@ Status HttpServerAsyncFlowUnitTest::AddMockFlowUnit() {
       std::string request_url;
       input_buf->At(0)->Get("endpoint", request_url);
       EXPECT_EQ(REQUEST_URL, request_url);
-      auto input_data = (char*)input_buf->ConstBufferData(0);
+      auto* input_data = (char*)input_buf->ConstBufferData(0);
       std::string request_body(input_data, input_buf->At(0)->GetBytes());
       std::string method;
       input_buf->At(0)->Get("method", method);
@@ -88,7 +88,7 @@ Status HttpServerAsyncFlowUnitTest::AddMockFlowUnit() {
         EXPECT_EQ(body_post, request_body);
         EXPECT_EQ("/restdemo_post", uri);
       } else if (method == "GET") {
-        std::string body_get = "";
+        std::string body_get;
         EXPECT_EQ(body_get, request_body);
         EXPECT_EQ("/restdemo_get", uri);
       } else if (method == "DELETE") {
@@ -125,8 +125,7 @@ void PutRequestAsync(web::http::uri uri,
   msg_put.headers() = headers_put;
   auto putvalue = web::json::value::object();
   putvalue["param"] = web::json::value::string(
-      "{\"image_id\":0,\"algorithm\":\"face_detection\",\"alg_threshold\":12."
-      "0}");
+      R"({"image_id":0,"algorithm":"face_detection","alg_threshold":12.0})");
   putvalue["image"] = web::json::value::string("image base 64 data string put");
   msg_put.set_body(putvalue);
 

@@ -33,7 +33,7 @@ int32_t Scale_32f_C1IR(float *imageData, int width, ImageRect &rect,
                        float ratio) {
   NppStatus status = NPP_ERROR;
 
-  if (NULL == imageData) {
+  if (nullptr == imageData) {
     MBLOG_ERROR << "Parma is Null.";
     return static_cast<int32_t>(status);
   }

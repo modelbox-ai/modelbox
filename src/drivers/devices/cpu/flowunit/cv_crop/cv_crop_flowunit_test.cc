@@ -74,7 +74,7 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
       auto spt = mock_flowunit_wp.lock();
       auto ext_data = spt->CreateExternalData();
       if (!ext_data) {
-        auto err_msg = "can not get external data.";
+        const auto *err_msg = "can not get external data.";
         modelbox::Status ret = {modelbox::STATUS_NODATA, err_msg};
         MBLOG_ERROR << err_msg;
         return ret;
@@ -82,7 +82,7 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
 
       auto buffer_list = ext_data->CreateBufferList();
       buffer_list->Build({10 * sizeof(int)});
-      auto data = (int*)buffer_list->MutableData();
+      auto *data = (int *)buffer_list->MutableData();
       for (size_t i = 0; i < 10; i++) {
         data[i] = i;
       }
@@ -112,7 +112,7 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
       uint32_t batch_size = 10;
 
       std::string img_path = std::string(TEST_ASSETS) + "/test.jpg";
-      cv::Mat img_data = cv::imread(img_path.c_str());
+      cv::Mat img_data = cv::imread(img_path);
       MBLOG_INFO << "image col " << img_data.cols << "  row " << img_data.rows
                  << " channel:" << img_data.channels();
       std::vector<size_t> img_shape_vector(
@@ -122,15 +122,15 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
 
       for (size_t i = 0; i < batch_size; ++i) {
         std::string img_path = std::string(TEST_ASSETS) + "/test.jpg";
-        cv::Mat img_data = cv::imread(img_path.c_str());
+        cv::Mat img_data = cv::imread(img_path);
         int32_t cols = img_data.cols;
         int32_t rows = img_data.rows;
         int32_t channels = img_data.channels();
         output_img_bufs->At(i)->Set("width", cols);
         output_img_bufs->At(i)->Set("height", rows);
         output_img_bufs->At(i)->Set("channel", channels);
-        auto output_img_data =
-            static_cast<uchar*>(output_img_bufs->MutableBufferData(i));
+        auto *output_img_data =
+            static_cast<uchar *>(output_img_bufs->MutableBufferData(i));
         memcpy_s(output_img_data, output_img_bufs->At(i)->GetBytes(),
                  img_data.data, img_data.total() * img_data.elemSize());
       }
@@ -142,7 +142,7 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
       output_box_bufs->Build(box_shape_vector);
 
       for (size_t i = 0; i < 5; ++i) {
-        auto output_box1_data = output_box_bufs->MutableBufferData(2 * i);
+        auto *output_box1_data = output_box_bufs->MutableBufferData(2 * i);
         std::shared_ptr<RoiBox> bbox1 = std::make_shared<RoiBox>();
         bbox1->w = 100;
         bbox1->h = 110;
@@ -150,7 +150,7 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
         bbox1->y = 100;
         memcpy_s(output_box1_data, sizeof(RoiBox), bbox1.get(), sizeof(RoiBox));
 
-        auto output_box2_data = output_box_bufs->MutableBufferData(2 * i + 1);
+        auto *output_box2_data = output_box_bufs->MutableBufferData(2 * i + 1);
         std::shared_ptr<RoiBox> bbox2 = std::make_shared<RoiBox>();
         bbox2->w = 50;
         bbox2->h = 90;
@@ -206,15 +206,15 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
           MBLOG_ERROR << "meta don't have key channel";
         }
 
-        auto input_data =
-            static_cast<const uchar*>(input_buf->ConstBufferData(i));
+        const auto *input_data =
+            static_cast<const uchar *>(input_buf->ConstBufferData(i));
 
         cv::Mat img_data(cv::Size(width, height), CV_8UC3);
         memcpy_s(img_data.data, img_data.total() * img_data.elemSize(),
                  input_data, input_buf->At(i)->GetBytes());
         std::string name =
             std::string(TEST_DATA_DIR) + "/test" + std::to_string(i) + ".jpg";
-        cv::imwrite(name.c_str(), img_data);
+        cv::imwrite(name, img_data);
       }
       MBLOG_INFO << "finsish test_1_0_cv_crop";
 

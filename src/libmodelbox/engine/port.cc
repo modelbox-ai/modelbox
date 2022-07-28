@@ -138,7 +138,7 @@ Status OutPort::Send(std::vector<std::shared_ptr<Buffer>>& buffers) {
     }
   }
 
-  for (auto& input_port : connected_input_ports_) {
+  for (const auto& input_port : connected_input_ports_) {
     input_port->NotifyPushEvent();
   }
 

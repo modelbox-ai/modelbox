@@ -219,7 +219,7 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
     driver_func =
         (CreateDriverFactory)dlsym(driver_handler_, "CreateDriverFactory");
     if (driver_func == nullptr) {
-      auto dl_err_msg = dlerror();
+      auto *dl_err_msg = dlerror();
       if (dl_err_msg != nullptr) {
         StatusError = {STATUS_INVALID,
                        "failed to dlsym function DriverDescription in file: " +
@@ -318,7 +318,7 @@ Status DriverDesc::CheckVersion(const std::string &version) {
   std::string temp;
   char split_char = '.';
 
-  if (version.find(split_char) == version.npos) {
+  if (version.find(split_char) == std::string::npos) {
     return {STATUS_BADCONF, "version is invalid"};
   }
 
@@ -361,7 +361,7 @@ void Drivers::PrintScanResult(
   } else {
     MBLOG_INFO << "load success drivers: count " << load_success_info.size()
                << ", show detail in debug level";
-    for (auto &info : load_success_info) {
+    for (const auto &info : load_success_info) {
       MBLOG_DEBUG << info;
     }
   }
@@ -371,7 +371,7 @@ void Drivers::PrintScanResult(
   } else {
     MBLOG_WARN << "load failed drivers: count " << load_failed_info.size()
                << ", detail:";
-    for (auto &info : load_failed_info) {
+    for (const auto &info : load_failed_info) {
       MBLOG_WARN << info.second;
     }
   }
@@ -469,7 +469,7 @@ Status Drivers::WriteScanInfo(const std::string &scan_info_path,
 
   dump_json["check_code"] = check_code;
   std::time_t tt =
-      std::chrono::system_clock::to_time_t(std::chrono::system_clock().now());
+      std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   dump_json["version_record"] = std::ctime(&tt);
   nlohmann::json dump_driver_json_arr = nlohmann::json::array();
 
@@ -694,7 +694,7 @@ Status Drivers::InnerScan() {
 
   ret = WriteScanInfo(default_driver_info_path_, check_code);
   if (ret != STATUS_OK) {
-    auto err_msg = "write scan info failed";
+    const auto *err_msg = "write scan info failed";
     MBLOG_ERROR << err_msg;
     return {STATUS_FAULT, err_msg};
   }
@@ -753,7 +753,7 @@ Status Drivers::Scan() {
 
   status = GatherScanInfo(default_driver_info_path_);
   if (status != STATUS_OK) {
-    auto err_msg = "gather scan info failed";
+    const auto *err_msg = "gather scan info failed";
     MBLOG_ERROR << err_msg;
     return {STATUS_FAULT, err_msg};
   }
@@ -819,7 +819,7 @@ Status Drivers::Add(const std::string &file) {
   void *driver_handler = dlopen(file.c_str(), RTLD_LAZY | RTLD_LOCAL);
   if (driver_handler == nullptr) {
     std::string errmsg = file + " : dlopen failed, ";
-    auto dl_errmsg = dlerror();
+    auto *dl_errmsg = dlerror();
     if (dl_errmsg != nullptr) {
       errmsg += dl_errmsg;
     } else {
@@ -832,7 +832,7 @@ Status Drivers::Add(const std::string &file) {
   driver_func = (DriverDescription)dlsym(driver_handler, "DriverDescription");
   if (driver_func == nullptr) {
     std::string errmsg = file + " : dlsym DriverDescription failed, ";
-    auto dl_errmsg = dlerror();
+    auto *dl_errmsg = dlerror();
     if (dl_errmsg != nullptr) {
       errmsg += dl_errmsg;
     } else {
@@ -856,7 +856,7 @@ Status Drivers::Add(const std::string &file) {
   desc->SetFilePath(file);
   auto no_delete = desc->GetNoDelete();
   if (no_delete) {
-    auto driver_handler_sec =
+    auto *driver_handler_sec =
         dlopen(file.c_str(), RTLD_LAZY | RTLD_LOCAL | RTLD_NODELETE);
     if (driver_handler_sec != nullptr) {
       dlclose(driver_handler_sec);
@@ -976,7 +976,7 @@ bool Drivers::DriversContains(
     const std::vector<std::shared_ptr<Driver>> &drivers_list,
     std::shared_ptr<Driver> driver) {
   std::shared_ptr<DriverDesc> target_desc = driver->GetDriverDesc();
-  for (auto &driver_item : drivers_list) {
+  for (const auto &driver_item : drivers_list) {
     std::shared_ptr<DriverDesc> desc = driver_item->GetDriverDesc();
 
     if (desc->GetClass() != target_desc->GetClass()) {

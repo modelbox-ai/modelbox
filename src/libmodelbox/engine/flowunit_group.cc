@@ -260,7 +260,7 @@ Status FlowUnitGroup::CheckInputAndOutput(
 
     if (!input_ports_in_cfg.empty()) {
       std::string err_msg = "config input port [ ";
-      for (auto &port_name : input_ports_in_cfg) {
+      for (const auto &port_name : input_ports_in_cfg) {
         err_msg += port_name + " ";
       }
 
@@ -285,7 +285,7 @@ Status FlowUnitGroup::CheckInputAndOutput(
 
     if (!output_ports_in_cfg.empty()) {
       std::string err_msg = "config output port [ ";
-      for (auto &port_name : output_ports_in_cfg) {
+      for (const auto &port_name : output_ports_in_cfg) {
         err_msg += port_name + " ";
       }
 

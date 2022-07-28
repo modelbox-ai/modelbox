@@ -63,7 +63,9 @@ TEST_F(FlowTest, All) {
   auto flowunit_mgr = FlowUnitManager::GetInstance();
   auto device_mgr = DeviceManager::GetInstance();
 
-  std::shared_ptr<Node> node_a = nullptr, node_b = nullptr, node_c = nullptr;
+  std::shared_ptr<Node> node_a = nullptr;
+  std::shared_ptr<Node> node_b = nullptr;
+  std::shared_ptr<Node> node_c = nullptr;
 
   {
     ConfigurationBuilder configbuilder;
@@ -125,8 +127,10 @@ TEST_F(FlowTest, PortEnlargeQueue) {
   auto flowunit_mgr = FlowUnitManager::GetInstance();
   auto device_mgr = DeviceManager::GetInstance();
 
-  std::shared_ptr<Node> start_node = nullptr, condition_node = nullptr,
-                        simple_pass_node = nullptr, receive_node = nullptr;
+  std::shared_ptr<Node> start_node = nullptr;
+  std::shared_ptr<Node> condition_node = nullptr;
+  std::shared_ptr<Node> simple_pass_node = nullptr;
+  std::shared_ptr<Node> receive_node = nullptr;
 
   {
     ConfigurationBuilder configbuilder;
@@ -214,7 +218,9 @@ TEST_F(FlowTest, TensorList_All) {
   auto flowunit_mgr = FlowUnitManager::GetInstance();
   auto device_mgr = DeviceManager::GetInstance();
 
-  std::shared_ptr<Node> node_a = nullptr, node_b = nullptr, node_c = nullptr;
+  std::shared_ptr<Node> node_a = nullptr;
+  std::shared_ptr<Node> node_b = nullptr;
+  std::shared_ptr<Node> node_c = nullptr;
 
   {
     ConfigurationBuilder configbuilder;
@@ -275,7 +281,8 @@ TEST_F(FlowTest, FAILED_ALL) {
   auto device_mgr = DeviceManager::GetInstance();
 
   std::shared_ptr<MockNode> node_a = nullptr;
-  std::shared_ptr<Node> node_b = nullptr, node_c = nullptr;
+  std::shared_ptr<Node> node_b = nullptr;
+  std::shared_ptr<Node> node_c = nullptr;
 
   {
     ConfigurationBuilder configbuilder;
@@ -428,7 +435,9 @@ TEST_F(FlowTest, DISABLED_Perf) {
   auto flowunit_mgr = FlowUnitManager::GetInstance();
   auto device_mgr = DeviceManager::GetInstance();
 
-  std::shared_ptr<Node> node_a = nullptr, node_b = nullptr, node_c = nullptr;
+  std::shared_ptr<Node> node_a = nullptr;
+  std::shared_ptr<Node> node_b = nullptr;
+  std::shared_ptr<Node> node_c = nullptr;
 
   {
     ConfigurationBuilder configbuilder;

@@ -47,7 +47,7 @@ class MeanFlowUnit : public modelbox::CudaFlowUnit {
   modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
   modelbox::Status Close();
 
-  modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> ctx,
+  modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
                              cudaStream_t stream);
 
  private:

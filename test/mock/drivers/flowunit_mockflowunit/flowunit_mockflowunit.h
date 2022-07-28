@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_MOCK_CPU_H_
 #define MODELBOX_FLOWUNIT_MOCK_CPU_H_
 
 #include <modelbox/base/device.h>
 #include <modelbox/flow.h>
 
-#include "modelbox/flowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "mock_driver_ctl.h"
+#include "modelbox/flowunit.h"
 
 class MockFlowUnit : public modelbox::FlowUnit {
  public:
@@ -35,9 +34,12 @@ class MockFlowUnit : public modelbox::FlowUnit {
               (const std::shared_ptr<modelbox::Configuration> &opts));
   MOCK_METHOD(modelbox::Status, Close, ());
 
-  MOCK_METHOD(modelbox::Status, Process, (std::shared_ptr<modelbox::DataContext>));
-  MOCK_METHOD(modelbox::Status, DataPre, (std::shared_ptr<modelbox::DataContext>));
-  MOCK_METHOD(modelbox::Status, DataPost, (std::shared_ptr<modelbox::DataContext>));
+  MOCK_METHOD(modelbox::Status, Process,
+              (std::shared_ptr<modelbox::DataContext>));
+  MOCK_METHOD(modelbox::Status, DataPre,
+              (std::shared_ptr<modelbox::DataContext>));
+  MOCK_METHOD(modelbox::Status, DataPost,
+              (std::shared_ptr<modelbox::DataContext>));
   MOCK_METHOD(modelbox::Status, DataGroupPre,
               (std::shared_ptr<modelbox::DataContext>));
   MOCK_METHOD(modelbox::Status, DataGroupPost,
@@ -49,16 +51,17 @@ class MockFlowUnitFactory : public modelbox::FlowUnitFactory {
   MockFlowUnitFactory(){};
   virtual ~MockFlowUnitFactory(){};
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe();
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
+  FlowUnitProbe();
 
   std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(const std::string &name,
-                                                   const std::string &type);
+                                                     const std::string &type);
 
   void SetMockFunctionFlowUnit(std::shared_ptr<MockFlowUnit> mock_flowunit);
 
   void SetMockCreateFlowUnitFunc(
-      std::function<std::shared_ptr<modelbox::FlowUnit>(const std::string &name,
-                                                      const std::string &type)>
+      std::function<std::shared_ptr<modelbox::FlowUnit>(
+          const std::string &name, const std::string &type)>
           create_func);
   void SetMockFlowUnitDesc(
       std::vector<std::shared_ptr<modelbox::FlowUnitDesc>> descs);
@@ -67,7 +70,7 @@ class MockFlowUnitFactory : public modelbox::FlowUnitFactory {
   std::shared_ptr<MockFlowUnit> bind_mock_flowunit_;
   std::vector<std::shared_ptr<modelbox::FlowUnitDesc>> flowunit_desc_;
   std::function<std::shared_ptr<modelbox::FlowUnit>(const std::string &name,
-                                                  const std::string &type)>
+                                                    const std::string &type)>
       flowunit_create_func_;
 };
 

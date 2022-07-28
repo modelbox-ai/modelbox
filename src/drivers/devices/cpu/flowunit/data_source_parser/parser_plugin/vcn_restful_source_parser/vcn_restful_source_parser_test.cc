@@ -34,8 +34,7 @@ class DataSourceVcnRestfulParserPluginTest : public testing::Test {
 
   virtual void TearDown() { driver_flow_->Clear(); };
   std::shared_ptr<DriverFlowTest> GetDriverFlow() { return driver_flow_; }
-  std::shared_ptr<DriverFlowTest> RunDriverFlow(
-      const std::string mock_flowunit_name);
+  std::shared_ptr<DriverFlowTest> RunDriverFlow(std::string mock_flowunit_name);
   modelbox::Status SendDataSourceCfg(
       std::shared_ptr<DriverFlowTest> &driver_flow,
       const std::string &data_source_cfg, const std::string &source_type);

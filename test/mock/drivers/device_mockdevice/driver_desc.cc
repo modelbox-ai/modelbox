@@ -40,7 +40,7 @@ void DriverDescription(modelbox::DriverDesc *desc) {
     return;
   }
 
-  if (GetDriverMock()->GetDriverDesc().get() == nullptr) {
+  if (GetDriverMock()->GetDriverDesc() == nullptr) {
     MBLOG_WARN << "Mock driver is invalid.";
     return;
   }
@@ -53,8 +53,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetVersion(GetDriverMock()->GetDriverDesc()->GetVersion());
   desc->SetFilePath(
       GetDriverMock()->GetDriverDesc()->GetFilePath());
-
-  return;
 }
 
 modelbox::Status DriverInit() {
