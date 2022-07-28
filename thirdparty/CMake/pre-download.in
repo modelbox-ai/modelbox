@@ -29,7 +29,7 @@ find_package(Git)
 
 if (NOT @USE_CN_MIRROR@) 
   set(GOOGLETEST_DOWNLOAD_URL "https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip")
-  set(HUAWEI_SECURE_C_DOWNLOAD_URL "https://gitee.com/openeuler/libboundscheck/repository/archive/master.zip")
+  set(HUAWEI_SECURE_C_DOWNLOAD_URL "https://github.com/openeuler-mirror/libboundscheck/archive/refs/heads/master.zip")
   set(TINYLOG_DOWNLOAD_URL "https://github.com/pymumu/tinylog/archive/refs/tags/v1.6.zip")
   set(PYBIND11_DOWNLOAD_URL "https://github.com/pybind/pybind11/archive/refs/tags/v2.9.1.zip")
   set(TOML11_DOWNLOAD_URL "https://github.com/ToruNiina/toml11/archive/refs/tags/v3.7.1.zip")

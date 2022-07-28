@@ -157,7 +157,7 @@ TEST_F(BufferTest, GetCast) {
   Buffer buffer(device_);
   int32_t weight = 720;
   buffer.Set("weight", weight);
-  int64_t weight64;
+  int64_t weight64 = 0;
   bool res = buffer.Get("weight", weight64);
   EXPECT_TRUE(res);
   EXPECT_EQ(weight64, 720);
@@ -175,6 +175,13 @@ TEST_F(BufferTest, Copy) {
   auto buffer2 = buffer.Copy();
 
   EXPECT_EQ(buffer.MutableData(), buffer2->MutableData());
+}
+
+TEST_F(BufferTest, BuildFromHost) {
+  auto buffer = std::make_shared<Buffer>(device_);
+  std::string data = "this is a message";
+  auto ret = buffer->BuildFromHost((char*)data.c_str(), data.length() + 1);
+  EXPECT_STREQ((char*)buffer->ConstData(), data.c_str());
 }
 
 TEST_F(BufferTest, DeepCopy) {
@@ -242,7 +249,7 @@ TEST_F(BufferTest, MoveToTargetDevice) {
   }
 
   MockBuffer buffer(device_cuda);
-  buffer.Build({3 * sizeof(int)});
+  buffer.Build(3 * sizeof(int));
 
   auto device_cpu = dev_mgr->CreateDevice("cpu", "0");
   buffer.SetDelayedCopyDestinationDevice(device_cpu);
@@ -250,7 +257,7 @@ TEST_F(BufferTest, MoveToTargetDevice) {
   auto data = buffer.ConstData();
   EXPECT_NE(data, nullptr);
   EXPECT_EQ("cpu", buffer.GetDevice()->GetType());
-  EXPECT_EQ({3 * sizeof(int)}, buffer.GetBytes());
+  EXPECT_EQ(3 * sizeof(int), buffer.GetBytes());
 }
 
 }  // namespace modelbox

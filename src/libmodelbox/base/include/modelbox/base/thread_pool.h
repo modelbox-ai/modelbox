@@ -237,7 +237,7 @@ class ThreadPool {
  private:
   std::shared_ptr<BlockingQueue<ThreadFunction>> work_queue_;
   bool quit_{false};
-  std::vector<std::shared_ptr<ThreadWorker>> workers_;
+  std::list<std::shared_ptr<ThreadWorker>> workers_;
   int thread_size_{0};
   int max_thread_size_{1};
   int keep_alive_{60000};

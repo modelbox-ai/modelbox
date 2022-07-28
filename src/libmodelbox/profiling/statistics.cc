@@ -527,21 +527,29 @@ void StatisticsItem::DelChildrenNotify(
   }
 }
 
-std::once_flag Statistics::fix_item_init_flag_;
+static std::shared_ptr<StatisticsItem> kGlobalRootStats;
+std::mutex kGlobRootStatLock;
 
 std::shared_ptr<StatisticsItem> Statistics::GetGlobalItem() {
-  static std::shared_ptr<StatisticsItem> stats(new StatisticsItem());
-  std::call_once(
-      fix_item_init_flag_,
-      [](std::shared_ptr<StatisticsItem> stats) {
-        auto flow_item = stats->AddItem(STATISTICS_ITEM_FLOW);
-        if (flow_item == nullptr) {
-          MBLOG_ERROR << "Add item " << STATISTICS_ITEM_FLOW << "failed";
-        }
-      },
-      stats);
+  if (kGlobalRootStats) {
+    return kGlobalRootStats;
+  }
 
-  return stats;
+  std::lock_guard<std::mutex> lock(kGlobRootStatLock);
+  if (kGlobalRootStats) {
+    return kGlobalRootStats;
+  }
+
+  kGlobalRootStats = std::make_shared<StatisticsItem>();
+  auto flow_item = kGlobalRootStats->AddItem(STATISTICS_ITEM_FLOW);
+
+  if (flow_item == nullptr) {
+    MBLOG_ERROR << "Add item " << STATISTICS_ITEM_FLOW << "failed";
+  }
+
+  return kGlobalRootStats;
 }
+
+void Statistics::ReleaseGlobalItem() { kGlobalRootStats = nullptr; }
 
 }  // namespace modelbox

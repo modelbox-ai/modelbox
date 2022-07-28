@@ -11,6 +11,11 @@ if (NOT CLANG_TIDY_BIN)
     return()
 endif()
 
+if (NOT CLANG_TIDY)
+    message(STATUS "disable clang-tidy")
+    return()
+endif()
+
 if (CLANG_TIDY_FIX)
     set(CLANG_TIDY_FLAG "${CLANG_TIDY_FLAG};-fix;")
 endif()
