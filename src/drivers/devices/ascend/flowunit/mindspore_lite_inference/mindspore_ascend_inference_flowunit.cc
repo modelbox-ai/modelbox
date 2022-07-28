@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-#include "mindspore_cpu_inference_flowunit.h"
+#include "mindspore_ascend_inference_flowunit.h"
 
-MindSporeInferenceCPUFlowUnit::MindSporeInferenceCPUFlowUnit() = default;
+MindSporeInferenceAsendFlowUnit::MindSporeInferenceAsendFlowUnit() = default;
 
-MindSporeInferenceCPUFlowUnit::~MindSporeInferenceCPUFlowUnit() = default;
+MindSporeInferenceAsendFlowUnit::~MindSporeInferenceAsendFlowUnit() = default;
 
-modelbox::Status MindSporeInferenceCPUFlowUnit::Open(
+modelbox::Status MindSporeInferenceAsendFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   auto context = std::make_shared<mindspore::Context>();
   auto &device_list = context->MutableDeviceInfo();
+  auto ascend_device_info = std::make_shared<mindspore::AscendDeviceInfo>();
+  ascend_device_info->SetDeviceID(dev_id_);
+  device_list.push_back(ascend_device_info);
+
   auto cpu_device_info = std::make_shared<mindspore::CPUDeviceInfo>();
   device_list.push_back(cpu_device_info);
 
@@ -33,20 +37,25 @@ modelbox::Status MindSporeInferenceCPUFlowUnit::Open(
                       context);
 }
 
-modelbox::Status MindSporeInferenceCPUFlowUnit::Process(
+modelbox::Status MindSporeInferenceAsendFlowUnit::AscendProcess(
+    std::shared_ptr<modelbox::DataContext> data_ctx, aclrtStream stream) {
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status MindSporeInferenceAsendFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   return infer_->Infer(data_ctx);
 }
 
-modelbox::Status MindSporeInferenceCPUFlowUnit::Close() {
+modelbox::Status MindSporeInferenceAsendFlowUnit::Close() {
   infer_ = nullptr;
   return modelbox::STATUS_OK;
 }
 
 std::shared_ptr<modelbox::FlowUnit>
-MindSporeInferenceCPUFlowUnitFactory::VirtualCreateFlowUnit(
+MindSporeInferenceAsendFlowUnitFactory::VirtualCreateFlowUnit(
     const std::string &unit_name, const std::string &unit_type,
     const std::string &virtual_type) {
-  auto inference_flowunit = std::make_shared<MindSporeInferenceCPUFlowUnit>();
+  auto inference_flowunit = std::make_shared<MindSporeInferenceAsendFlowUnit>();
   return inference_flowunit;
 };

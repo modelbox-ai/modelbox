@@ -19,18 +19,25 @@
 
 #include <modelbox/flowunit.h>
 
-#include "mindspore_inference_flowunit.h"
+#include "mindspore_inference.h"
 
 constexpr const char *FLOWUNIT_TYPE = "cpu";
 
-class MindSporeInferenceCPUFlowUnit : public MindSporeInferenceFlowUnit {
+class MindSporeInferenceCPUFlowUnit : public modelbox::FlowUnit {
  public:
   MindSporeInferenceCPUFlowUnit();
   ~MindSporeInferenceCPUFlowUnit() override;
 
- protected:
-  std::shared_ptr<mindspore::DeviceInfoContext> GetDeviceInfoContext(
-      std::shared_ptr<modelbox::Configuration> &config) override;
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
+
+  modelbox::Status Close() override;
+
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
+
+ private:
+  std::shared_ptr<MindSporeInference> infer_;
 };
 
 class MindSporeInferenceCPUFlowUnitFactory : public modelbox::FlowUnitFactory {

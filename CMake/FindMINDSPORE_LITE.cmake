@@ -1,4 +1,10 @@
 set(HITS_MINDSPORE_LITE_PATH $ENV{MINDSPORE_LITE_PATH})
+
+if (NOT WITH_MINDSPORE) 
+  message(STATUS "not build with mindspore-lite, to enable please add -DWITH_MINDSPORE=on")
+  return()
+endif()
+
 find_path(MINDSPORE_LITE_DIR NAMES 
   runtime/include/api/context.h 
   runtime/include/api/graph.h 

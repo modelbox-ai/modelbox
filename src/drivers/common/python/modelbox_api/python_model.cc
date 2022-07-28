@@ -61,7 +61,7 @@ modelbox::Status PythonModel::Start() {
 
   auto inference = flow_graph_desc_->AddNode(
       name_, device_,
-      {"batch_size=" + max_batch_size_, "device_id=" + device_id_},
+      {"batch_size=" + max_batch_size_, "deviceid=" + device_id_},
       source_ports);
 
   for (const auto &out_name : out_names_) {

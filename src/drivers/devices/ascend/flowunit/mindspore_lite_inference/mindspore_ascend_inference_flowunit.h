@@ -19,18 +19,30 @@
 
 #include <modelbox/flowunit.h>
 
-#include "mindspore_inference_flowunit.h"
+#include "mindspore_inference.h"
+#include "modelbox/device/ascend/device_ascend.h"
 
 constexpr const char *FLOWUNIT_TYPE = "ascend";
 
-class MindSporeInferenceAsendFlowUnit : public MindSporeInferenceFlowUnit {
+class MindSporeInferenceAsendFlowUnit : public modelbox::AscendFlowUnit {
  public:
   MindSporeInferenceAsendFlowUnit();
   virtual ~MindSporeInferenceAsendFlowUnit();
 
- protected:
-  virtual std::shared_ptr<mindspore::DeviceInfoContext> GetDeviceInfoContext(
-      std::shared_ptr<modelbox::Configuration> &config);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
+
+  modelbox::Status AscendProcess(
+      std::shared_ptr<modelbox::DataContext> data_ctx,
+      aclrtStream stream) override;
+
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
+
+  modelbox::Status Close() override;
+
+ private:
+  std::shared_ptr<MindSporeInference> infer_;
 };
 
 class MindSporeInferenceAsendFlowUnitFactory
@@ -45,6 +57,7 @@ class MindSporeInferenceAsendFlowUnitFactory
 
   std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
   std::string GetVirtualType() { return INFERENCE_TYPE; };
+  std::string GetFlowUnitInputDeviceType() override { return "cpu"; };
 
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
   FlowUnitProbe() {

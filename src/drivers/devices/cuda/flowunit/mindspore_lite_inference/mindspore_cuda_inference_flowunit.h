@@ -19,18 +19,26 @@
 
 #include <modelbox/flowunit.h>
 
-#include "mindspore_inference_flowunit.h"
+#include "mindspore_inference.h"
+#include "modelbox/device/cuda/device_cuda.h"
 
 constexpr const char *FLOWUNIT_TYPE = "cuda";
 
-class MindSporeInferenceCudaFlowUnit : public MindSporeInferenceFlowUnit {
+class MindSporeInferenceCudaFlowUnit : public modelbox::CudaFlowUnit {
  public:
   MindSporeInferenceCudaFlowUnit();
   virtual ~MindSporeInferenceCudaFlowUnit();
 
- protected:
-  virtual std::shared_ptr<mindspore::DeviceInfoContext> GetDeviceInfoContext(
-      std::shared_ptr<modelbox::Configuration> &config);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
+
+  modelbox::Status Close() override;
+
+  modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
+                               cudaStream_t stream) override;
+
+ private:
+  std::shared_ptr<MindSporeInference> infer_;
 };
 
 class MindSporeInferenceCudaFlowUnitFactory : public modelbox::FlowUnitFactory {
