@@ -106,6 +106,5 @@ Checks: >
   # clang-analyzer-optin.cplusplus.VirtualCall,
 
 # Turn all the warnings from the checks above into errors.
-WarningsAsErrors: "*"
 HeaderFilterRegex: '^(?!thirdparty/|/usr/include)*$'
 FormatStyle: file

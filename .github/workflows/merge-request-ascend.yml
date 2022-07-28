@@ -20,16 +20,12 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEBUI=off -DCLANG_TIDY=on -DCLANG_TIDY_AS_ERROR=on
 
     - name: Build
       working-directory: build
       run: |
         make package -j8
-
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
 
     - name: Test
       working-directory: build

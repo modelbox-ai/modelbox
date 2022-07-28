@@ -20,6 +20,10 @@ if (CLANG_TIDY_FIX)
     set(CLANG_TIDY_FLAG "${CLANG_TIDY_FLAG};-fix;")
 endif()
 
+if (CLANG_TIDY_AS_ERROR)
+    set(CLANG_TIDY_FLAG "${CLANG_TIDY_FLAG};-warnings-as-errors=*;")
+endif()
+
 message(STATUS "enable clang-tidy lint")
 set(CMAKE_CXX_CLANG_TIDY 
    ${CMAKE_CURRENT_LIST_DIR}/clang-tidy-warp;${CLANG_TIDY_FLAG})

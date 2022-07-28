@@ -23,6 +23,12 @@ on:
         options:
         - OFF
         - ON
+      WithClangTidy:
+        type: choice
+        description: build with clang-tidy or not
+        options:
+        - OFF
+        - ON
 
 env:
   BUILD_TYPE: Debug
@@ -46,7 +52,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_CN_MIRROR=yes -DWITH_WEBUI=${{github.event.inputs.WithWebUI}}
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_CN_MIRROR=yes -DWITH_WEBUI=${{github.event.inputs.WithWebUI}} -DWITH_ALL_DEMO=on -DCLANG_TIDY=${{github.event.inputs.WithClangTidy}} -DCLANG_TIDY_AS_ERROR=on
 
     - name: Build
       working-directory: build
