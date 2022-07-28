@@ -19,11 +19,12 @@ WORKDIR /root
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     dnf update -y --nogpgcheck && \
     dnf install -y --nogpgcheck \
-        vim gcc gcc-c++ make cmake libnsl python3-perf doxygen pciutils gdb net-tools zlib-devel gnutls-devel nc \
+        vim gcc gcc-c++ make cmake libnsl python3-perf doxygen pciutils gdb net-tools zlib-devel gnutls-devel nc gtk3-devel \
         rpm-build gcc-gfortran alsa-lib nss-devel fuse-devel gdbm-devel krb5-devel expat-devel curl-devel bzip2-devel bc \
         boost-devel ncurses-devel libxml2-devel libssh2-devel openssh-server python3-devel glibc-debuginfo libatomic systemd \
         git clang xauth graphviz-devel sqlite-devel openssl-devel readline-devel mesa-libGL-devel protobuf-c-devel passwd && \
     ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python && \
+    ln -sf opencv4/opencv2 /usr/local/include/opencv2 && \
     dnf clean all && rm -rf /var/cache/dnf/*
 
 RUN mkdir -p /root/.pip && \
@@ -32,26 +33,11 @@ RUN mkdir -p /root/.pip && \
     echo "trusted-host = pypi.python.org" >>/root/.pip/pip.conf && \
     echo "timeout = 120" >>/root/.pip/pip.conf && \
     python3 -m pip install --upgrade pip && \
-    python3 -m pip install --no-cache-dir wheel pyyaml requests opencv-python pillow && \
+    python3 -m pip install --no-cache-dir wheel numpy pyyaml requests opencv-python==4.5.5.64 pillow && \
     NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
     echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict - && \
-    if [ "${CUDA_VERSION}" = "10.2" ]; then \
-        dnf install -y --nogpgcheck --setopt=obsoletes=0 \
-            libcublas10-10.2.2.89-1 \
-            libcublas-devel-10.2.2.89-1; \
-    elif [ "${CUDA_VERSION}" = "11.2" ]; then \
-        curl -LO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz && \
-        tar zxf libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz -C /usr/local/ && \
-        python3 -m pip install --no-cache-dir tensorflow-gpu==2.6.0 && \
-        dnf install -y --nogpgcheck --setopt=obsoletes=0 \
-            libcudnn8-8.1.1.33-1.cuda11.2 \
-            libcudnn8-devel-8.1.1.33-1.cuda11.2 \
-            libcublas-11-2-11.4.1.1043-1 \
-            libcublas-devel-11-2-11.4.1.1043-1;fi && \
-    dnf clean all && rm -rf /var/cache/dnf/* /root/*
-
-RUN dnf install -y --nogpgcheck --setopt=obsoletes=0 \
+    dnf install -y --nogpgcheck --setopt=obsoletes=0 \
         cuda-cudart-${CUDA_VER}-${CUDA_CUDART_VERSION} \
         cuda-minimal-build-${CUDA_VER} \
         cuda-libraries-$([ "${CUDA_VERSION}" = "11.2" ] && echo "devel" || echo "dev")-${CUDA_VER} \
@@ -62,26 +48,32 @@ RUN dnf install -y --nogpgcheck --setopt=obsoletes=0 \
     npm install -g npm@latest && npm -v && node -v && \
     npm install -g @angular/cli && \
     npm cache clean --force && \
-    if [ -n "${TORCH_VERSION}" ]; then \
-        dnf install -y --nogpgcheck --setopt=obsoletes=0 \
-            libcudnn8-8.0.0.180-1.cuda10.2 \
-            libcudnn8-devel-8.0.0.180-1.cuda10.2 && \
+    dnf clean all && rm -rf /var/cache/dnf/* /root/*
+    
+RUN if [ "${CUDA_VERSION}" = "10.2" ]; then \
+        dnn_ver="8.0.0.180-1.cuda10.2"; \
+    elif [ "${CUDA_VERSION}" = "11.2" ]; then \
+        dnn_ver="8.4.1.50-1.cuda11.6"; \
+    dnf install -y --nogpgcheck --setopt=obsoletes=0 \
+        libcudnn8-devel-${dnn_ver};fi && \
+    if [ -n "${TF_VERSION}" ]; then \
+        curl -LO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz && \
+        tar zxf libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz -C /usr/local/ && \
+        python3 -m pip install --no-cache-dir tensorflow-gpu==2.6.0; \
+    elif [ -n "${TORCH_VERSION}" ]; then \
         curl -LO https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-abi-shared-with-deps-1.9.1%2Bcu102.zip && \
         unzip libtorch-*.zip -d /root >/dev/null 2>&1 && \
         cp -af libtorch/{include,lib,share} /usr/local/; \
     elif [ -n "${TRT_VERSION}" ]; then \
-        v="7.1.3-1.cuda10.2" && \
+        if [ "${TRT_VERSION}" = "7.1.3.4" ]; then \
+            trt_ver="7.1.3-1.cuda10.2" ; \
+        elif [ "${TRT_VERSION}" = "8.4.1.5" ]; then \
+            trt_ver="8.4.2-1.cuda11.6";fi && \
         dnf install -y --nogpgcheck --setopt=obsoletes=0 \
-            libcudnn8-8.0.0.180-1.cuda10.2 \
-            libcudnn8-devel-8.0.0.180-1.cuda10.2 \
-            libnvinfer7-${v} \
-            libnvinfer-devel-${v} \
-            libnvonnxparsers7-${v} \
-            libnvonnxparsers-devel-${v} \
-            libnvparsers7-${v} \
-            libnvparsers-devel-${v} \
-            libnvinfer-plugin7-${v} \
-            libnvinfer-plugin-devel-${v};fi && \
+            libnvinfer-devel-${trt_ver} \
+            libnvonnxparsers-devel-${trt_ver} \
+            libnvparsers-devel-${trt_ver} \
+            libnvinfer-plugin-devel-${trt_ver};fi && \
     dnf clean all && rm -rf /var/cache/dnf/* /root/*
 
 RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && \

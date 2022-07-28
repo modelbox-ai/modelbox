@@ -33,7 +33,7 @@ RUN if [ "$(arch)" = "aarch64" ];then driver_tag=3000;else driver_tag=3010; fi &
     cp -af /root/lib64 /usr/local/Ascend/driver/ && \
     rm -rf /root/lib64 /usr/local/Ascend/develop && \
     bash ascend/Ascend-cann-toolkit_${cann_ver}_linux-$(arch).run --quiet --full && \
-    ls -lh /usr/local/Ascend/*
+    ls -lh /usr/local/Ascend/* /usr/local/sbin/npu-smi
 
 
 FROM base as run
@@ -54,7 +54,5 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shang
     useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser
 
 COPY --from=dev /usr/local/Ascend /usr/local/Ascend_dev
+COPY --from=dev /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi
 COPY --from=run /usr/local/Ascend /usr/local/Ascend_run
-
-RUN ls -lh /usr/local/Ascend_dev/* && \
-    ls -lh /usr/local/Ascend_run/*

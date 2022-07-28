@@ -5,17 +5,28 @@ echo "VERSION_ID:$VERSION_ID"
 download() {
     url="$1"
     softName=${url##*/}
-    echo -e "\n\n\Begen to download ${softName}"
-    curl -LO ${url}
+    echo -e "\n\nBegin to download ${softName}"
+    curl -k -L -O ${url}
 
-    if [ "$(ls -lh ${softName}|awk '{print $5}')" == "0" ]; then
-        echo "package download failed"
+    times=1
+    until [ $times -gt 3 ]; do
+        if [ $(ls -l ${softName}|awk '{print $5}') -lt 50000 ]; then
+            ls -lh ${softName}
+            echo "package ${softName} download failed, retry $times ......"
+            curl -k -L -O ${url}
+        fi
+        let "times++"
+    done
+
+    if [ $(ls -l ${softName}|awk '{print $5}') -lt 50000 ]; then
+        echo "package ${softName} download failed,pls check"
         exit 1
     fi
 }
 
 if [ "$(arch)" == "x86_64" ];then
     if [ "$VERSION_ID" == "18.04" ];then
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0-ubuntu.tar.gz
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obssdk_3.22.3-ubuntu.tar.gz
     elif [ "$VERSION_ID" == "20.04" ];then
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/cpprestsdk_2.10.15.tar.gz
@@ -26,6 +37,7 @@ if [ "$(arch)" == "x86_64" ];then
     fi
 elif [ "$(arch)" == "aarch64" ];then
     if [ "$VERSION_ID" == "18.04" ];then
+        download http://download.modelbox-ai.com/third-party/aarch64/opencv_4.2.0-ubuntu.tar.gz
         download http://download.modelbox-ai.com/third-party/aarch64/obssdk_3.22.3-ubuntu.tar.gz
     elif [ "$VERSION_ID" == "20.03" ];then
         download http://download.modelbox-ai.com/third-party/aarch64/cpprestsdk_2.10.15.tar.gz
@@ -40,6 +52,5 @@ else
 fi
 
 ls -lh *.tar.gz
-
 ls release|egrep 'devel|document|solution|demo'|xargs -i rm -f release/{}
 ls -lh release

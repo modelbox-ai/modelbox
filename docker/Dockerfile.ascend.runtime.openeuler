@@ -21,7 +21,7 @@ WORKDIR /root
 
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     dnf update -y --nogpgcheck && \
-    dnf install -y --nogpgcheck gcc curl boost libnsl libssh2 libatomic mesa-libGL graphviz protobuf-c \
+    dnf install -y --nogpgcheck curl boost libnsl libssh2 libatomic mesa-libGL graphviz protobuf-c \
         systemd openblas python3-devel lapack python3-perf fuse libxml2 openssl bc && \
     ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python && \
     dnf clean all && rm -rf /var/cache/dnf/*
@@ -35,7 +35,7 @@ RUN mkdir -p /root/.pip && \
     groupadd HwHiAiUser && \
     useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser && \
     python3 -m pip install --upgrade pip && \
-    python3 -m pip install --no-cache-dir numpy decorator sympy cffi pyyaml pathlib2 grpcio grpcio-tools protobuf scipy requests pillow opencv-python && \
+    python3 -m pip install --no-cache-dir numpy decorator sympy cffi pyyaml pathlib2 grpcio grpcio-tools protobuf scipy requests pillow opencv-python==4.5.5.64 && \
     python3 -m pip install --no-cache-dir https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.6.1/MindSpore/ascend/$(arch)/mindspore_ascend-1.6.1-cp37-cp37m-linux_$(arch).whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/topi-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/te-0.4.0-py3-none-any.whl && \
