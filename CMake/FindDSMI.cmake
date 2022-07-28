@@ -15,6 +15,7 @@ find_library(DSMI_LIBRARY NAMES
           ${DRIVER_LIB_PATH}
           ${DRIVER_LIB_PATH}/driver
           /usr/local/Ascend/driver/lib64
+          /usr/local/Ascend/driver/lib64/driver
 )
 mark_as_advanced(DSMI_LIBRARY)
 

@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-#include "mindspore_cpu_inference_flowunit.h"
+#include "mindspore_cuda_inference_flowunit.h"
 
-MindSporeInferenceCPUFlowUnit::MindSporeInferenceCPUFlowUnit() = default;
+MindSporeInferenceCudaFlowUnit::MindSporeInferenceCudaFlowUnit() = default;
 
-MindSporeInferenceCPUFlowUnit::~MindSporeInferenceCPUFlowUnit() = default;
+MindSporeInferenceCudaFlowUnit::~MindSporeInferenceCudaFlowUnit() = default;
 
-modelbox::Status MindSporeInferenceCPUFlowUnit::Open(
+modelbox::Status MindSporeInferenceCudaFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   auto context = std::make_shared<mindspore::Context>();
   auto &device_list = context->MutableDeviceInfo();
+  auto gpu_device_info = std::make_shared<mindspore::GPUDeviceInfo>();
+  gpu_device_info->SetDeviceID(dev_id_);
+  device_list.push_back(gpu_device_info);
   auto cpu_device_info = std::make_shared<mindspore::CPUDeviceInfo>();
   device_list.push_back(cpu_device_info);
 
@@ -33,20 +36,26 @@ modelbox::Status MindSporeInferenceCPUFlowUnit::Open(
                       context);
 }
 
-modelbox::Status MindSporeInferenceCPUFlowUnit::Process(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
+modelbox::Status MindSporeInferenceCudaFlowUnit::CudaProcess(
+    std::shared_ptr<modelbox::DataContext> data_ctx, cudaStream_t stream) {
+  auto cuda_ret = cudaStreamSynchronize(stream);
+  if (cuda_ret != cudaSuccess) {
+    MBLOG_ERROR << "sync stream  " << stream << " failed, err " << cuda_ret;
+    return modelbox::STATUS_FAULT;
+  }
+
   return infer_->Infer(data_ctx);
 }
 
-modelbox::Status MindSporeInferenceCPUFlowUnit::Close() {
+modelbox::Status MindSporeInferenceCudaFlowUnit::Close() {
   infer_ = nullptr;
   return modelbox::STATUS_OK;
 }
 
 std::shared_ptr<modelbox::FlowUnit>
-MindSporeInferenceCPUFlowUnitFactory::VirtualCreateFlowUnit(
+MindSporeInferenceCudaFlowUnitFactory::VirtualCreateFlowUnit(
     const std::string &unit_name, const std::string &unit_type,
     const std::string &virtual_type) {
-  auto inference_flowunit = std::make_shared<MindSporeInferenceCPUFlowUnit>();
+  auto inference_flowunit = std::make_shared<MindSporeInferenceCudaFlowUnit>();
   return inference_flowunit;
 };

@@ -25,6 +25,7 @@
 #include "include/api/serialization.h"
 #include "model_decrypt.h"
 #include "modelbox/base/status.h"
+#include "virtualdriver_inference.h"
 
 static std::map<std::string, mindspore::ModelType> model_type_map{
     {"mindir", mindspore::ModelType::kMindIR},
@@ -69,6 +70,34 @@ MindSporeInference::~MindSporeInference() {
   context_ = nullptr;
 }
 
+modelbox::Status MindSporeInference::GetFlowUnitIO(
+    struct MindSporeIOList &io_list,
+    std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc) {
+  auto unit_desc =
+      std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(flowunit_desc);
+  auto input_desc = unit_desc->GetFlowUnitInput();
+  auto output_desc = unit_desc->GetFlowUnitOutput();
+  for (auto &input : input_desc) {
+    io_list.input_name_list.push_back(input.GetPortName());
+    io_list.input_type_list.push_back(input.GetPortType());
+    io_list.input_device_list.push_back(input.GetDeviceType());
+  }
+
+  for (auto &output : output_desc) {
+    io_list.output_name_list.push_back(output.GetPortName());
+    io_list.output_type_list.push_back(output.GetPortType());
+  }
+
+  if (io_list.input_name_list.empty() || io_list.output_name_list.empty()) {
+    MBLOG_ERROR << "Wrong input name [" << io_list.input_name_list.size()
+                << "] or output name [" << io_list.output_name_list.size()
+                << "] number";
+    return modelbox::STATUS_BADCONF;
+  }
+
+  return modelbox::STATUS_OK;
+}
+
 modelbox::Status MindSporeInference::GetModelType(
     const std::string &model_entry, mindspore::ModelType &model_type) {
   auto type_vec = modelbox::StringSplit(model_entry, '.');
@@ -102,16 +131,16 @@ modelbox::Status MindSporeInference::CheckMindSporeInfo(
 
 modelbox::Status MindSporeInference::CheckMindSporeIO(
     struct MindSporeIOList &io_list) {
-  auto input_tensor = model_->GetInputs();
-  auto ret = CheckMindSporeInfo(input_tensor, io_list.input_name_list);
+  auto input_tensors = model_->GetInputs();
+  auto ret = CheckMindSporeInfo(input_tensors, io_list.input_name_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms input failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
     return ret;
   }
 
-  auto output_tensor = model_->GetOutputs();
-  ret = CheckMindSporeInfo(output_tensor, io_list.output_name_list);
+  auto output_tensors = model_->GetOutputs();
+  ret = CheckMindSporeInfo(output_tensors, io_list.output_name_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms output failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
@@ -128,8 +157,14 @@ modelbox::Status MindSporeInference::Init(
     struct MindSporeIOList &io_list,
     const std::shared_ptr<modelbox::Drivers> &drivers_ptr) {
   context_ = mindspore_context;
+  auto device_info_list = context_->MutableDeviceInfo();
+  for (const auto &device_info : device_info_list) {
+    device_type_.insert(device_info->GetDeviceType());
+  }
+  context_->SetInterOpParallelNum(std::thread::hardware_concurrency());
+  MBLOG_INFO << "set interopparalle num: " << context_->GetInterOpParallelNum();
 
-  mindspore::ModelType mindspore_type = mindspore::ModelType::kAIR;
+  mindspore::ModelType mindspore_type = mindspore::ModelType::kMindIR;
   auto ret = GetModelType(model_entry, mindspore_type);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "get model type failed " + ret.WrapErrormsgs();
@@ -137,12 +172,22 @@ modelbox::Status MindSporeInference::Init(
     return ret;
   }
 
-  mindspore::Graph graph(nullptr);
   mindspore::Status ms_status{mindspore::kSuccess};
   ModelDecryption model_decrypt;
   ret = model_decrypt.Init(model_entry, drivers_ptr, config);
   if (ret != modelbox::STATUS_SUCCESS) {
     return {ret, "init model fail"};
+  }
+
+  model_ = std::make_shared<mindspore::Model>();
+  if (!config_file_.empty()) {
+    ms_status = model_->LoadConfig(config_file_);
+    if (ms_status != mindspore::kSuccess) {
+      std::string err_msg = "load model config:" + config_file_ +
+                            " failed, ret: " + ms_status.ToString();
+      MBLOG_ERROR << err_msg;
+      return {modelbox::STATUS_FAULT, err_msg};
+    }
   }
 
   if (model_decrypt.GetModelState() == ModelDecryption::MODEL_STATE_ENCRYPT) {
@@ -153,33 +198,18 @@ modelbox::Status MindSporeInference::Init(
       return {modelbox::StatusError, "Decrypt model fail"};
     }
 
-    ms_status = mindspore::Serialization::Load((const void *)modelBuf.get(),
-                                               (size_t)model_len,
-                                               mindspore_type, &graph);
+    ms_status = model_->Build((const void *)modelBuf.get(), (size_t)model_len,
+                              mindspore_type, context_);
   } else if (model_decrypt.GetModelState() ==
              ModelDecryption::MODEL_STATE_PLAIN) {
-    ms_status =
-        mindspore::Serialization::Load(model_entry, mindspore_type, &graph);
+    ms_status = model_->Build(model_entry, mindspore_type, context_);
   }
   if (ms_status != mindspore::kSuccess) {
-    auto err_msg = "mindspore load model failed, path " + model_entry + ", ";
-    std::stringstream stream;
-    stream << std::hex << ms_status.StatusCode();
-    err_msg += " code: " + stream.str();
-    err_msg += ", msg: " + ms_status.ToString();
+    std::string err_msg =
+        "model init failed, code: " + std::to_string(ms_status.StatusCode()) +
+        ", msg: " + ms_status.ToString();
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
-  }
-
-  model_ = std::make_shared<mindspore::Model>();
-  ms_status = model_->Build(mindspore::GraphCell(graph), context_);
-  if (ms_status != mindspore::kSuccess) {
-    auto err_msg = "build model failed, errmsg: " + ms_status.ToString();
-    std::stringstream stream;
-    stream << std::hex << ms_status.StatusCode();
-    err_msg += " code: " + stream.str();
-    MBLOG_ERROR << err_msg;
-    return {modelbox::STATUS_INVALID, err_msg};
   }
 
   ret = CheckMindSporeIO(io_list);
@@ -189,68 +219,211 @@ modelbox::Status MindSporeInference::Init(
     return {modelbox::STATUS_BADCONF, err_msg};
   }
 
-  auto size = model_->GetInputs()[0].Shape()[0];
-  if (size <= 0) {
-    const auto *err_msg = "model input batch_size less than zero";
-    MBLOG_ERROR << err_msg;
-    return {modelbox::STATUS_FAULT, err_msg};
+  for (auto &input_tensor : model_->GetInputs()) {
+    std::stringstream ss;
+    ss << "input name:" << input_tensor.Name() << ", shape: [";
+    for (size_t i = 0; i < input_tensor.Shape().size(); ++i) {
+      ss << input_tensor.Shape()[i];
+      if (i != input_tensor.Shape().size() - 1) {
+        ss << ", ";
+      }
+    }
+    ss << "]";
+    MBLOG_INFO << ss.str();
   }
 
-  batch_size_ = size;
   io_list_ = io_list;
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status MindSporeInference::Open(
+    const std::shared_ptr<modelbox::Configuration> &opts,
+    std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc,
+    const std::shared_ptr<modelbox::Drivers> &drivers_ptr,
+    std::shared_ptr<mindspore::Context> context) {
+  auto unit_desc =
+      std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(flowunit_desc);
+  auto config = unit_desc->GetConfiguration();
+
+  auto merge_config = std::make_shared<modelbox::Configuration>();
+  merge_config->Add(*config);
+  merge_config->Add(*opts);
+
+  struct MindSporeIOList iolist;
+
+  auto ret = GetFlowUnitIO(iolist, flowunit_desc);
+  if (ret != modelbox::STATUS_OK) {
+    return ret;
+  }
+
+  std::string config_file_ = merge_config->GetString("config.config_file");
+  if (!modelbox::IsAbsolutePath(config_file_)) {
+    auto relpath =
+        modelbox::GetDirName(unit_desc->GetDriverDesc()->GetFilePath());
+    config_file_ = relpath + "/" + config_file_;
+  }
+
+  ret = Init(context, unit_desc->GetModelEntry(), merge_config, iolist,
+             drivers_ptr);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "Init inference failed, " << ret;
+    return ret;
+  }
+
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status MindSporeInference::Infer(
     const std::shared_ptr<modelbox::DataContext> &data_ctx) {
-  auto input_tensor = model_->GetInputs();
-  std::vector<mindspore::MSTensor> ms_inputs;
-  for (size_t i = 0; i < input_tensor.size(); ++i) {
-    auto name = input_tensor[i].Name();
-    auto portname = io_list_.input_name_list[i];
-    auto input_buffer_list = data_ctx->Input(portname);
-    MBLOG_DEBUG << "input_buffer_list: " << portname << ", model port: " << name
-                << ", size: " << input_buffer_list->Size();
-    ms_inputs.emplace_back(
-        name, input_tensor[i].DataType(), input_tensor[i].Shape(),
-        input_buffer_list->ConstData(), input_buffer_list->GetBytes());
-    MBLOG_DEBUG << "input_tensor[i].Shape(): " << input_tensor[i].Shape()[0]
-                << ", " << input_tensor[i].Shape()[1];
-    MBLOG_DEBUG << "input_tensor[i].DataSize(): " << input_tensor[i].DataSize();
-    MBLOG_DEBUG << "input_tensor[i].ElementNum(): "
-                << input_tensor[i].ElementNum();
-  }
+  auto ms_inputs = model_->GetInputs();
+  std::vector<std::vector<int64_t>> new_shapes;
+  PrepareInputTensor(ms_inputs, new_shapes, data_ctx);
 
-  std::vector<mindspore::MSTensor> ms_outputs;
-  auto ret = model_->Predict(ms_inputs, &ms_outputs);
-  if (ret != mindspore::kSuccess) {
-    auto err_msg = "mindspore inference failed, ret " +
-                   std::to_string(ret.StatusCode()) +
-                   " err_msg: " + ret.ToString();
+  auto ms_ret = model_->Resize(ms_inputs, new_shapes);
+  if (ms_ret != mindspore::kSuccess) {
+    auto err_msg = "mindspore resize failed, ret " +
+                   std::to_string(ms_ret.StatusCode()) +
+                   " err_msg: " + ms_ret.ToString();
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  auto output_tensor = model_->GetOutputs();
-  for (size_t i = 0; i < output_tensor.size(); ++i) {
+  for (const auto &input : ms_inputs) {
+    MBLOG_DEBUG << "input portname: " << input.Name()
+                << ", batch size: " << input.Shape()[0]
+                << ", data size: " << input.DataSize()
+                << ", element num: " << input.ElementNum();
+  }
+
+  auto ms_outputs = model_->GetOutputs();
+  auto ret = PrepareOutputTensor(data_ctx, ms_outputs);
+  if (ret != modelbox::STATUS_OK) {
+    auto err_msg = "prepare output tensor failed, err_msg: " + ret.Errormsg();
+    MBLOG_ERROR << err_msg;
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+
+  ms_ret = model_->Predict(ms_inputs, &ms_outputs);
+  if (ms_ret != mindspore::kSuccess) {
+    auto err_msg = "mindspore inference failed, ret " +
+                   std::to_string(ms_ret.StatusCode()) +
+                   " err_msg: " + ms_ret.ToString();
+    MBLOG_ERROR << err_msg;
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+
+  ret = PrepareOutputBufferList(data_ctx, ms_outputs);
+  if (ret != modelbox::STATUS_OK) {
+    auto err_msg =
+        "prepare output bufferlist failed, err_msg: " + ret.Errormsg();
+    MBLOG_ERROR << err_msg;
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+
+  return modelbox::STATUS_OK;
+}
+
+void MindSporeInference::PrepareInputTensor(
+    std::vector<mindspore::MSTensor> &ms_inputs,
+    std::vector<std::vector<int64_t>> &new_shapes,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx) {
+  for (size_t i = 0; i < ms_inputs.size(); ++i) {
+    auto name = ms_inputs[i].Name();
+    auto input_shape = ms_inputs[i].Shape();
+    auto portname = io_list_.input_name_list[i];
+    auto input_buffer_list = data_ctx->Input(portname);
+    MBLOG_DEBUG << "input_buffer_list: " << portname << ", model port: " << name
+                << ", size: " << input_buffer_list->Size()
+                << ", bytes:" << input_buffer_list->GetBytes();
+    // cpu is host data
+    if (io_list_.input_device_list[i] == "cpu") {
+      ms_inputs[i].SetData(const_cast<void *>(input_buffer_list->ConstData()),
+                           false);
+    } else {
+      ms_inputs[i].SetDeviceData(
+          const_cast<void *>(input_buffer_list->ConstData()));
+    }
+    // set current batch size
+    input_shape[0] = input_buffer_list->Size();
+    MBLOG_DEBUG << "input name: " << name << " shape: ";
+    for (auto &item : input_shape) {
+      MBLOG_DEBUG << item;
+    }
+    new_shapes.push_back(input_shape);
+  }
+}
+
+modelbox::Status MindSporeInference::PrepareOutputTensor(
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
+    std::vector<mindspore::MSTensor> &ms_outputs) {
+  if (device_type_.find(mindspore::DeviceType::kGPU) == device_type_.end()) {
+    // only gpu support set output device data
+    return modelbox::STATUS_OK;
+  }
+
+  // set output mem
+  for (size_t i = 0; i < ms_outputs.size(); ++i) {
+    auto name = ms_outputs[i].Name();
     auto portname = io_list_.output_name_list[i];
-    auto output_buffer_list = data_ctx->Output(portname);
-    MBLOG_DEBUG << "output_tensor[i].DataSize(): "
-                << output_tensor[i].DataSize() << ", "
-                << "output_tensor[i].ElementNum(): "
-                << output_tensor[i].ElementNum();
-    if (output_tensor[i].Shape()[0] == 0) {
+    if (ms_outputs[i].Shape()[0] == 0) {
       auto err_msg = "output_tensor " + portname + " first dim is zero";
       MBLOG_ERROR << err_msg;
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
+    auto output_buffer_list = data_ctx->Output(portname);
+    output_buffer_list->Build(std::vector<size_t>(
+        ms_outputs[i].Shape()[0],
+        ms_outputs[i].DataSize() / ms_outputs[i].Shape()[0]));
+    ms_outputs[i].SetDeviceData(output_buffer_list->MutableData());
+    MBLOG_DEBUG << "output port name: " << portname
+                << ", batch size: " << ms_outputs[i].Shape()[0]
+                << ", data size: " << ms_outputs[i].DataSize()
+                << ", element num: " << ms_outputs[i].ElementNum()
+                << ", datatype: " << (int)ms_outputs[i].DataType();
+
+    auto tensor_shape = ms_outputs[i].Shape();
+    std::vector<size_t> output_shape;
+    tensor_shape[0] = 1;
+    MBLOG_DEBUG << "output name:" << name << ", shape: ";
+    for (auto &item : tensor_shape) {
+      output_shape.push_back(item);
+      MBLOG_DEBUG << item;
+    }
+    output_buffer_list->Set("shape", output_shape);
+    output_buffer_list->Set("type",
+                            data_type_flow_map[ms_outputs[i].DataType()]);
+  }
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status MindSporeInference::PrepareOutputBufferList(
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
+    std::vector<mindspore::MSTensor> &ms_outputs) {
+  if (device_type_.find(mindspore::DeviceType::kGPU) != device_type_.end()) {
+    // gpu infer has been set output buffer list
+    return modelbox::STATUS_OK;
+  }
+
+  for (size_t i = 0; i < ms_outputs.size(); ++i) {
+    auto portname = io_list_.output_name_list[i];
+    auto output_buffer_list = data_ctx->Output(portname);
+    MBLOG_DEBUG << "output port name: " << portname
+                << ", batch size: " << ms_outputs[i].Shape()[0]
+                << ", data size: " << ms_outputs[i].DataSize()
+                << ", element num: " << ms_outputs[i].ElementNum()
+                << ", datatype: " << (int)ms_outputs[i].DataType();
+    if (ms_outputs[i].Shape()[0] == 0) {
+      auto err_msg = "ms_outputs " + portname + " first dim is zero";
+      MBLOG_ERROR << err_msg;
+      return {modelbox::STATUS_FAULT, err_msg};
+    }
+
     std::vector<size_t> shape_size(
-        output_tensor[i].Shape()[0],
-        output_tensor[i].DataSize() / output_tensor[i].Shape()[0]);
+        ms_outputs[i].Shape()[0],
+        ms_outputs[i].DataSize() / ms_outputs[i].Shape()[0]);
     auto status = output_buffer_list->BuildFromHost(
-        shape_size, output_tensor[i].MutableData(),
-        output_tensor[i].DataSize());
+        shape_size, ms_outputs[i].MutableData(), ms_outputs[i].DataSize());
     if (status != modelbox::STATUS_OK) {
       auto err_msg =
           "output buffer list build from host failed " + status.WrapErrormsgs();
@@ -258,14 +431,17 @@ modelbox::Status MindSporeInference::Infer(
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    output_buffer_list->Set("shape", output_tensor[i].Shape());
+    auto tensor_shape = ms_outputs[i].Shape();
+    std::vector<size_t> output_shape;
+    tensor_shape[0] = 1;
     MBLOG_DEBUG << "output shape: ";
-    for (const auto &item : output_tensor[i].Shape()) {
+    for (const auto &item : tensor_shape) {
+      output_shape.push_back(item);
       MBLOG_DEBUG << item;
     }
+    output_buffer_list->Set("shape", output_shape);
     output_buffer_list->Set("type",
-                            data_type_flow_map[output_tensor[i].DataType()]);
+                            data_type_flow_map[ms_outputs[i].DataType()]);
   }
-
   return modelbox::STATUS_OK;
 }
