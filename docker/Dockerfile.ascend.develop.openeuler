@@ -3,6 +3,7 @@ FROM openeuler/openeuler:20.03-lts-sp3
 
 COPY release /opt/release
 COPY --from=0 /usr/local/Ascend_dev /usr/local/Ascend
+COPY --from=0 /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi
 
 ADD *.tar.gz /usr/local/
 
@@ -35,12 +36,14 @@ WORKDIR /root
 
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     dnf update -y --nogpgcheck && \
-    dnf install -y --nogpgcheck vim gcc gcc-c++ make cmake libnsl perf doxygen gcc-gfortran pciutils alsa-lib gdb clang \
+    dnf install -y --nogpgcheck \
+        vim gcc gcc-c++ make cmake libnsl perf doxygen gcc-gfortran pciutils alsa-lib gdb clang gtk3-devel \
         zlib-devel curl-devel bzip2-devel rpm-build sqlite-devel libffi-devel openssl-devel xz-devel git passwd systemd \
         krb5-devel expat-devel boost-devel ncurses-devel libxml2-devel libssh2-devel python3-devel python3-perf bc nc \
         readline-devel nss-devel fuse-devel gdbm-devel glibc-devel glibc-debuginfo gnutls-devel net-tools libatomic \
         xauth tk-devel lapack-devel graphviz-devel mesa-libGL-devel openblas-devel protobuf-c-devel openssh-server && \
     ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python && \
+    ln -sf opencv4/opencv2 /usr/local/include/opencv2 && \
     dnf clean all && rm -rf /var/cache/dnf/*
 
 RUN mkdir -p /root/.pip && \
@@ -52,7 +55,7 @@ RUN mkdir -p /root/.pip && \
     groupadd HwHiAiUser && \
     useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser && \
     python3 -m pip install --upgrade pip && \
-    python3 -m pip install --no-cache-dir wheel attrs psutil decorator protobuf scipy sympy cffi grpcio grpcio-tools requests pillow pyyaml opencv-python && \
+    python3 -m pip install --no-cache-dir wheel numpy attrs psutil decorator protobuf scipy sympy cffi grpcio grpcio-tools requests pillow pyyaml opencv-python==4.5.5.64 && \
     python3 -m pip install --no-cache-dir https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.6.1/MindSpore/ascend/$(arch)/mindspore_ascend-1.6.1-cp37-cp37m-linux_$(arch).whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/topi-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/te-0.4.0-py3-none-any.whl && \

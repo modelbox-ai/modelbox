@@ -1,0 +1,513 @@
+name: Publish modelbox images2
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'new image tag(e.g. v1.1.0)'
+        required: true
+        default: 'latest'
+
+env:
+  BUILD_TYPE: Release
+  IMAGE_VERSION: ${{ github.event.inputs.version }}
+
+jobs:
+  compile_cuda112_trt_ubuntu:
+    runs-on: ubuntu-20.04
+    container: modelbox/modelbox-develop-tensorrt_8.4.1-cuda_11.2-ubuntu-x86_64
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      TRT_VERSION: ${{ steps.env.outputs.TRT_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+    - name: Set-env
+      id: env
+      run: |
+        echo "::set-output name=CUDA_VER::11-2"
+        echo "::set-output name=CUDA_VERSION::11.2"
+        echo "::set-output name=CUDA_CUDART_VERSION::11.2.152-1"
+        echo "::set-output name=TRT_VERSION::8.4.2.4"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::11.2.2"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441"
+        echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64"
+        echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64"
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Release check
+      run: ./docker/artifact_check.sh
+      shell: bash
+    - name: Prepare Artifact
+      run: |
+        mkdir artifact
+        cp -af build/release artifact/
+        ls -lh artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: modelbox_cuda112_trt_ubuntu
+        path: artifact
+
+  build_cuda112_trt_ubuntu_develop_image:
+    runs-on: ubuntu-18.04
+    needs: compile_cuda112_trt_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: modelbox_cuda112_trt_ubuntu
+          path: .
+      - name: Download for dev package
+        run: ./docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.cuda.develop.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_trt_ubuntu.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_trt_ubuntu.outputs.CUDA_VERSION }}
+            TRT_VERSION=${{ needs.compile_cuda112_trt_ubuntu.outputs.TRT_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_trt_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_trt_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_trt_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda112_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda112_trt_ubuntu_runtime_image:
+    runs-on: ubuntu-18.04
+    needs: compile_cuda112_trt_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: modelbox_cuda112_trt_ubuntu
+          path: .
+      - name: Download for run package
+        run: ./docker/prepare_for_run.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.cuda.runtime.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_trt_ubuntu.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_trt_ubuntu.outputs.CUDA_VERSION }}
+            TRT_VERSION=${{ needs.compile_cuda112_trt_ubuntu.outputs.TRT_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_trt_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_trt_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_trt_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_trt_ubuntu.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda112_trt_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  compile_cuda112_tf_ubuntu:
+    runs-on: ubuntu-20.04
+    container: modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      TF_VERSION: ${{ steps.env.outputs.TF_VERSION }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+    - name: Set-env
+      id: env
+      run: |
+        echo "::set-output name=CUDA_VER::11-2"
+        echo "::set-output name=TF_VERSION::2.6.0"
+        echo "::set-output name=CUDA_VERSION::11.2"
+        echo "::set-output name=CUDA_CUDART_VERSION::11.2.152-1"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::11.2.2"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=450,driver<451"
+        echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64"
+        echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64"
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Release check
+      run: ./docker/artifact_check.sh
+      shell: bash
+    - name: Prepare Artifact
+      run: |
+        mkdir artifact
+        cp -af build/release artifact/
+        ls -lh artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: modelbox_cuda112_tf_ubuntu
+        path: artifact
+          
+  build_cuda112_tf_ubuntu_develop_image:
+    runs-on: ubuntu-18.04
+    needs: compile_cuda112_tf_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: modelbox_cuda112_tf_ubuntu
+          path: .
+      - name: Download for dev package
+        run: ./docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.cuda.develop.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_tf_ubuntu.outputs.CUDA_VER }}
+            TF_VERSION=${{ needs.compile_cuda112_tf_ubuntu.outputs.TF_VERSION }}
+            CUDA_VERSION=${{ needs.compile_cuda112_tf_ubuntu.outputs.CUDA_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_tf_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_tf_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_tf_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_tf_ubuntu.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda112_tf_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda112_tf_ubuntu_runtime_image:
+    runs-on: ubuntu-18.04
+    needs: compile_cuda112_tf_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: modelbox_cuda112_tf_ubuntu
+          path: .
+      - name: Download for run package
+        run: ./docker/prepare_for_run.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.cuda.runtime.ubuntu
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_tf_ubuntu.outputs.CUDA_VER }}
+            TF_VERSION=${{ needs.compile_cuda112_tf_ubuntu.outputs.TF_VERSION }}
+            CUDA_VERSION=${{ needs.compile_cuda112_tf_ubuntu.outputs.CUDA_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_tf_ubuntu.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_tf_ubuntu.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_tf_ubuntu.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_tf_ubuntu.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda112_tf_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  compile_cuda112_trt_openeuler:
+    runs-on: ubuntu-20.04
+    container: modelbox/modelbox-develop-tensorrt_8.4.1-cuda_11.2-openeuler-x86_64
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      TRT_VERSION: ${{ steps.env.outputs.TRT_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+    - name: Set-env
+      id: env
+      run: |
+        echo "::set-output name=CUDA_VER::11-2"
+        echo "::set-output name=CUDA_VERSION::11.2"
+        echo "::set-output name=CUDA_CUDART_VERSION::11.2.152-1"
+        echo "::set-output name=TRT_VERSION::8.4.2.4"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::11.2.2"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441"
+        echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64"
+        echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64"
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Release check
+      run: ./docker/artifact_check.sh
+      shell: bash
+    - name: Prepare Artifact
+      run: |
+        mkdir artifact
+        cp -af build/release artifact/
+        ls -lh artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: modelbox_cuda112_trt_openeuler
+        path: artifact
+
+  build_cuda112_trt_openeuler_develop_image:
+    runs-on: ubuntu-20.04
+    needs: compile_cuda112_trt_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: modelbox_cuda112_trt_openeuler
+          path: .
+      - name: Download for dev package
+        run: ./docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.cuda.develop.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_trt_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_trt_openeuler.outputs.CUDA_VERSION }}
+            TRT_VERSION=${{ needs.compile_cuda112_trt_openeuler.outputs.TRT_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_trt_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_trt_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_trt_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_trt_openeuler.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda112_trt_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda112_trt_openeuler_runtime_image:
+    runs-on: ubuntu-20.04
+    needs: compile_cuda112_trt_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: modelbox_cuda112_trt_openeuler
+          path: .
+      - name: Download for run package
+        run: ./docker/prepare_for_run.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.cuda.runtime.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_trt_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_trt_openeuler.outputs.CUDA_VERSION }}
+            TRT_VERSION=${{ needs.compile_cuda112_trt_openeuler.outputs.TRT_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_trt_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_trt_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_trt_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_trt_openeuler.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda112_trt_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  compile_cuda112_tf_openeuler:
+    runs-on: ubuntu-20.04
+    container: modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64
+    outputs:
+      CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
+      TF_VERSION: ${{ steps.env.outputs.TF_VERSION }}
+      CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
+      CUDA_CUDART_VERSION: ${{ steps.env.outputs.CUDA_CUDART_VERSION }}
+      NVIDIA_CUDA_VERSION: ${{ steps.env.outputs.NVIDIA_CUDA_VERSION }}
+      NVIDIA_REQUIRE_CUDA: ${{ steps.env.outputs.NVIDIA_REQUIRE_CUDA }}
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+    - name: Set-env
+      id: env
+      run: |
+        echo "::set-output name=CUDA_VER::11-2"
+        echo "::set-output name=TF_VERSION::2.6.0"
+        echo "::set-output name=CUDA_VERSION::11.2"
+        echo "::set-output name=CUDA_CUDART_VERSION::11.2.152-1"
+        echo "::set-output name=NVIDIA_CUDA_VERSION::11.2.2"
+        echo "::set-output name=NVIDIA_REQUIRE_CUDA::cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=450,driver<451"
+        echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64"
+        echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64"
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+    - name: Build
+      working-directory: build
+      run: |
+        make package -j8
+    - name: Release check
+      run: ./docker/artifact_check.sh
+      shell: bash
+    - name: Prepare Artifact
+      run: |
+        mkdir artifact
+        cp -af build/release artifact/
+        ls -lh artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: modelbox_cuda112_tf_openeuler
+        path: artifact
+          
+  build_cuda112_tf_openeuler_develop_image:
+    runs-on: ubuntu-20.04
+    needs: compile_cuda112_tf_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: modelbox_cuda112_tf_openeuler
+          path: .
+      - name: Download for dev package
+        run: ./docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.cuda.develop.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_VER }}
+            CUDA_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.TF_VERSION }}
+            CUDA_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_tf_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_tf_openeuler.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_cuda112_tf_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_cuda112_tf_openeuler_runtime_image:
+    runs-on: ubuntu-20.04
+    needs: compile_cuda112_tf_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: modelbox_cuda112_tf_openeuler
+          path: .
+      - name: Download for run package
+        run: ./docker/prepare_for_run.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.cuda.runtime.openeuler
+          build-args: |
+            CUDA_VER=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_VER }}
+            TF_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.TF_VERSION }}
+            CUDA_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_VERSION }}
+            CUDA_CUDART_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_CUDART_VERSION }}
+            NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.NVIDIA_CUDA_VERSION }}
+            NVIDIA_REQUIRE_CUDA=${{ needs.compile_cuda112_tf_openeuler.outputs.NVIDIA_REQUIRE_CUDA }}
+          tags: |
+            ${{ needs.compile_cuda112_tf_openeuler.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_cuda112_tf_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
