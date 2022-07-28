@@ -67,7 +67,7 @@ RUN if [ "${CUDA_VERSION}" = "10.2" ]; then \
     elif [ -n "${TRT_VERSION}" ]; then \
         if [ "${TRT_VERSION}" = "7.1.3.4" ]; then \
             trt_ver="7.1.3-1.cuda10.2" ; \
-        elif [ "${TRT_VERSION}" = "8.4.1.5" ]; then \
+        elif [ "${TRT_VERSION}" = "8.4.2.4" ]; then \
             trt_ver="8.4.2-1.cuda11.6";fi && \
         dnf install -y --nogpgcheck --setopt=obsoletes=0 \
             libnvinfer-devel-${trt_ver} \

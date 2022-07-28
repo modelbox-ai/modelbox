@@ -14,7 +14,7 @@ env:
 jobs:
   compile_cuda112_trt_ubuntu:
     runs-on: ubuntu-20.04
-    container: modelbox/modelbox-develop-tensorrt_8.4.1-cuda_11.2-ubuntu-x86_64
+    container: modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64
     outputs:
       CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
       CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
@@ -31,11 +31,11 @@ jobs:
         echo "::set-output name=CUDA_VER::11-2"
         echo "::set-output name=CUDA_VERSION::11.2"
         echo "::set-output name=CUDA_CUDART_VERSION::11.2.152-1"
-        echo "::set-output name=TRT_VERSION::8.4.1.5"
+        echo "::set-output name=TRT_VERSION::8.4.2.4"
         echo "::set-output name=NVIDIA_CUDA_VERSION::11.2.2"
         echo "::set-output name=NVIDIA_REQUIRE_CUDA::cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441"
-        echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_8.4.1-cuda_11.2-ubuntu-x86_64"
-        echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_8.4.1-cuda_11.2-ubuntu-x86_64"
+        echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64"
+        echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64"
     - name: Checkout
       uses: actions/checkout@v3
     - name: CMake
@@ -824,7 +824,7 @@ jobs:
 
   compile_cuda112_trt_openeuler:
     runs-on: ubuntu-20.04
-    container: modelbox/modelbox-develop-tensorrt_8.4.1-cuda_11.2-openeuler-x86_64
+    container: modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64
     outputs:
       CUDA_VER: ${{ steps.env.outputs.CUDA_VER }}
       CUDA_VERSION: ${{ steps.env.outputs.CUDA_VERSION }}
@@ -841,11 +841,11 @@ jobs:
         echo "::set-output name=CUDA_VER::11-2"
         echo "::set-output name=CUDA_VERSION::11.2"
         echo "::set-output name=CUDA_CUDART_VERSION::11.2.152-1"
-        echo "::set-output name=TRT_VERSION::8.4.1.5"
+        echo "::set-output name=TRT_VERSION::8.4.2.4"
         echo "::set-output name=NVIDIA_CUDA_VERSION::11.2.2"
         echo "::set-output name=NVIDIA_REQUIRE_CUDA::cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441"
-        echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_8.4.1-cuda_11.2-openeuler-x86_64"
-        echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_8.4.1-cuda_11.2-openeuler-x86_64"
+        echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64"
+        echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64"
     - name: Checkout
       uses: actions/checkout@v3
     - name: CMake
