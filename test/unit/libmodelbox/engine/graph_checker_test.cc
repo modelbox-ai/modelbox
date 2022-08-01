@@ -24,7 +24,6 @@
 #include "mockflow.h"
 #include "modelbox/base/log.h"
 
-using ::testing::_;
 namespace modelbox {
 
 class GraphCheckerTest : public testing::Test {

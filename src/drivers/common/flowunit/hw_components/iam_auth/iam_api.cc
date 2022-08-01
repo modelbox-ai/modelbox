@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "iam_api.h"
 
 #include <iostream>
@@ -23,11 +22,10 @@
 #include "modelbox/base/log.h"
 #include "signer.h"
 
-using namespace std;
-using namespace utility;
-using namespace web;
-using namespace web::http;
-using namespace web::http::client;
+using namespace utility;            // NOLINT
+using namespace web;                // NOLINT
+using namespace web::http;          // NOLINT
+using namespace web::http::client;  // NOLINT
 
 namespace modelbox {
 bool IAMApi::validate_certificates_ = false;
@@ -49,9 +47,9 @@ void SetHttpConfig(http_client_config &config, bool validate_certificates) {
 }
 
 modelbox::Status CreateRequestBody(const AgencyInfo &agency_info,
-                                 const ProjectInfo &project_info,
-                                 const int32_t &token_flag,
-                                 web::json::value &request_body) {
+                                   const ProjectInfo &project_info,
+                                   const int32_t &token_flag,
+                                   web::json::value &request_body) {
   try {
     request_body["auth"]["identity"]["methods"][0] =
         web::json::value::string(U("assume_role"));
@@ -59,7 +57,7 @@ modelbox::Status CreateRequestBody(const AgencyInfo &agency_info,
         web::json::value::string(U(agency_info.user_domain_name));
     request_body["auth"]["identity"]["assume_role"]["agency_name"] =
         web::json::value::string(U(agency_info.xrole_name));
-    request_body["auth"]["identity"]["assume_role"]["duration_seconds"] = 
+    request_body["auth"]["identity"]["assume_role"]["duration_seconds"] =
         ONE_DAY_SECONDS;
     if (token_flag == TOKEN_REQUEST) {
       if (!project_info.project_name.empty()) {
@@ -72,7 +70,7 @@ modelbox::Status CreateRequestBody(const AgencyInfo &agency_info,
         MBLOG_ERROR << "cannot find any project info";
       }
     }
-  } catch (const exception &e) {
+  } catch (const std::exception &e) {
     MBLOG_ERROR << e.what();
     return modelbox::STATUS_FAULT;
   }
@@ -138,7 +136,7 @@ std::shared_ptr<void> IAMApi::CreateSignerRequest(
   }
 
   size_t pos = request_host_.find("://", 0);
-  size_t offset = string("://").length();
+  size_t offset = std::string("://").length();
   std::string endpoint = request_host_.substr(pos + offset);
 
   // construct json data
@@ -165,9 +163,9 @@ std::shared_ptr<void> IAMApi::CreateSignerRequest(
 }
 
 modelbox::Status SendHttpRequest(const std::string request_host,
-                               const std::string &request_uri,
-                               const web::http::http_request &token_request,
-                               web::http::http_response &response_data) {
+                                 const std::string &request_uri,
+                                 const web::http::http_request &token_request,
+                                 web::http::http_response &response_data) {
   http_client_config config;
   SetHttpConfig(config, IAMApi::validate_certificates_);
   http_client token_client(U(request_host + request_uri), config);
@@ -208,8 +206,8 @@ modelbox::Status IAMApi::GetAgencyProjectCredentialWithAK(
 
   web::http::http_response response_data;
   if (modelbox::STATUS_OK != SendHttpRequest(request_host_,
-                                           request_credential_uri_,
-                                           token_request, response_data)) {
+                                             request_credential_uri_,
+                                             token_request, response_data)) {
     return modelbox::STATUS_FAULT;
   }
 
@@ -227,8 +225,8 @@ modelbox::Status IAMApi::GetAgencyProjectCredentialWithToken(
   web::json::value request_body;
   ProjectInfo project_info;
   if (modelbox::STATUS_OK != CreateRequestBody(agency_info, project_info,
-                                             CREDENTIAL_REQUEST,
-                                             request_body)) {
+                                               CREDENTIAL_REQUEST,
+                                               request_body)) {
     return modelbox::STATUS_FAULT;
   }
 
@@ -240,7 +238,7 @@ modelbox::Status IAMApi::GetAgencyProjectCredentialWithToken(
   web::http::http_response response_data;
 
   if (modelbox::STATUS_OK != SendHttpRequest(request_host_, request_token_uri_,
-                                           token_request, response_data)) {
+                                             token_request, response_data)) {
     return modelbox::STATUS_FAULT;
   }
 
@@ -271,7 +269,7 @@ modelbox::Status IAMApi::GetAgencyProjectTokenWithAK(
 
   web::http::http_response response_data;
   if (modelbox::STATUS_OK != SendHttpRequest(request_host_, request_token_uri_,
-                                           token_request, response_data)) {
+                                             token_request, response_data)) {
     return modelbox::STATUS_FAULT;
   }
 
@@ -288,7 +286,7 @@ modelbox::Status IAMApi::GetAgencyProjectTokenWithToken(
     const ProjectInfo &project_info, UserAgencyToken &user_agency_token) {
   web::json::value request_body;
   if (modelbox::STATUS_OK != CreateRequestBody(agency_info, project_info,
-                                             TOKEN_REQUEST, request_body)) {
+                                               TOKEN_REQUEST, request_body)) {
     return modelbox::STATUS_FAULT;
   }
 
@@ -300,7 +298,7 @@ modelbox::Status IAMApi::GetAgencyProjectTokenWithToken(
   web::http::http_response response_data;
 
   if (modelbox::STATUS_OK != SendHttpRequest(request_host_, request_token_uri_,
-                                           token_request, response_data)) {
+                                             token_request, response_data)) {
     return modelbox::STATUS_FAULT;
   }
 

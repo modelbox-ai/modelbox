@@ -11,7 +11,6 @@
 #include "test/mock/minimodelbox/mockflow.h"
 #include "yolobox_flowunit.h"
 
-using ::testing::_;
 namespace modelbox {
 class CommonYoloboxFlowUintTest : public testing::Test {
  public:

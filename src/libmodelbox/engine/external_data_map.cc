@@ -364,9 +364,9 @@ void ExternalDataSelect::RemoveExternalData(
     if (*iter == std::dynamic_pointer_cast<ExternalDataMapImpl>(externl_data)) {
       iter = external_list_.erase(iter);
       break;
-    } else {
-      iter++;
     }
+
+    iter++;
   }
 }
 

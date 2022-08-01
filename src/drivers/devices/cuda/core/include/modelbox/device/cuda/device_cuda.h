@@ -25,13 +25,13 @@
 
 #include <list>
 
-#define GET_CUDA_API_ERROR(api, err_code, err_str)    \
-  const char *err_name = NULL;                        \
-  cuGetErrorName(err_code, &err_name);                \
-  std::ostringstream error_log;                       \
-  error_log << #api << ", return code : " << err_code \
-            << ", error : " << err_name;              \
-  auto err_str = error_log.str();
+#define GET_CUDA_API_ERROR(api, err_code, err_str)      \
+  const char *err_name = NULL;                          \
+  cuGetErrorName(err_code, &err_name);                  \
+  std::ostringstream error_log;                         \
+  error_log << #api << ", return code : " << (err_code) \
+            << ", error : " << err_name;                \
+  auto(err_str) = error_log.str();
 
 #define CUDA_API_CALL(api)                                      \
   do {                                                          \

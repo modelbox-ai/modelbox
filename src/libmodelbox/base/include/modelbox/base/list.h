@@ -124,17 +124,17 @@ static inline int ListEmptyCareful(const ListHead *head) {
 #define ListLastEntry(ptr, type, member) ListEntry((ptr)->prev, type, member)
 
 /* iterator the list */
-#define ListForEachEntry(pos, head, member)                      \
-  for (pos = ListEntry((head)->next, LIST_TYPEOF(*pos), member); \
-       &pos->member != (head);                                   \
-       pos = ListEntry(pos->member.next, LIST_TYPEOF(*pos), member))
+#define ListForEachEntry(pos, head, member)                          \
+  for ((pos) = ListEntry((head)->next, LIST_TYPEOF(*(pos)), member); \
+       &(pos)->member != (head);                                     \
+       (pos) = ListEntry((pos)->member.next, LIST_TYPEOF(*(pos)), member))
 
 /* iterator the list */
-#define ListForEachEntrySafe(pos, n, head, member)                \
-  for (pos = ListEntry((head)->next, LIST_TYPEOF(*pos), member),  \
-      n = ListEntry(pos->member.next, LIST_TYPEOF(*pos), member); \
-       &pos->member != (head);                                    \
-       pos = n, n = ListEntry(n->member.next, LIST_TYPEOF(*n), member))
+#define ListForEachEntrySafe(pos, n, head, member)                      \
+  for ((pos) = ListEntry((head)->next, LIST_TYPEOF(*(pos)), member),    \
+      (n) = ListEntry((pos)->member.next, LIST_TYPEOF(*(pos)), member); \
+       &(pos)->member != (head); (pos) = (n),                           \
+      (n) = ListEntry((n)->member.next, LIST_TYPEOF(*(n)), member))
 
 #ifdef __cplusplus
 }

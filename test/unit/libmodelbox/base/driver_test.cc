@@ -35,10 +35,6 @@
 #include "modelbox/base/log.h"
 #include "modelbox/base/utils.h"
 
-using ::testing::_;
-using ::testing::NiceMock;
-using ::testing::Return;
-
 namespace modelbox {
 
 class DriverTest : public testing::Test {

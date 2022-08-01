@@ -26,8 +26,6 @@
 #include "modelbox/device/mockdevice/device_mockdevice.h"
 #include "modelbox/flowunit.h"
 
-using ::testing::_;
-
 namespace modelbox {
 
 std::shared_ptr<FlowUnitDataContext> BuildFlowUnitDataContext(

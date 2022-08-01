@@ -217,7 +217,9 @@ int ToolCommandServer::RecvCommand() {
     int rc = poll(fds, nfds, 30 * 1000);
     if (rc == 0) {
       return -1;
-    } else if (rc < 0) {
+    }
+
+    if (rc < 0) {
       continue;
     }
 
@@ -234,7 +236,8 @@ int ToolCommandServer::RecvCommand() {
     ret = msg->Unserialize();
     if (ret == modelbox::STATUS_AGAIN) {
       continue;
-    } else if (ret == modelbox::STATUS_INVALID) {
+    }
+    if (ret == modelbox::STATUS_INVALID) {
       return -1;
     }
 

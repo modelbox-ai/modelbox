@@ -2,7 +2,7 @@
 #include "modelbox/python/log.h"
 
 #include <pybind11/embed.h>
-using namespace py::literals;
+
 namespace modelbox {
 
 LoggerPython::LoggerPython() = default;

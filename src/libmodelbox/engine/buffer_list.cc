@@ -338,7 +338,7 @@ Status BufferList::CopyMeta(const std::shared_ptr<BufferList>& bufferlist,
   return STATUS_OK;
 }
 
-Status BufferList::BuildContiguous(std::shared_ptr<modelbox::Device> device,
+Status BufferList::BuildContiguous(std::shared_ptr<Device> device,
                                    const std::vector<size_t>& data_size_list) {
   size_t size = std::accumulate(data_size_list.begin(), data_size_list.end(),
                                 (size_t)0, std::plus<size_t>());
@@ -362,7 +362,7 @@ Status BufferList::BuildContiguous(std::shared_ptr<modelbox::Device> device,
   return STATUS_OK;
 }
 
-Status BufferList::BuildSeparate(std::shared_ptr<modelbox::Device> device,
+Status BufferList::BuildSeparate(std::shared_ptr<Device> device,
                                  const std::vector<size_t>& data_size_list) {
   if (dev_mem_->GetSize() != 0) {
     dev_mem_ = device->MemAlloc(0, dev_mem_flags_);
@@ -451,12 +451,12 @@ BufferList::GetAllBufferDeviceMemory() {
 
 Status BufferList::MoveAllBufferToTargetDevice() {
   if (buffer_list_.empty()) {
-    return modelbox::STATUS_OK;
+    return STATUS_OK;
   }
 
   if (dev_mem_ == nullptr) {
     MBLOG_ERROR << "dev_mem of buffer_list should not be null";
-    return modelbox::STATUS_FAULT;
+    return STATUS_FAULT;
   }
 
   std::vector<std::shared_ptr<Buffer>> new_buffer_list;
@@ -471,7 +471,7 @@ Status BufferList::MoveAllBufferToTargetDevice() {
   for (auto& buffer : buffer_list_) {
     if (buffer == nullptr) {
       MBLOG_ERROR << "buffer in buffer list is nullptr";
-      return modelbox::STATUS_FAULT;
+      return STATUS_FAULT;
     }
 
     if (buffer->HasError()) {
@@ -497,7 +497,7 @@ Status BufferList::MoveAllBufferToTargetDevice() {
     auto data_size = buffer->GetBytes();
     auto dev_mem = target_device->MemAlloc(data_size, dev_mem_flags_);
     if (!dev_mem) {
-      return modelbox::STATUS_NOMEM;
+      return STATUS_NOMEM;
     }
     auto new_buffer = std::make_shared<Buffer>(dev_mem);
     new_buffer_list.push_back(new_buffer);
@@ -510,7 +510,7 @@ Status BufferList::MoveAllBufferToTargetDevice() {
   }
 
   buffer_list_.swap(new_buffer_list);
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 void BufferList::SetError(const std::string& error_code,

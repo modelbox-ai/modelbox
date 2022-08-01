@@ -40,8 +40,6 @@
 #define MODELBOX_VERSION_MAJORSTRING(R) MODELBOX_VERSION_MAJORSTR(R)
 #define DLL_NAME DLL_NAME_SUB MODELBOX_VERSION_MAJORSTRING(MODELBOX_VERSION_MAJOR)
 
-using ::testing::_;
-
 namespace modelbox {
 
 typedef std::shared_ptr<DriverFactory> (*CreateDriverFactory)();

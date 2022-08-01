@@ -18,6 +18,7 @@
 
 #include "modelbox/device/cpu/device_cpu.h"
 
+// NOLINTNEXTLINE
 using namespace pybind11::literals;
 
 static std::mutex reload_mutex;

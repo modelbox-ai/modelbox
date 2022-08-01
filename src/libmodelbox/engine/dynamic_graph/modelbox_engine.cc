@@ -15,7 +15,9 @@
  */
 
 #include "modelbox/modelbox_engine.h"
+
 #include <securec.h>
+
 #include "modelbox/base/log.h"
 #include "modelbox/base/utils.h"
 #include "modelbox/data_handler.h"
@@ -209,7 +211,7 @@ std::shared_ptr<DataHandler> ModelBoxEngine::CreateInput(
   auto gcgraph = std::make_shared<GCGraph>();
   gcgraph->Init(nullptr);
   auto grah_config = config_->GetSubConfig("graph");
-  if(grah_config != nullptr){
+  if (grah_config != nullptr) {
     gcgraph->SetConfiguration(grah_config);
   }
   auto data_handler =
@@ -504,8 +506,8 @@ std::shared_ptr<DynamicGraph> ModelBoxEngine::CreateDynamicGraph(
 }
 
 Status ModelBoxEngine::SendExternalData(
-    std::shared_ptr<modelbox::ExternalDataMap> &extern_datamap,
-    std::shared_ptr<modelbox::BufferList> &buffer_list,
+    std::shared_ptr<ExternalDataMap> &extern_datamap,
+    std::shared_ptr<BufferList> &buffer_list,
     const std::shared_ptr<GCNode> &gcnode) {
   auto input_data = gcnode->GetBindDataHandler();
   if (input_data == nullptr) {
@@ -580,7 +582,8 @@ Status ModelBoxEngine::FeedData(std::shared_ptr<DynamicGraph> &dynamic_graph,
 std::shared_ptr<DataHandler> ModelBoxEngine::Execute(
     const std::string &name, std::map<std::string, std::string> config_map,
     const std::map<std::string, std::shared_ptr<DataHandler>> &data) {
-  auto data_handler = std::make_shared<DataHandler>(STREAM_NODE, shared_from_this());
+  auto data_handler =
+      std::make_shared<DataHandler>(STREAM_NODE, shared_from_this());
   auto ret = data_handler->SetDataHandler(data);
   if (ret != STATUS_OK) {
     data_handler->SetError(ret);
@@ -636,8 +639,8 @@ bool ModelBoxEngine::CheckisStream(
   return false;
 }
 
-static void SetDefaultConfigValue(const std::string &name,
-                           std::map<std::string, std::string> &config_map) {
+static void SetDefaultConfigValue(
+    const std::string &name, std::map<std::string, std::string> &config_map) {
   if (config_map.find("type") == config_map.end()) {
     config_map["type"] = "flowunit";
   }

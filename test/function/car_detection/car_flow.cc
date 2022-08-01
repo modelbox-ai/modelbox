@@ -22,8 +22,6 @@
 #include "gtest/gtest.h"
 #include "mock_driver_ctl.h"
 
-using ::testing::_;
-
 namespace modelbox {
 
 CarFlow::CarFlow() : flow_(std::make_shared<Flow>()) {}

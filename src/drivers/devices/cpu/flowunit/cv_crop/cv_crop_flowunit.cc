@@ -21,7 +21,7 @@
 #include "image_process.h"
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
-using namespace imageprocess;
+
 CVCropFlowUnit::CVCropFlowUnit() = default;
 CVCropFlowUnit::~CVCropFlowUnit() = default;
 
@@ -98,9 +98,9 @@ modelbox::Status CVCropFlowUnit::Process(
 
     channel = RGB_CHANNLES;
 
-    const auto *bbox =
-        static_cast<const RoiBox *>(input_box_bufs->ConstBufferData(i));
-    if (!CheckRoiBoxVaild(bbox, width, height)) {
+    const auto *bbox = static_cast<const imageprocess::RoiBox *>(
+        input_box_bufs->ConstBufferData(i));
+    if (!imageprocess::CheckRoiBoxVaild(bbox, width, height)) {
       return {modelbox::STATUS_FAULT, "roi box param is invaild !"};
     }
 

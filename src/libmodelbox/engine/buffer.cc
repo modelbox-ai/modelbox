@@ -93,7 +93,7 @@ Status Buffer::Build(void* data, size_t data_size, DeleteFunction func) {
   }
 
   auto device = dev_mem_->GetDevice();
-  std::shared_ptr<modelbox::DeviceMemory> dev_mem;
+  std::shared_ptr<DeviceMemory> dev_mem;
   if (func) {
     dev_mem = device->MemAcquire(data, data_size, func, dev_mem_flags_);
   } else {

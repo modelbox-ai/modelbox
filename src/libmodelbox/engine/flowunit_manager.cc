@@ -122,9 +122,7 @@ Status FlowUnitManager::FlowUnitProbe() {
       flowunit_desc_list_.insert(std::make_pair(iter.first.first, tmp));
     } else {
       for (const auto &item : tmp) {
-        {
-          value->second.insert(std::make_pair(item.first, item.second));
-        }
+        { value->second.insert(std::make_pair(item.first, item.second)); }
       }
     }
 
@@ -196,26 +194,27 @@ std::vector<std::string> FlowUnitManager::GetFlowUnitList(
   return flowunit_name;
 }
 
-modelbox::Status FlowUnitManager::CheckParams(
-    const std::string &unit_name, const std::string &unit_type,
-    const std::string &unit_device_id) {
+Status FlowUnitManager::CheckParams(const std::string &unit_name,
+                                    const std::string &unit_type,
+                                    const std::string &unit_device_id) {
   if (unit_name.empty()) {
     MBLOG_WARN << "FlowUnit name should not be empty.";
-    return modelbox::STATUS_BADCONF;
+    return STATUS_BADCONF;
   }
 
   if (unit_type.empty() && !unit_device_id.empty()) {
     MBLOG_WARN << "Empty flowUnit type and not empty flowunit device id are "
                   "not allowed.";
-    return modelbox::STATUS_BADCONF;
+    return STATUS_BADCONF;
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
-modelbox::Status FlowUnitManager::ParseUnitDeviceConf(
-    const std::string &unit_name, const std::string &unit_type,
-    const std::string &unit_device_id, FlowUnitDeviceConfig &dev_cfg) {
+Status FlowUnitManager::ParseUnitDeviceConf(const std::string &unit_name,
+                                            const std::string &unit_type,
+                                            const std::string &unit_device_id,
+                                            FlowUnitDeviceConfig &dev_cfg) {
   auto ret = ParseUserDeviceConf(unit_type, unit_device_id, dev_cfg);
   if (!ret) {
     return ret;
@@ -226,12 +225,12 @@ modelbox::Status FlowUnitManager::ParseUnitDeviceConf(
     return ret;
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
-modelbox::Status FlowUnitManager::ParseUserDeviceConf(
-    const std::string &unit_type, const std::string &unit_device_id,
-    FlowUnitDeviceConfig &dev_cfg) {
+Status FlowUnitManager::ParseUserDeviceConf(const std::string &unit_type,
+                                            const std::string &unit_device_id,
+                                            FlowUnitDeviceConfig &dev_cfg) {
   /**
    * user format: unit_type = "cuda:0,1;cpu"
    * what we get from configuration will be: unit_type = "cuda:0~1;cpu"
@@ -239,12 +238,11 @@ modelbox::Status FlowUnitManager::ParseUserDeviceConf(
   auto unit_type_formatted = unit_type;
   std::replace(unit_type_formatted.begin(), unit_type_formatted.end(), '~',
                ',');
-  auto device_list = modelbox::StringSplit(unit_type_formatted, ';');
+  auto device_list = StringSplit(unit_type_formatted, ';');
   for (auto &device_info : device_list) {
-    auto data = modelbox::StringSplit(device_info, ':');
+    auto data = StringSplit(device_info, ':');
     if (data.empty() || data.size() > 2) {
-      return {modelbox::STATUS_BADCONF,
-              "device info " + unit_type + " format error"};
+      return {STATUS_BADCONF, "device info " + unit_type + " format error"};
     }
 
     auto &device_type = data[0];
@@ -254,37 +252,37 @@ modelbox::Status FlowUnitManager::ParseUserDeviceConf(
     }
 
     auto &ids = data[1];
-    auto id_list = modelbox::StringSplit(ids, ',');
+    auto id_list = StringSplit(ids, ',');
     for (size_t id_index = 0; id_index < id_list.size(); ++id_index) {
       single_dev_cfg.push_back(id_list[id_index]);
     }
   }
 
   if (unit_device_id.empty()) {
-    return modelbox::STATUS_OK;
+    return STATUS_OK;
   }
 
   // For compatibility, check old config: device="cpu", deviceid="0"
   if (dev_cfg.size() != 1) {
-    return {modelbox::STATUS_BADCONF,
+    return {STATUS_BADCONF,
             "should not set deviceid param when use multi device"};
   }
 
   for (auto &cfg_item : dev_cfg) {
     auto &ids = cfg_item.second;
     if (!ids.empty()) {
-      return {modelbox::STATUS_BADCONF,
+      return {STATUS_BADCONF,
               "should not set deviceid param when use [device:id] format"};
     }
 
     ids.push_back(unit_device_id);
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
-modelbox::Status FlowUnitManager::AutoFillDeviceConf(
-    const std::string &unit_name, FlowUnitDeviceConfig &dev_cfg) {
+Status FlowUnitManager::AutoFillDeviceConf(const std::string &unit_name,
+                                           FlowUnitDeviceConfig &dev_cfg) {
   if (dev_cfg.empty()) {
     // will auto fill all device type if no device selected
     auto unit_types = GetFlowUnitTypes(unit_name);
@@ -303,7 +301,7 @@ modelbox::Status FlowUnitManager::AutoFillDeviceConf(
     }
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 std::vector<std::shared_ptr<FlowUnit>> FlowUnitManager::CreateFlowUnit(
@@ -314,7 +312,7 @@ std::vector<std::shared_ptr<FlowUnit>> FlowUnitManager::CreateFlowUnit(
   StatusError = {STATUS_NOTFOUND};
 
   auto ret = CheckParams(unit_name, unit_type, unit_device_id);
-  if (ret != modelbox::STATUS_OK) {
+  if (ret != STATUS_OK) {
     return flowunit_list;
   }
 
@@ -366,7 +364,7 @@ std::shared_ptr<FlowUnit> FlowUnitManager::CreateSingleFlowUnit(
 
   std::shared_ptr<FlowUnit> flowunit;
   std::shared_ptr<Device> device;
-  std::shared_ptr<modelbox::DeviceManager> device_mgr = GetDeviceManager();
+  std::shared_ptr<DeviceManager> device_mgr = GetDeviceManager();
 
   auto iter = flowunit_factory_.find(std::make_pair(unit_type, unit_name));
   if (iter == flowunit_factory_.end()) {

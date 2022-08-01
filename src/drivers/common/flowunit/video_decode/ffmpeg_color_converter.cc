@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-
 #include "ffmpeg_color_converter.h"
 
 #include <modelbox/base/log.h>
 #include <video_decode_common.h>
 
-using namespace modelbox;
-
 modelbox::Status FfmpegColorConverter::CvtColor(
     const std::shared_ptr<AVFrame> &src_frame, uint8_t *out_frame_data,
     AVPixelFormat out_pix_fmt) {
   if (!SupportCvtPixFmt(out_pix_fmt)) {
-    return STATUS_INVALID;
+    return modelbox::STATUS_INVALID;
   }
 
   auto &width = src_frame->width;
@@ -36,7 +33,7 @@ modelbox::Status FfmpegColorConverter::CvtColor(
     height_ = height;
     auto ret = InitSwsCtx(width, height, (AVPixelFormat)src_frame->format,
                           out_pix_fmt);
-    if (ret != STATUS_SUCCESS) {
+    if (ret != modelbox::STATUS_SUCCESS) {
       return ret;
     }
   }
@@ -57,10 +54,10 @@ modelbox::Status FfmpegColorConverter::CvtColor(
   if (ffmpeg_ret < 0) {
     GET_FFMPEG_ERR(ffmpeg_ret, ffmpeg_err_str);
     MBLOG_ERROR << "sws_scale failed, detail:" << ffmpeg_err_str;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 bool FfmpegColorConverter::SupportCvtPixFmt(AVPixelFormat pix_fmt) {
@@ -74,9 +71,9 @@ bool FfmpegColorConverter::SupportCvtPixFmt(AVPixelFormat pix_fmt) {
   return false;
 }
 
-Status FfmpegColorConverter::InitSwsCtx(int32_t width, int32_t height,
-                                        AVPixelFormat src_pix_fmt,
-                                        AVPixelFormat dest_pix_fmt) {
+modelbox::Status FfmpegColorConverter::InitSwsCtx(int32_t width, int32_t height,
+                                                  AVPixelFormat src_pix_fmt,
+                                                  AVPixelFormat dest_pix_fmt) {
   auto *sws_ctx = sws_getContext(width, height, src_pix_fmt, width, height,
                                  dest_pix_fmt, 0, nullptr, nullptr, nullptr);
   if (sws_ctx == nullptr) {
@@ -93,15 +90,17 @@ Status FfmpegColorConverter::InitSwsCtx(int32_t width, int32_t height,
     MBLOG_ERROR << "Failed to create sws_ctx for [f:" << fmt_name
                 << " w:" << width << " h:" << height << "]->[f:" << pix_fmt_name
                 << " w:" << width << " h:" << height << "]";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   sws_ctx_.reset(sws_ctx, [](SwsContext *ctx) { sws_freeContext(ctx); });
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status FfmpegColorConverter::GetLineSize(AVPixelFormat pix_fmt, int32_t width,
-                                         int32_t linesize[4], int32_t linesize_size) {
+modelbox::Status FfmpegColorConverter::GetLineSize(AVPixelFormat pix_fmt,
+                                                   int32_t width,
+                                                   int32_t linesize[4],
+                                                   int32_t linesize_size) {
   linesize[1] = 0;
   linesize[2] = 0;
   linesize[3] = 0;
@@ -125,8 +124,8 @@ Status FfmpegColorConverter::GetLineSize(AVPixelFormat pix_fmt, int32_t width,
       } else {
         MBLOG_ERROR << "Not support pix fmt " << pix_fmt;
       }
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }

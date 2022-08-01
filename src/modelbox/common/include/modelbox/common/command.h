@@ -81,8 +81,8 @@ extern std::recursive_mutex ToolCommandGetOptLock;
   std::unique_lock<std::recursive_mutex> get_opt_lock(                       \
       ::modelbox::ToolCommandGetOptLock);                                    \
   ::modelbox::ToolCommandGetOptReset();                                      \
-  while ((cmdtype = getopt_long_only(argc, argv, short_options, options,     \
-                                     &option_index)) != EOF) {               \
+  while (((cmdtype) = getopt_long_only(argc, argv, short_options, options,   \
+                                       &option_index)) != EOF) {             \
     int MODELBOX_COMMAND_SUB_ARGC = argc - optind + 1;                       \
     char **MODELBOX_COMMAND_SUB_ARGV = argv + optind - 1;                    \
     { auto &unused __attribute__((unused)) = MODELBOX_COMMAND_SUB_ARGC; }    \

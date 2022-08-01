@@ -20,19 +20,16 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using namespace modelbox;
-using ::testing::_;
-
 namespace videodecoder {
 
 static modelbox::Status StartFlowUnitOpenFunc(
     const std::shared_ptr<modelbox::Configuration>& flow_option,
-    std::shared_ptr<MockFlowUnit> mock_flowunit) {
+    std::shared_ptr<modelbox::MockFlowUnit> mock_flowunit) {
   for (uint32_t i = 0; i < 2; i++) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
       MBLOG_ERROR << "can not get external data.";
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
 
     auto source_url = std::string();
@@ -49,7 +46,7 @@ static modelbox::Status StartFlowUnitOpenFunc(
                               source_url.size());
     if (i == 0) {
       // Test demuxer url in output meta
-      auto data_meta = std::make_shared<DataMeta>();
+      auto data_meta = std::make_shared<modelbox::DataMeta>();
       data_meta->SetMeta("source_url",
                          std::make_shared<std::string>(source_url));
       ext_data->SetOutputMeta(data_meta);
@@ -60,33 +57,35 @@ static modelbox::Status StartFlowUnitOpenFunc(
     auto status = ext_data->Send(output_buf);
     if (!status) {
       MBLOG_ERROR << "external data send buffer list failed:" << status;
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
 
     status = ext_data->Close();
     if (!status) {
       MBLOG_ERROR << "external data close failed:" << status;
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
   }
 
   return modelbox::STATUS_SUCCESS;
 }
 
-static void AddStartFlowUnit(std::shared_ptr<MockFlow>& flow) {
-  auto mock_desc = GenerateFlowunitDesc("start_unit", {}, {"stream_meta"});
-  mock_desc->SetFlowType(STREAM);
+static void AddStartFlowUnit(std::shared_ptr<modelbox::MockFlow>& flow) {
+  auto mock_desc =
+      modelbox::GenerateFlowunitDesc("start_unit", {}, {"stream_meta"});
+  mock_desc->SetFlowType(modelbox::STREAM);
   mock_desc->SetStreamSameCount(true);
-  auto process_func = [=](std::shared_ptr<DataContext> data_ctx,
-                          std::shared_ptr<MockFlowUnit> mock_flowunit) {
-    auto output_buffers = data_ctx->Output("stream_meta");
-    auto input_buffers = data_ctx->External();
-    for (auto buffer : *input_buffers) {
-      output_buffers->PushBack(buffer);
-    }
-    return modelbox::STATUS_OK;
-  };
-  auto mock_functions = std::make_shared<MockFunctionCollection>();
+  auto process_func =
+      [=](std::shared_ptr<modelbox::DataContext> data_ctx,
+          std::shared_ptr<modelbox::MockFlowUnit> mock_flowunit) {
+        auto output_buffers = data_ctx->Output("stream_meta");
+        auto input_buffers = data_ctx->External();
+        for (auto buffer : *input_buffers) {
+          output_buffers->PushBack(buffer);
+        }
+        return modelbox::STATUS_OK;
+      };
+  auto mock_functions = std::make_shared<modelbox::MockFunctionCollection>();
   mock_functions->RegisterOpenFunc(StartFlowUnitOpenFunc);
   mock_functions->RegisterProcessFunc(process_func);
   flow->AddFlowUnitDesc(mock_desc, mock_functions->GenerateCreateFunc(),
@@ -132,51 +131,54 @@ static void CheckVideoFrame(std::shared_ptr<modelbox::Buffer> frame_buffer,
   }
 }
 
-static void AddReadFrameFlowUnit(std::shared_ptr<MockFlow>& flow,
+static void AddReadFrameFlowUnit(std::shared_ptr<modelbox::MockFlow>& flow,
                                  bool is_stream) {
-  auto mock_desc = GenerateFlowunitDesc("read_frame", {"frame_info"}, {});
-  mock_desc->SetFlowType(STREAM);
-  auto data_pre_func = [&](std::shared_ptr<DataContext> data_ctx,
-                           std::shared_ptr<MockFlowUnit> mock_flowunit) {
-    MBLOG_INFO << "read_frame DataPre";
-    auto index_counter = std::make_shared<int64_t>(0);
-    data_ctx->SetPrivate("index", index_counter);
-    return modelbox::STATUS_OK;
-  };
-  auto process_func = [=](std::shared_ptr<DataContext> op_ctx,
-                          std::shared_ptr<MockFlowUnit> mock_flowunit) {
-    auto index_counter =
-        std::static_pointer_cast<int64_t>(op_ctx->GetPrivate("index"));
+  auto mock_desc =
+      modelbox::GenerateFlowunitDesc("read_frame", {"frame_info"}, {});
+  mock_desc->SetFlowType(modelbox::STREAM);
+  auto data_pre_func =
+      [&](std::shared_ptr<modelbox::DataContext> data_ctx,
+          std::shared_ptr<modelbox::MockFlowUnit> mock_flowunit) {
+        MBLOG_INFO << "read_frame DataPre";
+        auto index_counter = std::make_shared<int64_t>(0);
+        data_ctx->SetPrivate("index", index_counter);
+        return modelbox::STATUS_OK;
+      };
+  auto process_func =
+      [=](std::shared_ptr<modelbox::DataContext> op_ctx,
+          std::shared_ptr<modelbox::MockFlowUnit> mock_flowunit) {
+        auto index_counter =
+            std::static_pointer_cast<int64_t>(op_ctx->GetPrivate("index"));
 
-    auto frame_buffer_list = op_ctx->Input("frame_info");
-    EXPECT_NE(frame_buffer_list, nullptr);
-    if (is_stream) {
-      return modelbox::STATUS_OK;
-    }
-    for (size_t i = 0; i < frame_buffer_list->Size(); ++i) {
-      auto frame_buffer = frame_buffer_list->At(i);
-      if (frame_buffer->GetBytes() == 0) {
-        continue;
-      }
+        auto frame_buffer_list = op_ctx->Input("frame_info");
+        EXPECT_NE(frame_buffer_list, nullptr);
+        if (is_stream) {
+          return modelbox::STATUS_OK;
+        }
+        for (size_t i = 0; i < frame_buffer_list->Size(); ++i) {
+          auto frame_buffer = frame_buffer_list->At(i);
+          if (frame_buffer->GetBytes() == 0) {
+            continue;
+          }
 
-      CheckVideoFrame(frame_buffer, index_counter);
-    }
+          CheckVideoFrame(frame_buffer, index_counter);
+        }
 
-    return modelbox::STATUS_OK;
-  };
+        return modelbox::STATUS_OK;
+      };
 
-  auto mock_functions = std::make_shared<MockFunctionCollection>();
+  auto mock_functions = std::make_shared<modelbox::MockFunctionCollection>();
   mock_functions->RegisterDataPreFunc(data_pre_func);
   mock_functions->RegisterProcessFunc(process_func);
   flow->AddFlowUnitDesc(mock_desc, mock_functions->GenerateCreateFunc(),
                         TEST_DRIVER_DIR);
 }
 
-modelbox::Status AddMockFlowUnit(std::shared_ptr<MockFlow>& flow,
+modelbox::Status AddMockFlowUnit(std::shared_ptr<modelbox::MockFlow>& flow,
                                  bool is_stream) {
   AddStartFlowUnit(flow);
   AddReadFrameFlowUnit(flow, is_stream);
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 std::string GetTomlConfig(const std::string& device,

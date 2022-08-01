@@ -315,7 +315,7 @@ Status FlowUnitGroup::Init(const std::set<std::string> &input_ports_name,
                            std::shared_ptr<FlowUnitManager> flowunit_mgr,
                            bool checkport) {
   if (flowunit_mgr == nullptr) {
-    return STATUS_FAULT;
+    return {STATUS_FAULT, "flowunit manager is null"};
   }
 
   flowunit_group_ =

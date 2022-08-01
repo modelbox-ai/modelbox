@@ -66,7 +66,7 @@ modelbox::Status NppiCropFlowUnit::CudaProcess(
       MBLOG_WARN << "input buffer " << i << " is invalid.";
       continue;
     }
-    auto bbox = static_cast<const RoiBox *>(buff);
+    auto bbox = static_cast<const imageprocess::RoiBox *>(buff);
     if (bbox == nullptr) {
       MBLOG_WARN << "buffer is not box, buffer index: " << i;
       continue;
@@ -137,18 +137,18 @@ modelbox::Status NppiCropFlowUnit::ProcessOneImage(
   MBLOG_DEBUG << "Input image width " << src_size.width << " height "
               << src_size.height << " channel " << src_size.channel;
 
-  auto bbox = static_cast<const RoiBox *>(
+  auto bbox = static_cast<const imageprocess::RoiBox *>(
       input_box_buffer_list->ConstBufferData(index));
   if (bbox == nullptr) {
     MBLOG_ERROR << "input data at " << index << " is invalid.";
     return modelbox::STATUS_NODATA;
   }
 
-  if (!CheckRoiBoxVaild(bbox, src_size.width, src_size.height)) {
+  if (!imageprocess::CheckRoiBoxVaild(bbox, src_size.width, src_size.height)) {
     return {modelbox::STATUS_FAULT, "roi box param is invaild !"};
   }
 
-  RoiBox dst_size;
+  imageprocess::RoiBox dst_size;
   dst_size.w = bbox->w;
   dst_size.h = bbox->h;
   dst_size.x = bbox->x;
@@ -184,7 +184,7 @@ modelbox::Status NppiCropFlowUnit::ProcessOneImage(
 modelbox::Status NppiCropFlowUnit::NppiCrop_u8_c3r(const u_char *p_src_data,
                                                    ImageSize src_size,
                                                    u_char *p_dst_data,
-                                                   RoiBox dst_size) {
+                                                   imageprocess::RoiBox dst_size) {
   const Npp8u *p_src = p_src_data;
 
   p_src =

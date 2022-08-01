@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "yolobox_flowunit.h"
 
 #include <math.h>
@@ -26,8 +25,6 @@
 #include "modelbox/device/cpu/device_cpu.h"
 #include "modelbox/flowunit.h"
 #include "virtualdriver_yolobox.h"
-
-using namespace modelbox;
 
 YoloboxFlowUnit::YoloboxFlowUnit() = default;
 
@@ -58,7 +55,7 @@ modelbox::Status YoloboxFlowUnit::InitYoloParam(YoloParam &param) {
     return modelbox::STATUS_BADCONF;
   }
 
-  if (param.layer_wh_.size() != (size_t)(param.layer_num_ * 2)) {
+  if (param.layer_wh_.size() != ((size_t)param.layer_num_ * 2)) {
     MBLOG_ERROR << YOLO_OUTPUT_LAYER_WH << " size != " << YOLO_OUTPUT_LAYER_NUM
                 << " * 2";
     return modelbox::STATUS_BADCONF;
@@ -86,7 +83,7 @@ modelbox::Status YoloboxFlowUnit::InitYoloParam(YoloParam &param) {
     param.nms_threshold_.push_back(param.nms_threshold_.back());
   }
 
-  return STATUS_OK;
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status YoloboxFlowUnit::Open(
@@ -106,7 +103,7 @@ modelbox::Status YoloboxFlowUnit::Open(
 
   if (input_name_list_.empty()) {
     MBLOG_ERROR << "Input is empty";
-    return STATUS_BADCONF;
+    return modelbox::STATUS_BADCONF;
   }
 
   auto output_list = desc->GetFlowUnitOutput();
@@ -116,7 +113,7 @@ modelbox::Status YoloboxFlowUnit::Open(
 
   if (output_name_list_.size() != 1) {
     MBLOG_ERROR << "Should only has one output port";
-    return STATUS_BADCONF;
+    return modelbox::STATUS_BADCONF;
   }
 
   return modelbox::STATUS_OK;
@@ -241,16 +238,15 @@ modelbox::Status YoloboxFlowUnit::Process(
 }
 
 std::string YoloboxFlowUnitFactory::GetFlowUnitFactoryType() {
-  return DEVICE_TYPE;
+  return modelbox::DEVICE_TYPE;
 }
 
-std::string YoloboxFlowUnitFactory::GetVirtualType() {
-  return YOLO_TYPE;
-}
+std::string YoloboxFlowUnitFactory::GetVirtualType() { return YOLO_TYPE; }
 
-std::shared_ptr<modelbox::FlowUnit> YoloboxFlowUnitFactory::VirtualCreateFlowUnit(
-    const std::string &unit_name, const std::string &unit_type,
-    const std::string &virtual_type) {
+std::shared_ptr<modelbox::FlowUnit>
+YoloboxFlowUnitFactory::VirtualCreateFlowUnit(const std::string &unit_name,
+                                              const std::string &unit_type,
+                                              const std::string &virtual_type) {
   return std::make_shared<YoloboxFlowUnit>();
 }
 

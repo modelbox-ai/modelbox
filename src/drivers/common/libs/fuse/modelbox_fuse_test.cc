@@ -34,8 +34,6 @@
 #include "modelbox/buffer.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 
 const char *MOCK_FUSE_FILE = "/tmp/modelbox_fuse";

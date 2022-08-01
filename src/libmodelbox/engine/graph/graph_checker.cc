@@ -106,17 +106,18 @@ IndexPort LeastCommonAncestor::ProcessSameNode(const IndexPort &node_a,
                                                const IndexPort &node_b) {
   if (node_a.port_name == node_b.port_name) {
     return IndexPort(node_a.node_name, node_a.port_name, node_a.port_type);
-  } else {
-    std::string match_port_name;
-    auto input_nums = all_nodes_[node_a.node_name]->GetInputNum();
-    if (input_nums == 0) {
-      match_port_name = EXTERNAL;
-    } else {
-      match_port_name =
-          all_nodes_[node_a.node_name]->GetInputPorts()[0]->GetName();
-    }
-    return IndexPort(node_a.node_name, match_port_name, IndexPortType::INPUT);
   }
+
+  std::string match_port_name;
+  auto input_nums = all_nodes_[node_a.node_name]->GetInputNum();
+  if (input_nums == 0) {
+    match_port_name = EXTERNAL;
+  } else {
+    match_port_name =
+        all_nodes_[node_a.node_name]->GetInputPorts()[0]->GetName();
+  }
+
+  return IndexPort(node_a.node_name, match_port_name, IndexPortType::INPUT);
 }
 
 void LeastCommonAncestor::FindMatchNode(const IndexPort &node_a,
@@ -735,7 +736,7 @@ void GraphChecker::SetMatchNodes() {
       auto match_condition_node =
           CastNode(all_nodes_.at(single_node_match.second));
       if (match_condition_node == nullptr) {
-        modelbox::Abort("cast match condition node failed.");
+        Abort("cast match condition node failed.");
       }
 
       real_node->SetMatchNode(single_node_match.first, match_condition_node);

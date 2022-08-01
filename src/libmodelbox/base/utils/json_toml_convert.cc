@@ -91,12 +91,12 @@ Status JsonToTomlProcess(
       default:
         MBLOG_ERROR << "Process json to toml failed, " << key << ":"
                     << cur_value;
-        return {modelbox::STATUS_BADCONF};
+        return {STATUS_BADCONF};
         break;
     }
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 Status JsonToToml(const std::string &json_data, std::string *toml_data) {
@@ -104,7 +104,7 @@ Status JsonToToml(const std::string &json_data, std::string *toml_data) {
   auto toml_root = std::make_shared<toml::value>();
 
   if (toml_data == nullptr) {
-    return {modelbox::STATUS_INVALID};
+    return {STATUS_INVALID};
   }
 
   try {
@@ -121,13 +121,13 @@ Status JsonToToml(const std::string &json_data, std::string *toml_data) {
     }
   } catch (std::exception &e) {
     MBLOG_ERROR << "parse json failed, " << e.what();
-    return {modelbox::STATUS_BADCONF, e.what()};
+    return {STATUS_BADCONF, e.what()};
   }
 
   std::ostringstream os;
   os << *toml_root;
   *toml_data = os.str();
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 struct JsonSerializer {
@@ -288,7 +288,7 @@ struct JsonSerializer {
 Status TomlToJson(const std::string &toml_data, std::string *json_data,
                   bool readable) {
   if (json_data == nullptr) {
-    return {modelbox::STATUS_INVALID};
+    return {STATUS_INVALID};
   }
 
   try {
@@ -299,10 +299,10 @@ Status TomlToJson(const std::string &toml_data, std::string *json_data,
     *json_data = json_serialize.GetJsonData();
   } catch (const std::exception &e) {
     MBLOG_ERROR << "parse toml failed, " << e.what();
-    return {modelbox::STATUS_BADCONF, e.what()};
+    return {STATUS_BADCONF, e.what()};
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 }  // namespace modelbox

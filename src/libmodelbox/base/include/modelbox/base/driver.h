@@ -104,7 +104,7 @@ class DriverHandlerInfo {
 class DriverHandler {
  public:
   std::shared_ptr<DriverHandlerInfo> Add(void *driver_handler);
-  modelbox::Status Remove(void *driver_handler);
+  Status Remove(void *driver_handler);
   std::shared_ptr<DriverHandlerInfo> Get(void *driver_handler);
 
   std::mutex handler_map_lock;
@@ -152,8 +152,8 @@ class VirtualDriver : public Driver {
   std::shared_ptr<VirtualDriverDesc> GetVirtualDriverDesc();
   void SetVirtualDriverDesc(std::shared_ptr<VirtualDriverDesc> desc);
   std::shared_ptr<DriverFactory> CreateFactory() override;
-  std::vector<std::shared_ptr<modelbox::Driver>> GetBindDriver() {
-    return std::vector<std::shared_ptr<modelbox::Driver>>();
+  std::vector<std::shared_ptr<Driver>> GetBindDriver() {
+    return std::vector<std::shared_ptr<Driver>>();
   }
 
  private:

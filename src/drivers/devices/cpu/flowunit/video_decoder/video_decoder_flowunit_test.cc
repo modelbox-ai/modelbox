@@ -28,8 +28,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using ::testing::_;
-
 namespace modelbox {
 class VideoDecoderFlowUnitTest : public testing::Test {
  public:

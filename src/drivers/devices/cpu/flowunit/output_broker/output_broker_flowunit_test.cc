@@ -35,8 +35,6 @@
 #include "iam_auth.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 class OutputBrokerFlowUnitTest : public testing::Test {
  public:

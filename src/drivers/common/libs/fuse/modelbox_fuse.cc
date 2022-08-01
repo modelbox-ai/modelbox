@@ -193,9 +193,12 @@ Status ModelBoxFuse::InitLowLevelFuse() {
     MBLOG_ERROR << err;
     if (errno == ENOENT) {
       return {STATUS_NOENT, err};
-    } else if (errno == EACCES) {
+    }
+
+    if (errno == EACCES) {
       return {STATUS_PERMIT, err};
     }
+
     return {STATUS_FAULT, err};
   }
 
@@ -627,7 +630,9 @@ std::shared_ptr<ModelBoxDEntry> ModelBoxDEntry::LookUp(
   names.pop_front();
   if (current == ".") {
     return shared_from_this();
-  } else if (current == "..") {
+  }
+
+  if (current == "..") {
     return Parent();
   }
 
@@ -681,7 +686,6 @@ int ModelBoxDEntry::ChildDirNum() {
   std::unique_lock<std::mutex> lock(children_lock_);
   return dir_num_;
 }
-
 
 void ModelBoxDEntry::SetName(const std::string &name) { name_ = name; }
 

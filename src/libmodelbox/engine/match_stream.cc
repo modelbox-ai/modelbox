@@ -78,7 +78,9 @@ Status MatchBufferCache::CacheBuffer(const std::string& port_name,
       MBLOG_ERROR << "port " << port_name
                   << " missmatch, still has data when other port received end";
       return STATUS_FAULT;
-    } else if (!is_end_flag_ && buffer_index->IsEndFlag()) {
+    }
+
+    if (!is_end_flag_ && buffer_index->IsEndFlag()) {
       MBLOG_ERROR << "port " << port_name
                   << " missmatch, received end when other port still has data";
       return STATUS_FAULT;
@@ -622,8 +624,7 @@ void OutputMatchStreamManager::SetNeedNewIndex(bool need_new_index) {
 }
 
 Status OutputMatchStreamManager::UpdateStreamInfo(
-    const std::unordered_map<std::string,
-                             std::vector<std::shared_ptr<modelbox::Buffer>>>&
+    const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>&
         stream_data_map,
     const std::unordered_map<std::string, std::shared_ptr<DataMeta>>&
         port_stream_meta,
@@ -698,8 +699,7 @@ Status OutputMatchStreamManager::UpdateStreamInfo(
 }
 
 MatchKey* OutputMatchStreamManager::GetOutputStreamMatchKey(
-    const std::unordered_map<std::string,
-                             std::vector<std::shared_ptr<modelbox::Buffer>>>&
+    const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>&
         stream_data_map) {
   std::shared_ptr<Buffer> not_null_output_buffer;
   for (auto port_iter = stream_data_map.begin();
@@ -731,8 +731,7 @@ MatchKey* OutputMatchStreamManager::GetOutputStreamMatchKey(
 
 void OutputMatchStreamManager::GenerateOutputStream(
     OutputMatchStream& output_match_stream,
-    const std::unordered_map<std::string,
-                             std::vector<std::shared_ptr<modelbox::Buffer>>>&
+    const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>&
         stream_data_map,
     const std::unordered_map<std::string, std::shared_ptr<DataMeta>>&
         port_stream_meta,
@@ -806,8 +805,8 @@ void OutputMatchStreamManager::GenerateOutputStream(
 }
 
 void OutputMatchStreamManager::SetIndexInStream(
-    std::shared_ptr<modelbox::BufferIndexInfo> buffer_index,
-    std::shared_ptr<modelbox::Stream> stream) {
+    std::shared_ptr<BufferIndexInfo> buffer_index,
+    std::shared_ptr<Stream> stream) {
   if (need_new_index_) {
     buffer_index->SetIndex(stream->GetBufferCount());
   }

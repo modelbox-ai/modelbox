@@ -138,7 +138,9 @@ Status Popen::Open(std::vector<std::string> args, int timeout, const char *mode,
   child_pid = vfork();
   if (child_pid < 0) {
     return {STATUS_FAULT, StrError(errno)};
-  } else if (child_pid == 0) {
+  }
+
+  if (child_pid == 0) {
     size_t i = 0;
     int fd_out_keep = fd_out[1];
     setsid();
@@ -269,7 +271,9 @@ int Popen::ReadLineData(struct stdfd *stdfd) {
         return 0;
       }
       return POPEN_ERROR;
-    } else if (len == 0) {
+    }
+
+    if (len == 0) {
       stdfd->iseof_ = 1;
       UpdateNewLinePos(stdfd);
       return POPEN_STOP_READ;

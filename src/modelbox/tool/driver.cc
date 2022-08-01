@@ -167,9 +167,13 @@ Status ToolCommandDriver::OutputDriverInfo(
     const std::string &filter_name) {
   if (format == DRIVER_OUTFORMAT_LIST) {
     return DisplayDriverInList(config);
-  } else if (format == DRIVER_OUTFORMAT_JSON) {
+  }
+
+  if (format == DRIVER_OUTFORMAT_JSON) {
     return DisplayDriverInJson(config);
-  } else if (format == DRIVER_OUTFORMAT_DETAILS) {
+  }
+
+  if (format == DRIVER_OUTFORMAT_DETAILS) {
     return DisplayDriverInDetails(config, filter_name);
   }
 
@@ -181,9 +185,13 @@ Status ToolCommandDriver::OutputFlowunitInfo(
     const std::string &filter_name) {
   if (format == DRIVER_OUTFORMAT_LIST) {
     return DisplayFlowunitInList(config);
-  } else if (format == DRIVER_OUTFORMAT_JSON) {
+  }
+
+  if (format == DRIVER_OUTFORMAT_JSON) {
     return DisplayFlowunitInJson(config);
-  } else if (format == DRIVER_OUTFORMAT_DETAILS) {
+  }
+
+  if (format == DRIVER_OUTFORMAT_DETAILS) {
     return DisplayFlowunitInDetails(config, filter_name);
   }
 
@@ -196,7 +204,8 @@ Status ToolCommandDriver::OutputInfo(std::shared_ptr<Configuration> config,
                                      const std::string &filter_name) {
   if (type == DRIVER_TYPE_ALL) {
     return OutputDriverInfo(config, format, filter_name);
-  } else if (type == DRIVER_TYPE_FLOWUNIT) {
+  }
+  if (type == DRIVER_TYPE_FLOWUNIT) {
     return OutputFlowunitInfo(config, format, filter_name);
   }
 
@@ -268,7 +277,8 @@ Status ToolCommandDriver::DisplayDriverInDetails(
     return status;
   }
 
-  auto device_desc_list = flowunit_info->GetDeviceManager()->GetDeviceDescList();
+  auto device_desc_list =
+      flowunit_info->GetDeviceManager()->GetDeviceDescList();
   for (const auto &itr_list : device_desc_list) {
     for (const auto &itr_device : itr_list.second) {
       auto desc = itr_device.second;
@@ -375,7 +385,8 @@ Status ToolCommandDriver::DisplayFlowunitInList(
   return STATUS_OK;
 }
 
-void ToolCommandDriver::DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flowunit) {
+void ToolCommandDriver::DisplayFlowunit(
+    std::shared_ptr<FlowUnitDesc> flowunit) {
   auto driverdesc = flowunit->GetDriverDesc();
   printf("--------------------------------------\n");
   printf("flowunit name\t: %s\n", flowunit->GetFlowUnitName().c_str());

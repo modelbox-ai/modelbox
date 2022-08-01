@@ -165,18 +165,17 @@ class GraphChecker {
 
   void SetMatchNodes();
   void ShowMatchNodes();
-  modelbox::Status Check();
+  Status Check();
 
  private:
-  modelbox::Status CalNodeStreamMap(std::shared_ptr<NodeBase> node,
-                                    NodeStreamConnection &node_stream_map);
-  modelbox::Status CheckNodeMatch(std::shared_ptr<Node> node,
-                                  const NodeStreamConnection &node_stream_map);
-  modelbox::Status CheckCollapseMatch(std::shared_ptr<Node> node);
-  modelbox::Status CheckBranchPathMatch(const std::string &start,
-                                        const std::string &end);
-  modelbox::Status CheckOverHierarchyMatch();
-  modelbox::Status CheckUnmatchExpands(size_t size);
+  Status CalNodeStreamMap(std::shared_ptr<NodeBase> node,
+                          NodeStreamConnection &node_stream_map);
+  Status CheckNodeMatch(std::shared_ptr<Node> node,
+                        const NodeStreamConnection &node_stream_map);
+  Status CheckCollapseMatch(std::shared_ptr<Node> node);
+  Status CheckBranchPathMatch(const std::string &start, const std::string &end);
+  Status CheckOverHierarchyMatch();
+  Status CheckUnmatchExpands(size_t size);
   Status CheckLeastCommonAncestorsAnyTwoNodes(
       const std::vector<IndexPort> &match_nodes,
       std::vector<IndexPort> &res_nodes);

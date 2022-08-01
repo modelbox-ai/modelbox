@@ -19,7 +19,6 @@
 #include "image_process.h"
 #include "modelbox/flowunit_api_helper.h"
 
-using namespace imageprocess;
 const int MIN_WIDTH_STRIDE = 32;
 const std::string OUTPUT_IMG_PIX_FMT = "nv12";
 
@@ -72,12 +71,15 @@ modelbox::Status CropFlowUnit::PrepareOutput(
   std::vector<size_t> output_shape;
   for (size_t i = 0; i < img_count; ++i) {
     auto box_buffer = input_box_buffer_list->At(i);
-    auto box_ptr = (RoiBox *)box_buffer->ConstData();
+    auto box_ptr = (imageprocess::RoiBox *)box_buffer->ConstData();
     size_t bytes = 0;
-    int32_t align_w = align_up(box_ptr->w, ASCEND_WIDTH_ALIGN);
+    int32_t align_w =
+        imageprocess::align_up(box_ptr->w, imageprocess::ASCEND_WIDTH_ALIGN);
     align_w = std::max(align_w, MIN_WIDTH_STRIDE);
-    int32_t align_h = align_up(box_ptr->h, ASCEND_HEIGHT_ALIGN);
-    auto ret = GetImageBytes(OUTPUT_IMG_PIX_FMT, align_w, align_h, bytes);
+    int32_t align_h =
+        imageprocess::align_up(box_ptr->h, imageprocess::ASCEND_HEIGHT_ALIGN);
+    auto ret = imageprocess::GetImageBytes(OUTPUT_IMG_PIX_FMT, align_w, align_h,
+                                           bytes);
     if (!ret) {
       return ret;
     }
@@ -94,13 +96,14 @@ modelbox::Status CropFlowUnit::CheckInputParamVaild(
   std::string in_pix_fmt;
   int32_t in_img_width = 0, in_img_height = 0, in_img_width_stride = 0,
           in_img_height_stride = 0;
-  auto ret = GetImgParam(in_image, in_pix_fmt, in_img_width, in_img_height,
-                         in_img_width_stride, in_img_height_stride);
+  auto ret = imageprocess::GetImgParam(in_image, in_pix_fmt, in_img_width,
+                                       in_img_height, in_img_width_stride,
+                                       in_img_height_stride);
   if (!ret) {
     return ret;
   }
-  auto box_ptr = (const RoiBox *)in_box->ConstData();
-  if (!CheckRoiBoxVaild(box_ptr, in_img_width, in_img_height)) {
+  auto box_ptr = (const imageprocess::RoiBox *)in_box->ConstData();
+  if (!imageprocess::CheckRoiBoxVaild(box_ptr, in_img_width, in_img_height)) {
     return {modelbox::STATUS_FAULT, "roi box param is invaild !"};
   }
   return modelbox::STATUS_OK;
@@ -115,7 +118,7 @@ modelbox::Status CropFlowUnit::ProcessOneImg(
     return {modelbox::STATUS_FAULT, "check input param failed"};
   }
 
-  auto chan_desc = GetDvppChannel(dev_id_);
+  auto chan_desc = imageprocess::GetDvppChannel(dev_id_);
   if (chan_desc == nullptr) {
     return {modelbox::STATUS_FAULT, "Get dvpp channel failed"};
   }
@@ -143,7 +146,8 @@ modelbox::Status CropFlowUnit::ProcessOneImg(
     return ret;
   }
 
-  return SetOutImgMeta(out_image, OUTPUT_IMG_PIX_FMT, out_img_desc);
+  return imageprocess::SetOutImgMeta(out_image, OUTPUT_IMG_PIX_FMT,
+                                     out_img_desc);
 }
 
 modelbox::Status CropFlowUnit::GetInputDesc(
@@ -152,17 +156,18 @@ modelbox::Status CropFlowUnit::GetInputDesc(
   std::string in_pix_fmt;
   int32_t in_img_width = 0, in_img_height = 0, in_img_width_stride = 0,
           in_img_height_stride = 0;
-  auto ret = GetImgParam(in_image, in_pix_fmt, in_img_width, in_img_height,
-                         in_img_width_stride, in_img_height_stride);
+  auto ret = imageprocess::GetImgParam(in_image, in_pix_fmt, in_img_width,
+                                       in_img_height, in_img_width_stride,
+                                       in_img_height_stride);
   if (!ret) {
     return ret;
   }
 
   in_img_desc = CreateImgDesc(
       in_image->GetBytes(), (void *)in_image->ConstData(), in_pix_fmt,
-      ImageShape{in_img_width, in_img_height, in_img_width_stride,
-                 in_img_height_stride},
-      ImgDescDestroyFlag::DESC_ONLY);
+      imageprocess::ImageShape{in_img_width, in_img_height, in_img_width_stride,
+                               in_img_height_stride},
+      imageprocess::ImgDescDestroyFlag::DESC_ONLY);
   if (in_img_desc == nullptr) {
     return modelbox::StatusError;
   }
@@ -174,7 +179,7 @@ modelbox::Status CropFlowUnit::GetOutputDesc(
     const std::shared_ptr<modelbox::Buffer> &in_box,
     const std::shared_ptr<modelbox::Buffer> &out_image,
     std::shared_ptr<acldvppPicDesc> &out_img_desc) {
-  auto box_ptr = (const RoiBox *)in_box->ConstData();
+  auto box_ptr = (const imageprocess::RoiBox *)in_box->ConstData();
   if (box_ptr->x % 2 != 0 || box_ptr->y % 2 != 0 || box_ptr->w % 2 != 0 ||
       box_ptr->h % 2 != 0) {
     return {modelbox::STATUS_INVALID,
@@ -185,13 +190,16 @@ modelbox::Status CropFlowUnit::GetOutputDesc(
                 "] is invalid, value must be even"};
   }
 
-  auto align_w = align_up(box_ptr->w, ASCEND_WIDTH_ALIGN);
+  auto align_w =
+      imageprocess::align_up(box_ptr->w, imageprocess::ASCEND_WIDTH_ALIGN);
   align_w = std::max(align_w, MIN_WIDTH_STRIDE);
-  auto align_h = align_up(box_ptr->h, ASCEND_HEIGHT_ALIGN);
+  auto align_h =
+      imageprocess::align_up(box_ptr->h, imageprocess::ASCEND_HEIGHT_ALIGN);
   out_img_desc = CreateImgDesc(
       out_image->GetBytes(), (void *)out_image->MutableData(),
-      OUTPUT_IMG_PIX_FMT, ImageShape{box_ptr->w, box_ptr->h, align_w, align_h},
-      ImgDescDestroyFlag::DESC_ONLY);
+      OUTPUT_IMG_PIX_FMT,
+      imageprocess::ImageShape{box_ptr->w, box_ptr->h, align_w, align_h},
+      imageprocess::ImgDescDestroyFlag::DESC_ONLY);
   if (out_img_desc == nullptr) {
     return modelbox::StatusError;
   }
@@ -202,7 +210,7 @@ modelbox::Status CropFlowUnit::GetOutputDesc(
 modelbox::Status CropFlowUnit::GetRoiCfg(
     const std::shared_ptr<modelbox::Buffer> &in_box,
     std::shared_ptr<acldvppRoiConfig> &roi_cfg) {
-  auto box_ptr = (const RoiBox *)in_box->ConstData();
+  auto box_ptr = (const imageprocess::RoiBox *)in_box->ConstData();
   uint32_t left = box_ptr->x;
   uint32_t right = box_ptr->x + box_ptr->w - 1;
   uint32_t top = box_ptr->y;

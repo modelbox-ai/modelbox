@@ -25,9 +25,15 @@
 const int MAX_BLOCK_SIZE = 1 * 1024 * 1024;
 const int MAX_READ_SIZE = 40;
 
-using namespace modelbox;
+namespace modelbox {
 
-FileRequester::~FileRequester() { listener_->close().wait(); }
+FileRequester::~FileRequester() {
+  try {
+    listener_->close().wait();
+  } catch (const std::exception &e) {
+    MBLOG_INFO << "close file request failed, " << e.what();
+  }
+}
 
 std::once_flag FileRequester::file_requester_init_flag_;
 
@@ -37,7 +43,7 @@ std::shared_ptr<FileRequester> FileRequester::GetInstance() {
       file_requester_init_flag_,
       [](std::shared_ptr<FileRequester> server) {
         auto ret = server->Init();
-        if (modelbox::STATUS_FAULT == ret) {
+        if (STATUS_FAULT == ret) {
           server = nullptr;
         }
       },
@@ -45,7 +51,7 @@ std::shared_ptr<FileRequester> FileRequester::GetInstance() {
   return server;
 }
 
-modelbox::Status FileRequester::Init() {
+Status FileRequester::Init() {
   utility::string_t address = _XPLATSTR(DEFAULT_FILE_REQUEST_URI);
   web::uri_builder uri(address);
   auto addr = uri.to_uri().to_string();
@@ -60,24 +66,23 @@ modelbox::Status FileRequester::Init() {
     MBLOG_INFO << "File requester start to listen : " << addr;
   } catch (std::exception const &e) {
     MBLOG_ERROR << e.what();
-    return modelbox::STATUS_FAULT;
+    return STATUS_FAULT;
   }
-  pool_ = std::make_shared<modelbox::ThreadPool>(0, 8);
+  pool_ = std::make_shared<ThreadPool>(0, 8);
   pool_->SetName("File-Requester");
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
-modelbox::Status FileRequester::RegisterUrlHandler(
-    const std::string &relative_url,
-    std::shared_ptr<modelbox::FileGetHandler> handler) {
+Status FileRequester::RegisterUrlHandler(
+    const std::string &relative_url, std::shared_ptr<FileGetHandler> handler) {
   std::lock_guard<std::mutex> lock(handler_lock_);
   auto iter = file_handlers_.find(relative_url);
   if (iter == file_handlers_.end()) {
     file_handlers_.emplace(relative_url, handler);
-    return modelbox::STATUS_OK;
+    return STATUS_OK;
   }
   MBLOG_ERROR << "Url " << relative_url << "has been registered!";
-  return modelbox::STATUS_EXIST;
+  return STATUS_EXIST;
 }
 
 void FileRequester::SetMaxFileReadSize(int read_size) {
@@ -90,17 +95,17 @@ void FileRequester::SetMaxFileReadSize(int read_size) {
   MBLOG_INFO << "Set max file read size to " << max_read_size_;
 }
 
-modelbox::Status FileRequester::DeregisterUrl(const std::string &relative_url) {
+Status FileRequester::DeregisterUrl(const std::string &relative_url) {
   std::lock_guard<std::mutex> lock(handler_lock_);
   auto iter = file_handlers_.find(relative_url);
   if (iter != file_handlers_.end()) {
     file_handlers_.erase(iter);
     MBLOG_INFO << "Success to deregister url: " << relative_url;
-    return modelbox::STATUS_OK;
+    return STATUS_OK;
   }
   MBLOG_ERROR << "Failed to deregister url: " << relative_url
               << ", url not registered!";
-  return modelbox::STATUS_NOTFOUND;
+  return STATUS_NOTFOUND;
 }
 
 bool FileRequester::IsValidRequest(const web::http::http_request &request) {
@@ -126,7 +131,7 @@ bool FileRequester::ReadRequestRange(const web::http::http_request &request,
     return false;
   }
   auto range_start_end = range_value.substr(range_prefix.size());
-  auto ranges = modelbox::StringSplit(range_start_end, '-');
+  auto ranges = StringSplit(range_start_end, '-');
   if ((ranges.size() > 2) || (ranges.size() < 1)) {
     MBLOG_ERROR << "Range value is invalid."
                 << "range_start_end: " << range_start_end;
@@ -159,10 +164,9 @@ bool FileRequester::ReadRequestRange(const web::http::http_request &request,
   return true;
 }
 
-void FileRequester::ProcessRequest(
-    web::http::http_request &request,
-    std::shared_ptr<modelbox::FileGetHandler> handler, uint64_t range_start,
-    uint64_t range_end) {
+void FileRequester::ProcessRequest(web::http::http_request &request,
+                                   std::shared_ptr<FileGetHandler> handler,
+                                   uint64_t range_start, uint64_t range_end) {
   uint64_t file_size = handler->GetFileSize();
   concurrency::streams::producer_consumer_buffer<unsigned char> rwbuf;
   concurrency::streams::basic_istream<uint8_t> stream(rwbuf);
@@ -195,7 +199,7 @@ void FileRequester::ProcessRequest(
       read_size = range_end - range_start + 1;
     }
     auto ret = handler->Get(raw_data.get(), read_size, range_start);
-    if (modelbox::STATUS_OK != ret) {
+    if (STATUS_OK != ret) {
       MBLOG_ERROR << "Get file data failed.";
       request.reply(web::http::status_codes::InternalError);
       return;
@@ -243,3 +247,5 @@ void FileRequester::HandleFileGet(web::http::http_request request) {
   pool_->Submit(&FileRequester::ProcessRequest, this, request, file_get_handler,
                 range_start, range_end);
 }
+
+}  // namespace modelbox

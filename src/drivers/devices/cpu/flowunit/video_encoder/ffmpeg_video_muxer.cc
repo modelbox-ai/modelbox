@@ -19,18 +19,17 @@
 #include <modelbox/base/log.h>
 #include "video_decode_common.h"
 
-using namespace modelbox;
 
-Status FfmpegVideoMuxer::Init(const std::shared_ptr<AVCodecContext> &codec_ctx,
+modelbox::Status FfmpegVideoMuxer::Init(const std::shared_ptr<AVCodecContext> &codec_ctx,
                               std::shared_ptr<FfmpegWriter> writer) {
   destination_url_ = writer->GetDestinationURL();
   format_ctx_ = writer->GetCtx();
   auto ret = SetupStreamParam(codec_ctx);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status FfmpegVideoMuxer::SetupStreamParam(
@@ -38,7 +37,7 @@ modelbox::Status FfmpegVideoMuxer::SetupStreamParam(
   stream_ = avformat_new_stream(format_ctx_.get(), codec_ctx->codec);
   if (stream_ == nullptr) {
     MBLOG_ERROR << "Create video stream failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   stream_->time_base = codec_ctx->time_base;
@@ -47,13 +46,13 @@ modelbox::Status FfmpegVideoMuxer::SetupStreamParam(
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, ffmpeg_err);
     MBLOG_ERROR << "avcodec_parameters_from_context err " << ffmpeg_err;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status FfmpegVideoMuxer::Mux(const AVRational &time_base,
+modelbox::Status FfmpegVideoMuxer::Mux(const AVRational &time_base,
                              const std::shared_ptr<AVPacket> &av_packet) {
   av_packet_rescale_ts(av_packet.get(), time_base, stream_->time_base);
   av_packet->stream_index = stream_->index;
@@ -62,7 +61,7 @@ Status FfmpegVideoMuxer::Mux(const AVRational &time_base,
     if (ret < 0) {
       GET_FFMPEG_ERR(ret, ffmpeg_err);
       MBLOG_ERROR << "avformat_write_header failed, ret " << ffmpeg_err;
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
 
     is_header_wrote_ = true;
@@ -72,10 +71,10 @@ Status FfmpegVideoMuxer::Mux(const AVRational &time_base,
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, ffmpeg_err);
     MBLOG_ERROR << "av_write_frame failed, ret " << ffmpeg_err;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 FfmpegVideoMuxer::~FfmpegVideoMuxer() {

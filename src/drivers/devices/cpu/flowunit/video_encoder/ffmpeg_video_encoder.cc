@@ -14,29 +14,28 @@
  * limitations under the License.
  */
 
-
 #include "ffmpeg_video_encoder.h"
+
 #include <modelbox/base/log.h>
+
 #include "video_decode_common.h"
 
-using namespace modelbox;
-
-Status FfmpegVideoEncoder::Init(int32_t width, int32_t height,
-                                const AVRational &frame_rate,
-                                const std::string &encoder_name) {
+modelbox::Status FfmpegVideoEncoder::Init(int32_t width, int32_t height,
+                                          const AVRational &frame_rate,
+                                          const std::string &encoder_name) {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
   av_register_all();
 #endif
   auto *codec = avcodec_find_encoder_by_name(encoder_name.c_str());
   if (codec == nullptr) {
     MBLOG_ERROR << "Find encoder failed, encoder name:" << encoder_name;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto *codec_ctx = avcodec_alloc_context3(codec);
   if (codec_ctx == nullptr) {
     MBLOG_ERROR << "Alloc codec ctx failed, encoder name:" << encoder_name;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   codec_ctx_.reset(codec_ctx,
@@ -48,10 +47,10 @@ Status FfmpegVideoEncoder::Init(int32_t width, int32_t height,
   if (ffmpeg_ret < 0) {
     GET_FFMPEG_ERR(ffmpeg_ret, ffmpeg_err);
     MBLOG_ERROR << "avcodec_open2 failed, ret " << ffmpeg_err;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 void FfmpegVideoEncoder::SetupCodecParam(
@@ -67,42 +66,42 @@ void FfmpegVideoEncoder::SetupCodecParam(
   codec_ctx->max_b_frames = 0;
 }
 
-Status FfmpegVideoEncoder::Encode(
+modelbox::Status FfmpegVideoEncoder::Encode(
     const std::shared_ptr<AVFrame> &av_frame,
     std::vector<std::shared_ptr<AVPacket>> &av_packet_list) {
   auto ret = avcodec_send_frame(codec_ctx_.get(), av_frame.get());
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, ffmpeg_err);
     MBLOG_ERROR << "avcodec_send_frame failed, ret " << ffmpeg_err;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   do {
     auto *av_packet_ptr = av_packet_alloc();
     if (av_packet_ptr == nullptr) {
       MBLOG_ERROR << "av packet alloc failed";
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
 
     std::shared_ptr<AVPacket> av_packet(
         av_packet_ptr, [](AVPacket *pkt) { av_packet_free(&pkt); });
     ret = avcodec_receive_packet(codec_ctx_.get(), av_packet.get());
     if (ret == AVERROR(EAGAIN)) {
-      return STATUS_SUCCESS;
+      return modelbox::STATUS_SUCCESS;
     }
 
     if (ret == AVERROR_EOF) {
-      return STATUS_NODATA;
+      return modelbox::STATUS_NODATA;
     }
 
     if (ret < 0) {
       GET_FFMPEG_ERR(ret, err_str);
       MBLOG_ERROR << "avcodec_receive_packet failed, err " << err_str;
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
 
     av_packet_list.push_back(av_packet);
   } while (ret >= 0);
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }

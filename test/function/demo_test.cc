@@ -35,7 +35,6 @@
 #include "test/mock/minimodelbox/mockflow.h"
 
 namespace modelbox {
-using ::testing::Sequence;
 class DemoTest : public testing::Test {
  public:
   DemoTest() = default;
