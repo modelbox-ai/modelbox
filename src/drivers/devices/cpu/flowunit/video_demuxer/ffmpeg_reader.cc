@@ -16,6 +16,7 @@
 
 #include "ffmpeg_reader.h"
 
+#include "driver_util.h"
 #include <modelbox/base/log.h>
 
 #include <regex>
@@ -110,7 +111,7 @@ void FfmpegReader::SetupCommonOption(const std::string &source_url,
                                      AVDictionary **options) {
   av_dict_set(options, "reconnect", "1", 0);
   av_dict_set(options, "rw_timeout", "30000000", 0);
-  MBLOG_INFO << "Source url:" << source_url
+  MBLOG_INFO << "Source url:" << driverutil::string_masking(source_url)
              << ", reconnect:true, rw_timeout:30s";
 }
 

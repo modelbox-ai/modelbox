@@ -59,6 +59,13 @@ modelbox::Status GetPlugin(
   return modelbox::STATUS_SUCCESS;
 }
 
+/**
+ * @brief mask sensitive information
+ * @param input_str input string
+ * @return desensitive characters
+ */
+std::string string_masking(const std::string &input);
+
 }  // namespace driverutil
 
 #endif  // MODELBOX_FLOWUNIT_DRIVER_UTIL_H_

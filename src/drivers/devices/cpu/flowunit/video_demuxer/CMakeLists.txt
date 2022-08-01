@@ -57,6 +57,7 @@ target_link_libraries(${MODELBOX_UNIT_SHARED} pthread)
 target_link_libraries(${MODELBOX_UNIT_SHARED} rt)
 target_link_libraries(${MODELBOX_UNIT_SHARED} dl)
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${FFMPEG_LIBRARIES})
+target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_COMMON_DRIVER_UTIL_LIBRARY})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_COMMON_SOURCE_CONTEXT_LIBRARY})
 
 set_target_properties(${MODELBOX_UNIT_SHARED} PROPERTIES OUTPUT_NAME "modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}")

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 #include "upsample-layer.h"
 
 #include <modelbox/device/cuda/device_cuda.h>
@@ -24,13 +23,13 @@
 
 namespace nvinfer1 {
 template <typename T>
-void write(char *&buffer, const T &val) {
+void write_buffer(char *&buffer, const T &val) {
   *reinterpret_cast<T *>(buffer) = val;
   buffer += sizeof(T);
 }
 
 template <typename T>
-void read(const char *&buffer, T &val) {
+void read_buffer(const char *&buffer, T &val) {
   val = *reinterpret_cast<const T *>(buffer);
   buffer += sizeof(T);
 }
@@ -48,28 +47,34 @@ UpsampleLayerPlugin2::~UpsampleLayerPlugin2() {}
 
 // create the plugin at runtime from a byte stream
 UpsampleLayerPlugin2::UpsampleLayerPlugin2(const void *data, size_t length) {
-  const char *d = reinterpret_cast<const char *>(data);
+  const auto *d = reinterpret_cast<const char *>(data);
+  if (d == nullptr) {
+    return;
+  }
   const char *a = d;
-  read(d, mCHW);
-  read(d, mDataType);
-  read(d, mScale);
-  read(d, mOutputWidth);
-  read(d, mOutputHeight);
-  read(d, mThreadCount);
+  read_buffer(d, mCHW);
+  read_buffer(d, mDataType);
+  read_buffer(d, mScale);
+  read_buffer(d, mOutputWidth);
+  read_buffer(d, mOutputHeight);
+  read_buffer(d, mThreadCount);
   if (d != a + length) {
     MBLOG_ERROR << "create plugin from byte stream error.";
   }
 }
 
 void UpsampleLayerPlugin2::serialize(void *buffer) {
-  char *d = static_cast<char *>(buffer);
+  auto *d = static_cast<char *>(buffer);
+  if (d == nullptr) {
+    return;
+  }
   char *a = d;
-  write(d, mCHW);
-  write(d, mDataType);
-  write(d, mScale);
-  write(d, mOutputWidth);
-  write(d, mOutputHeight);
-  write(d, mThreadCount);
+  write_buffer(d, mCHW);
+  write_buffer(d, mDataType);
+  write_buffer(d, mScale);
+  write_buffer(d, mOutputWidth);
+  write_buffer(d, mOutputHeight);
+  write_buffer(d, mThreadCount);
   if (d != a + getSerializationSize()) {
     MBLOG_ERROR << "create plugin from byte serialization data error.";
   }
