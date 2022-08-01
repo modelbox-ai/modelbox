@@ -38,9 +38,9 @@ class ModelboxServingTest : public testing::Test {
     flow_ = std::make_shared<Flow>();
   };
 
-  virtual ~ModelboxServingTest() {};
+  ~ModelboxServingTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     auto version = GetTFVersion();
 
     if (SUPPORT_TF_VERSION.find(version) == SUPPORT_TF_VERSION.end()) {
@@ -53,7 +53,7 @@ class ModelboxServingTest : public testing::Test {
     UpdateToml(version);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     if (!version_suitable_) {
       GTEST_SKIP();
     }

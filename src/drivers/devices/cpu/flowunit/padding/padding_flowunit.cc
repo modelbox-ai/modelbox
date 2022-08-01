@@ -19,8 +19,8 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-PaddingFlowUnit::PaddingFlowUnit(){};
-PaddingFlowUnit::~PaddingFlowUnit(){};
+PaddingFlowUnit::PaddingFlowUnit() = default;
+PaddingFlowUnit::~PaddingFlowUnit() = default;
 
 std::map<std::string, cv::InterpolationFlags> kCVResizeMethod = {
     {"inter_nearest", cv::INTER_NEAREST},

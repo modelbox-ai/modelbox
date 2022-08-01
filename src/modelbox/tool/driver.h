@@ -41,15 +41,15 @@ constexpr const char *DRIVER_DESC = "List all driver information";
 class ToolCommandDriver : public ToolCommand {
  public:
   ToolCommandDriver();
-  virtual ~ToolCommandDriver();
+  ~ToolCommandDriver() override;
 
-  int Run(int argc, char *argv[]);
+  int Run(int argc, char *argv[]) override;
 
-  std::string GetHelp();
+  std::string GetHelp() override;
 
-  std::string GetCommandName() { return "driver"; };
+  std::string GetCommandName() override { return "driver"; };
 
-  std::string GetCommandDesc() { return DRIVER_DESC; };
+  std::string GetCommandDesc() override { return DRIVER_DESC; };
 
  protected:
   int RunInfoCommand(int argc, char *argv[]);

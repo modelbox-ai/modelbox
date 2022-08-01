@@ -60,7 +60,7 @@ class ExternalDataImpl : public ExternalData {
  public:
   ExternalDataImpl(std::shared_ptr<InPort> port, std::shared_ptr<Device> device,
                    std::shared_ptr<Stream> init_stream);
-  virtual ~ExternalDataImpl();
+  ~ExternalDataImpl() override;
 
   std::shared_ptr<BufferList> CreateBufferList() override;
   Status Send(std::shared_ptr<BufferList> buffer_list) override;
@@ -117,10 +117,10 @@ class DataContext {
 
   virtual std::shared_ptr<void> GetPrivate(const std::string &key) = 0;
 
-  virtual const std::shared_ptr<DataMeta> GetInputMeta(
+  virtual std::shared_ptr<DataMeta> GetInputMeta(
       const std::string &port) = 0;
 
-  virtual const std::shared_ptr<DataMeta> GetInputGroupMeta(
+  virtual std::shared_ptr<DataMeta> GetInputGroupMeta(
       const std::string &port) = 0;
 
   virtual void SetOutputMeta(const std::string &port,
@@ -140,7 +140,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   FlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
                       std::shared_ptr<Session> session);
 
-  virtual ~FlowUnitDataContext();
+  ~FlowUnitDataContext() override;
 
   std::shared_ptr<BufferList> Input(const std::string &port) const override;
 
@@ -165,11 +165,9 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
   void SendEvent(std::shared_ptr<FlowUnitEvent> event) override;
 
-  const std::shared_ptr<DataMeta> GetInputMeta(
-      const std::string &port) override;
+  std::shared_ptr<DataMeta> GetInputMeta(const std::string &port) override;
 
-  const std::shared_ptr<DataMeta> GetInputGroupMeta(
-      const std::string &port) override;
+  std::shared_ptr<DataMeta> GetInputGroupMeta(const std::string &port) override;
 
   void SetOutputMeta(const std::string &port,
                      std::shared_ptr<DataMeta> data_meta) override;
@@ -182,7 +180,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
       DataContextStatsType type) override;
 
   // common function for FlowUnitDataContext
- public:
+
   const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
       &GetInputs() const;
 
@@ -231,7 +229,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   void NotifySessionClose() override;
 
   // would be different in specify FlowUnitDataContext
- public:
+
   // buffers in stream_data_map is in order
   virtual void WriteInputData(std::shared_ptr<PortDataMap> stream_data_map);
 
@@ -367,7 +365,7 @@ class NormalFlowUnitDataContext : public FlowUnitDataContext {
  public:
   NormalFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
                             std::shared_ptr<Session> session);
-  virtual ~NormalFlowUnitDataContext() = default;
+  ~NormalFlowUnitDataContext() override = default;
 
   void SendEvent(std::shared_ptr<FlowUnitEvent> event) override {
     // not support user send event
@@ -387,7 +385,7 @@ class LoopNormalFlowUnitDataContext : public NormalFlowUnitDataContext {
  public:
   LoopNormalFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
                                 std::shared_ptr<Session> session);
-  virtual ~LoopNormalFlowUnitDataContext() = default;
+  ~LoopNormalFlowUnitDataContext() override = default;
 
  protected:
   Status GenerateOutput() override;
@@ -407,7 +405,7 @@ class StreamFlowUnitDataContext : public FlowUnitDataContext {
  public:
   StreamFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
                             std::shared_ptr<Session> session);
-  virtual ~StreamFlowUnitDataContext() = default;
+  ~StreamFlowUnitDataContext() override = default;
 
   bool IsDataPre() override;
   bool IsDataPost() override;
@@ -429,7 +427,7 @@ class NormalExpandFlowUnitDataContext : public FlowUnitDataContext {
   NormalExpandFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
                                   std::shared_ptr<Session> session);
 
-  virtual ~NormalExpandFlowUnitDataContext() = default;
+  ~NormalExpandFlowUnitDataContext() override = default;
 
   void UpdateProcessState() override;
 
@@ -445,7 +443,7 @@ class StreamExpandFlowUnitDataContext : public FlowUnitDataContext {
  public:
   StreamExpandFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
                                   std::shared_ptr<Session> session);
-  virtual ~StreamExpandFlowUnitDataContext() = default;
+  ~StreamExpandFlowUnitDataContext() override = default;
 
   void WriteInputData(std::shared_ptr<PortDataMap> stream_data_map) override;
 
@@ -482,7 +480,7 @@ class NormalCollapseFlowUnitDataContext : public FlowUnitDataContext {
  public:
   NormalCollapseFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
                                     std::shared_ptr<Session> session);
-  virtual ~NormalCollapseFlowUnitDataContext() = default;
+  ~NormalCollapseFlowUnitDataContext() override = default;
 
   void SendEvent(std::shared_ptr<FlowUnitEvent> event) override {
     // not support user send event
@@ -518,7 +516,7 @@ class StreamCollapseFlowUnitDataContext : public FlowUnitDataContext {
  public:
   StreamCollapseFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
                                     std::shared_ptr<Session> session);
-  virtual ~StreamCollapseFlowUnitDataContext() = default;
+  ~StreamCollapseFlowUnitDataContext() override = default;
 
   void SendEvent(std::shared_ptr<FlowUnitEvent> event) override {
     // not support user send event
@@ -569,44 +567,41 @@ class ExecutorDataContext : public DataContext {
  public:
   ExecutorDataContext(std::shared_ptr<FlowUnitDataContext> origin_ctx,
                       std::shared_ptr<FlowUnitExecData> data);
-  virtual ~ExecutorDataContext() = default;
+  ~ExecutorDataContext() override = default;
 
-  virtual std::shared_ptr<BufferList> Input(
-      const std::string &port) const override;
+  std::shared_ptr<BufferList> Input(const std::string &port) const override;
 
-  virtual std::shared_ptr<BufferList> Output(const std::string &port) override;
+  std::shared_ptr<BufferList> Output(const std::string &port) override;
 
-  virtual std::shared_ptr<BufferListMap> Input() const override;
+  std::shared_ptr<BufferListMap> Input() const override;
 
-  virtual std::shared_ptr<BufferListMap> Output() override;
+  std::shared_ptr<BufferListMap> Output() override;
 
-  virtual std::shared_ptr<BufferList> External() override;
+  std::shared_ptr<BufferList> External() override;
 
-  virtual bool HasError() override;
+  bool HasError() override;
 
-  virtual std::shared_ptr<FlowUnitEvent> Event() override;
+  std::shared_ptr<FlowUnitEvent> Event() override;
 
-  virtual void SendEvent(std::shared_ptr<FlowUnitEvent> event) override;
+  void SendEvent(std::shared_ptr<FlowUnitEvent> event) override;
 
-  virtual void SetPrivate(const std::string &key,
-                          std::shared_ptr<void> private_content) override;
+  void SetPrivate(const std::string &key,
+                  std::shared_ptr<void> private_content) override;
 
-  virtual std::shared_ptr<void> GetPrivate(const std::string &key) override;
+  std::shared_ptr<void> GetPrivate(const std::string &key) override;
 
-  virtual const std::shared_ptr<DataMeta> GetInputMeta(
-      const std::string &port) override;
+  std::shared_ptr<DataMeta> GetInputMeta(const std::string &port) override;
 
-  virtual const std::shared_ptr<DataMeta> GetInputGroupMeta(
-      const std::string &port) override;
+  std::shared_ptr<DataMeta> GetInputGroupMeta(const std::string &port) override;
 
-  virtual void SetOutputMeta(const std::string &port,
-                             std::shared_ptr<DataMeta> data_meta) override;
+  void SetOutputMeta(const std::string &port,
+                     std::shared_ptr<DataMeta> data_meta) override;
 
-  virtual std::shared_ptr<SessionContext> GetSessionContext() override;
+  std::shared_ptr<SessionContext> GetSessionContext() override;
 
   void SetStatus(Status status);
 
-  virtual std::shared_ptr<Configuration> GetSessionConfig() override;
+  std::shared_ptr<Configuration> GetSessionConfig() override;
 
   std::shared_ptr<StatisticsItem> GetStatistics(
       DataContextStatsType type) override;

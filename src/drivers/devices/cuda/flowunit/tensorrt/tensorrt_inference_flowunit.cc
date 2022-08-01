@@ -31,7 +31,7 @@
 #endif
 #include "virtualdriver_inference.h"
 
-TensorRTInferenceFlowUnit::TensorRTInferenceFlowUnit(){};
+TensorRTInferenceFlowUnit::TensorRTInferenceFlowUnit() = default;
 TensorRTInferenceFlowUnit::~TensorRTInferenceFlowUnit() {
   context_ = nullptr;
   engine_ = nullptr;
@@ -53,7 +53,7 @@ RndInt8Calibrator::RndInt8Calibrator(
     int total_samples, std::string cache_file,
     std::map<std::string, nvinfer1::Dims3>& input_dims)
     : total_samples_(total_samples),
-      current_sample_(0),
+
       cache_file_(cache_file) {
   std::default_random_engine generator;
   std::uniform_real_distribution<float> distribution(-1.0F, 1.0F);
@@ -228,7 +228,7 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpModelFile(
         MBLOG_ERROR << "invalid uffInputs";
         return {modelbox::STATUS_BADCONF, "invalid uffInputs."};
       }
-      params_.uff_input_list.push_back(std::make_pair(name, dims));
+      params_.uff_input_list.emplace_back(name, dims);
     }
 
     return modelbox::STATUS_OK;

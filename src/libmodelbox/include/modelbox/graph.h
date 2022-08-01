@@ -64,8 +64,8 @@ class Graph {
   std::shared_ptr<InPort> GetInPort(const std::string &nodeName,
                                     const std::string &portName) const;
 
-  const std::unordered_map<std::shared_ptr<NodeBase>,
-                           std::vector<std::shared_ptr<IPort>>>
+  std::unordered_map<std::shared_ptr<NodeBase>,
+                     std::vector<std::shared_ptr<IPort>>>
   GetNotifyPort() const;
 
   std::shared_ptr<OutPort> GetOutPort(const std::string &nodeName,
@@ -168,14 +168,13 @@ class Graph {
   virtual Status InitScheduler();
 
   Status UpdateGraphConfigToNode(std::shared_ptr<GCGraph> g,
-                                 const std::shared_ptr<GCNode> node);
+                                 std::shared_ptr<GCNode> node);
 
   virtual Status InitNode(std::shared_ptr<Node> &node,
                           const std::set<std::string> &input_port_names,
                           const std::set<std::string> &output_port_names,
                           std::shared_ptr<Configuration> &config);
 
- private:
   SessionManager session_manager_;
 
   std::map<std::string, std::shared_ptr<NodeBase>> nodes_;
@@ -227,22 +226,22 @@ class Graph {
 
   std::map<std::string, std::string> loop_links_;
 
-  bool is_stop_;
+  bool is_stop_{false};
 };
 
 class DynamicGraph : public Graph {
  public:
   DynamicGraph();
-  ~DynamicGraph();
+  ~DynamicGraph() override;
 
-  Status Shutdown();
-  Status IsValidGraph() const;
-  Status InitScheduler();
+  Status Shutdown() override;
+  Status IsValidGraph() const override;
+  Status InitScheduler() override;
 
   Status InitNode(std::shared_ptr<Node> &node,
                   const std::set<std::string> &input_port_names,
                   const std::set<std::string> &output_port_names,
-                  std::shared_ptr<Configuration> &config);
+                  std::shared_ptr<Configuration> &config) override;
 };
 
 }  // namespace modelbox

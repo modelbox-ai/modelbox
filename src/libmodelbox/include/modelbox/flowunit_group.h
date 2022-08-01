@@ -47,10 +47,12 @@ class FlowUnitGroup {
         config_(config),
         profiler_(profiler){};
 
-  virtual ~FlowUnitGroup(){};
+  virtual ~FlowUnitGroup() = default;
 
-  Status Init(const std::set<std::string> &, const std::set<std::string> &,
-              std::shared_ptr<FlowUnitManager>, bool checkport = true);
+  Status Init(const std::set<std::string> &input_ports_name,
+              const std::set<std::string> &output_ports_name,
+              std::shared_ptr<FlowUnitManager>flowunit_mgr,
+              bool checkport = true);
 
   Status CheckInputAndOutput(const std::set<std::string> &input_ports_name,
                              const std::set<std::string> &output_ports_name);

@@ -138,7 +138,7 @@ Status InputContext::PushData(const std::string &key,
 BufferListContext::BufferListContext(std::weak_ptr<ModelBoxEngine> env)
     : HandlerContext(env) {}
 
-BufferListContext::~BufferListContext() {}
+BufferListContext::~BufferListContext() = default;
 
 Status BufferListContext::RunGraph(
     const std::shared_ptr<DataHandler> &handler) {
@@ -176,7 +176,7 @@ StreamContext::StreamContext(std::weak_ptr<ModelBoxEngine> env)
   end_flag_ = false;
 }
 
-StreamContext::~StreamContext() {}
+StreamContext::~StreamContext() = default;
 
 std::shared_ptr<BufferList> StreamContext::GetBufferList(
     const std::string &key) {

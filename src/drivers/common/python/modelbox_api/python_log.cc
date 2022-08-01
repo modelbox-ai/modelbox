@@ -27,7 +27,7 @@ FlowUnitPythonLog& FlowUnitPythonLog::Instance() {
   return *kInst;
 }
 
-FlowUnitPythonLog::FlowUnitPythonLog() {}
+FlowUnitPythonLog::FlowUnitPythonLog() = default;
 
 FlowUnitPythonLog::~FlowUnitPythonLog() {
   // Avoid crash when log destroy.

@@ -80,8 +80,8 @@ LogLevel LogLevelStrToLevel(const std::string &level) {
   return LOG_OFF;
 }
 
-Logger::Logger(){};
-Logger::~Logger(){};
+Logger::Logger() = default;
+Logger::~Logger() = default;
 
 void Logger::Vprint(LogLevel level, const char *file, int lineno,
                     const char *func, const char *format, va_list ap) {
@@ -124,9 +124,9 @@ void Logger::Print(LogLevel level, const char *file, int lineno,
 
 void Logger::SetLogLevel(LogLevel level) { UNUSED_VAR(level); };
 
-LoggerCallback::LoggerCallback() : level_(LOG_DEBUG){};
+LoggerCallback::LoggerCallback() = default;
 
-LoggerCallback::~LoggerCallback(){};
+LoggerCallback::~LoggerCallback() = default;
 
 void LoggerCallback::SetLogLevel(LogLevel level) { level_ = level; }
 
@@ -177,7 +177,7 @@ void LoggerConsole::SetLogLevelFromEnv() {
   level_ = LogLevelStrToLevel(log_level);
 }
 
-LoggerConsole::~LoggerConsole() {}
+LoggerConsole::~LoggerConsole() = default;
 
 void LoggerConsole::Print(LogLevel level, const char *file, int lineno,
                           const char *func, const char *msg) {
@@ -227,9 +227,9 @@ void LoggerConsole::SetLogLevel(LogLevel level) { level_ = level; }
 
 LogLevel LoggerConsole::GetLogLevel() { return level_; }
 
-Log::Log() {}
+Log::Log() = default;
 
-Log::~Log() {}
+Log::~Log() = default;
 
 void Log::Print(LogLevel level, const char *file, int lineno, const char *func,
                 const char *format, ...) {

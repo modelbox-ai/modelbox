@@ -5,8 +5,8 @@
 using namespace py::literals;
 namespace modelbox {
 
-LoggerPython::LoggerPython() {}
-LoggerPython::~LoggerPython() {}
+LoggerPython::LoggerPython() = default;
+LoggerPython::~LoggerPython() = default;
 
 void LoggerPython::Print(LogLevel level, const char *file, int lineno,
                          const char *func, const char *msg) {
@@ -52,7 +52,7 @@ void LoggerPythonWapper::RegLogFunc(py::function pylog) {
   ModelBoxLogger.SetLogger(logger_python_);
 }
 
-const std::shared_ptr<Logger> LoggerPythonWapper::GetLogger() {
+std::shared_ptr<Logger> LoggerPythonWapper::GetLogger() {
   return ModelBoxLogger.GetLogger();
 }
 

@@ -24,8 +24,8 @@
 
 class ModelboxEditorPlugin : public modelbox::Plugin {
  public:
-  ModelboxEditorPlugin(){};
-  virtual ~ModelboxEditorPlugin(){};
+  ModelboxEditorPlugin() = default;
+  ~ModelboxEditorPlugin() override = default;
 
   bool Init(std::shared_ptr<modelbox::Configuration> config) override;
   bool Start() override;
@@ -75,7 +75,6 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
                                    std::string &json_data);
   bool CheckBlackDir(std::string dir);
 
- private:
   std::string ResultMsg(const std::string &code, const std::string &msg);
   std::string ResultMsg(modelbox::Status &status);
   void SetUpResponse(httplib::Response &response, modelbox::Status &status);

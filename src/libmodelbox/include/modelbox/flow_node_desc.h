@@ -111,7 +111,6 @@ class FlowNodeDesc : public std::enable_shared_from_this<FlowNodeDesc> {
 
   void Clear();
 
- private:
   std::string node_name_;
   std::string flowunit_name_;
   std::string type_;

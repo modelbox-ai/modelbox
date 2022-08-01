@@ -124,7 +124,7 @@ class StatisticsNotifyMsg {
                       StatisticsNotifyType type)
       : path_{path}, value_{value}, type_{type} {}
 
-  ~StatisticsNotifyMsg() {}
+  virtual ~StatisticsNotifyMsg() = default;
   std::string path_;
   std::shared_ptr<StatisticsValue> value_;
   StatisticsNotifyType type_;
@@ -168,7 +168,7 @@ class StatisticsNotifyCfg {
 
   bool operator==(const StatisticsNotifyCfg& other) { return id_ == other.id_; }
 
-  ~StatisticsNotifyCfg() {}
+  virtual ~StatisticsNotifyCfg() = default;
 
   /**
    * @brief Set timer notify
@@ -227,7 +227,7 @@ class StatisticsNotifyConsumers {
  public:
   StatisticsNotifyConsumers();
 
-  ~StatisticsNotifyConsumers();
+  virtual ~StatisticsNotifyConsumers();
 
   modelbox::Status AddConsumer(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
 
@@ -378,7 +378,6 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
           std::is_same<T, std::string>::value>::type>
   std::tuple<modelbox::Status, T> GetValue();
 
- public:
   /**
    * @brief Add new item as child, it is not a leaf item, can not set value
    * @param name Name of new item
@@ -452,7 +451,6 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
   modelbox::Status ForEach(const StatisticsForEachFunc& func,
                            bool recursive = false);
 
- public:
   /**
    * @brief Register notify for item, notify type {CREATE, DELETE, CHANGE,
    * TIMER}
@@ -496,7 +494,6 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
   std::shared_ptr<StatisticsItem> AddItemInner(const std::string& name,
                                                std::shared_ptr<Any> value);
 
- private:
   std::string parent_path_;
   std::string name_;
   std::weak_ptr<StatisticsItem> parent_;

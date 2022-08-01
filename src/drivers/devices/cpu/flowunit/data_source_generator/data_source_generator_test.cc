@@ -40,9 +40,9 @@ class DataSourceGeneratorFlowUnitTest : public testing::Test {
       : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() { auto ret = AddMockFlowUnit(); };
+  void SetUp() override { auto ret = AddMockFlowUnit(); };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
   std::shared_ptr<MockFlow> RunDriverFlow();
 

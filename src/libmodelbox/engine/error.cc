@@ -28,7 +28,7 @@ FlowUnitError::FlowUnitError(std::string node, std::string error_pos,
   error_status_ = error_status;
 };
 
-FlowUnitError::~FlowUnitError(){};
+FlowUnitError::~FlowUnitError() = default;
 
 std::string FlowUnitError::GetDesc() { return desc_; };
 

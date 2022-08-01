@@ -29,8 +29,8 @@ namespace modelbox {
 
 REG_MODELBOX_TOOL_COMMAND(ToolCommandHelp)
 
-ToolCommandHelp::ToolCommandHelp() {}
-ToolCommandHelp::~ToolCommandHelp() {}
+ToolCommandHelp::ToolCommandHelp() = default;
+ToolCommandHelp::~ToolCommandHelp() = default;
 
 std::string ToolCommandHelp::GetHelp() {
   char help[] =
@@ -53,7 +53,7 @@ int ToolCommandHelp::Run(int argc, char *argv[]) {
 
   std::cout << "modelbox-tool " << cmd->GetCommandName() << " [OPTION]..."
             << std::endl;
-  std::cout << cmd->GetHelp();;
+  std::cout << cmd->GetHelp();
 
   return 0;
 }

@@ -20,9 +20,9 @@
 
 namespace modelbox {
 
-BufferMeta::BufferMeta() {}
+BufferMeta::BufferMeta() = default;
 
-BufferMeta::~BufferMeta(){};
+BufferMeta::~BufferMeta() = default;
 
 Status BufferMeta::CopyMeta(const std::shared_ptr<BufferMeta> buf_meta,
                             bool is_override) {
@@ -35,10 +35,7 @@ Status BufferMeta::CopyMeta(const std::shared_ptr<BufferMeta> buf_meta,
   return STATUS_OK;
 }
 
-BufferMeta& BufferMeta::operator=(const BufferMeta& other) {
-  custom_meta_ = other.custom_meta_;
-  return *this;
-}
+BufferMeta& BufferMeta::operator=(const BufferMeta& other) = default;
 
 BufferMeta& BufferMeta::DeepCopy(const BufferMeta& other) {
   custom_meta_ = other.custom_meta_;

@@ -52,7 +52,7 @@ class TensorBuffer : public Buffer {
    */
   TensorBuffer(const TensorBuffer& other);
 
-  virtual ~TensorBuffer() override;
+  ~TensorBuffer() override;
 
   /**
    * @brief Resize tensor 
@@ -120,7 +120,7 @@ class TensorBuffer : public Buffer {
   template <typename T>
   T* MutableData() {
     auto type = TypeToDataType<T>::Value;
-    if (type != type) {
+    if (type_ != type) {
       MBLOG_WARN << "invalid data type.";
       return nullptr;
     }

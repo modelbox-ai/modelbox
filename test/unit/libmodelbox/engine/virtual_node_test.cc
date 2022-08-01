@@ -34,11 +34,11 @@ using ::testing::_;
 namespace modelbox {
 class VirtualNodeTest : public testing::Test {
  public:
-  VirtualNodeTest() {}
+  VirtualNodeTest() = default;
 
  protected:
   std::shared_ptr<MockFlow> mock_flow_;
-  virtual void SetUp() {
+  void SetUp() override {
     old_level_ = ModelBoxLogger.GetLogger()->GetLogLevel();
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     mock_flow_ = std::make_shared<MockFlow>();
@@ -126,7 +126,7 @@ class VirtualNodeTest : public testing::Test {
     drivers->Scan(TEST_LIB_DIR, "/libmodelbox-unit-*");
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     ModelBoxLogger.GetLogger()->SetLogLevel(old_level_);
   }
 

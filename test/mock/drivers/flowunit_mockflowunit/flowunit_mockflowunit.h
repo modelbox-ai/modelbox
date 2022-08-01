@@ -28,7 +28,7 @@
 class MockFlowUnit : public modelbox::FlowUnit {
  public:
   MockFlowUnit() = default;
-  virtual ~MockFlowUnit() = default;
+  ~MockFlowUnit() override = default;
 
   MOCK_METHOD(modelbox::Status, Open,
               (const std::shared_ptr<modelbox::Configuration> &opts));
@@ -48,14 +48,14 @@ class MockFlowUnit : public modelbox::FlowUnit {
 
 class MockFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
-  MockFlowUnitFactory(){};
-  virtual ~MockFlowUnitFactory(){};
+  MockFlowUnitFactory() = default;
+  ~MockFlowUnitFactory() override = default;
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
-  FlowUnitProbe();
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override;
 
-  std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(const std::string &name,
-                                                     const std::string &type);
+  std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
+      const std::string &name, const std::string &type) override;
 
   void SetMockFunctionFlowUnit(std::shared_ptr<MockFlowUnit> mock_flowunit);
 
@@ -76,8 +76,8 @@ class MockFlowUnitFactory : public modelbox::FlowUnitFactory {
 
 class MockDriverFlowUnit : public modelbox::MockDriver {
  public:
-  MockDriverFlowUnit(){};
-  virtual ~MockDriverFlowUnit(){};
+  MockDriverFlowUnit() = default;
+  ~MockDriverFlowUnit() override = default;
 
   static MockDriverFlowUnit *Instance() { return &desc_; };
 

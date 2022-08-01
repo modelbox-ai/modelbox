@@ -34,24 +34,29 @@ class NormalizeParams {
 class NormalizeFlowUnitBase : public modelbox::FlowUnit {
  public:
   NormalizeFlowUnitBase();
-  virtual ~NormalizeFlowUnitBase();
+  ~NormalizeFlowUnitBase() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
-  modelbox::Status Close();
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
+  modelbox::Status Close() override;
 
   /* run when processing data */
-  virtual modelbox::Status Process(
-      std::shared_ptr<modelbox::DataContext> data_ctx) = 0;
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override = 0;
 
-  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPre(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPost(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataGroupPre(std::shared_ptr<modelbox::DataContext> data_ctx) {
+  modelbox::Status DataGroupPre(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override {
     return modelbox::STATUS_OK;
   };
 
-  modelbox::Status DataGroupPost(std::shared_ptr<modelbox::DataContext> data_ctx) {
+  modelbox::Status DataGroupPost(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override {
     return modelbox::STATUS_OK;
   };
 

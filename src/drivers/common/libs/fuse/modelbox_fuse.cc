@@ -174,7 +174,7 @@ void ModelBoxFuseOperation::DestroyFuse(ModelBoxFuse *modelbox_fuse) {
   modelbox_fuses_lock_.unlock();
 }
 
-ModelBoxFuse::ModelBoxFuse() {}
+ModelBoxFuse::ModelBoxFuse() = default;
 ModelBoxFuse::~ModelBoxFuse() {
   StopFuseLoop();
   DestroyLowLevelFuse();
@@ -557,9 +557,9 @@ void ModelBoxFuse::StopFuseLoop() {
   DestroyLowLevelFuse();
 }
 
-ModelBoxInode::ModelBoxInode(){};
+ModelBoxInode::ModelBoxInode() = default;
 
-ModelBoxInode::~ModelBoxInode(){};
+ModelBoxInode::~ModelBoxInode() = default;
 
 int ModelBoxInode::FillStat(struct stat *stat) { return 0; };
 
@@ -575,7 +575,7 @@ ModelBoxDirInode::ModelBoxDirInode() {
   SetInodeType(MODELBOX_FUSE_INODE_TYPE_DIR);
 };
 
-ModelBoxDirInode::~ModelBoxDirInode(){};
+ModelBoxDirInode::~ModelBoxDirInode() = default;
 
 void ModelBoxDirInode::SetStat(struct stat *stat) {
   stat_ = *stat;
@@ -594,10 +594,10 @@ int ModelBoxDirInode::FillStat(struct stat *stat) {
 ModelBoxFileInode::ModelBoxFileInode() {
   SetInodeType(MODELBOX_FUSE_INODE_TYPE_FILE);
 }
-ModelBoxFileInode::~ModelBoxFileInode() {}
+ModelBoxFileInode::~ModelBoxFileInode() = default;
 
-ModelBoxDEntry::ModelBoxDEntry() {}
-ModelBoxDEntry::~ModelBoxDEntry() {}
+ModelBoxDEntry::ModelBoxDEntry() = default;
+ModelBoxDEntry::~ModelBoxDEntry() = default;
 
 void ModelBoxDEntry::SetParent(std::shared_ptr<ModelBoxDEntry> dentry) {
   parent_ = dentry;

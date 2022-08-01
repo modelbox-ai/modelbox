@@ -21,8 +21,8 @@
 
 namespace modelbox {
 
-FlowUnitManager::FlowUnitManager(){};
-FlowUnitManager::~FlowUnitManager(){};
+FlowUnitManager::FlowUnitManager() = default;
+FlowUnitManager::~FlowUnitManager() = default;
 
 std::shared_ptr<FlowUnitManager> FlowUnitManager::GetInstance() {
   static std::shared_ptr<FlowUnitManager> flowunit_mgr =

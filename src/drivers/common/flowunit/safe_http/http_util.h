@@ -44,9 +44,8 @@ class HttpRequestLimiter {
    HttpRequestLimiter(const HttpRequestLimiter &) = delete;
    HttpRequestLimiter &operator=(const HttpRequestLimiter &) = delete;
 
-   HttpRequestLimiter() {};
-
-   ~HttpRequestLimiter() { --request_count_; };
+   HttpRequestLimiter() = default;
+   virtual ~HttpRequestLimiter() { --request_count_; };
 
    static std::shared_ptr<HttpRequestLimiter> GetInstance() {
      std::lock_guard<std::mutex> lock(request_mutex_);

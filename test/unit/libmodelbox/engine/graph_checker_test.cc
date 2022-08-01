@@ -29,10 +29,10 @@ namespace modelbox {
 
 class GraphCheckerTest : public testing::Test {
  public:
-  GraphCheckerTest() {}
+  GraphCheckerTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
 
     {
@@ -236,7 +236,7 @@ class GraphCheckerTest : public testing::Test {
     flow_->Init(false);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     auto flowunit_mgr = FlowUnitManager::GetInstance();
     flowunit_mgr->Clear();
     auto device_mgr = DeviceManager::GetInstance();

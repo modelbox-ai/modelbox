@@ -43,8 +43,8 @@
 
 void RemoveFileCallback(std::string uri);
 
-ObsSourceParser::ObsSourceParser() {}
-ObsSourceParser::~ObsSourceParser() {}
+ObsSourceParser::ObsSourceParser() = default;
+ObsSourceParser::~ObsSourceParser() = default;
 
 modelbox::Status ObsSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {

@@ -31,13 +31,15 @@ class MODELBOX_DLL_PUBLIC MindSporeInferenceFlowUnit
     : public modelbox::FlowUnit {
  public:
   MindSporeInferenceFlowUnit();
-  virtual ~MindSporeInferenceFlowUnit();
+  ~MindSporeInferenceFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  protected:
   virtual std::shared_ptr<mindspore::DeviceInfoContext> GetDeviceInfoContext(

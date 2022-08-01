@@ -31,7 +31,7 @@ DeviceMemory::DeviceMemory(const std::shared_ptr<Device> &device,
     : is_host_mem_(is_host_mem),
       device_(device),
       mem_mgr_(mem_mgr),
-      offset_(0),
+
       size_(size),
       capacity_(size) {
   UpdateMemID(device_mem_ptr.get());
@@ -667,9 +667,9 @@ DeviceMemoryLog::DeviceMemoryLog(const std::string &memory_id,
       device_id_(device_id),
       size_(size) {}
 
-DeviceMemoryLog::~DeviceMemoryLog() {}
+DeviceMemoryLog::~DeviceMemoryLog() = default;
 
-DeviceMemoryTrace::~DeviceMemoryTrace() {}
+DeviceMemoryTrace::~DeviceMemoryTrace() = default;
 
 void DeviceMemoryTrace::TraceMemoryAlloc(const std::string &memory_id,
                                          const std::string &user_id,

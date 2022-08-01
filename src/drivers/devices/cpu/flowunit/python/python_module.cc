@@ -34,7 +34,7 @@ namespace py = pybind11;
 PythonInterpreter::PythonInterpreter() {
   if (!Py_IsInitialized()) {
     is_initialized_ = true;
-    py::initialize_interpreter(0);
+    py::initialize_interpreter(false);
     // unlock GIL
     threadState_ = PyEval_SaveThread();
     return;

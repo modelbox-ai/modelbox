@@ -42,9 +42,7 @@ std::shared_ptr<GraphConfig> GraphvizFactory::CreateGraphConfigFromFile(
   return graphviz_conf;
 }
 
-const std::string GraphvizFactory::GetGraphConfFactoryType() {
-  return factory_type_;
-}
+std::string GraphvizFactory::GetGraphConfFactoryType() { return factory_type_; }
 
 GraphvizConfig::GraphvizConfig(const std::string &graph_conf,
                                const bool is_file) {
@@ -52,7 +50,7 @@ GraphvizConfig::GraphvizConfig(const std::string &graph_conf,
   is_file_ = is_file;
 }
 
-GraphvizConfig::~GraphvizConfig() {}
+GraphvizConfig::~GraphvizConfig() = default;
 
 std::shared_ptr<GCGraph> GraphvizConfig::Resolve() {
   std::shared_ptr<modelbox::GCGraph> graph = std::make_shared<modelbox::GCGraph>();

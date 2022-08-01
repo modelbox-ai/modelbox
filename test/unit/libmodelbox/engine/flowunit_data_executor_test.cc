@@ -289,9 +289,9 @@ class FlowUnitExecutorTest : public testing::Test {
   std::vector<FlowType> flow_types_ = {NORMAL, STREAM};
 
  protected:
-  virtual void SetUp() {}
+  void SetUp() override {}
 
-  virtual void TearDown() {}
+  void TearDown() override {}
 };
 
 TEST_F(FlowUnitExecutorTest, EventInputTest) {

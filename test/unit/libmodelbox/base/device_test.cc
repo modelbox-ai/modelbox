@@ -39,14 +39,14 @@ namespace modelbox {
 
 class DeviceManagerTest : public testing::Test {
  public:
-  DeviceManagerTest() {}
+  DeviceManagerTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     std::shared_ptr<DeviceManager> device_mgr = DeviceManager::GetInstance();
     device_mgr->Clear();
@@ -56,10 +56,10 @@ class DeviceManagerTest : public testing::Test {
 
 class DeviceMemoryTest : public testing::Test {
  public:
-  DeviceMemoryTest() {}
+  DeviceMemoryTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto drivers = Drivers::GetInstance();
     ConfigurationBuilder config_builder;
 
@@ -84,7 +84,7 @@ class DeviceMemoryTest : public testing::Test {
     CopyFile(device_ascend_src_path, device_ascend_dest_path, 0, true);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     std::shared_ptr<DeviceManager> device_mgr = DeviceManager::GetInstance();
     device_ = nullptr;

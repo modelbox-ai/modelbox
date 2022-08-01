@@ -30,13 +30,13 @@ namespace modelbox {
 
 class ListTest : public testing::Test {
  public:
-  ListTest() {}
+  ListTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 struct Item {

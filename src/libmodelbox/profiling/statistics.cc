@@ -23,7 +23,7 @@ namespace modelbox {
  */
 StatisticsValue::StatisticsValue(const std::shared_ptr<Any>& val) : val_(val) {}
 
-StatisticsValue::~StatisticsValue() {}
+StatisticsValue::~StatisticsValue() = default;
 
 const std::type_info& StatisticsValue::GetType() { return val_->type(); }
 

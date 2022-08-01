@@ -5,9 +5,9 @@
 
 namespace modelbox {
 
-MockServer::MockServer() {}
+MockServer::MockServer() = default;
 
-MockServer::~MockServer() {}
+MockServer::~MockServer() = default;
 
 std::string MockServer::GetTestGraphDir() {
   return std::string(TEST_WORKING_DIR) + "/graph";
@@ -24,8 +24,8 @@ httplib::Response MockServer::DoRequest(HttpRequest &request) {
 
 void MockServer::SetDefaultConfig(std::shared_ptr<Configuration> config) {
   std::vector<std::string> plugin_path;
-  plugin_path.push_back(MODELBOX_PLUGIN_SO_PATH);
-  plugin_path.push_back(MODELBOX_PLUGIN_EDITOR_SO_PATH);
+  plugin_path.emplace_back(MODELBOX_PLUGIN_SO_PATH);
+  plugin_path.emplace_back(MODELBOX_PLUGIN_EDITOR_SO_PATH);
   if (config->GetStrings("plugin.files").size() <= 0) {
     config->SetProperty("plugin.files", plugin_path);
   }

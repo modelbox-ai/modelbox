@@ -21,8 +21,8 @@
 #include <sstream>
 #include <string>
 
-ImageRotateFlowUnitBase::ImageRotateFlowUnitBase(){};
-ImageRotateFlowUnitBase::~ImageRotateFlowUnitBase(){};
+ImageRotateFlowUnitBase::ImageRotateFlowUnitBase() = default;
+ImageRotateFlowUnitBase::~ImageRotateFlowUnitBase() = default;
 
 modelbox::Status ImageRotateFlowUnitBase::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

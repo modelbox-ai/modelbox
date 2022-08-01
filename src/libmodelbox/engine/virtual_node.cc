@@ -31,7 +31,7 @@ InputVirtualNode::InputVirtualNode(
   device_mgr_ = device_manager;
 }
 
-InputVirtualNode::~InputVirtualNode() {}
+InputVirtualNode::~InputVirtualNode() = default;
 
 Status InputVirtualNode::Init(const std::set<std::string>& input_port_names,
                               const std::set<std::string>& output_port_names,
@@ -108,7 +108,7 @@ OutputVirtualNode::OutputVirtualNode(
   target_device_ = device_mgr_->CreateDevice(device_name, device_id);
 }
 
-OutputVirtualNode::~OutputVirtualNode() {}
+OutputVirtualNode::~OutputVirtualNode() = default;
 
 Status OutputVirtualNode::Init(const std::set<std::string>& input_port_names,
                                const std::set<std::string>& output_port_names,
@@ -345,7 +345,7 @@ OutputUnmatchVirtualNode::OutputUnmatchVirtualNode(
   target_device_ = device_mgr_->GetDevice(device_name, device_id);
 }
 
-OutputUnmatchVirtualNode::~OutputUnmatchVirtualNode() {}
+OutputUnmatchVirtualNode::~OutputUnmatchVirtualNode() = default;
 
 Status OutputUnmatchVirtualNode::Init(
     const std::set<std::string>& input_port_names,

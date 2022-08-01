@@ -30,11 +30,11 @@
 namespace modelbox {
 class BaseUtilsTest : public testing::Test {
  public:
-  BaseUtilsTest() {}
+  BaseUtilsTest() = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 TEST_F(BaseUtilsTest, Volume) {

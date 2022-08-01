@@ -29,17 +29,17 @@
 
 class ProfilerTest : public testing::Test {
  public:
-  ProfilerTest() {}
-  virtual ~ProfilerTest() {}
+  ProfilerTest() = default;
+  ~ProfilerTest() override = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     std::ostringstream sstr_profile_path;
     sstr_profile_path << TEST_DATA_DIR << "/perf";
     setenv(modelbox::PROFILE_PATH_ENV, sstr_profile_path.str().c_str(), 1);
   };
 
-  virtual void TearDown() { unsetenv(modelbox::PROFILE_PATH_ENV); };
+  void TearDown() override { unsetenv(modelbox::PROFILE_PATH_ENV); };
 };
 
 TEST_F(ProfilerTest, ProfilerInit) {

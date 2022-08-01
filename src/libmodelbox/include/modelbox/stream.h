@@ -69,7 +69,7 @@ class Stream {
  public:
   Stream(std::shared_ptr<Session> session);
 
-  ~Stream() = default;
+  virtual ~Stream() = default;
 
   std::shared_ptr<Session> GetSession();
 

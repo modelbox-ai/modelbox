@@ -40,7 +40,7 @@ class NppiResizeFlowUnitTest : public testing::Test {
   NppiResizeFlowUnitTest() : driver_flow_(std::make_shared<DriverFlowTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -52,7 +52,7 @@ class NppiResizeFlowUnitTest : public testing::Test {
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_->Clear(); };
+  void TearDown() override { driver_flow_->Clear(); };
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
 
  private:
@@ -144,7 +144,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
               std::string gimg_path =
                   std::string((char*)(*external)[0]->ConstData());
 
-              cv::Mat gimg_data = cv::imread(gimg_path.c_str());
+              cv::Mat gimg_data = cv::imread(gimg_path);
 
               MBLOG_INFO << "gimage col " << gimg_data.cols << "  grow "
                          << gimg_data.rows
@@ -161,7 +161,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
               output_buf->Build(shape_vector);
               for (size_t i = 0; i < batch_size; ++i) {
                 std::string img_path = std::string(TEST_ASSETS) + "/test.jpg";
-                cv::Mat img_data = cv::imread(img_path.c_str());
+                cv::Mat img_data = cv::imread(img_path);
                 std::vector<cv::Mat> vecChannels;
                 cv::split(img_data, vecChannels);
                 cv::Mat mergeImg;
@@ -273,7 +273,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
                 std::string name = std::string(TEST_DATA_DIR) + "/test" +
                                    std::to_string(i) + ".jpg";
-                cv::imwrite(name.c_str(), img_data);
+                cv::imwrite(name, img_data);
               }
               MBLOG_DEBUG << "p3_test_1_0_resize process data finish";
               return modelbox::STATUS_OK;
@@ -364,7 +364,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
               std::string gimg_path =
                   std::string((char*)(*external)[0]->ConstData());
 
-              cv::Mat gimg_data = cv::imread(gimg_path.c_str());
+              cv::Mat gimg_data = cv::imread(gimg_path);
 
               MBLOG_INFO << "gimage col " << gimg_data.cols << "  grow "
                          << gimg_data.rows
@@ -384,7 +384,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
               for (size_t i = 0; i < 5; ++i) {
                 std::string img_path = gimg_path;
-                cv::Mat img_data = cv::imread(img_path.c_str());
+                cv::Mat img_data = cv::imread(img_path);
                 MBLOG_INFO << "image col " << img_data.cols << "  row "
                            << img_data.rows
                            << " channel:" << img_data.channels();
@@ -478,7 +478,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
                 std::string name = std::string(TEST_DATA_DIR) + "/test" +
                                    std::to_string(i) + ".jpg";
-                cv::imwrite(name.c_str(), img_data);
+                cv::imwrite(name, img_data);
               }
 
               MBLOG_INFO << "c3r_test_1_0_resize process data finish";

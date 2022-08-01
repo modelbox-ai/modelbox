@@ -33,8 +33,7 @@ constexpr const char *MODELBOX_ROOT_VAR = "${MODELBOX_ROOT}";
  * @brief Get current modelbox standalone directory
  * @return standalone root dir
  */
-const std::string &modelbox_root_dir(void);
-
+const std::string &modelbox_root_dir();
 
 /**
  * @brief Get modelbox full path

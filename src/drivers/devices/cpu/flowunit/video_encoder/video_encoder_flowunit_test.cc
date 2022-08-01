@@ -33,12 +33,12 @@ using ::testing::_;
 namespace modelbox {
 class VideoEncoderFlowUnitTest : public testing::Test {
  public:
-  VideoEncoderFlowUnitTest(){};
+  VideoEncoderFlowUnitTest() = default;
 
  protected:
-  virtual void SetUp(){};
+  void SetUp() override{};
 
-  virtual void TearDown(){};
+  void TearDown() override{};
 
  public:
   std::shared_ptr<MockFlow> flow_;

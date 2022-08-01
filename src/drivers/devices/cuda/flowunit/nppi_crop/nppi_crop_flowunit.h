@@ -64,7 +64,7 @@ using namespace imageprocess;
 class NppiCropFlowUnit : public modelbox::CudaFlowUnit {
  public:
   NppiCropFlowUnit();
-  virtual ~NppiCropFlowUnit();
+  ~NppiCropFlowUnit() override;
 
   modelbox::Status Open(
       const std::shared_ptr<modelbox::Configuration> &opts) override;

@@ -33,10 +33,10 @@ std::mutex mtx;
 int count;
 class TaskManagerTest : public testing::Test {
  public:
-  TaskManagerTest() {}
+  TaskManagerTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     std::string toml_content = R"(
     [driver]
     skip-default=true
@@ -61,7 +61,7 @@ class TaskManagerTest : public testing::Test {
     mockflow_->Init();
     auto ret = mockflow_->BuildAndRun("TaskManager", toml_content, -1);
   };
-  virtual void TearDown() { mockflow_ = nullptr; };
+  void TearDown() override { mockflow_ = nullptr; };
 
   std::shared_ptr<MockFlow> mockflow_;
 

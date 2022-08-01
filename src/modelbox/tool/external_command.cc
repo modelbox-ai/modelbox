@@ -34,8 +34,8 @@
 
 namespace modelbox {
 
-ExternalCommandKey::ExternalCommandKey() {}
-ExternalCommandKey::~ExternalCommandKey() {}
+ExternalCommandKey::ExternalCommandKey() = default;
+ExternalCommandKey::~ExternalCommandKey() = default;
 
 Status ExternalCommandKey::SetExecuteCmd(const std::string &cmd) {
   cmd_ = cmd;
@@ -61,7 +61,7 @@ int ExternalCommandKey::Run(int argc, char *argv[]) {
 
   cmd.push_back(cmd_);
   for (int i = 1; i < argc; i++) {
-    cmd.push_back(argv[i]);
+    cmd.emplace_back(argv[i]);
   }
 
   modelbox::Popen p;

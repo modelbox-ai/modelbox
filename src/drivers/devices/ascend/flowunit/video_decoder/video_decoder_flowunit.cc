@@ -27,8 +27,8 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-VideoDecodeFlowUnit::VideoDecodeFlowUnit(){};
-VideoDecodeFlowUnit::~VideoDecodeFlowUnit(){};
+VideoDecodeFlowUnit::VideoDecodeFlowUnit() = default;
+VideoDecodeFlowUnit::~VideoDecodeFlowUnit() = default;
 
 static std::map<std::string, int32_t> fmt_trans_map = {
     {"nv12", PIXEL_FORMAT_YUV_SEMIPLANAR_420}};

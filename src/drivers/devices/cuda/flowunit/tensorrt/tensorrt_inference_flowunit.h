@@ -55,7 +55,9 @@ class RndInt8Calibrator;
 class iLogger : public nvinfer1::ILogger {
   void log(Severity severity, const char* msg) noexcept override {
     // suppress info-level messages
-    if (severity < Severity::kINFO) std::cout << msg << std::endl;
+    if (severity < Severity::kINFO) {
+      std::cout << msg << std::endl;
+    }
   }
 };
 
@@ -63,8 +65,8 @@ extern iLogger gLogger;
 
 class TensorRTParams {
  public:
-  TensorRTParams(){};
-  virtual ~TensorRTParams(){};
+  TensorRTParams() = default;
+  virtual ~TensorRTParams() = default;
 
   modelbox::Status Clear();
   // caffe model file
@@ -103,19 +105,22 @@ class TensorRTParams {
 class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
  public:
   TensorRTInferenceFlowUnit();
-  virtual ~TensorRTInferenceFlowUnit();
+  ~TensorRTInferenceFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration>& opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration>& opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPre(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPost(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
   /* run when processing data */
   modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                               cudaStream_t stream);
+                               cudaStream_t stream) override;
 
  private:
   void SetUpOtherConfig(std::shared_ptr<modelbox::Configuration> config);
@@ -182,12 +187,13 @@ class RndInt8Calibrator : public IInt8EntropyCalibrator {
   RndInt8Calibrator(int total_samples, std::string cache_file,
                     std::map<std::string, nvinfer1::Dims3>& input_dims);
 
-  virtual ~RndInt8Calibrator();
+  ~RndInt8Calibrator() override;
   int getBatchSize() const noexcept override;
   bool getBatch(void* bindings[], const char* names[],
                 int nbBindings) noexcept override;
   const void* readCalibrationCache(size_t& length) noexcept override;
-  virtual void writeCalibrationCache(const void*, size_t) noexcept override;
+  void writeCalibrationCache(const void* /*ptr*/,
+                             size_t /*length*/) noexcept override;
 
  private:
   int total_samples_{0};
@@ -200,17 +206,17 @@ class RndInt8Calibrator : public IInt8EntropyCalibrator {
 class TensorRTInferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   TensorRTInferenceFlowUnitFactory() = default;
-  virtual ~TensorRTInferenceFlowUnitFactory() = default;
+  ~TensorRTInferenceFlowUnitFactory() override = default;
 
   std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
       const std::string& unit_name, const std::string& unit_type,
-      const std::string& virtual_type);
+      const std::string& virtual_type) override;
 
-  const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
-  const std::string GetVirtualType() { return INFERENCE_TYPE; };
+  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
+  std::string GetVirtualType() override { return INFERENCE_TYPE; };
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
-  FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override {
     return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
   };
 };

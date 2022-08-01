@@ -471,7 +471,7 @@ void SlabCacheReclaimer::DoReclaim() {
   }
 }
 
-SlabCacheReclaimer::SlabCacheReclaimer() {}
+SlabCacheReclaimer::SlabCacheReclaimer() = default;
 
 SlabCacheReclaimer::~SlabCacheReclaimer() {
   if (reclaimer_timer_ == nullptr) {

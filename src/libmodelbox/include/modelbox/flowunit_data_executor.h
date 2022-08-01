@@ -227,7 +227,7 @@ class FlowUnitExecDataView {
  public:
   FlowUnitExecDataView(const FUExecContextList &exec_ctx_list);
 
-  ~FlowUnitExecDataView() = default;
+  virtual ~FlowUnitExecDataView() = default;
 
   Status LoadInputFromExecCtx(bool need_reshape, bool is_stream,
                               size_t batch_size, bool need_contiguous);
@@ -258,7 +258,6 @@ class FlowUnitExecDataView {
   std::unordered_map<FlowUnit *, BatchedFUExecDataCtxList> data_of_flowunit_;
   std::mutex data_of_flowunit_lock_;
 
- private:
   class LoadConfig {
    public:
     LoadConfig(bool need_reshape, bool is_stream, size_t batch_size,

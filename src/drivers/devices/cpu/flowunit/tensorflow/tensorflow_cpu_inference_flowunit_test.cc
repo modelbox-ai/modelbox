@@ -40,7 +40,7 @@ class InferenceTensorflowCpuFlowUnitTest : public testing::Test {
       : driver_flow_(std::make_shared<DriverFlowTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto version = GetTFVersion();
 
     if (SUPPORT_TF_VERSION.find(version) == SUPPORT_TF_VERSION.end()) {
@@ -56,7 +56,7 @@ class InferenceTensorflowCpuFlowUnitTest : public testing::Test {
     SetUpTomlFiles(version);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     if (!version_suitable_) {
       GTEST_SKIP();
     }

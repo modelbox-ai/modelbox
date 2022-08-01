@@ -23,15 +23,15 @@
 namespace modelbox {
 class DynamicGraphTest : public testing::Test {
  public:
-  DynamicGraphTest() {}
+  DynamicGraphTest() = default;
 
  protected:
   std::shared_ptr<ModelBoxEngine> modelbox_engine;
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
 
-  virtual void TearDown(){
+  void TearDown() override{
 
   };
 };

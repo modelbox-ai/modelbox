@@ -39,7 +39,7 @@ class DataError {
  public:
   DataError(const std::string &error_code, const std::string &error_msg);
 
-  virtual ~DataError() {};
+  virtual ~DataError() = default;
 
   std::string GetErrorCode();
 

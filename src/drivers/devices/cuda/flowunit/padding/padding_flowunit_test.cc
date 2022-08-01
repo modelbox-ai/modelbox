@@ -41,7 +41,7 @@ class NppiPaddingFlowUnitTest : public testing::Test {
   NppiPaddingFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -50,7 +50,7 @@ class NppiPaddingFlowUnitTest : public testing::Test {
     }
   };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
 
  private:

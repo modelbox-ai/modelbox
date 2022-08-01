@@ -23,8 +23,8 @@
 
 namespace modelbox {
 
-IPACL::IPACL() {}
-IPACL::~IPACL() {}
+IPACL::IPACL() = default;
+IPACL::~IPACL() = default;
 
 modelbox::Status IPACL::AddCidr(const std::string &cidr) {
   uint32_t mask_len = sizeof(uint32_t) * 8;

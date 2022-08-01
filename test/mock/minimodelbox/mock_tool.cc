@@ -23,9 +23,9 @@
 
 namespace modelbox {
 
-MockTool::MockTool() {}
+MockTool::MockTool() = default;
 
-MockTool::~MockTool() {}
+MockTool::~MockTool() = default;
 
 int MockTool::Run(const std::string &cmd) {
   auto cmds = modelbox::StringSplit(cmd, ' ');

@@ -16,9 +16,9 @@
 
 #include "tensorflow_cpu_inference_flowunit.h"
 
-InferenceTensorflowCpuFlowUnit::InferenceTensorflowCpuFlowUnit(){};
+InferenceTensorflowCpuFlowUnit::InferenceTensorflowCpuFlowUnit() = default;
 
-InferenceTensorflowCpuFlowUnit::~InferenceTensorflowCpuFlowUnit(){};
+InferenceTensorflowCpuFlowUnit::~InferenceTensorflowCpuFlowUnit() = default;
 
 std::shared_ptr<modelbox::FlowUnit>
 InferenceTensorflowCpuFlowUnitFactory::VirtualCreateFlowUnit(

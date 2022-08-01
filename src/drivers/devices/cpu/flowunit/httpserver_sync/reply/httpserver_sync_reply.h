@@ -30,18 +30,19 @@ constexpr const char *FLOWUNIT_DESC_REPLY =
     "\t  The the input port buffer data type is char * .\n"
     "\t@Constraint: The flowuint 'httpserver_sync_reply' must be used pair "
     "with 'httpserver_sync_receive'.";
-;
 
 class HTTPServerReplySync : public modelbox::FlowUnit {
  public:
   HTTPServerReplySync();
-  virtual ~HTTPServerReplySync();
+  ~HTTPServerReplySync() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   std::string content_type_;

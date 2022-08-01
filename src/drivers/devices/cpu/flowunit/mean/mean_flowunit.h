@@ -38,9 +38,10 @@ constexpr const char *FLOWUNIT_DESC =
 class MeanFlowUnit : public MeanFlowUnitBase {
  public:
   MeanFlowUnit();
-  virtual ~MeanFlowUnit();
+  ~MeanFlowUnit() override;
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   template <typename T>

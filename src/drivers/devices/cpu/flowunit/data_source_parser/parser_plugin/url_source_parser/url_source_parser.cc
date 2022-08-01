@@ -26,8 +26,8 @@
 #define STREAM_DEFAULT_RETRY_TIMES -1
 #define DEFAULT_RETRY_INTERVAL 1000
 
-UrlSourceParser::UrlSourceParser() {}
-UrlSourceParser::~UrlSourceParser() {}
+UrlSourceParser::UrlSourceParser() = default;
+UrlSourceParser::~UrlSourceParser() = default;
 
 modelbox::Status UrlSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
@@ -63,7 +63,6 @@ modelbox::Status UrlSourceParser::GetStreamType(const std::string &config,
     std::string url_type = json["url_type"].get<std::string>();
     if (url_type.empty()) {
       return {modelbox::STATUS_BADCONF, "url_type is empty"};
-      ;
     }
 
     if (url_type == "file") {

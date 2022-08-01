@@ -18,7 +18,7 @@
 #include <modelbox/stream.h>
 namespace modelbox {
 
-DataMeta::DataMeta() {}
+DataMeta::DataMeta() = default;
 
 DataMeta::DataMeta(const DataMeta &other) { private_map_ = other.private_map_; }
 

@@ -63,8 +63,8 @@ constexpr const char *DEVICE_DRIVER_DESCRIPTION = "A gpu device driver";
 class Cuda : public Device {
  public:
   Cuda(const std::shared_ptr<DeviceMemoryManager> &mem_mgr);
-  virtual ~Cuda();
-  const std::string GetType() const override;
+  ~Cuda() override;
+  std::string GetType() const override;
 
   Status DeviceExecute(DevExecuteCallBack fun, int32_t priority,
                        size_t count) override;
@@ -75,29 +75,29 @@ class Cuda : public Device {
 class CudaFactory : public DeviceFactory {
  public:
   CudaFactory();
-  virtual ~CudaFactory();
+  ~CudaFactory() override;
 
-  std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe();
-  const std::string GetDeviceFactoryType();
-  std::vector<std::string> GetDeviceList();
-  std::shared_ptr<Device> CreateDevice(const std::string &device_id);
+  std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe() override;
+  std::string GetDeviceFactoryType() override;
+  std::vector<std::string> GetDeviceList() override;
+  std::shared_ptr<Device> CreateDevice(const std::string &device_id) override;
 };
 
 class CudaDesc : public DeviceDesc {
  public:
   CudaDesc() = default;
-  virtual ~CudaDesc() = default;
+  ~CudaDesc() override = default;
 };
 
 class CudaFlowUnit : public FlowUnit {
  public:
   CudaFlowUnit() = default;
-  virtual ~CudaFlowUnit() = default;
+  ~CudaFlowUnit() override = default;
 
   virtual Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
                              cudaStream_t stream) = 0;
 
-  virtual Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  Status Process(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 };
 
 }  // namespace modelbox

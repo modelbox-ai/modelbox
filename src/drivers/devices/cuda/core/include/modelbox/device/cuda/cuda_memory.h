@@ -125,7 +125,7 @@ class CudaMemory : public DeviceMemory {
              const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
              std::shared_ptr<void> device_mem_ptr, size_t size);
 
-  virtual ~CudaMemory();
+  ~CudaMemory() override;
   /**
    * @brief Get bind cuda stream
    * @return Cuda stream
@@ -165,13 +165,13 @@ class CudaMemoryPool : public MemoryPoolBase {
  public:
   CudaMemoryPool(const std::string &device_id);
 
-  virtual ~CudaMemoryPool();
+  ~CudaMemoryPool() override;
 
   Status Init();
 
-  virtual void *MemAlloc(size_t size);
+  void *MemAlloc(size_t size) override;
 
-  virtual void MemFree(void *ptr);
+  void MemFree(void *ptr) override;
 
   virtual void OnTimer();
 
@@ -188,7 +188,7 @@ class CudaMemoryManager : public DeviceMemoryManager {
    */
   CudaMemoryManager(const std::string &device_id);
 
-  virtual ~CudaMemoryManager();
+  ~CudaMemoryManager() override;
 
   /**
    * @brief Init memory manager

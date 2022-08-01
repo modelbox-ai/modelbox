@@ -24,8 +24,8 @@
 #include "modelbox/base/uuid.h"
 #include "modelbox/device/cpu/device_cpu.h"
 
-ObsOutputBroker::ObsOutputBroker() {}
-ObsOutputBroker::~ObsOutputBroker() {}
+ObsOutputBroker::ObsOutputBroker() = default;
+ObsOutputBroker::~ObsOutputBroker() = default;
 
 modelbox::Status ObsOutputBroker::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {

@@ -30,13 +30,13 @@ namespace modelbox {
 
 class PopenTest : public testing::Test {
  public:
-  PopenTest() {}
+  PopenTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 #include <fcntl.h>
@@ -46,9 +46,9 @@ class PopenTest : public testing::Test {
 TEST_F(PopenTest, OpenCaptureOutput) {
   Popen p;
   std::vector<std::string> args;
-  args.push_back("/bin/bash");
-  args.push_back("-c");
-  args.push_back(
+  args.emplace_back("/bin/bash");
+  args.emplace_back("-c");
+  args.emplace_back(
       "N=0;"
       "while [ $N -lt 1000 ]; do echo msg $N; echo err $N >&2; ((N=N+1)); "
       "done");
@@ -87,9 +87,9 @@ TEST_F(PopenTest, OpenCaptureOutput) {
 TEST_F(PopenTest, OpenTimeout) {
   Popen p;
   std::vector<std::string> args;
-  args.push_back("/bin/bash");
-  args.push_back("-c");
-  args.push_back(
+  args.emplace_back("/bin/bash");
+  args.emplace_back("-c");
+  args.emplace_back(
       "N=0;"
       "while [ true ]; do echo msg $N; echo err $N >&2; ((N=N+1)); "
       "done");
@@ -129,9 +129,9 @@ TEST_F(PopenTest, OpenTimeout) {
 TEST_F(PopenTest, OpenCaptureStdOutputOnly) {
   Popen p;
   std::vector<std::string> args;
-  args.push_back("/bin/bash");
-  args.push_back("-c");
-  args.push_back(
+  args.emplace_back("/bin/bash");
+  args.emplace_back("-c");
+  args.emplace_back(
       "N=0;"
       "while [ $N -lt 10 ]; do echo msg $N; echo err $N >&2; ((N=N+1)); "
       "done");
@@ -159,9 +159,9 @@ TEST_F(PopenTest, OpenCaptureStdOutputOnly) {
 TEST_F(PopenTest, OpenCaptureNone) {
   Popen p;
   std::vector<std::string> args;
-  args.push_back("/bin/bash");
-  args.push_back("-c");
-  args.push_back(
+  args.emplace_back("/bin/bash");
+  args.emplace_back("-c");
+  args.emplace_back(
       "N=0;"
       "while [ $N -lt 10 ]; do echo msg $N; echo err $N >&2; ((N=N+1)); "
       "done");
@@ -173,8 +173,8 @@ TEST_F(PopenTest, OpenCaptureNone) {
 TEST_F(PopenTest, OpenCaptureNoneTimeOut) {
   Popen p;
   std::vector<std::string> args;
-  args.push_back("/bin/sleep");
-  args.push_back("10");
+  args.emplace_back("/bin/sleep");
+  args.emplace_back("10");
   p.Open(args, 100, "");
   auto ret = p.Close();
   EXPECT_EQ(WIFSIGNALED(ret), 1);
@@ -184,8 +184,8 @@ TEST_F(PopenTest, OpenCaptureNoneTimeOut) {
 TEST_F(PopenTest, OpenWait) {
   Popen p;
   std::vector<std::string> args;
-  args.push_back("/bin/sleep");
-  args.push_back("0.1");
+  args.emplace_back("/bin/sleep");
+  args.emplace_back("0.1");
   p.Open(args, -1, "");
   auto ret = p.Close();
   EXPECT_EQ(WIFSIGNALED(ret), 0);
@@ -195,9 +195,9 @@ TEST_F(PopenTest, OpenWait) {
 TEST_F(PopenTest, OpenInput) {
   Popen p;
   std::vector<std::string> args;
-  args.push_back("/bin/bash");
-  args.push_back("-c");
-  args.push_back(
+  args.emplace_back("/bin/bash");
+  args.emplace_back("-c");
+  args.emplace_back(
       "N=0;\n"
       "read N\n"
       "echo $N\n"

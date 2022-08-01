@@ -18,8 +18,8 @@
 #include "modelbox/flowunit_api_helper.h"
 #include "modelbox/type.h"
 
-MeanFlowUnit::MeanFlowUnit(){};
-MeanFlowUnit::~MeanFlowUnit(){};
+MeanFlowUnit::MeanFlowUnit() = default;
+MeanFlowUnit::~MeanFlowUnit() = default;
 
 modelbox::Status MeanFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {

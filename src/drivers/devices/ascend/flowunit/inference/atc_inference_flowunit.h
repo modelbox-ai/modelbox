@@ -33,14 +33,16 @@ constexpr const char *INFERENCE_TYPE = "acl";
 class AtcInferenceFlowUnit : public modelbox::AscendFlowUnit {
  public:
   AtcInferenceFlowUnit();
-  virtual ~AtcInferenceFlowUnit();
+  ~AtcInferenceFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status AscendProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                               aclrtStream stream);
+  modelbox::Status AscendProcess(
+      std::shared_ptr<modelbox::DataContext> data_ctx,
+      aclrtStream stream) override;
 
  private:
   modelbox::Status GetFlowUnitIO(std::vector<std::string> &input_name_list,
@@ -52,9 +54,9 @@ class AtcInferenceFlowUnit : public modelbox::AscendFlowUnit {
 class AtcInferenceFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
   AtcInferenceFlowUnitDesc() = default;
-  virtual ~AtcInferenceFlowUnitDesc() = default;
+  ~AtcInferenceFlowUnitDesc() override = default;
 
-  void SetModelEntry(const std::string model_entry);
+  void SetModelEntry(std::string model_entry);
   const std::string GetModelEntry();
 
  private:
@@ -64,14 +66,15 @@ class AtcInferenceFlowUnitDesc : public modelbox::FlowUnitDesc {
 class AtcInferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   AtcInferenceFlowUnitFactory() = default;
-  virtual ~AtcInferenceFlowUnitFactory() = default;
+  ~AtcInferenceFlowUnitFactory() override = default;
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override {
     return {};
   }
 
-  const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
-  const std::string GetVirtualType() { return INFERENCE_TYPE; };
+  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
+  std::string GetVirtualType() override { return INFERENCE_TYPE; };
   std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type,
       const std::string &virtual_type) override;

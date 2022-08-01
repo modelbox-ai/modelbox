@@ -34,8 +34,8 @@
 #include "modelbox/device/cpu/device_cpu.h"
 #include "signer.h"
 
-VisSourceParser::VisSourceParser() {}
-VisSourceParser::~VisSourceParser() {}
+VisSourceParser::VisSourceParser() = default;
+VisSourceParser::~VisSourceParser() = default;
 
 modelbox::Status VisSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {

@@ -29,13 +29,13 @@ constexpr const char *KEY_DESC = "Key encrypt";
 class ToolCommandKey : public ToolCommand {
  public:
   ToolCommandKey();
-  virtual ~ToolCommandKey();
+  ~ToolCommandKey() override;
 
-  int Run(int argc, char *argv[]);
-  std::string GetHelp();
+  int Run(int argc, char *argv[]) override;
+  std::string GetHelp() override;
 
-  std::string GetCommandName() { return "key"; };
-  std::string GetCommandDesc() { return KEY_DESC;};
+  std::string GetCommandName() override { return "key"; };
+  std::string GetCommandDesc() override { return KEY_DESC; };
 
  private:
   int RunPassCommand(int argc, char *argv[], std::string &fname);

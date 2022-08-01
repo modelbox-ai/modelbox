@@ -47,7 +47,7 @@ class ImageShape {
         width_stride{img_width_stride},
         height_stride{img_height_stride} {}
 
-  ~ImageShape() {}
+  virtual ~ImageShape() = default;
 
   int32_t width{0};
   int32_t height{0};

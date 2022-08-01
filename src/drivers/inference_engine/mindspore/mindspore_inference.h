@@ -32,7 +32,7 @@ struct MindSporeIOList {
 class MindSporeInference {
  public:
   MindSporeInference() = default;
-  ~MindSporeInference();
+  virtual ~MindSporeInference();
 
   modelbox::Status Init(std::shared_ptr<mindspore::Context> mindspore_context,
                         const std::string &model_entry,

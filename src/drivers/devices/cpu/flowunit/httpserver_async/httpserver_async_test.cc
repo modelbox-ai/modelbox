@@ -33,12 +33,12 @@ class HttpServerAsyncFlowUnitTest : public testing::Test {
   HttpServerAsyncFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
 
  private:
@@ -266,10 +266,10 @@ TEST_F(HttpServerAsyncFlowUnitTest, InitUnit) {
 
   std::vector<std::thread> threads;
   for (int i = 0; i < 5; ++i) {
-    threads.push_back(std::thread(PutRequestAsync, uri, client_config));
-    threads.push_back(std::thread(DelRequestAsync, uri, client_config));
-    threads.push_back(std::thread(PostRequestAsync, uri, client_config));
-    threads.push_back(std::thread(GetRequestAsync, uri, client_config));
+    threads.emplace_back(PutRequestAsync, uri, client_config);
+    threads.emplace_back(DelRequestAsync, uri, client_config);
+    threads.emplace_back(PostRequestAsync, uri, client_config);
+    threads.emplace_back(GetRequestAsync, uri, client_config);
   }
   for (auto& th : threads) {
     th.join();

@@ -35,13 +35,13 @@ constexpr const char *MOCK_GRAPHCONF_DESC = "mock graph config parse graphviz";
 class MockGraphConfig : public modelbox::GraphConfig {
  public:
   using GraphConfig::Resolve;
-  MockGraphConfig(const std::string &graph_conf_path) : modelbox::GraphConfig() {
+  MockGraphConfig(const std::string &graph_conf_path) {
     EXPECT_CALL(*this, Resolve)
         .WillRepeatedly([this](std::shared_ptr<modelbox::GCGraph> graph) {
           return this->Resolve(graph);
         });
   };
-  virtual ~MockGraphConfig() = default;
+  ~MockGraphConfig() override = default;
 
   MOCK_METHOD(bool, Resolve, (std::shared_ptr<modelbox::GCGraph>));
 
@@ -69,13 +69,13 @@ class MockGraphConfigFactory : public modelbox::GraphConfigFactory {
     });
   };
 
-  virtual ~MockGraphConfigFactory() = default;
+  ~MockGraphConfigFactory() override = default;
 
   MOCK_METHOD(std::shared_ptr<GraphConfig>, CreateGraphConfigFromStr,
               (const std::string &config_path));
   MOCK_METHOD(std::shared_ptr<GraphConfig>, CreateGraphConfigFromFile,
               (const std::string &file_path));
-  MOCK_METHOD(const std::string, GetGraphConfFactoryType, ());
+  MOCK_METHOD(std::string, GetGraphConfFactoryType, ());
 
  private:
   std::shared_ptr<GraphvizFactory> bind_factory_;
@@ -83,8 +83,8 @@ class MockGraphConfigFactory : public modelbox::GraphConfigFactory {
 
 class MockDriverGraphConfig : public modelbox::MockDriver {
  public:
-  MockDriverGraphConfig(){};
-  virtual ~MockDriverGraphConfig(){};
+  MockDriverGraphConfig() = default;
+  ~MockDriverGraphConfig() override = default;
 
   static MockDriverGraphConfig *Instance() { return &desc_; };
 

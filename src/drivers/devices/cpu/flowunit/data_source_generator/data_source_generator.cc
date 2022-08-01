@@ -24,8 +24,8 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-DataSourceGeneratorFlowUnit::DataSourceGeneratorFlowUnit(){};
-DataSourceGeneratorFlowUnit::~DataSourceGeneratorFlowUnit(){};
+DataSourceGeneratorFlowUnit::DataSourceGeneratorFlowUnit() = default;
+DataSourceGeneratorFlowUnit::~DataSourceGeneratorFlowUnit() = default;
 
 static std::unordered_set<std::string> g_predefined_keys{"type",
                                                          "flowunit",

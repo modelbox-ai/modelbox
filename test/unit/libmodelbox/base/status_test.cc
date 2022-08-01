@@ -31,13 +31,13 @@ namespace modelbox {
 
 class StatusTest : public testing::Test {
  public:
-  StatusTest() {}
+  StatusTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 TEST_F(StatusTest, OK) {

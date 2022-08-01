@@ -60,8 +60,8 @@ constexpr int ASCII_DEL = 126;
 constexpr int AES256_KEY_LEN = 32;
 constexpr int ENCRYPT_BLOCK_SIZE = (AES256_KEY_LEN * 256);
 
-ToolCommandKey::ToolCommandKey() {}
-ToolCommandKey::~ToolCommandKey() {}
+ToolCommandKey::ToolCommandKey() = default;
+ToolCommandKey::~ToolCommandKey() = default;
 
 std::string ToolCommandKey::GetHelp() {
   char help[] =

@@ -343,9 +343,9 @@ void ExternalDataMapImpl::SessionEnd(std::shared_ptr<FlowUnitError> error) {
   }
 }
 
-ExternalDataSelect::ExternalDataSelect() {}
+ExternalDataSelect::ExternalDataSelect() = default;
 
-ExternalDataSelect::~ExternalDataSelect() {}
+ExternalDataSelect::~ExternalDataSelect() = default;
 
 void ExternalDataSelect::RegisterExternalData(
     std::shared_ptr<ExternalDataMap> externl_data) {

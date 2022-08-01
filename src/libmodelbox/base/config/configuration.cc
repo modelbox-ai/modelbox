@@ -617,7 +617,7 @@ Status TomlConfigParser::Parse(std::shared_ptr<Configuration> &config,
   return Parse(config, ifs, file);
 }
 
-ConfigurationBuilder::ConfigurationBuilder() {}
+ConfigurationBuilder::ConfigurationBuilder() = default;
 
 void ConfigurationBuilder::AddProperty(const std::string &key,
                                        const std::string &property) {

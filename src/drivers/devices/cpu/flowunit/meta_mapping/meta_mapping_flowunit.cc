@@ -31,8 +31,8 @@
     code;                                                                     \
   }
 
-MetaMappingFlowUnit::MetaMappingFlowUnit(){};
-MetaMappingFlowUnit::~MetaMappingFlowUnit(){};
+MetaMappingFlowUnit::MetaMappingFlowUnit() = default;
+MetaMappingFlowUnit::~MetaMappingFlowUnit() = default;
 
 modelbox::Status MetaMappingFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

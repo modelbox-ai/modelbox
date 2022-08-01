@@ -22,8 +22,8 @@
 #include "nppi_color_converter.h"
 #include "video_decode_common.h"
 
-VideoDecoderFlowUnit::VideoDecoderFlowUnit(){};
-VideoDecoderFlowUnit::~VideoDecoderFlowUnit(){};
+VideoDecoderFlowUnit::VideoDecoderFlowUnit() = default;
+VideoDecoderFlowUnit::~VideoDecoderFlowUnit() = default;
 
 modelbox::Status VideoDecoderFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

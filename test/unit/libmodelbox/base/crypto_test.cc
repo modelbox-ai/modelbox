@@ -32,11 +32,11 @@ namespace modelbox {
 
 class CryptoTest : public testing::Test {
  public:
-  CryptoTest() {}
+  CryptoTest() = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 TEST_F(CryptoTest, Base64) {

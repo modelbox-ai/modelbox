@@ -47,7 +47,7 @@ Status FlowSetupLog(std::shared_ptr<Configuration> config) {
   return STATUS_OK;
 }
 
-Flow::Flow(){};
+Flow::Flow() = default;
 
 Flow::~Flow() { Clear(); };
 

@@ -140,7 +140,7 @@ class Node : public NodeBase {
  public:
   Node();
 
-  ~Node() = default;
+  ~Node() override = default;
 
   /**
    * @brief Init the node
@@ -309,7 +309,6 @@ class Node : public NodeBase {
   std::shared_ptr<StatisticsItem> graph_stats_;
   SessionManager* session_mgr_{nullptr};
 
- protected:
   std::unordered_map<std::string, std::shared_ptr<Node>> port_match_at_node_;
   std::once_flag input_stream_count_update_flag_;
   std::shared_ptr<InputMatchStreamManager> input_match_stream_mgr_;

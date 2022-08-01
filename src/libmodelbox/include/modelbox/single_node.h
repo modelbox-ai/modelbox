@@ -57,7 +57,6 @@ class SingleNode : public Node {
   Status RecvData(const std::shared_ptr<DataHandler>& data);
   Status Process();
 
- private:
   std::shared_ptr<FlowUnitDataContext> data_context_;
   std::shared_ptr<Configuration> config_;
 };

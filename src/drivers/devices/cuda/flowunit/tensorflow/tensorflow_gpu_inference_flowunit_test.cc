@@ -41,7 +41,7 @@ class InferenceTensorflowCudaFlowUnitTest : public testing::Test {
       : driver_flow_(std::make_shared<DriverFlowTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -64,7 +64,7 @@ class InferenceTensorflowCudaFlowUnitTest : public testing::Test {
     SetUpTomlFiles(version);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     if (!has_cuda_ || !version_suitable_) {
       GTEST_SKIP();
     }

@@ -35,7 +35,6 @@ constexpr const char *FLOWUNIT_DESC_RECEIVE =
     "\t  The the output port buffer data type is char * .\n"
     "\t@Constraint: The flowuint 'httpserver_sync_receive' must be used pair "
     "with 'httpserver_sync_reply'.";
-;
 
 struct RequestInfo {
   web::http::method method;
@@ -53,7 +52,7 @@ class ReplyHandle {
     reply_func_ = reply_func;
   }
 
-  virtual ~ReplyHandle() {}
+  virtual ~ReplyHandle() = default;
   void Reply(uint16_t status, const concurrency::streams::istream &body_data,
              const utility::string_t &content_type) {
     reply_func_(status, body_data, content_type);
@@ -69,13 +68,15 @@ class ReplyHandle {
 class HTTPServerReceiveSync : public modelbox::FlowUnit {
  public:
   HTTPServerReceiveSync();
-  virtual ~HTTPServerReceiveSync();
+  ~HTTPServerReceiveSync() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   modelbox::Status HandleFunc(web::http::http_request request);
@@ -83,7 +84,6 @@ class HTTPServerReceiveSync : public modelbox::FlowUnit {
   modelbox::Status HandleTask(web::http::http_request request,
                               const RequestInfo &request_info);
 
- private:
   std::shared_ptr<std::atomic<uint64_t>> sum_cnt_ =
       std::make_shared<std::atomic<uint64_t>>(0);
   std::shared_ptr<web::http::experimental::listener::http_listener> listener_;

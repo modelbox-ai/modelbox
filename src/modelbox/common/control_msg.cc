@@ -30,7 +30,7 @@ ControlMsg::ControlMsg() {
   data_buff_->resize(CONTROL_MAX_MSG_LEN);
 }
 
-ControlMsg::~ControlMsg() {}
+ControlMsg::~ControlMsg() = default;
 
 size_t ControlMsg::GetRemainSpace() { return data_buff_->size() - data_len_; }
 
@@ -234,7 +234,7 @@ ControlMsgResult::ControlMsgResult() {
   SetMsgType(SERVER_CONTROL_MSG_TYPE_RESULT);
 }
 
-ControlMsgResult::~ControlMsgResult() {}
+ControlMsgResult::~ControlMsgResult() = default;
 void ControlMsgResult::SetResult(int result) { result_ = result; }
 
 int ControlMsgResult::GetResult() { return result_; }
@@ -266,7 +266,7 @@ modelbox::Status ControlMsgResult::UnSerializeMsg(uint8_t *buff,
 ControlMsgString::ControlMsgString() {
   SetMsgType(SERVER_CONTROL_MSG_TYPE_STRING);
 }
-ControlMsgString::~ControlMsgString() {}
+ControlMsgString::~ControlMsgString() = default;
 
 const std::string &ControlMsgString::GetString() { return str_; }
 
@@ -292,26 +292,26 @@ modelbox::Status ControlMsgString::UnSerializeMsg(uint8_t *buff,
 }
 
 ControlMsgHelp::ControlMsgHelp() { SetMsgType(SERVER_CONTROL_MSG_TYPE_HELP); }
-ControlMsgHelp::~ControlMsgHelp(){};
+ControlMsgHelp::~ControlMsgHelp() = default;
 
 ControlMsgStdout::ControlMsgStdout() {
   SetMsgType(SERVER_CONTROL_MSG_TYPE_OUTMSG);
 }
-ControlMsgStdout::~ControlMsgStdout() {}
+ControlMsgStdout::~ControlMsgStdout() = default;
 
 ControlMsgErrout::ControlMsgErrout() {
   SetMsgType(SERVER_CONTROL_MSG_TYPE_ERRMSG);
 }
-ControlMsgErrout::~ControlMsgErrout() {}
+ControlMsgErrout::~ControlMsgErrout() = default;
 
 ControlMsgCmd::ControlMsgCmd() { SetMsgType(SERVER_CONTROL_MSG_TYPE_CMD); }
 
-ControlMsgCmd::~ControlMsgCmd() {}
+ControlMsgCmd::~ControlMsgCmd() = default;
 
 void ControlMsgCmd::SetArgs(int argc, char *argv[]) {
   argv_.clear();
   for (int i = 0; i < argc; i++) {
-    argv_.push_back(argv[i]);
+    argv_.emplace_back(argv[i]);
   }
 }
 
@@ -408,7 +408,7 @@ modelbox::Status ControlMsgCmd::UnSerializeMsg(uint8_t *buff, size_t buff_len) {
 
 ControlMsgError::ControlMsgError() { SetMsgType(SERVER_CONTROL_MSG_TYPE_ERR); }
 
-ControlMsgError::~ControlMsgError() {}
+ControlMsgError::~ControlMsgError() = default;
 
 void ControlMsgError::SetError(int err_code, const std::string &err_msg) {
   err_code_ = err_code;

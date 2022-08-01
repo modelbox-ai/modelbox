@@ -37,7 +37,7 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
   DataHandler(BindNodeType type = BUFFERLIST_NODE,
               std::shared_ptr<ModelBoxEngine> env = nullptr);
 
-  ~DataHandler();
+  virtual ~DataHandler();
 
   /**
    * @brief close data handler, when data handler is closd,no data can be pushed
@@ -49,12 +49,11 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
    * @param data data handler which stores data
    * @return  return result
    */
-  Status PushData(std::shared_ptr<DataHandler> &data, const std::string key);
+  Status PushData(std::shared_ptr<DataHandler> &data, std::string key);
 
-  Status PushData(std::shared_ptr<Buffer> &data, const std::string key);
+  Status PushData(std::shared_ptr<Buffer> &data, std::string key);
 
-  Status PushData(std::shared_ptr<BufferList> &data,
-                               const std::string key);
+  Status PushData(std::shared_ptr<BufferList> &data, std::string key);
   /**
    * @brief push meta to data handler
    * @param key  key of meta info
@@ -155,7 +154,6 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
   std::shared_ptr<DataHandler> GetOutputData(
       std::shared_ptr<DynamicGraph> &dynamic_graph);
 
- private:
   friend class SingleNode;
   friend class ModelBoxEngine;
   friend class InputContext;

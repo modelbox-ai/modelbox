@@ -25,14 +25,14 @@ namespace modelbox {
 class RegisterFlowUnit : public FlowUnit {
  public:
   RegisterFlowUnit(const std::string &name);
-  ~RegisterFlowUnit();
+  ~RegisterFlowUnit() override;
 
-  Status Open(const std::shared_ptr<Configuration> &config);
+  Status Open(const std::shared_ptr<Configuration> &config) override;
 
   /* class when unit is close */
-  Status Close();
+  Status Close() override;
 
-  Status Process(std::shared_ptr<DataContext> data_context);
+  Status Process(std::shared_ptr<DataContext> data_context) override;
 
   void SetCallBack(
       std::function<Status(std::shared_ptr<DataContext>)> callback);
@@ -51,14 +51,14 @@ class RegisterFlowUnitFactory : public modelbox::FlowUnitFactory {
       const std::string &unit_name, const std::vector<std::string> &inputs,
       const std::vector<std::string> &outputs,
       const std::function<Status(std::shared_ptr<DataContext>)> &callback);
-  virtual ~RegisterFlowUnitFactory() = default;
+  ~RegisterFlowUnitFactory() override = default;
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
-  FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override {
     return desc_map_;
   }
 
-  const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
+  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
   std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
       const std::string &name, const std::string &unit_type) override;
 

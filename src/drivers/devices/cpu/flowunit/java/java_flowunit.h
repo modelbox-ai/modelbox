@@ -76,7 +76,7 @@ class JavaFlowUnitFactory : public modelbox::FlowUnitFactory {
     return java_flowunit;
   };
 
-  const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
+  std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
 
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
   FlowUnitProbe() {

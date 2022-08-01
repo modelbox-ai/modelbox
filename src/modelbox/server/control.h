@@ -74,19 +74,19 @@ class ControlStream : public OutStream {
 class ControlOutStream : public ControlStream {
  public:
   ControlOutStream();
-  virtual ~ControlOutStream();
+  ~ControlOutStream() override;
 
  protected:
-  void ProcessStream(OStream *st);
+  void ProcessStream(OStream *st) override;
 };
 
 class ControlErrStream : public ControlStream {
  public:
   ControlErrStream();
-  virtual ~ControlErrStream();
+  ~ControlErrStream() override;
 
  protected:
-  void ProcessStream(OStream *st);
+  void ProcessStream(OStream *st) override;
 };
 
 }  // namespace modelbox

@@ -22,8 +22,8 @@
 #include "modelbox/device/ascend/device_ascend.h"
 #include "virtualdriver_inference.h"
 
-AtcInferenceFlowUnit::AtcInferenceFlowUnit(){};
-AtcInferenceFlowUnit::~AtcInferenceFlowUnit(){};
+AtcInferenceFlowUnit::AtcInferenceFlowUnit() = default;
+AtcInferenceFlowUnit::~AtcInferenceFlowUnit() = default;
 
 modelbox::Status AtcInferenceFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

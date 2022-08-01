@@ -46,7 +46,7 @@ typedef struct tag_OBSDownloadInfo {
 class ObsSourceParser : public DataSourceParserPlugin {
  public:
   ObsSourceParser();
-  virtual ~ObsSourceParser();
+  ~ObsSourceParser() override;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -85,7 +85,7 @@ class ObsSourceParser : public DataSourceParserPlugin {
 class ObsSourceParserFactory : public modelbox::DriverFactory {
  public:
   ObsSourceParserFactory() = default;
-  virtual ~ObsSourceParserFactory() = default;
+  ~ObsSourceParserFactory() override = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> parser =

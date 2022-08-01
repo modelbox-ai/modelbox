@@ -33,7 +33,7 @@ class InputVirtualNode : public Node {
   InputVirtualNode(const std::string& device_name, const std::string& device_id,
                    std::shared_ptr<DeviceManager> device_manager);
 
-  virtual ~InputVirtualNode() override;
+  ~InputVirtualNode() override;
 
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,
@@ -67,7 +67,7 @@ class OutputVirtualNode : public Node {
                     const std::string& device_id,
                     std::shared_ptr<DeviceManager> device_manager);
 
-  virtual ~OutputVirtualNode();
+  ~OutputVirtualNode() override;
 
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,
@@ -130,7 +130,7 @@ class OutputUnmatchVirtualNode : public Node {
                            const std::string& device_id,
                            std::shared_ptr<DeviceManager> device_manager);
 
-  virtual ~OutputUnmatchVirtualNode();
+  ~OutputUnmatchVirtualNode() override;
 
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,

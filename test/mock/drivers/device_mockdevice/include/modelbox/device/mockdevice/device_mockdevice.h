@@ -43,28 +43,31 @@ class FakeDeviceMemoryManager : public DeviceMemoryManager {
 
   std::shared_ptr<DeviceMemory> MakeDeviceMemory(
       const std::shared_ptr<Device> &device, std::shared_ptr<void> mem_ptr,
-      size_t size) {
+      size_t size) override {
     return nullptr;
   };
 
-  void *Malloc(size_t size, uint32_t mem_flags = 0) { return nullptr; };
+  void *Malloc(size_t size, uint32_t mem_flags = 0) override {
+    return nullptr;
+  };
 
-  void Free(void *mem_ptr, uint32_t mem_flags = 0){};
+  void Free(void *mem_ptr, uint32_t mem_flags = 0) override{};
 
   Status Copy(void *dest, size_t dest_size, const void *src_buffer,
-              size_t src_size, DeviceMemoryCopyKind kind) {
+              size_t src_size, DeviceMemoryCopyKind kind) override {
     return STATUS_SUCCESS;
   }
 
-  Status DeviceMemoryCopy(
-      const std::shared_ptr<DeviceMemory> &dest_memory, size_t dest_offset,
-      const std::shared_ptr<const DeviceMemory> &src_memory, size_t src_offset,
-      size_t src_size,
-      DeviceMemoryCopyKind copy_kind = DeviceMemoryCopyKind::FromHost) {
+  Status DeviceMemoryCopy(const std::shared_ptr<DeviceMemory> &dest_memory,
+                          size_t dest_offset,
+                          const std::shared_ptr<const DeviceMemory> &src_memory,
+                          size_t src_offset, size_t src_size,
+                          DeviceMemoryCopyKind copy_kind =
+                              DeviceMemoryCopyKind::FromHost) override {
     return STATUS_SUCCESS;
   };
 
-  Status GetDeviceMemUsage(size_t *free, size_t *total) const {
+  Status GetDeviceMemUsage(size_t *free, size_t *total) const override {
     return STATUS_SUCCESS;
   };
 };
@@ -77,7 +80,7 @@ class MockDevice : public Device {
             [](size_t size, const std::string &user_id) { return nullptr; });
   };
 
-  virtual ~MockDevice() = default;
+  ~MockDevice() override = default;
 
   std::vector<std::shared_ptr<DeviceMemory>> GetDeviceMemories() {
     return std::vector<std::shared_ptr<DeviceMemory>>();
@@ -103,7 +106,7 @@ class MockDeviceFactory : public DeviceFactory {
         });
   };
 
-  virtual ~MockDeviceFactory(){};
+  ~MockDeviceFactory() override = default;
 
   using DescMap = std::map<std::string, std::shared_ptr<DeviceDesc>>;
   MOCK_METHOD(DescMap, DeviceProbe, ());
@@ -116,8 +119,8 @@ class MockDeviceFactory : public DeviceFactory {
 
 class MockDriverDevice : public modelbox::MockDriver {
  public:
-  MockDriverDevice(){};
-  virtual ~MockDriverDevice(){};
+  MockDriverDevice() = default;
+  ~MockDriverDevice() override = default;
 
   static MockDriverDevice *Instance() { return &desc_; };
 

@@ -217,7 +217,6 @@ class FlowGraphDesc {
   std::list<std::shared_ptr<FlowNodeDesc>> node_desc_list_;
   Status build_status_{STATUS_FAULT};
 
- private:
   std::shared_ptr<Configuration> GetConfig();
 
   std::shared_ptr<GCGraph> GetGCGraph();
@@ -233,7 +232,6 @@ class FlowGraphDesc {
   std::shared_ptr<DeviceManager> device_mgr_;
   std::shared_ptr<FlowUnitManager> flowunit_mgr_;
 
- private:
   void AddOutput(const std::string &output_name, const std::string &device,
                  std::shared_ptr<FlowPortDesc> source_node_port);
 

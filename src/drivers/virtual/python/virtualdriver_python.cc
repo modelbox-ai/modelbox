@@ -202,7 +202,6 @@ modelbox::Status VirtualPythonFlowUnitFactory::FillInput(
     if (input_item_table.empty()) {
       MBLOG_ERROR << "the key " << key << " is not found in config file.";
       return modelbox::STATUS_BADCONF;
-      ;
     }
 
     auto name_index = key + ".name";
@@ -210,7 +209,6 @@ modelbox::Status VirtualPythonFlowUnitFactory::FillInput(
     if (input_name.empty()) {
       MBLOG_ERROR << "the key " << key << " should have key name.";
       return modelbox::STATUS_BADCONF;
-      ;
     }
 
     auto device_index = key + ".device";

@@ -50,14 +50,16 @@ const int RGB_CHANNELS = 3;
 class CVResizeFlowUnit : public modelbox::FlowUnit {
  public:
   CVResizeFlowUnit();
-  virtual ~CVResizeFlowUnit();
+  ~CVResizeFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
   /* run when processing data */
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   uint32_t dest_width_{224};

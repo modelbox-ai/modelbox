@@ -24,8 +24,8 @@
 #include "modelbox/flowunit_api_helper.h"
 #include "source_context.h"
 
-DataSourceParserFlowUnit::DataSourceParserFlowUnit(){};
-DataSourceParserFlowUnit::~DataSourceParserFlowUnit(){};
+DataSourceParserFlowUnit::DataSourceParserFlowUnit() = default;
+DataSourceParserFlowUnit::~DataSourceParserFlowUnit() = default;
 
 modelbox::Status DataSourceParserFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

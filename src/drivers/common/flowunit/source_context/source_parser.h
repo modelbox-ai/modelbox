@@ -38,6 +38,7 @@ class SourceParser {
   virtual RetryStatus NeedRetry(std::string &stream_type,
                                 modelbox::Status &last_status,
                                 int32_t retry_times) = 0;
+  virtual ~SourceParser() = default;
 };
 }  // namespace modelbox
 

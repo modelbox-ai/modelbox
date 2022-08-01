@@ -19,8 +19,8 @@
 #include "modelbox/flowunit_api_helper.h"
 #include "normalize_flowunit_cu.h"
 
-NormalizeFlowUnitV2::NormalizeFlowUnitV2(){};
-NormalizeFlowUnitV2::~NormalizeFlowUnitV2(){};
+NormalizeFlowUnitV2::NormalizeFlowUnitV2() = default;
+NormalizeFlowUnitV2::~NormalizeFlowUnitV2() = default;
 
 constexpr int COLOR_CHANNEL_COUNT = 3;
 constexpr int GRAY_CHANNEL_COUNT = 1;

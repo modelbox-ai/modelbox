@@ -192,7 +192,7 @@ void NodeBase::Shutdown() {
   event_port_->Shutdown();
 }
 
-Node::Node() {}
+Node::Node() = default;
 
 Status Node::Init(const std::set<std::string>& input_port_names,
                   const std::set<std::string>& output_port_names,

@@ -32,16 +32,16 @@ class ExternalDataSelect;
 
 class ExternalDataMap : public SessionIO {
  public:
-  virtual ~ExternalDataMap() = default;
+  ~ExternalDataMap() override = default;
   virtual std::shared_ptr<BufferList> CreateBufferList() = 0;
-  virtual Status SetOutputMeta(const std::string& port_name,
-                               std::shared_ptr<DataMeta> meta) = 0;
-  virtual Status Send(const std::string& port_name,
-                      std::shared_ptr<BufferList> buffer_list) = 0;
-  virtual Status Recv(OutputBufferList& map_buffer_list,
-                      int32_t timeout = 0) = 0;
-  virtual Status Close() = 0;
-  virtual Status Shutdown() = 0;
+  Status SetOutputMeta(const std::string& port_name,
+                       std::shared_ptr<DataMeta> meta) override = 0;
+  Status Send(const std::string& port_name,
+              std::shared_ptr<BufferList> buffer_list) override = 0;
+  Status Recv(OutputBufferList& map_buffer_list,
+              int32_t timeout = 0) override = 0;
+  Status Close() override = 0;
+  Status Shutdown() override = 0;
   virtual std::shared_ptr<SessionContext> GetSessionContext() = 0;
   virtual std::shared_ptr<Configuration> GetSessionConfig() = 0;
   virtual std::shared_ptr<FlowUnitError> GetLastError() = 0;
@@ -54,7 +54,7 @@ class ExternalDataMapImpl
   ExternalDataMapImpl(std::shared_ptr<Node> input_node,
                       std::shared_ptr<Stream> init_stream);
 
-  virtual ~ExternalDataMapImpl() = default;
+  ~ExternalDataMapImpl() override = default;
 
   std::shared_ptr<BufferList> CreateBufferList() override;
 

@@ -31,13 +31,13 @@ constexpr const char *DEFAULT_MODELBOX_CONF = "${MODELBOX_ROOT}/usr/local/etc/mo
 class ToolCommandServer : public ToolCommand {
  public:
   ToolCommandServer();
-  virtual ~ToolCommandServer();
+  ~ToolCommandServer() override;
 
-  int Run(int argc, char *argv[]);
-  std::string GetHelp();
+  int Run(int argc, char *argv[]) override;
+  std::string GetHelp() override;
 
-  std::string GetCommandName() { return "server"; };
-  std::string GetCommandDesc() { return SERVER_DESC; };
+  std::string GetCommandName() override { return "server"; };
+  std::string GetCommandDesc() override { return SERVER_DESC; };
 
  private:
   modelbox::Status InitClient(const std::string &connect_url);

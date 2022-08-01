@@ -53,7 +53,7 @@ class ServerPlugin {
 class DlPlugin : public ServerPlugin {
  public:
   DlPlugin(const std::string &plugin_path);
-  virtual ~DlPlugin();
+  ~DlPlugin() override;
 
   modelbox::Status Init(
       std::shared_ptr<modelbox::Configuration> config) override;
@@ -73,7 +73,7 @@ class JSCtx;
 class JsPlugin : public ServerPlugin {
  public:
   JsPlugin(const std::string &plugin_path);
-  virtual ~JsPlugin();
+  ~JsPlugin() override;
 
   modelbox::Status Init(
       std::shared_ptr<modelbox::Configuration> config) override;
@@ -81,7 +81,7 @@ class JsPlugin : public ServerPlugin {
   modelbox::Status Stop() override;
 
   void RegisterStatsNotify(
-      const std::string path_pattern,
+      std::string path_pattern,
       const std::set<modelbox::StatisticsNotifyType> &type_list,
       const std::string &func_name, void *priv_data, size_t delay = 0,
       size_t interval = 0);

@@ -37,7 +37,7 @@ class MeanGpuFlowUnitTest : public testing::Test {
   MeanGpuFlowUnitTest() : driver_flow_(std::make_shared<DriverFlowTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -49,7 +49,7 @@ class MeanGpuFlowUnitTest : public testing::Test {
     EXPECT_EQ(ret, STATUS_OK);
   }
 
-  virtual void TearDown() { driver_flow_->Clear(); };
+  void TearDown() override { driver_flow_->Clear(); };
 
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
 

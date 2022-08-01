@@ -35,7 +35,7 @@ constexpr const char *GRAPH_KEY_QUEUE_SIZE = "queue_size";
 constexpr const char *GRAPH_KEY_BATCH_SIZE = "batch_size";
 constexpr const char *GRAPH_KEY_CHECK_NODE_OUTPUT = "need_check_output";
 
-Graph::Graph() : scheduler_(nullptr), is_stop_(false) {}
+Graph::Graph() : scheduler_(nullptr) {}
 
 Graph::~Graph() {
   if (!is_stop_) {
@@ -274,8 +274,8 @@ std::shared_ptr<OutPort> Graph::GetOutPort(const std::string &nodeName,
   return node->GetOutputPort(portName);
 }
 
-const std::unordered_map<std::shared_ptr<NodeBase>,
-                         std::vector<std::shared_ptr<IPort>>>
+std::unordered_map<std::shared_ptr<NodeBase>,
+                   std::vector<std::shared_ptr<IPort>>>
 Graph::GetNotifyPort() const {
   std::unordered_map<std::shared_ptr<NodeBase>,
                      std::vector<std::shared_ptr<IPort>>>

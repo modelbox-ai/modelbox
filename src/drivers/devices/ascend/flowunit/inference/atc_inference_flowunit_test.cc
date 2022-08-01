@@ -39,7 +39,7 @@ class InferenceAscendFlowUnitTest : public testing::Test {
   InferenceAscendFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     // Test ascend runtime
     int32_t count = 0;
     auto dsmi_ret = dsmi_get_device_count(&count);
@@ -69,7 +69,7 @@ class InferenceAscendFlowUnitTest : public testing::Test {
     CopyFile(src_toml_en, dest_toml_file_en, true);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     remove(dest_model_file.c_str());
     remove(dest_toml_file.c_str());
     remove(dest_model_file_en.c_str());
