@@ -104,7 +104,7 @@ Status FlowUnitDesc::AddFlowUnitOption(const FlowUnitOption &flowunit_option) {
 }
 
 Status FlowUnitDesc::CheckGroupType(const std::string &group_type) {
-  if (!std::regex_match(group_type, modelbox::REGROUPTYPE)) {
+  if (!std::regex_match(group_type, REGROUPTYPE)) {
     auto err_msg = group_type +
                    " is not match, you can use a-z, A-Z, 1-9, _ and uppercase "
                    "the first character.";
@@ -113,7 +113,7 @@ Status FlowUnitDesc::CheckGroupType(const std::string &group_type) {
   }
 
   if (group_type.find("/") == std::string::npos) {
-    return modelbox::STATUS_SUCCESS;
+    return STATUS_SUCCESS;
   }
 
   if (group_type.find_first_of("/") != group_type.find_last_of("/")) {
@@ -122,7 +122,7 @@ Status FlowUnitDesc::CheckGroupType(const std::string &group_type) {
     return {STATUS_INVALID, err_msg};
   }
 
-  return modelbox::STATUS_SUCCESS;
+  return STATUS_SUCCESS;
 }
 
 Status FlowUnitDesc::CheckInputDuplication(

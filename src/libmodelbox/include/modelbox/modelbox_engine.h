@@ -145,10 +145,9 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
   std::shared_ptr<DataHandler> ExecuteBufferListNode(
       const std::string &name, std::map<std::string, std::string> &config_map,
       const std::shared_ptr<DataHandler> &buffers);
-  Status SendExternalData(
-      std::shared_ptr<modelbox::ExternalDataMap> &extern_datamap,
-      std::shared_ptr<modelbox::BufferList> &buffer_list,
-      const std::shared_ptr<GCNode> &gcnode);
+  Status SendExternalData(std::shared_ptr<ExternalDataMap> &extern_datamap,
+                          std::shared_ptr<BufferList> &buffer_list,
+                          const std::shared_ptr<GCNode> &gcnode);
   std::shared_ptr<GCNode> ProcessOutputHandler(
       const std::shared_ptr<DataHandler> &data_handler,
       std::shared_ptr<GCNode> &gcnode, std::shared_ptr<GCGraph> &root_graph);

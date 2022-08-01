@@ -27,8 +27,6 @@
 constexpr const char* REQUEST_URL_HTTPS = "https://localhost:54321";
 constexpr const char* REQUEST_URL_HTTP = "http://localhost:54321";
 
-using ::testing::_;
-
 namespace modelbox {
 class HttpServerSyncFlowUnitTest : public testing::Test {
  public:

@@ -328,7 +328,7 @@ void FlowUnitExecData::MakeCopyForUserOutput() {
 }
 
 Status FlowUnitExecData::SaveProcessOneToOne(
-    std::shared_ptr<modelbox::BufferListMap> parent_data, size_t data_count,
+    std::shared_ptr<BufferListMap> parent_data, size_t data_count,
     bool data_in_one_port) {
   // input n, output n, and inherit one to one
   std::vector<std::shared_ptr<BufferProcessInfo>> process_info_list;
@@ -370,7 +370,7 @@ Status FlowUnitExecData::SaveProcessOneToOne(
 }
 
 Status FlowUnitExecData::SaveProcessNToM(
-    std::shared_ptr<modelbox::BufferListMap> parent_data) {
+    std::shared_ptr<BufferListMap> parent_data) {
   // input n, output m
   auto process_info = std::make_shared<BufferProcessInfo>();
   for (auto &in_item : *parent_data) {

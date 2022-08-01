@@ -38,8 +38,6 @@
 #include "securec.h"
 #include "server.h"
 
-using namespace modelbox;
-
 #define MODELBOX_SERVER_LOG_PATH "/var/log/modelbox/modelbox.log"
 #define MODELBOX_SERVER_PID_FILE "/var/run/modelbox.pid"
 
@@ -86,7 +84,7 @@ static void showhelp() {
   /* clang-format on */
 }
 
-void modelbox_stop() { kServerTimer->Stop(); }
+void modelbox_stop() { modelbox::kServerTimer->Stop(); }
 
 static void modelbox_sig_handler(int volatile sig_no, siginfo_t *sig_info,
                                  void *volatile ptr) {
@@ -124,7 +122,8 @@ static void modelbox_sig_handler(int volatile sig_no, siginfo_t *sig_info,
 }
 
 static int modelbox_reg_signal() {
-  if (modelbox_sig_register(g_sig_list, g_sig_num, modelbox_sig_handler) != 0) {
+  if (modelbox::modelbox_sig_register(g_sig_list, g_sig_num,
+                                      modelbox_sig_handler) != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
   }
@@ -133,20 +132,21 @@ static int modelbox_reg_signal() {
 }
 
 int modelbox_init_log() {
-  std::shared_ptr<ModelboxServerLogger> logger =
-      std::make_shared<ModelboxServerLogger>();
+  std::shared_ptr<modelbox::ModelboxServerLogger> logger =
+      std::make_shared<modelbox::ModelboxServerLogger>();
 
-  auto log_size =
-      modelbox::GetBytesFromReadable(kConfig->GetString("log.size", "64MB"));
-  auto log_num = kConfig->GetUint32("log.num", 64);
-  auto log_path = kConfig->GetString("log.path", MODELBOX_SERVER_LOG_PATH);
-  auto log_screen = kConfig->GetBool("log.screen", false);
-  auto log_level = kConfig->GetString("log.level", "INFO");
+  auto log_size = modelbox::GetBytesFromReadable(
+      modelbox::kConfig->GetString("log.size", "64MB"));
+  auto log_num = modelbox::kConfig->GetUint32("log.num", 64);
+  auto log_path =
+      modelbox::kConfig->GetString("log.path", MODELBOX_SERVER_LOG_PATH);
+  auto log_screen = modelbox::kConfig->GetBool("log.screen", false);
+  auto log_level = modelbox::kConfig->GetString("log.level", "INFO");
   if (log_screen) {
     kVerbose = true;
   }
 
-  log_path = modelbox_full_path(log_path);
+  log_path = modelbox::modelbox_full_path(log_path);
 
   if (logger->Init(log_path, log_size, log_num, kVerbose) == false) {
     fprintf(stderr, "init logger failed.\n");
@@ -165,8 +165,9 @@ int modelbox_init() {
     return 1;
   }
 
-  if (LoadConfig(kConfigPath) == false) {
-    fprintf(stderr, "can not load configuration : %s \n", kConfigPath.c_str());
+  if (modelbox::LoadConfig(modelbox::kConfigPath) == false) {
+    fprintf(stderr, "can not load configuration : %s \n",
+            modelbox::kConfigPath.c_str());
     return 1;
   }
 
@@ -175,13 +176,15 @@ int modelbox_init() {
   }
 
   /* if in standalone mode */
-  if (modelbox_root_dir().length() > 0) {
-    std::string default_scanpath = modelbox_full_path(
-        std::string(MODELBOX_ROOT_VAR) + MODELBOX_DEFAULT_DRIVER_PATH);
+  if (modelbox::modelbox_root_dir().length() > 0) {
+    std::string default_scanpath =
+        modelbox::modelbox_full_path(std::string(modelbox::MODELBOX_ROOT_VAR) +
+                                     MODELBOX_DEFAULT_DRIVER_PATH);
     modelbox::Drivers::SetDefaultScanPath(default_scanpath);
 
-    std::string default_driver_info_path = modelbox_full_path(
-        std::string(MODELBOX_ROOT_VAR) + "/var/run/modelbox-driver-info");
+    std::string default_driver_info_path =
+        modelbox::modelbox_full_path(std::string(modelbox::MODELBOX_ROOT_VAR) +
+                                     "/var/run/modelbox-driver-info");
     modelbox::Drivers::SetDefaultInfoPath(default_driver_info_path);
   }
 
@@ -209,7 +212,7 @@ void modelbox_hung_check() {
     if (schedule_status != "blocking") {
       continue;
     }
-    MBLOG_WARN << "flow " << name <<  " is blocking";
+    MBLOG_WARN << "flow " << name << " is blocking";
 
     is_status_ok = 0;
   }
@@ -221,7 +224,7 @@ void modelbox_hung_check() {
   app_monitor_heartbeat();
 }
 
-int modelbox_run(std::shared_ptr<Server> server) {
+int modelbox_run(std::shared_ptr<modelbox::Server> server) {
   auto ret = server->Init();
   if (!ret) {
     MBLOG_ERROR << "server init failed !";
@@ -234,7 +237,8 @@ int modelbox_run(std::shared_ptr<Server> server) {
     return 1;
   }
 
-  std::shared_ptr<TimerTask> heart_beattask = std::make_shared<TimerTask>();
+  std::shared_ptr<modelbox::TimerTask> heart_beattask =
+      std::make_shared<modelbox::TimerTask>();
   heart_beattask->Callback(modelbox_hung_check);
 
   auto future = std::async(std::launch::async, [heart_beattask]() {
@@ -244,24 +248,25 @@ int modelbox_run(std::shared_ptr<Server> server) {
 
     sleep(1);
     MBLOG_INFO << "start manager heartbeat";
-    kServerTimer->Schedule(heart_beattask, 0,
-                           1000 * app_monitor_heartbeat_interval(), true);
+    modelbox::kServerTimer->Schedule(
+        heart_beattask, 0, 1000 * app_monitor_heartbeat_interval(), true);
   });
 
   // run timer loop.
-  kServerTimer->Run();
+  modelbox::kServerTimer->Run();
 
   server->Stop();
   return 0;
 }
 
 int GetConfig(const std::string key) {
-  if (LoadConfig(kConfigPath) == false) {
-    fprintf(stderr, "can not load configuration : %s \n", kConfigPath.c_str());
+  if (modelbox::LoadConfig(modelbox::kConfigPath) == false) {
+    fprintf(stderr, "can not load configuration : %s \n",
+            modelbox::kConfigPath.c_str());
     return 1;
   }
 
-  auto values = kConfig->GetStrings(key);
+  auto values = modelbox::kConfig->GetStrings(key);
   if (values.size() <= 0) {
     fprintf(stderr, "Not found key %s\n", key.c_str());
     return 1;
@@ -284,7 +289,7 @@ int CheckPort(const std::string host) {
   std::string ip;
   std::string port;
 
-  auto ret_val = SplitIPPort(host, ip, port);
+  auto ret_val = modelbox::SplitIPPort(host, ip, port);
   if (!ret_val) {
     std::cerr << ret_val.Errormsg() << std::endl;
     return 1;
@@ -309,7 +314,9 @@ int CheckPort(const std::string host) {
     if (errno == EADDRINUSE) {
       /* in use */
       return 2;
-    } else if (errno == EACCES) {
+    }
+
+    if (errno == EACCES) {
       /* no permission */
       return 3;
     }
@@ -343,7 +350,7 @@ int main(int argc, char *argv[])
           get_conf_key = optarg;
           break;
         case MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT:
-          printf("%s\n", modelbox_root_dir().c_str());
+          printf("%s\n", modelbox::modelbox_root_dir().c_str());
           return 0;
           break;
         default:
@@ -352,7 +359,7 @@ int main(int argc, char *argv[])
           break;
       }
       case 'p':
-        pidfile = modelbox_full_path(optarg);
+        pidfile = modelbox::modelbox_full_path(optarg);
         break;
       case 'V':
         kVerbose = true;
@@ -364,7 +371,7 @@ int main(int argc, char *argv[])
         showhelp();
         return 1;
       case 'c':
-        kConfigPath = modelbox_full_path(optarg);
+        modelbox::kConfigPath = modelbox::modelbox_full_path(optarg);
         break;
       case 'v':
         printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
@@ -393,7 +400,7 @@ int main(int argc, char *argv[])
   /* 忽略SIGPIPE，避免发送缓冲区慢导致的进程退出 */
   signal(SIGPIPE, SIG_IGN);
 
-  if (modelbox_create_pid(pidfile.c_str()) != 0) {
+  if (modelbox::modelbox_create_pid(pidfile.c_str()) != 0) {
     fprintf(stderr, "create pid file failed.\n");
     return 1;
   }
@@ -403,9 +410,9 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  MBLOG_INFO << "modelbox config path : " << kConfigPath;
-  auto server = std::make_shared<Server>(kConfig);
-  kServerTimer->Start();
+  MBLOG_INFO << "modelbox config path : " << modelbox::kConfigPath;
+  auto server = std::make_shared<modelbox::Server>(modelbox::kConfig);
+  modelbox::kServerTimer->Start();
 
   if (modelbox_run(server) != 0) {
     return 1;

@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-
+#include <cuda_runtime.h>
 #include <securec.h>
 
-#include <cuda_runtime.h>
 #include <functional>
 #include <future>
 #include <opencv2/opencv.hpp>
 #include <random>
 #include <thread>
 
-#include "modelbox/base/log.h"
-#include "modelbox/base/utils.h"
-#include "modelbox/buffer.h"
 #include "driver_flow_test.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "modelbox/base/log.h"
+#include "modelbox/base/utils.h"
+#include "modelbox/buffer.h"
 #include "test/mock/minimodelbox/mockflow.h"
-
-using ::testing::_;
 
 namespace modelbox {
 class NppiCropFlowUnitTest : public testing::Test {

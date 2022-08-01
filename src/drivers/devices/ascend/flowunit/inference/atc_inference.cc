@@ -22,8 +22,6 @@
 
 #include <cstdint>
 
-using namespace modelbox;
-
 modelbox::Status AtcInference::Init(
     const std::string &model_file,
     const std::shared_ptr<modelbox::Configuration> &config,
@@ -32,33 +30,33 @@ modelbox::Status AtcInference::Init(
     std::shared_ptr<modelbox::Drivers> drivers_ptr) {
   model_file_ = model_file;
   auto ret = ParseConfig(config);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   auto acl_ret = aclrtSetDevice(device_id_);
   if (acl_ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "aclrtSetDevice failed, ret " << acl_ret;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   ret = LoadModel(drivers_ptr, config);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   ret = GetModelDesc();
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   ReadModelInfo();
   ret = CheckModelIO(unit_input_list, unit_output_list);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status AtcInference::ParseConfig(
@@ -66,7 +64,7 @@ modelbox::Status AtcInference::ParseConfig(
   device_id_ = config->GetInt32("deviceid");
   batch_size_ = config->GetInt32("batch_size", 1);
   MBLOG_INFO << "Model batch size " << batch_size_;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status AtcInference::LoadModel(
@@ -77,7 +75,7 @@ modelbox::Status AtcInference::LoadModel(
   if (modelbox::STATUS_SUCCESS !=
       model_decrypt.Init(model_file_, drivers_ptr, config)) {
     MBLOG_ERROR << "init model fail";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   if (model_decrypt.GetModelState() == ModelDecryption::MODEL_STATE_ENCRYPT) {
@@ -86,7 +84,7 @@ modelbox::Status AtcInference::LoadModel(
         model_decrypt.GetModelSharedBuffer(model_len);
     if (!modelBuf) {
       MBLOG_ERROR << "GetDecryptModelBuffer fail";
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
     ret = aclmdlLoadFromMem((char *)(modelBuf.get()), model_len, &model_id_);
   } else if (model_decrypt.GetModelState() ==
@@ -96,28 +94,28 @@ modelbox::Status AtcInference::LoadModel(
   if (ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "aclmdlLoadFromFile failed, ret " << ret
                 << ", model:" << model_file_;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   is_model_load_ = true;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status AtcInference::GetModelDesc() {
   auto desc = aclmdlCreateDesc();
   if (desc == nullptr) {
     MBLOG_ERROR << "aclmdlCreateDesc failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   model_desc_.reset(desc, [](aclmdlDesc *desc) { aclmdlDestroyDesc(desc); });
   auto ret = aclmdlGetDesc(model_desc_.get(), model_id_);
   if (ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "aclmdlGetDesc failed, model:" << model_file_;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status AtcInference::CheckModelIO(
@@ -153,7 +151,7 @@ modelbox::Status AtcInference::CheckModelIO(
     }
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 void AtcInference::ReadModelInfo() {
@@ -281,13 +279,14 @@ std::string AtcInference::GetDataTypeStr(aclDataType data_type) {
   return std::to_string(data_type);
 }
 
-ModelBoxDataType AtcInference::GetModelBoxDataType(aclDataType data_type) {
+modelbox::ModelBoxDataType AtcInference::GetModelBoxDataType(
+    aclDataType data_type) {
   auto item = data_type_flow_.find(data_type);
   if (item != data_type_flow_.end()) {
     return item->second;
   }
 
-  return ModelBoxDataType::MODELBOX_TYPE_INVALID;
+  return modelbox::ModelBoxDataType::MODELBOX_TYPE_INVALID;
 }
 
 modelbox::Status AtcInference::Infer(
@@ -296,25 +295,25 @@ modelbox::Status AtcInference::Infer(
   if (acl_ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "aclrtSetDevice failed, device_id " << device_id_ << ",ret "
                 << acl_ret;
-    return {STATUS_FAULT, "Set device failed"};
+    return {modelbox::STATUS_FAULT, "Set device failed"};
   }
 
   auto input = CreateDataSet(data_ctx->Input(), model_input_list_);
   if (input == nullptr) {
     MBLOG_ERROR << "Create input for infer failed";
-    return {STATUS_FAULT, "Create input failed"};
+    return {modelbox::STATUS_FAULT, "Create input failed"};
   }
 
   auto ret = PrepareOutput(data_ctx);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Prepare output failed";
-    return {STATUS_FAULT, "Prepare output failed"};
+    return {modelbox::STATUS_FAULT, "Prepare output failed"};
   }
 
   auto output = CreateDataSet(data_ctx->Output(), model_output_list_);
   if (output == nullptr) {
     MBLOG_ERROR << "Create output for infer failed";
-    return {STATUS_FAULT, "Create output failed"};
+    return {modelbox::STATUS_FAULT, "Create output failed"};
   }
 
   acl_ret = ACL_ERROR_NONE;
@@ -327,10 +326,10 @@ modelbox::Status AtcInference::Infer(
 
   if (acl_ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "aclmdlExecute failed, ret " << acl_ret;
-    return {STATUS_FAULT, "Execute acl infer failed"};
+    return {modelbox::STATUS_FAULT, "Execute acl infer failed"};
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status AtcInference::PrepareOutput(
@@ -346,7 +345,7 @@ modelbox::Status AtcInference::PrepareOutput(
     buffer_list->Set("type", output_data_type_[i]);
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 std::shared_ptr<aclmdlDataset> AtcInference::CreateDataSet(
@@ -396,20 +395,20 @@ std::shared_ptr<aclmdlDataset> AtcInference::CreateDataSet(
 
 modelbox::Status AtcInference::Deinit() {
   if (!is_model_load_) {
-    return STATUS_SUCCESS;
+    return modelbox::STATUS_SUCCESS;
   }
 
   auto acl_ret = aclrtSetDevice(device_id_);
   if (acl_ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "aclrtSetDevice failed, ret " << acl_ret;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto ret = aclmdlUnload(model_id_);
   if (ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "Unload model failed, model id is " << model_id_;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }

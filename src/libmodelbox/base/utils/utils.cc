@@ -174,8 +174,8 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
       continue;
     }
 
-    if (strncmp(ptr->d_name, ".", PATH_MAX) == 0 ||
-        strncmp(ptr->d_name, "..", PATH_MAX) == 0) {
+    if (strncmp(ptr->d_name, ".", PATH_MAX - 1) == 0 ||
+        strncmp(ptr->d_name, "..", PATH_MAX - 1) == 0) {
       continue;
     }
 
@@ -402,9 +402,7 @@ std::string GetBytesReadable(size_t size) {
 
   if (size >= 1024) {
     for (i = 0; (size / 1024) > 0 && i < length - 1; i++, size /= 1024) {
-      {
-        double_size = size / 1024.0;
-      }
+      double_size = size / 1024.0;
     }
   }
 
@@ -455,9 +453,9 @@ bool IsAbsolutePath(const std::string &path) {
 
     if (c != Separator) {
       return false;
-    } else {
-      return true;
     }
+
+    return true;
   }
 
   return false;
@@ -493,7 +491,9 @@ std::string PathCanonicalize(const std::string &path,
   for (auto itr = fields.rbegin(); itr != fields.rend(); itr++) {
     if (itr->empty() || *itr == ".") {
       continue;
-    } else if (*itr == "..") {
+    }
+
+    if (*itr == "..") {
       ++skip_num;
       continue;
     }

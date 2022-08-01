@@ -21,8 +21,6 @@
 #include "modelbox/base/log.h"
 #include "modelbox/device/cuda/device_cuda.h"
 
-using namespace modelbox;
-
 #define MIN_ALLOWABLE_DECODE_SURFACE_NUM 1
 
 #define NVDEC_THROW_ERROR(err_str, err_code)                                \
@@ -86,9 +84,10 @@ NvcodecVideoDecoder::~NvcodecVideoDecoder() {
   }
 }
 
-Status NvcodecVideoDecoder::Init(const std::string &device_id,
-                                 AVCodecID codec_id, std::string &file_url,
-                                 bool skip_err_frame) {
+modelbox::Status NvcodecVideoDecoder::Init(const std::string &device_id,
+                                           AVCodecID codec_id,
+                                           std::string &file_url,
+                                           bool skip_err_frame) {
   gpu_id_ = std::stoi(device_id);
   MBLOG_INFO << "Init decode in gpu " << gpu_id_;
   // Use cuda runtime CUContext on same device in whole modelbox process to
@@ -96,7 +95,7 @@ Status NvcodecVideoDecoder::Init(const std::string &device_id,
   auto cuda_ret = cudaSetDevice(gpu_id_);
   if (cuda_ret != cudaSuccess) {
     MBLOG_ERROR << "Set device to " << gpu_id_ << " failed, err " << cuda_ret;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   CUcontext cu_ctx;
@@ -104,19 +103,19 @@ Status NvcodecVideoDecoder::Init(const std::string &device_id,
   if (cu_ret != CUDA_SUCCESS) {
     GET_CUDA_API_ERROR(cuCtxGetCurrent, cu_ret, err_str);
     MBLOG_ERROR << "Get Ctx in gpu " << gpu_id_ << " failed, err " << err_str;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   cu_ret = cuvidCtxLockCreate(&ctx_lock_, cu_ctx);
   if (cu_ret != CUDA_SUCCESS) {
     GET_CUDA_API_ERROR(cuvidCtxLockCreate, cu_ret, err_str);
     MBLOG_ERROR << err_str << " : device " << device_id.c_str();
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   CUVIDPARSERPARAMS videoParserParams = {};
   auto ret = GetCudaVideoCodec(codec_id, codec_id_);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
@@ -134,21 +133,21 @@ Status NvcodecVideoDecoder::Init(const std::string &device_id,
   if (cu_ret != CUDA_SUCCESS) {
     GET_CUDA_API_ERROR(cuvidCreateVideoParser, cu_ret, err_str);
     MBLOG_ERROR << err_str;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   file_url_ = file_url;
   skip_err_frame_ = skip_err_frame;
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status NvcodecVideoDecoder::Decode(
+modelbox::Status NvcodecVideoDecoder::Decode(
     std::shared_ptr<NvcodecPacket> pkt,
     std::vector<std::shared_ptr<NvcodecFrame>> &frame_list, CUstream stream) {
   if (!video_parser_) {
     MBLOG_ERROR << "Nvcodec decode is not inited, parser is null";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   CUVIDSOURCEDATAPACKET packet = {};
@@ -168,7 +167,7 @@ Status NvcodecVideoDecoder::Decode(
   if (cuda_ret != cudaSuccess) {
     MBLOG_ERROR << "Set device to gpu " << gpu_id_ << " failed, err "
                 << cuda_ret;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   CUDA_API_CALL(cuvidParseVideoData(video_parser_, &packet));
@@ -183,23 +182,23 @@ Status NvcodecVideoDecoder::Decode(
   }
 
   if (packet.flags & CUVID_PKT_ENDOFSTREAM) {
-    return STATUS_NODATA;
+    return modelbox::STATUS_NODATA;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status NvcodecVideoDecoder::GetCudaVideoCodec(AVCodecID codec_id,
-                                              cudaVideoCodec &cuda_codec_id) {
+modelbox::Status NvcodecVideoDecoder::GetCudaVideoCodec(
+    AVCodecID codec_id, cudaVideoCodec &cuda_codec_id) {
   auto iter = codec_id_map_.find(codec_id);
   if (iter == codec_id_map_.end()) {
     MBLOG_ERROR << "ffmpeg code id[" << codec_id
                 << "] for nvcodec is not supported";
-    return STATUS_NOTSUPPORT;
+    return modelbox::STATUS_NOTSUPPORT;
   }
 
   cuda_codec_id = iter->second;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 std::string NvcodecVideoDecoder::GetVideoCodecString(

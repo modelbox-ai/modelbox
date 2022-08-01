@@ -28,7 +28,7 @@
 #define TOKEN_REQUEST 0
 #define CREDENTIAL_REQUEST 1
 #define ONE_DAY_SECONDS 86400
-using namespace web;
+
 namespace modelbox {
 class IAMApi {
  public:

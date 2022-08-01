@@ -29,9 +29,10 @@
 #include "gtest/gtest.h"
 #include "test_config.h"
 
-class MockFlowUnit;
 
 namespace modelbox {
+
+class MockFlowUnit;
 
 class MockDriver {
  public:

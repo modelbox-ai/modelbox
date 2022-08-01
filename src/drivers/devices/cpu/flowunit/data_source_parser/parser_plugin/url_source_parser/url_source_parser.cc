@@ -21,9 +21,9 @@
 #include <nlohmann/json.hpp>
 
 #include "modelbox/device/cpu/device_cpu.h"
-#define RETRY_PARAMS_NOT_SET -2
+#define RETRY_PARAMS_NOT_SET (-2)
 #define FILE_DEFAULT_RETRY_TIMES 10
-#define STREAM_DEFAULT_RETRY_TIMES -1
+#define STREAM_DEFAULT_RETRY_TIMES (-1)
 #define DEFAULT_RETRY_INTERVAL 1000
 
 UrlSourceParser::UrlSourceParser() = default;

@@ -138,25 +138,45 @@ size_t MemoryPoolBase::CalSlabSize(size_t object_size) {
 
   if (object_size <= size_1K) {
     return size_1M;
-  } else if (object_size <= 16 * size_1K) {
+  }
+
+  if (object_size <= 16 * size_1K) {
     return 8 * size_1M;
-  } else if (object_size <= 512 * size_1K) {
+  }
+
+  if (object_size <= 512 * size_1K) {
     return 16 * size_1M;
-  } else if (object_size <= size_1M) {
+  }
+
+  if (object_size <= size_1M) {
     return 8 * size_1M;
-  } else if (object_size <= 2 * size_1M) {
+  }
+
+  if (object_size <= 2 * size_1M) {
     return 16 * size_1M;
-  } else if (object_size <= 4 * size_1M) {
+  }
+
+  if (object_size <= 4 * size_1M) {
     return 32 * size_1M;
-  } else if (object_size <= 8 * size_1M) {
+  }
+
+  if (object_size <= 8 * size_1M) {
     return 32 * size_1M;
-  } else if (object_size <= 16 * size_1M) {
+  }
+
+  if (object_size <= 16 * size_1M) {
     return 64 * size_1M;
-  } else if (object_size <= 32 * size_1M) {
+  }
+
+  if (object_size <= 32 * size_1M) {
     return 64 * size_1M;
-  } else if (object_size <= 64 * size_1M) {
+  }
+
+  if (object_size <= 64 * size_1M) {
     return 128 * size_1M;
-  } else if (object_size <= 128 * size_1M) {
+  }
+
+  if (object_size <= 128 * size_1M) {
     return 128 * size_1M;
   }
 

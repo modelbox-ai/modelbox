@@ -276,7 +276,7 @@ void FlowScheduler::WaitNodeFinish() {
   cv_.wait(lock, pred);
 }
 
-void FlowScheduler::CheckScheduleStatus(const bool &printlog) {
+void FlowScheduler::CheckScheduleStatus(const bool& printlog) {
   // If the current status is normal, no information is printed. The logic for
   // determining abnormalities is as follows:
   // 1. If the node is running, it indicates that the current node has been
@@ -393,11 +393,12 @@ Status FlowScheduler::RunImpl() {
 
       timeout_count++;
       continue;
-    } else if (status == STATUS_NODATA) {
+    }
+
+    if (status == STATUS_NODATA) {
       timeout_count = 0;
       continue;
     }
-
 
     if (timeout_count > 0 && is_no_response_ == false) {
       stats_status_->SetValue(std::string("running"));

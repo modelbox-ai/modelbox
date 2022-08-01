@@ -33,8 +33,6 @@
 #include "modelbox/common/utils.h"
 #include "modelbox/server/utils.h"
 
-using namespace modelbox;
-
 const std::string DEFAULT_WEB_ROOT =
     "${MODELBOX_ROOT}/usr/local/share/modelbox/www";
 const std::string DEFAULT_PROJECT_TEMPLATE_DIR =
@@ -124,7 +122,7 @@ bool ModelboxEditorPlugin::Init(
   return true;
 }
 
-std::shared_ptr<Plugin> CreatePlugin() {
+std::shared_ptr<modelbox::Plugin> CreatePlugin() {
   MBLOG_INFO << "create modelbox editor plugin";
   return std::make_shared<ModelboxEditorPlugin>();
 }
@@ -132,32 +130,36 @@ std::shared_ptr<Plugin> CreatePlugin() {
 void ModelboxEditorPlugin::RegistHandlers() {
   struct Handler_Map {
     const std::string path;
-    const HttpMethod method;
+    const modelbox::HttpMethod method;
     void (ModelboxEditorPlugin::*func)(const httplib::Request& request,
                                        httplib::Response& response);
   };
   Handler_Map handler_list[] = {
-      {UI_url, HttpMethods::GET, &ModelboxEditorPlugin::HandlerUIGet},
-      {basic_info, HttpMethods::GET, &ModelboxEditorPlugin::HanderBasicInfoGet},
-      {flowunit_info_url, HttpMethods::PUT,
+      {UI_url, modelbox::HttpMethods::GET, &ModelboxEditorPlugin::HandlerUIGet},
+      {basic_info, modelbox::HttpMethods::GET,
+       &ModelboxEditorPlugin::HanderBasicInfoGet},
+      {flowunit_info_url, modelbox::HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerFlowUnitInfoPut},
-      {flowunit_info_url, HttpMethods::GET,
+      {flowunit_info_url, modelbox::HttpMethods::GET,
        &ModelboxEditorPlugin::HandlerFlowUnitInfoGet},
-      {demo_url, HttpMethods::GET, &ModelboxEditorPlugin::HandlerDemoGet},
-      {project_url, HttpMethods::GET, &ModelboxEditorPlugin::HandlerProjectGet},
-      {project_template_url, HttpMethods::GET,
+      {demo_url, modelbox::HttpMethods::GET,
+       &ModelboxEditorPlugin::HandlerDemoGet},
+      {project_url, modelbox::HttpMethods::GET,
+       &ModelboxEditorPlugin::HandlerProjectGet},
+      {project_template_url, modelbox::HttpMethods::GET,
        &ModelboxEditorPlugin::HandlerProjectTemplateListGet},
-      {project_list_url, HttpMethods::GET,
+      {project_list_url, modelbox::HttpMethods::GET,
        &ModelboxEditorPlugin::HandlerProjectListGet},
-      {project_create_url, HttpMethods::PUT,
+      {project_create_url, modelbox::HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerProjectCreate},
-      {flowunit_create_url, HttpMethods::PUT,
+      {flowunit_create_url, modelbox::HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerFlowUnitCreate},
-      {save_graph_url, HttpMethods::PUT,
+      {save_graph_url, modelbox::HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerSaveGraph},
-      {pass_encode_url, HttpMethods::PUT,
+      {pass_encode_url, modelbox::HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerPassEncode},
-      {postman_url, HttpMethods::POST, &ModelboxEditorPlugin::HandlerPostman},
+      {postman_url, modelbox::HttpMethods::POST,
+       &ModelboxEditorPlugin::HandlerPostman},
   };
 
   for (const auto& hander : handler_list) {
@@ -184,22 +186,22 @@ void ModelboxEditorPlugin::SetUpResponse(httplib::Response& response,
                                          modelbox::Status& status) {
   switch (status.Code()) {
     case modelbox::STATUS_SUCCESS:
-      response.status = HttpStatusCodes::OK;
+      response.status = modelbox::HttpStatusCodes::OK;
       break;
     case modelbox::STATUS_NOTFOUND:
-      response.status = HttpStatusCodes::NOT_FOUND;
+      response.status = modelbox::HttpStatusCodes::NOT_FOUND;
       break;
     case modelbox::STATUS_INVALID:
     case modelbox::STATUS_BADCONF:
-      response.status = HttpStatusCodes::BAD_REQUEST;
+      response.status = modelbox::HttpStatusCodes::BAD_REQUEST;
       break;
     default:
-      response.status = HttpStatusCodes::INTERNAL_ERROR;
+      response.status = modelbox::HttpStatusCodes::INTERNAL_ERROR;
       break;
   }
 
-  AddSafeHeader(response);
-  response.set_content(ResultMsg(status), JSON);
+  modelbox::AddSafeHeader(response);
+  response.set_content(ResultMsg(status), modelbox::JSON);
 }
 
 bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
@@ -310,7 +312,7 @@ void ModelboxEditorPlugin::HandlerFlowUnitCreate(
     const httplib::Request& request, httplib::Response& response) {
   auto ret = RunTemplateCommand(request, response, "--flowunit");
   if (ret == modelbox::STATUS_OK) {
-    response.status = HttpStatusCodes::CREATED;
+    response.status = modelbox::HttpStatusCodes::CREATED;
   }
 }
 
@@ -319,7 +321,7 @@ void ModelboxEditorPlugin::HandlerSaveGraph(const httplib::Request& request,
   auto ret = SaveGraph(request);
   SetUpResponse(response, ret);
   if (ret == modelbox::STATUS_OK) {
-    response.status = HttpStatusCodes::CREATED;
+    response.status = modelbox::HttpStatusCodes::CREATED;
   }
 }
 
@@ -364,10 +366,10 @@ modelbox::Status ModelboxEditorPlugin::SaveGraph(
   } catch (const std::exception& e) {
     std::string errmsg = "save graph info failed: ";
     errmsg += e.what();
-    return {STATUS_INVALID, errmsg};
+    return {modelbox::STATUS_INVALID, errmsg};
   }
 
-  return STATUS_OK;
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status ModelboxEditorPlugin::ReadProjectName(const std::string& path,
@@ -381,7 +383,7 @@ modelbox::Status ModelboxEditorPlugin::ReadProjectName(const std::string& path,
   name.erase(std::remove(name.begin(), name.end(), '\n'), name.end());
   name.erase(std::remove(name.begin(), name.end(), '\r'), name.end());
 
-  return STATUS_OK;
+  return modelbox::STATUS_OK;
 }
 
 void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
@@ -448,17 +450,17 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
     }
     result = json.dump();
     MBLOG_DEBUG << "infos: " << result;
-    response.set_content(result, JSON);
+    response.set_content(result, modelbox::JSON);
   } catch (const std::exception& e) {
     std::string errmsg = "Get info failed: ";
     errmsg += e.what();
     MBLOG_ERROR << errmsg;
-    modelbox::Status ret = {STATUS_INVALID, errmsg};
+    modelbox::Status ret = {modelbox::STATUS_INVALID, errmsg};
     SetUpResponse(response, ret);
     return;
   }
 
-  response.status = HttpStatusCodes::OK;
+  response.status = modelbox::HttpStatusCodes::OK;
 }
 
 modelbox::Status ModelboxEditorPlugin::GenerateCommandFromJson(
@@ -500,7 +502,7 @@ modelbox::Status ModelboxEditorPlugin::GenerateCommandFromJson(
 modelbox::Status ModelboxEditorPlugin::RunCommand(const std::string& cmd,
                                                   const std::string* in,
                                                   std::string* out) {
-  Popen p;
+  modelbox::Popen p;
   std::string outmsg;
   std::string err;
   std::string mode;
@@ -544,7 +546,7 @@ void ModelboxEditorPlugin::HandlerProjectCreate(const httplib::Request& request,
                                                 httplib::Response& response) {
   auto ret = RunTemplateCommand(request, response, "--project");
   if (ret == modelbox::STATUS_OK) {
-    response.status = HttpStatusCodes::CREATED;
+    response.status = modelbox::HttpStatusCodes::CREATED;
   }
 }
 
@@ -574,9 +576,9 @@ void ModelboxEditorPlugin::HandlerFlowUnitInfo(
     return;
   }
 
-  AddSafeHeader(response);
-  response.status = HttpStatusCodes::OK;
-  response.set_content(info, JSON);
+  modelbox::AddSafeHeader(response);
+  response.status = modelbox::HttpStatusCodes::OK;
+  response.set_content(info, modelbox::JSON);
 }
 
 void ModelboxEditorPlugin::HandlerProjectTemplateListGet(
@@ -622,9 +624,9 @@ void ModelboxEditorPlugin::HandlerProjectTemplateListGet(
     }
   }
 
-  AddSafeHeader(response);
-  response.status = HttpStatusCodes::OK;
-  response.set_content(response_json.dump(), JSON);
+  modelbox::AddSafeHeader(response);
+  response.status = modelbox::HttpStatusCodes::OK;
+  response.set_content(response_json.dump(), modelbox::JSON);
 }
 
 void ModelboxEditorPlugin::HandlerProjectListGet(
@@ -651,7 +653,8 @@ void ModelboxEditorPlugin::HandlerProjectListGet(
     std::string list_path;
     list_path = request.params.find("path")->second;
     MBLOG_DEBUG << "list path: " << list_path;
-    ret = ListFiles(list_path, "*", &listfiles, LIST_FILES_DIR);
+    ret = modelbox::ListFiles(list_path, "*", &listfiles,
+                              modelbox::LIST_FILES_DIR);
     if (!ret) {
       rspret = {ret, "List path failed."};
       return;
@@ -672,12 +675,12 @@ void ModelboxEditorPlugin::HandlerProjectListGet(
     std::string errmsg = "internal error when searching path, ";
     errmsg += e.what();
     MBLOG_ERROR << errmsg;
-    rspret = {STATUS_FAULT, errmsg};
+    rspret = {modelbox::STATUS_FAULT, errmsg};
     return;
   }
 
-  AddSafeHeader(response);
-  response.set_content(response_json.dump(), JSON);
+  modelbox::AddSafeHeader(response);
+  response.set_content(response_json.dump(), modelbox::JSON);
 }
 
 bool ModelboxEditorPlugin::IsModelboxProjectDir(std::string& path) {
@@ -724,7 +727,7 @@ void ModelboxEditorPlugin::HandlerUIGet(const httplib::Request& request,
   MBLOG_DEBUG << "request file:" << file_name;
   if (GetHtmlFile(file_name, &resolve_file, &redirect_file) == false) {
     if (!redirect_file.empty()) {
-      response.status = HttpStatusCodes::FOUND;
+      response.status = modelbox::HttpStatusCodes::FOUND;
       response.headers.insert(std::make_pair("location", redirect_file));
       return;
     }
@@ -783,12 +786,12 @@ void ModelboxEditorPlugin::SendFile(const std::string& file_name,
   auto data = std::shared_ptr<char>(new (std::nothrow) char[data_size],
                                     [](const char* ptr) { delete[] ptr; });
   if (data == nullptr) {
-    rspret = {STATUS_FAULT, HTTP_RESP_ERR_CANNOT_READ};
+    rspret = {modelbox::STATUS_FAULT, HTTP_RESP_ERR_CANNOT_READ};
     return;
   }
 
-  AddSafeHeader(response);
-  response.status = HttpStatusCodes::OK;
+  modelbox::AddSafeHeader(response);
+  response.status = modelbox::HttpStatusCodes::OK;
   response.set_content_provider(
       content_type.c_str(),
       [file, data, data_size](size_t offset, httplib::DataSink& sink) {
@@ -864,9 +867,9 @@ void ModelboxEditorPlugin::HanderBasicInfoGet(const httplib::Request& request,
   response_json["user"] = result->pw_name;
   response_json["home-dir"] = result->pw_dir;
 
-  AddSafeHeader(response);
-  response.status = HttpStatusCodes::OK;
-  response.set_content(response_json.dump(), JSON);
+  modelbox::AddSafeHeader(response);
+  response.status = modelbox::HttpStatusCodes::OK;
+  response.set_content(response_json.dump(), modelbox::JSON);
 }
 
 void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
@@ -939,9 +942,9 @@ void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
     }
   }
 
-  AddSafeHeader(response);
-  response.status = HttpStatusCodes::OK;
-  response.set_content(response_json.dump(), JSON);
+  modelbox::AddSafeHeader(response);
+  response.status = modelbox::HttpStatusCodes::OK;
+  response.set_content(response_json.dump(), modelbox::JSON);
 }
 
 void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
@@ -959,7 +962,7 @@ void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
     std::string graph_file;
     std::string demo_file;
     std::string demo_name;
-    SplitPath(relative_path, demo_name, graph_file);
+    modelbox::SplitPath(relative_path, demo_name, graph_file);
     if (demo_name.length() == 0 && graph_file.length() == 0) {
       HandlerDemoGetList(request, response);
       return;
@@ -970,8 +973,8 @@ void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
       return;
     }
 
-    demo_file =
-        PathCanonicalize(demo_name + "/graph/" + graph_file, demo_path_);
+    demo_file = modelbox::PathCanonicalize(demo_name + "/graph/" + graph_file,
+                                           demo_path_);
     if (demo_file.length() == 0) {
       rspret = {modelbox::STATUS_NOTFOUND, HTTP_RESP_ERR_PATH_NOT_FOUND};
       return;
@@ -983,17 +986,17 @@ void ModelboxEditorPlugin::HandlerDemoGet(const httplib::Request& request,
     if (!rspret) {
       MBLOG_WARN << "Get graph file failed, " << rspret.WrapErrormsgs();
       std::string msg = "demo file is invalid.";
-      rspret = {STATUS_BADCONF, msg};
+      rspret = {modelbox::STATUS_BADCONF, msg};
       return;
     }
 
-    AddSafeHeader(response);
-    response.status = HttpStatusCodes::OK;
-    response.set_content(json_data, JSON);
+    modelbox::AddSafeHeader(response);
+    response.status = modelbox::HttpStatusCodes::OK;
+    response.set_content(json_data, modelbox::JSON);
     return;
   } catch (const std::exception& e) {
     MBLOG_ERROR << "demo get failed, " << e.what();
-    rspret = {STATUS_FAULT,
+    rspret = {modelbox::STATUS_FAULT,
               std::string(HTTP_RESP_ERR_GETINFO_FAILED) + e.what()};
     return;
   }
@@ -1039,7 +1042,7 @@ void ModelboxEditorPlugin::HandlerPassEncode(const httplib::Request& request,
     rspret = RunCommand(keypass, &plainpass, &out);
   } catch (const std::exception& e) {
     std::string errmsg = "encrypt password failed, " + std::string(e.what());
-    rspret = {STATUS_FAULT, errmsg};
+    rspret = {modelbox::STATUS_FAULT, errmsg};
     return;
   }
 
@@ -1050,14 +1053,14 @@ void ModelboxEditorPlugin::HandlerPassEncode(const httplib::Request& request,
 
   auto lines = modelbox::StringSplit(out, '\n');
   if (lines.size() != 2) {
-    rspret = {STATUS_FAULT, "Run key command failed."};
+    rspret = {modelbox::STATUS_FAULT, "Run key command failed."};
     return;
   }
 
   for (auto const& line : lines) {
     auto values = modelbox::StringSplit(line, ':');
     if (values.size() != 2) {
-      rspret = {STATUS_FAULT, "Get values failed."};
+      rspret = {modelbox::STATUS_FAULT, "Get values failed."};
       return;
     }
 
@@ -1070,9 +1073,9 @@ void ModelboxEditorPlugin::HandlerPassEncode(const httplib::Request& request,
     }
   }
 
-  AddSafeHeader(response);
-  response.status = HttpStatusCodes::OK;
-  response.set_content(response_json.dump(), JSON);
+  modelbox::AddSafeHeader(response);
+  response.status = modelbox::HttpStatusCodes::OK;
+  response.set_content(response_json.dump(), modelbox::JSON);
 }
 
 void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
@@ -1098,14 +1101,14 @@ void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
     if (body.find("method") != body.end()) {
       method = body["method"].get<std::string>();
     } else {
-      rspret = {STATUS_FAULT, "Get method failed."};
+      rspret = {modelbox::STATUS_FAULT, "Get method failed."};
       return;
     }
 
     if (body.find("url") != body.end()) {
       url = body["url"].get<std::string>();
     } else {
-      rspret = {STATUS_FAULT, "Get url failed."};
+      rspret = {modelbox::STATUS_FAULT, "Get url failed."};
       return;
     }
 
@@ -1120,16 +1123,16 @@ void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
     }
 
     if (method == "POST") {
-      hmethod = HttpMethods::POST;
+      hmethod = modelbox::HttpMethods::POST;
     } else if (method == "GET") {
-      hmethod = HttpMethods::GET;
+      hmethod = modelbox::HttpMethods::GET;
     } else if (method == "DELETE") {
-      hmethod = HttpMethods::DELETE;
+      hmethod = modelbox::HttpMethods::DELETE;
     } else if (method == "PUT") {
-      hmethod = HttpMethods::PUT;
+      hmethod = modelbox::HttpMethods::PUT;
     }
 
-    HttpRequest hrequest(hmethod, url);
+    modelbox::HttpRequest hrequest(hmethod, url);
 
     if (hasbody) {
       hrequest.SetBody(rbody);
@@ -1139,12 +1142,12 @@ void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
       hrequest.SetHeaders(rheader);
     }
 
-    rspret = SendHttpRequest(hrequest);
+    rspret = modelbox::SendHttpRequest(hrequest);
     if (rspret != modelbox::STATUS_SUCCESS) {
       return;
     }
     auto test_response = hrequest.GetResponse();
-    AddSafeHeader(response);
+    modelbox::AddSafeHeader(response);
 
     nlohmann::json response_json;
     nlohmann::json test_response_json;
@@ -1155,14 +1158,14 @@ void ModelboxEditorPlugin::HandlerPostman(const httplib::Request& request,
 
     response_json["body"] = test_response_json;
 
-    response.status = HttpStatusCodes::OK;
-    response.set_content(response_json.dump(), JSON);
+    response.status = modelbox::HttpStatusCodes::OK;
+    response.set_content(response_json.dump(), modelbox::JSON);
 
   } catch (const std::exception& e) {
     std::string errmsg = "internal error when debugging";
     errmsg += e.what();
     MBLOG_ERROR << errmsg;
-    rspret = {STATUS_FAULT, errmsg};
+    rspret = {modelbox::STATUS_FAULT, errmsg};
     return;
   }
 }
@@ -1212,10 +1215,10 @@ bool ModelboxEditorPlugin::ParseConfig(
       config->GetString("editor.template_dir", DEFAULT_PROJECT_TEMPLATE_DIR);
   acl_white_list_ = config->GetStrings("acl.allow");
 
-  web_root_ = modelbox_full_path(web_root_);
-  demo_path_ = modelbox_full_path(demo_path_);
-  template_dir_ = modelbox_full_path(template_dir_);
-  template_cmd_ = modelbox_full_path(template_cmd_);
+  web_root_ = modelbox::modelbox_full_path(web_root_);
+  demo_path_ = modelbox::modelbox_full_path(demo_path_);
+  template_dir_ = modelbox::modelbox_full_path(template_dir_);
+  template_cmd_ = modelbox::modelbox_full_path(template_cmd_);
 
   return true;
 }

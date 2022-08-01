@@ -19,8 +19,6 @@
 #include "image_process.h"
 #include "modelbox/flowunit_api_helper.h"
 
-using namespace imageprocess;
-
 const std::string output_img_pix_fmt = "nv12";
 
 modelbox::Status ResizeFlowUnit::Open(
@@ -54,9 +52,12 @@ modelbox::Status ResizeFlowUnit::AscendProcess(
 
   auto output_img_buffer_list = data_ctx->Output(OUT_IMG);
   size_t buffer_size = 0;
-  auto align_w = align_up(dest_width_, ASCEND_WIDTH_ALIGN);
-  auto align_h = align_up(dest_height_, ASCEND_HEIGHT_ALIGN);
-  auto ret = GetImageBytes(output_img_pix_fmt, align_w, align_h, buffer_size);
+  auto align_w =
+      imageprocess::align_up(dest_width_, imageprocess::ASCEND_WIDTH_ALIGN);
+  auto align_h =
+      imageprocess::align_up(dest_height_, imageprocess::ASCEND_HEIGHT_ALIGN);
+  auto ret = imageprocess::GetImageBytes(output_img_pix_fmt, align_w, align_h,
+                                         buffer_size);
   if (!ret) {
     MBLOG_ERROR << "get image bytes failed, err " << ret;
     return ret;
@@ -86,7 +87,7 @@ modelbox::Status ResizeFlowUnit::AscendProcess(
 modelbox::Status ResizeFlowUnit::ProcessOneImg(
     std::shared_ptr<modelbox::Buffer> &in_image,
     std::shared_ptr<modelbox::Buffer> &out_image, aclrtStream stream) {
-  auto chan_desc = GetDvppChannel(dev_id_);
+  auto chan_desc = imageprocess::GetDvppChannel(dev_id_);
   if (chan_desc == nullptr) {
     return {modelbox::STATUS_FAULT, "Get dvpp channel failed"};
   }
@@ -108,7 +109,8 @@ modelbox::Status ResizeFlowUnit::ProcessOneImg(
     return ret;
   }
 
-  return SetOutImgMeta(out_image, output_img_pix_fmt, out_img_desc);
+  return imageprocess::SetOutImgMeta(out_image, output_img_pix_fmt,
+                                     out_img_desc);
 }
 
 modelbox::Status ResizeFlowUnit::GetInputDesc(
@@ -117,8 +119,9 @@ modelbox::Status ResizeFlowUnit::GetInputDesc(
   std::string in_pix_fmt;
   int32_t in_img_width = 0, in_img_height = 0, in_img_width_stride = 0,
           in_img_height_stride = 0;
-  auto ret = GetImgParam(in_image, in_pix_fmt, in_img_width, in_img_height,
-                         in_img_width_stride, in_img_height_stride);
+  auto ret = imageprocess::GetImgParam(in_image, in_pix_fmt, in_img_width,
+                                       in_img_height, in_img_width_stride,
+                                       in_img_height_stride);
   if (!ret) {
     return ret;
   }
@@ -132,9 +135,9 @@ modelbox::Status ResizeFlowUnit::GetInputDesc(
 
   in_img_desc = CreateImgDesc(
       in_image->GetBytes(), (void *)in_image->ConstData(), in_pix_fmt,
-      ImageShape{in_img_width, in_img_height, in_img_width_stride,
-                 in_img_height_stride},
-      ImgDescDestroyFlag::DESC_ONLY);
+      imageprocess::ImageShape{in_img_width, in_img_height, in_img_width_stride,
+                               in_img_height_stride},
+      imageprocess::ImgDescDestroyFlag::DESC_ONLY);
   if (in_img_desc == nullptr) {
     return modelbox::StatusError;
   }
@@ -152,13 +155,16 @@ modelbox::Status ResizeFlowUnit::GetOutputDesc(
                 std::to_string((uintptr_t)out_image->MutableData())};
   }
 
-  auto align_w = align_up((int32_t)dest_width_, ASCEND_WIDTH_ALIGN);
-  auto align_h = align_up((int32_t)dest_height_, ASCEND_HEIGHT_ALIGN);
+  auto align_w = imageprocess::align_up((int32_t)dest_width_,
+                                        imageprocess::ASCEND_WIDTH_ALIGN);
+  auto align_h = imageprocess::align_up((int32_t)dest_height_,
+                                        imageprocess::ASCEND_HEIGHT_ALIGN);
   out_img_desc = CreateImgDesc(
       out_image->GetBytes(), (void *)out_image->MutableData(),
       output_img_pix_fmt,
-      ImageShape{(int32_t)dest_width_, (int32_t)dest_height_, align_w, align_h},
-      ImgDescDestroyFlag::DESC_ONLY);
+      imageprocess::ImageShape{(int32_t)dest_width_, (int32_t)dest_height_,
+                               align_w, align_h},
+      imageprocess::ImgDescDestroyFlag::DESC_ONLY);
   if (out_img_desc == nullptr) {
     return modelbox::StatusError;
   }

@@ -25,8 +25,13 @@
 #include "modelbox/device/cuda/device_cuda.h"
 #include "modelbox/flowunit_api_helper.h"
 
-std::map<std::string, nvjpegOutputFormat_t> NvImgPixelFormat{
+std::map<std::string, nvjpegOutputFormat_t> kNvImgPixelFormat{
     {"bgr", NVJPEG_OUTPUT_BGR}, {"rgb", NVJPEG_OUTPUT_RGB}};
+
+std::map<ImageType, std::vector<uint8_t>> kImgStreamFormat{
+    {IMAGE_TYPE_JPEG, {0xff, 0xd8}},
+    {IMAGE_TYPE_PNG, {0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a}},
+    {IMAGE_TYPE_BMP, {0x42, 0x4d}}};
 
 NvImageDecoderFlowUnit::NvImageDecoderFlowUnit() = default;
 NvImageDecoderFlowUnit::~NvImageDecoderFlowUnit() = default;
@@ -34,11 +39,11 @@ NvImageDecoderFlowUnit::~NvImageDecoderFlowUnit() = default;
 modelbox::Status NvImageDecoderFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   pixel_format_ = opts->GetString("pix_fmt", "bgr");
-  if (NvImgPixelFormat.find(pixel_format_) == NvImgPixelFormat.end()) {
+  if (kNvImgPixelFormat.find(pixel_format_) == kNvImgPixelFormat.end()) {
     auto errMsg = "pixel_format is invalid, configure is :" + pixel_format_;
     MBLOG_ERROR << errMsg;
     std::string valid_format;
-    for (const auto &iter : NvImgPixelFormat) {
+    for (const auto &iter : kNvImgPixelFormat) {
       if (valid_format.length() > 0) {
         valid_format += ", ";
       }
@@ -126,7 +131,7 @@ modelbox::Status NvImageDecoderFlowUnit::Close() {
 };
 
 ImageType NvImageDecoderFlowUnit::CheckImageType(const uint8_t *input_data) {
-  for (auto &format_value : ImgStreamFormat) {
+  for (auto &format_value : kImgStreamFormat) {
     int ret = memcmp(input_data, format_value.second.data(),
                      format_value.second.size());
     if (ret == 0) {
@@ -179,7 +184,7 @@ bool NvImageDecoderFlowUnit::DecodeJpeg(
                             (uint32_t)widths[0], (uint32_t)widths[0]}};
 
   ret = nvjpegDecode(handle_, jpeg_handle, input_data, input_buffer->GetBytes(),
-                     NvImgPixelFormat[pixel_format_], &imgdesc, stream->Get());
+                     kNvImgPixelFormat[pixel_format_], &imgdesc, stream->Get());
   cudaStreamSynchronize(stream->Get());
   if (ret != NVJPEG_STATUS_SUCCESS) {
     MBLOG_ERROR << "nvjpegDecode failed, ret " << ret;
@@ -264,7 +269,7 @@ MODELBOX_FLOWUNIT(NvImageDecoderFlowUnit, desc) {
   desc.SetDescription(FLOWUNIT_DESC);
   std::map<std::string, std::string> format_list;
 
-  for (auto &item : NvImgPixelFormat) {
+  for (auto &item : kNvImgPixelFormat) {
     format_list[item.first] = item.first;
   }
 

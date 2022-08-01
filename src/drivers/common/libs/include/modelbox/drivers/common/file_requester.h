@@ -40,7 +40,7 @@ class FileGetHandler {
    * @param path file path.
    * @return read result.
    */
-  virtual modelbox::Status Get(unsigned char *buff, size_t size, off_t off) = 0;
+  virtual Status Get(unsigned char *buff, size_t size, off_t off) = 0;
 
   /**
    * @brief get file size.
@@ -60,11 +60,10 @@ class FileRequester {
    */
   static std::shared_ptr<FileRequester> GetInstance();
 
-  modelbox::Status RegisterUrlHandler(
-      const std::string &relative_url,
-      std::shared_ptr<modelbox::FileGetHandler> handler);
+  Status RegisterUrlHandler(const std::string &relative_url,
+                            std::shared_ptr<FileGetHandler> handler);
 
-  modelbox::Status DeregisterUrl(const std::string &relative_url);
+  Status DeregisterUrl(const std::string &relative_url);
 
   void SetMaxFileReadSize(int read_size);
 
@@ -72,21 +71,22 @@ class FileRequester {
 
  private:
   FileRequester() = default;
-  modelbox::Status Init();
+  Status Init();
   void HandleFileGet(web::http::http_request request);
   bool IsValidRequest(const web::http::http_request &request);
-  bool ReadRequestRange(const web::http::http_request &request, uint64_t file_size,
-                        uint64_t &range_start, uint64_t &range_end);
+  bool ReadRequestRange(const web::http::http_request &request,
+                        uint64_t file_size, uint64_t &range_start,
+                        uint64_t &range_end);
   void ProcessRequest(web::http::http_request &request,
-                      std::shared_ptr<modelbox::FileGetHandler> handler,
+                      std::shared_ptr<FileGetHandler> handler,
                       uint64_t range_start, uint64_t range_end);
 
   static std::once_flag file_requester_init_flag_;
   std::shared_ptr<web::http::experimental::listener::http_listener> listener_;
-  std::unordered_map<std::string, std::shared_ptr<modelbox::FileGetHandler>>
+  std::unordered_map<std::string, std::shared_ptr<FileGetHandler>>
       file_handlers_;
   std::mutex handler_lock_;
-  std::shared_ptr<modelbox::ThreadPool> pool_;
+  std::shared_ptr<ThreadPool> pool_;
   int max_read_size_ = 0;
 };
 };  // namespace modelbox

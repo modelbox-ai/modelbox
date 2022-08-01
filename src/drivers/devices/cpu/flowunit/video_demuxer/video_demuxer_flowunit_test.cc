@@ -27,8 +27,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using ::testing::_;
-
 namespace modelbox {
 class VideoDemuxerFlowUnitTest : public testing::Test {
  public:

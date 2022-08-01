@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_UUID_H_
 #define MODELBOX_UUID_H_
 
 #define UUID_LENGTH 37
 #include "modelbox/base/status.h"
 
+namespace modelbox {
+
 /**
  * @brief Generate UUID
  * @param uuid uuid output result
  * @return success or fail
  */
-modelbox::Status GetUUID(std::string *uuid);
+Status GetUUID(std::string *uuid);
+
+}  // namespace modelbox
 
 #endif

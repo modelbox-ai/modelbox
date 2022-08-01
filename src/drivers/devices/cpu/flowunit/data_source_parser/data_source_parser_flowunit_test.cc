@@ -41,8 +41,6 @@
 
 #define RESTFUL_URL "https://localhost:54321"
 
-using ::testing::_;
-
 namespace modelbox {
 
 class DataSourceParserFlowUnitTest : public testing::Test {

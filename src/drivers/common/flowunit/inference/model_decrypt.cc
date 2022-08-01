@@ -29,17 +29,16 @@
 #include "modelbox/base/status.h"
 #include "modelbox/base/utils.h"
 
-using namespace modelbox;
-
 ModelDecryption::~ModelDecryption() {
   if (fmodel_.is_open()) {
     fmodel_.close();
   }
 }
 
-Status ModelDecryption::Init(const std::string& model_path,
-                             const std::shared_ptr<Drivers>& drivers_ptr,
-                             const std::shared_ptr<Configuration>& config) {
+modelbox::Status ModelDecryption::Init(
+    const std::string& model_path,
+    const std::shared_ptr<modelbox::Drivers>& drivers_ptr,
+    const std::shared_ptr<modelbox::Configuration>& config) {
   model_state_ = MODEL_STATE_ERROR;
   header_offset_ = 0;
 
@@ -52,9 +51,9 @@ Status ModelDecryption::Init(const std::string& model_path,
   fmodel_.open(model_path, std::ios::binary);
   if (fmodel_.fail() || !fmodel_.is_open()) {
     std::string errmsg = "open model '";
-    errmsg += model_path + "' failed, " + StrError(errno);
+    errmsg += model_path + "' failed, " + modelbox::StrError(errno);
     MBLOG_ERROR << errmsg;
-    return {STATUS_INVALID, errmsg};
+    return {modelbox::STATUS_INVALID, errmsg};
   }
 
   fmodel_.seekg(0, std::ios::end);
@@ -62,7 +61,7 @@ Status ModelDecryption::Init(const std::string& model_path,
   if (fsize_ <= 0) {
     std::string errmsg = "empty model file: " + model_path;
     MBLOG_ERROR << errmsg;
-    return {STATUS_BADCONF, errmsg};
+    return {modelbox::STATUS_BADCONF, errmsg};
   }
 
   auto plugin_name = config->GetString("encryption.plugin_name");
@@ -74,7 +73,7 @@ Status ModelDecryption::Init(const std::string& model_path,
   if (!plugin_name.empty()) {
     if (drivers_ptr == nullptr) {
       MBLOG_ERROR << "drivers_ptr is null";
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
 
     auto plugin_driver = drivers_ptr->GetDriver(
@@ -83,13 +82,13 @@ Status ModelDecryption::Init(const std::string& model_path,
       std::string errmsg = "Can not find decrytp drivers: " + plugin_name;
       MBLOG_ERROR << errmsg;
       // fclose will call when ~ModelDecryption
-      return {STATUS_BADCONF, errmsg};
+      return {modelbox::STATUS_BADCONF, errmsg};
     }
 
     cur_factory_ = plugin_driver->CreateFactory();
     if (cur_factory_ == nullptr) {
       MBLOG_ERROR << "Plugin : " << plugin_name << " factory create failed";
-      return {STATUS_FAULT, "decrypt driver create failed"};
+      return {modelbox::STATUS_FAULT, "decrypt driver create failed"};
     }
 
     cur_plugin_ = std::dynamic_pointer_cast<IModelDecryptPlugin>(
@@ -97,11 +96,11 @@ Status ModelDecryption::Init(const std::string& model_path,
     if (cur_plugin_ == nullptr) {
       MBLOG_ERROR << "plugin : " << plugin_name
                   << " is not derived from IModelDecryptPlugin";
-      return {STATUS_FAULT, "decrypt driver create failed"};
+      return {modelbox::STATUS_FAULT, "decrypt driver create failed"};
     }
 
     auto ret = cur_plugin_->Init(model_path, config);
-    if (ret == STATUS_SUCCESS) {
+    if (ret == modelbox::STATUS_SUCCESS) {
       model_state_ = MODEL_STATE_ENCRYPT;
     } else {
       MBLOG_ERROR << "drivers Init Error";
@@ -111,16 +110,16 @@ Status ModelDecryption::Init(const std::string& model_path,
     model_state_ = MODEL_STATE_PLAIN;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-void ModelDecryption::GetInfoFromHeader(std::string& plugin_name,
-                                        std::string& plugin_version,
-                                        const std::shared_ptr<Configuration>& config) {
+void ModelDecryption::GetInfoFromHeader(
+    std::string& plugin_name, std::string& plugin_version,
+    const std::shared_ptr<modelbox::Configuration>& config) {
   struct PrefixInfo model_info;
   fmodel_.seekg(0, std::ios::beg);
   fmodel_.read(reinterpret_cast<char*>(&model_info), sizeof(PrefixInfo));
-  
+
   std::string magic_str(model_info.magic, MAGIC_SIZE);
   if (fmodel_.gcount() != sizeof(PrefixInfo) || magic_str != MAGIC_FLAG) {
     // here is plain model , not err , so do not log
@@ -161,7 +160,7 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
     modelbox::StatusError = {modelbox::STATUS_INVALID, "Read file fail."};
     return nullptr;
   }
-  
+
   if (model_state_ == MODEL_STATE_ENCRYPT && cur_plugin_ != nullptr) {
     int64_t raw_len = fsize_ - header_offset_;
     int64_t plain_len = raw_len + EVP_MAX_BLOCK_LENGTH + 1;
@@ -169,7 +168,8 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
     auto ret = cur_plugin_->ModelDecrypt(model_buf + header_offset_, raw_len,
                                          plain_buf, plain_len);
     free(model_buf);
-    if (ret != STATUS_SUCCESS) {
+
+    if (ret != modelbox::STATUS_SUCCESS) {
       MBLOG_ERROR << "ModelDecrypt fail.";
       model_len = 0;
       free(plain_buf);
@@ -183,7 +183,8 @@ uint8_t* ModelDecryption::GetModelBuffer(int64_t& model_len) {
   return model_buf;
 }
 
-std::shared_ptr<uint8_t> ModelDecryption::GetModelSharedBuffer(int64_t& model_len) {
+std::shared_ptr<uint8_t> ModelDecryption::GetModelSharedBuffer(
+    int64_t& model_len) {
   uint8_t* ret_buf = GetModelBuffer(model_len);
   if (ret_buf) {
     std::shared_ptr<uint8_t> retShare(ret_buf, [](uint8_t* p) { free(p); });

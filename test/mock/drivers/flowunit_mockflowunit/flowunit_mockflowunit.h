@@ -25,56 +25,50 @@
 #include "mock_driver_ctl.h"
 #include "modelbox/flowunit.h"
 
-class MockFlowUnit : public modelbox::FlowUnit {
+namespace modelbox {
+
+class MockFlowUnit : public FlowUnit {
  public:
   MockFlowUnit() = default;
   ~MockFlowUnit() override = default;
 
-  MOCK_METHOD(modelbox::Status, Open,
-              (const std::shared_ptr<modelbox::Configuration> &opts));
-  MOCK_METHOD(modelbox::Status, Close, ());
+  MOCK_METHOD(Status, Open, (const std::shared_ptr<Configuration> &opts));
+  MOCK_METHOD(Status, Close, ());
 
-  MOCK_METHOD(modelbox::Status, Process,
-              (std::shared_ptr<modelbox::DataContext>));
-  MOCK_METHOD(modelbox::Status, DataPre,
-              (std::shared_ptr<modelbox::DataContext>));
-  MOCK_METHOD(modelbox::Status, DataPost,
-              (std::shared_ptr<modelbox::DataContext>));
-  MOCK_METHOD(modelbox::Status, DataGroupPre,
-              (std::shared_ptr<modelbox::DataContext>));
-  MOCK_METHOD(modelbox::Status, DataGroupPost,
-              (std::shared_ptr<modelbox::DataContext>));
+  MOCK_METHOD(Status, Process, (std::shared_ptr<DataContext>));
+  MOCK_METHOD(Status, DataPre, (std::shared_ptr<DataContext>));
+  MOCK_METHOD(Status, DataPost, (std::shared_ptr<DataContext>));
+  MOCK_METHOD(Status, DataGroupPre, (std::shared_ptr<DataContext>));
+  MOCK_METHOD(Status, DataGroupPost, (std::shared_ptr<DataContext>));
 };
 
-class MockFlowUnitFactory : public modelbox::FlowUnitFactory {
+class MockFlowUnitFactory : public FlowUnitFactory {
  public:
   MockFlowUnitFactory() = default;
   ~MockFlowUnitFactory() override = default;
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
-      override;
+  std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe() override;
 
-  std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
-      const std::string &name, const std::string &type) override;
+  std::shared_ptr<FlowUnit> CreateFlowUnit(const std::string &name,
+                                           const std::string &type) override;
 
   void SetMockFunctionFlowUnit(std::shared_ptr<MockFlowUnit> mock_flowunit);
 
   void SetMockCreateFlowUnitFunc(
-      std::function<std::shared_ptr<modelbox::FlowUnit>(
-          const std::string &name, const std::string &type)>
+      std::function<std::shared_ptr<FlowUnit>(const std::string &name,
+                                              const std::string &type)>
           create_func);
-  void SetMockFlowUnitDesc(
-      std::vector<std::shared_ptr<modelbox::FlowUnitDesc>> descs);
+  void SetMockFlowUnitDesc(std::vector<std::shared_ptr<FlowUnitDesc>> descs);
 
  private:
   std::shared_ptr<MockFlowUnit> bind_mock_flowunit_;
-  std::vector<std::shared_ptr<modelbox::FlowUnitDesc>> flowunit_desc_;
-  std::function<std::shared_ptr<modelbox::FlowUnit>(const std::string &name,
-                                                    const std::string &type)>
+  std::vector<std::shared_ptr<FlowUnitDesc>> flowunit_desc_;
+  std::function<std::shared_ptr<FlowUnit>(const std::string &name,
+                                          const std::string &type)>
       flowunit_create_func_;
 };
 
-class MockDriverFlowUnit : public modelbox::MockDriver {
+class MockDriverFlowUnit : public MockDriver {
  public:
   MockDriverFlowUnit() = default;
   ~MockDriverFlowUnit() override = default;
@@ -84,5 +78,6 @@ class MockDriverFlowUnit : public modelbox::MockDriver {
  private:
   static MockDriverFlowUnit desc_;
 };
+}  // namespace modelbox
 
 #endif  // MODELBOX_FLOWUNIT_MOCK_CPU_H_

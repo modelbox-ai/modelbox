@@ -272,12 +272,16 @@ Status ToolCommandKey::ReadPassword(std::string *pass) {
     if (ch == ASCII_ETX) {
       std::cout << std::endl;
       return {STATUS_STOP};
-    } else if (ch == ASCII_BACKSPACE || ch == ASCII_DEL) {
+    }
+
+    if (ch == ASCII_BACKSPACE || ch == ASCII_DEL) {
       if (num > 0) {
         num--;
       }
       continue;
-    } else if (ch == EOF) {
+    }
+
+    if (ch == EOF) {
       if (num == 0) {
         return {STATUS_EOF, "Get input failed"};
       }
@@ -313,7 +317,9 @@ int ToolCommandKey::RunPassCommand(int argc, char *argv[], std::string &fname) {
   auto ret = EnKey(sysrelated, &rootkey, &enpass, fname);
   if (ret == STATUS_STOP) {
     return -1;
-  } else if (!ret) {
+  }
+
+  if (!ret) {
     std::cerr << std::endl << "encrypt password failed, " << ret << std::endl;
     return -1;
   }
@@ -338,7 +344,9 @@ Status ToolCommandKey::EnKey(bool sysrelated, std::string *rootkey,
     ret = ReadPassword(&pass);
     if (ret == STATUS_STOP) {
       return ret;
-    } else if (ret != STATUS_OK) {
+    }
+
+    if (ret != STATUS_OK) {
       std::cerr << "Read password failed, " << ret << std::endl;
       return STATUS_INVALID;
     }

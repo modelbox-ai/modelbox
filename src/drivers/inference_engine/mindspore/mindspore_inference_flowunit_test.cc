@@ -29,8 +29,6 @@
 #include "modelbox/buffer.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 
 Status InferenceMindSporeFlowUnitTest::Init() {

@@ -3,7 +3,6 @@
 
 #include "modelbox/base/log.h"
 
-using namespace py::literals;
 namespace modelbox {
 
 static std::shared_ptr<FlowUnitPythonLog> kInst = nullptr;

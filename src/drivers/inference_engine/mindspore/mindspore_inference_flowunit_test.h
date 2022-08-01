@@ -27,8 +27,6 @@
 #include "gtest/gtest.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 class InferenceMindSporeFlowUnitTest {
  public:

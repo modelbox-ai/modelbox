@@ -29,8 +29,6 @@
 #include "securec.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 class VideoDemuxerFlowUnitRetryTest : public testing::Test {
  public:

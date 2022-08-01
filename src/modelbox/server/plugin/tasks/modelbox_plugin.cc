@@ -25,8 +25,6 @@
 #include "modelbox/base/utils.h"
 #include "modelbox/common/utils.h"
 
-using namespace modelbox;
-
 const std::string SERVER_PATH = "/v1/modelbox/job";
 constexpr const char* GRAPH_DISABLED_FLAG = "DISABLED_";
 constexpr int MAX_FILES = 1 << 16;
@@ -66,7 +64,7 @@ bool ModelboxPlugin::Init(std::shared_ptr<modelbox::Configuration> config) {
   return CreateLocalJobs();
 }
 
-std::shared_ptr<Plugin> CreatePlugin() {
+std::shared_ptr<modelbox::Plugin> CreatePlugin() {
   MBLOG_INFO << "create modelbox plugin";
   return std::make_shared<ModelboxPlugin>();
 }
@@ -75,15 +73,15 @@ void ModelboxPlugin::RegistHandlers() {
   MBLOG_INFO << "modelbox plugin register handlers";
   MBLOG_INFO << "regist url : " << SERVER_PATH;
 
-  listener_->Register(SERVER_PATH, HttpMethods::PUT,
+  listener_->Register(SERVER_PATH, modelbox::HttpMethods::PUT,
                       std::bind(&ModelboxPlugin::HandlerPut, this,
                                 std::placeholders::_1, std::placeholders::_2));
 
-  listener_->Register(SERVER_PATH, HttpMethods::DELETE,
+  listener_->Register(SERVER_PATH, modelbox::HttpMethods::DELETE,
                       std::bind(&ModelboxPlugin::HandlerDel, this,
                                 std::placeholders::_1, std::placeholders::_2));
 
-  listener_->Register(SERVER_PATH, HttpMethods::GET,
+  listener_->Register(SERVER_PATH, modelbox::HttpMethods::GET,
                       std::bind(&ModelboxPlugin::HandlerGet, this,
                                 std::placeholders::_1, std::placeholders::_2));
 }
@@ -139,9 +137,10 @@ bool ModelboxPlugin::ParseConfig(
   default_application_path_ = config->GetString("server.application_root");
   oneshot_flow_path_ = default_flow_path_ + "/oneshot";
 
-  default_flow_path_ = modelbox_full_path(default_flow_path_);
-  default_application_path_ = modelbox_full_path(default_application_path_);
-  oneshot_flow_path_ = modelbox_full_path(oneshot_flow_path_);
+  default_flow_path_ = modelbox::modelbox_full_path(default_flow_path_);
+  default_application_path_ =
+      modelbox::modelbox_full_path(default_application_path_);
+  oneshot_flow_path_ = modelbox::modelbox_full_path(oneshot_flow_path_);
   return true;
 }
 
@@ -347,7 +346,7 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
   std::string graph_format = HTTP_GRAPH_FORMAT_JSON;
   std::string error_code = "MODELBOX_001";
   std::string error_msg;
-  AddSafeHeader(response);
+  modelbox::AddSafeHeader(response);
   bool is_failed = true;
   Defer {
     if (is_failed == false) {
@@ -356,8 +355,8 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
 
     MBLOG_ERROR << "Create task failed, " << error_msg;
     const auto& response_content = BuildErrorResponse(error_code, error_msg);
-    response.status = HttpStatusCodes::BAD_REQUEST;
-    response.set_content(response_content, JSON);
+    response.status = modelbox::HttpStatusCodes::BAD_REQUEST;
+    response.set_content(response_content, modelbox::JSON);
   };
 
   try {
@@ -422,23 +421,23 @@ void ModelboxPlugin::HandlerPut(const httplib::Request& request,
     return;
   }
 
-  response.status = HttpStatusCodes::CREATED;
+  response.status = modelbox::HttpStatusCodes::CREATED;
 }
 
 void ModelboxPlugin::HandlerGet(const httplib::Request& request,
                                 httplib::Response& response) {
-  AddSafeHeader(response);
+  modelbox::AddSafeHeader(response);
   try {
     std::string relative_path = request.path.substr(SERVER_PATH.size());
     std::string pre_path;
     std::string job_id;
-    SplitPath(relative_path, pre_path, job_id);
+    modelbox::SplitPath(relative_path, pre_path, job_id);
     if (pre_path.empty()) {
       if (modelbox::JobStatus::JOB_STATUS_NOTEXIST ==
           jobmanager_.QueryJobStatus(job_id)) {
         const auto& response_content = BuildErrorResponse("MODELBOX_002");
-        response.status = HttpStatusCodes::NOT_FOUND;
-        response.set_content(response_content, JSON);
+        response.status = modelbox::HttpStatusCodes::NOT_FOUND;
+        response.set_content(response_content, modelbox::JSON);
         return;
       }
 
@@ -448,8 +447,8 @@ void ModelboxPlugin::HandlerGet(const httplib::Request& request,
       response_json["job_id"] = job_id;
       response_json["job_status"] = job_status;
       response_json["job_error_msg"] = job_msg;
-      response.status = HttpStatusCodes::OK;
-      response.set_content(response_json.dump(), JSON);
+      response.status = modelbox::HttpStatusCodes::OK;
+      response.set_content(response_json.dump(), modelbox::JSON);
       return;
     }
 
@@ -468,36 +467,36 @@ void ModelboxPlugin::HandlerGet(const httplib::Request& request,
         response_json["job_list"].push_back(job_state);
       }
 
-      response.status = HttpStatusCodes::OK;
-      response.set_content(response_json.dump(), JSON);
+      response.status = modelbox::HttpStatusCodes::OK;
+      response.set_content(response_json.dump(), modelbox::JSON);
       return;
     }
 
     const auto& response_content = BuildErrorResponse("MODELBOX_006");
-    response.status = HttpStatusCodes::INTERNAL_ERROR;
-    response.set_content(response_content, JSON);
+    response.status = modelbox::HttpStatusCodes::INTERNAL_ERROR;
+    response.set_content(response_content, modelbox::JSON);
     return;
   } catch (const std::exception& e) {
     const auto& response_content = BuildErrorResponse("MODELBOX_001");
-    response.status = HttpStatusCodes::INTERNAL_ERROR;
-    response.set_content(response_content, JSON);
+    response.status = modelbox::HttpStatusCodes::INTERNAL_ERROR;
+    response.set_content(response_content, modelbox::JSON);
     return;
   }
 }
 
 void ModelboxPlugin::HandlerDel(const httplib::Request& request,
                                 httplib::Response& response) {
-  AddSafeHeader(response);
+  modelbox::AddSafeHeader(response);
   try {
     std::string relative_path = request.path.substr(SERVER_PATH.size());
     std::string pre_path;
     std::string job_id;
-    SplitPath(relative_path, pre_path, job_id);
+    modelbox::SplitPath(relative_path, pre_path, job_id);
     if (modelbox::JobStatus::JOB_STATUS_NOTEXIST ==
         jobmanager_.QueryJobStatus(job_id)) {
       const auto& response_content = BuildErrorResponse("MODELBOX_002");
-      response.status = HttpStatusCodes::NOT_FOUND;
-      response.set_content(response_content, JSON);
+      response.status = modelbox::HttpStatusCodes::NOT_FOUND;
+      response.set_content(response_content, modelbox::JSON);
       return;
     }
 
@@ -506,15 +505,15 @@ void ModelboxPlugin::HandlerDel(const httplib::Request& request,
     bool ret = jobmanager_.DeleteJob(job_id);
     if (!ret) {
       const auto& response_content = BuildErrorResponse("MODELBOX_002");
-      response.status = HttpStatusCodes::BAD_REQUEST;
-      response.set_content(response_content, JSON);
+      response.status = modelbox::HttpStatusCodes::BAD_REQUEST;
+      response.set_content(response_content, modelbox::JSON);
     }
   } catch (const std::exception& e) {
     const auto& response_content = BuildErrorResponse("MODELBOX_001");
-    response.status = HttpStatusCodes::INTERNAL_ERROR;
-    response.set_content(response_content, JSON);
+    response.status = modelbox::HttpStatusCodes::INTERNAL_ERROR;
+    response.set_content(response_content, modelbox::JSON);
     return;
   }
 
-  response.status = HttpStatusCodes::NO_CONTENT;
+  response.status = modelbox::HttpStatusCodes::NO_CONTENT;
 }

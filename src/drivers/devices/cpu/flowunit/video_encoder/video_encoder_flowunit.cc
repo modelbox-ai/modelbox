@@ -19,8 +19,6 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-using namespace modelbox;
-
 VideoEncoderFlowUnit::VideoEncoderFlowUnit() = default;
 VideoEncoderFlowUnit::~VideoEncoderFlowUnit() = default;
 
@@ -35,11 +33,11 @@ modelbox::Status VideoEncoderFlowUnit::Open(
       format_name_ != "mp4") {
     MBLOG_ERROR << "Bad value [" << format_name_
                 << "] for format, must be one of [rtsp|flv|mp4]";
-    return STATUS_BADCONF;
+    return modelbox::STATUS_BADCONF;
   }
 
   encoder_name_ = opts->GetString("encoder", "mpeg4");
-  return STATUS_OK;
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status VideoEncoderFlowUnit::Close() { return modelbox::STATUS_OK; }
@@ -54,30 +52,30 @@ modelbox::Status VideoEncoderFlowUnit::Process(
       data_ctx->GetPrivate(COLOR_CVT_CTX));
   if (muxer == nullptr || encoder == nullptr || color_cvt == nullptr) {
     MBLOG_ERROR << "Stream not inited";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   std::vector<std::shared_ptr<AVFrame>> av_frame_list;
   auto ret = ReadFrames(color_cvt, data_ctx, av_frame_list);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Read input frame failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   std::vector<std::shared_ptr<AVPacket>> av_packet_list;
   ret = EncodeFrame(encoder, av_frame_list, av_packet_list);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Encode frame failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   ret = MuxPacket(muxer, encoder->GetCtx()->time_base, av_packet_list);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Mux packet failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoEncoderFlowUnit::ReadFrames(
@@ -87,7 +85,7 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrames(
   auto frame_buffer_list = data_ctx->Input(FRAME_INFO_INPUT);
   if (frame_buffer_list == nullptr || frame_buffer_list->Size() == 0) {
     MBLOG_ERROR << "Input frame list is empty";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto frame_index_ptr =
@@ -97,14 +95,14 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrames(
     auto ret = ReadFrameFromBuffer(frame_buffer, av_frame);
     av_frame->pts = *frame_index_ptr;
     ++(*frame_index_ptr);
-    if (ret != STATUS_SUCCESS) {
+    if (ret != modelbox::STATUS_SUCCESS) {
       MBLOG_ERROR << "Read frame from buffer failed";
       return ret;
     }
 
     std::shared_ptr<AVFrame> yuv420p_frame;
     ret = CvtFrameToYUV420P(color_cvt, av_frame, yuv420p_frame);
-    if (ret != STATUS_SUCCESS) {
+    if (ret != modelbox::STATUS_SUCCESS) {
       MBLOG_ERROR << "Convert frame to yuv420p failed";
       return ret;
     }
@@ -112,7 +110,7 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrames(
     av_frame_list.push_back(yuv420p_frame);
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoEncoderFlowUnit::ReadFrameFromBuffer(
@@ -121,7 +119,7 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrameFromBuffer(
   auto *frame_ptr = av_frame_alloc();
   if (frame_ptr == nullptr) {
     MBLOG_ERROR << "Alloca frame failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   av_frame.reset(frame_ptr, [](AVFrame *ptr) { av_frame_free(&ptr); });
@@ -132,7 +130,7 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrameFromBuffer(
   auto iter = videodecode::g_av_pix_fmt_map.find(pix_fmt);
   if (iter == videodecode::g_av_pix_fmt_map.end()) {
     MBLOG_ERROR << "Encoder not support pix fmt " << pix_fmt;
-    return STATUS_NOTSUPPORT;
+    return modelbox::STATUS_NOTSUPPORT;
   }
   av_frame->format = iter->second;
   auto ret =
@@ -142,10 +140,10 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrameFromBuffer(
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, ffmpeg_err);
     MBLOG_ERROR << "avpicture_fill failed, err " << ffmpeg_err;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoEncoderFlowUnit::CvtFrameToYUV420P(
@@ -154,7 +152,7 @@ modelbox::Status VideoEncoderFlowUnit::CvtFrameToYUV420P(
   auto *frame = av_frame_alloc();
   if (frame == nullptr) {
     MBLOG_ERROR << "Alloc frame failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   yuv420p_frame.reset(frame, [](AVFrame *ptr) {
@@ -172,17 +170,17 @@ modelbox::Status VideoEncoderFlowUnit::CvtFrameToYUV420P(
     GET_FFMPEG_ERR(ffmepg_ret, ffmpeg_err);
     MBLOG_ERROR << "av_image_alloc failed, width " << yuv420p_frame->width
                 << ",height " << yuv420p_frame->height << ",err " << ffmpeg_err;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto ret = color_cvt->CvtColor(origin, yuv420p_frame->data[0],
                                  AVPixelFormat::AV_PIX_FMT_YUV420P);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Conver color failed";
     return ret;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoEncoderFlowUnit::EncodeFrame(
@@ -191,13 +189,13 @@ modelbox::Status VideoEncoderFlowUnit::EncodeFrame(
     std::vector<std::shared_ptr<AVPacket>> &av_packet_list) {
   for (auto frame : av_frame_list) {
     auto ret = encoder->Encode(frame, av_packet_list);
-    if (ret != STATUS_SUCCESS) {
+    if (ret != modelbox::STATUS_SUCCESS) {
       MBLOG_ERROR << "Encoder encode frame failed";
       return ret;
     }
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoEncoderFlowUnit::MuxPacket(
@@ -205,27 +203,27 @@ modelbox::Status VideoEncoderFlowUnit::MuxPacket(
     std::vector<std::shared_ptr<AVPacket>> &av_packet_list) {
   for (auto packet : av_packet_list) {
     auto ret = muxer->Mux(time_base, packet);
-    if (ret != STATUS_SUCCESS) {
+    if (ret != modelbox::STATUS_SUCCESS) {
       MBLOG_ERROR << "Muxer mux packet failed";
       return ret;
     }
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoEncoderFlowUnit::DataPre(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   std::string dest_url;
   auto ret = GetDestUrl(data_ctx, dest_url);
-  if (ret != STATUS_SUCCESS) {
-    return STATUS_FAULT;
+  if (ret != modelbox::STATUS_SUCCESS) {
+    return modelbox::STATUS_FAULT;
   }
 
   auto frame_buffer_list = data_ctx->Input(FRAME_INFO_INPUT);
   if (frame_buffer_list == nullptr || frame_buffer_list->Size() == 0) {
     MBLOG_ERROR << "Input [frame_info] is empty";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto frame_buffer = frame_buffer_list->At(0);
@@ -240,7 +238,7 @@ modelbox::Status VideoEncoderFlowUnit::DataPre(
 
   if (width == 0 || height == 0) {
     MBLOG_ERROR << "buffer meta is invalid";
-    return STATUS_INVALID;
+    return modelbox::STATUS_INVALID;
   }
 
   if (rate_num == 0 || rate_den == 0) {
@@ -252,7 +250,7 @@ modelbox::Status VideoEncoderFlowUnit::DataPre(
   ret = encoder->Init(width, height, {rate_num, rate_den}, encoder_name_);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Init encoder failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto writer = std::make_shared<FfmpegWriter>();
@@ -260,14 +258,14 @@ modelbox::Status VideoEncoderFlowUnit::DataPre(
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Open ffmepg writer failed, format " << format_name_
                 << ", url " << dest_url;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto muxer = std::make_shared<FfmpegVideoMuxer>();
   ret = muxer->Init(encoder->GetCtx(), writer);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Init muxer failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto color_cvt = std::make_shared<FfmpegColorConverter>();
@@ -282,7 +280,7 @@ modelbox::Status VideoEncoderFlowUnit::DataPre(
              << rate_num << "/" << rate_den << ", format " << format_name_
              << ", destination url " << dest_url << ", encoder "
              << encoder_name_;
-  return STATUS_OK;
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status VideoEncoderFlowUnit::GetDestUrl(
@@ -293,7 +291,7 @@ modelbox::Status VideoEncoderFlowUnit::GetDestUrl(
         std::static_pointer_cast<std::string>(stream_meta->GetMeta(DEST_URL));
     if (dest_url_ptr != nullptr) {
       dest_url = *dest_url_ptr;
-      return STATUS_SUCCESS;
+      return modelbox::STATUS_SUCCESS;
     }
   }
 
@@ -302,16 +300,16 @@ modelbox::Status VideoEncoderFlowUnit::GetDestUrl(
                 "for debug";
   if (default_dest_url_.empty()) {
     MBLOG_ERROR << "default_dest_url in config is empty, no dest url available";
-    return STATUS_BADCONF;
+    return modelbox::STATUS_BADCONF;
   }
 
   dest_url = default_dest_url_;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoEncoderFlowUnit::DataPost(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
-  return STATUS_OK;
+  return modelbox::STATUS_OK;
 }
 
 MODELBOX_FLOWUNIT(VideoEncoderFlowUnit, desc) {

@@ -269,7 +269,7 @@ class BufferList {
    * @param error_msg buffer error message
    * @return buffer reference
    */
-  void SetError(const std::string &error_code, const std::string &error_msg);
+  void SetError(const std::string& error_code, const std::string& error_msg);
 
   /**
    * @brief push current device data to buffer list.
@@ -328,9 +328,9 @@ class BufferList {
   uint32_t dev_mem_flags_{0};
   std::vector<std::shared_ptr<Buffer>> buffer_list_;
 
-  Status BuildContiguous(std::shared_ptr<modelbox::Device> device,
+  Status BuildContiguous(std::shared_ptr<Device> device,
                          const std::vector<size_t>& data_size_list);
-  Status BuildSeparate(std::shared_ptr<modelbox::Device> device,
+  Status BuildSeparate(std::shared_ptr<Device> device,
                        const std::vector<size_t>& data_size_list);
 };
 

@@ -16,18 +16,19 @@
 
 #include "obs_file_handler.h"
 
-using namespace modelbox;
+namespace modelbox {
 
-modelbox::Status OBSFileHandler::Get(unsigned char *buff, size_t size,
-                                     off_t off) {
-  return modelbox::ObsClient::GetInstance()->GetBuffer(opt_, buff, size, off);
+Status OBSFileHandler::Get(unsigned char *buff, size_t size, off_t off) {
+  return ObsClient::GetInstance()->GetBuffer(opt_, buff, size, off);
 }
 
 uint64_t OBSFileHandler::GetFileSize() {
   if (file_size_ == 0) {
-    file_size_ = modelbox::ObsClient::GetInstance()->GetObjectSize(opt_);
+    file_size_ = ObsClient::GetInstance()->GetObjectSize(opt_);
   }
   return file_size_;
 }
 
 void OBSFileHandler::SetOBSOption(const ObsOptions &opt) { opt_ = opt; }
+
+}  // namespace modelbox

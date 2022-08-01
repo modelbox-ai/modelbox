@@ -95,6 +95,7 @@ const HttpMethod HttpMethods::PATCH = "PATCH";
 #define GET_SSL_ERR(ssl_err_code, ssl_err_str)          \
   char ssl_err_str[256];                                \
   auto ssl_err_code_num = ERR_get_error();              \
+  /* NOLINTNEXTLINE */                                  \
   auto ssl_err_code = std::to_string(ssl_err_code_num); \
   ERR_error_string_n(ssl_err_code_num, ssl_err_str, 256);
 
@@ -421,8 +422,8 @@ Status HttpServer::Start() {
   auto ret = server_impl_->bind_to_port(ip_.c_str(), port_);
   if (!ret) {
     status_ = {STATUS_ALREADY, "bind to " + ip_ + ":" + std::to_string(port_) +
-                                 " failed, might be conflict, error " +
-                                 StrError(errno)};
+                                   " failed, might be conflict, error " +
+                                   StrError(errno)};
     return status_;
   }
 

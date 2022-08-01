@@ -115,13 +115,13 @@ std::shared_ptr<DriverHandlerInfo> DriverHandler::Add(void *driver_handler) {
   return driver_handler_info;
 }
 
-modelbox::Status DriverHandler::Remove(void *driver_handler) {
+Status DriverHandler::Remove(void *driver_handler) {
   auto driver_handler_info = Get(driver_handler);
   auto cnt = driver_handler_info->DecHanderRefcnt();
   if (cnt == 0) {
     handler_map.erase(driver_handler);
   }
-  return modelbox::STATUS_SUCCESS;
+  return STATUS_SUCCESS;
 }
 
 std::shared_ptr<DriverHandlerInfo> DriverHandler::Get(void *driver_handler) {
@@ -161,7 +161,7 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
     auto global = GetDriverDesc()->GetGlobal();
     auto deep_bind = GetDriverDesc()->GetDeepBind();
     typedef std::shared_ptr<DriverFactory> (*CreateDriverFactory)();
-    typedef modelbox::Status (*DriverInit)();
+    typedef Status (*DriverInit)();
 
     CreateDriverFactory driver_func = nullptr;
     DriverInit driver_init = nullptr;
@@ -202,8 +202,8 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
         return nullptr;
       }
 
-      modelbox::Status init = driver_init();
-      if (init != modelbox::STATUS_OK) {
+      Status init = driver_init();
+      if (init != STATUS_OK) {
         handler_info->initialize_count_--;
         handler_info->initialize_lock_.unlock();
         StatusError = {init, "driver init failed, driver:" + GetDriverFile()};
@@ -381,7 +381,7 @@ Status Drivers::Scan(const std::string &path, const std::string &filter) {
   auto ret = lstat(path.c_str(), &s);
   if (ret) {
     auto err_msg = "lstat " + path + " failed, errno:" + StrError(errno);
-    return {modelbox::STATUS_FAULT, err_msg};
+    return {STATUS_FAULT, err_msg};
   }
 
   if (!S_ISDIR(s.st_mode)) {
@@ -593,7 +593,7 @@ Status Drivers::FillCheckInfo(std::string &file_check_node,
             std::string("parser scan info file failed, ") + e.what()};
   }
 
-   return STATUS_SUCCESS;
+  return STATUS_SUCCESS;
 }
 
 bool Drivers::CheckPathAndMagicCode() {

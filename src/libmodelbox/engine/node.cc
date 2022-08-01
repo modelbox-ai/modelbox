@@ -25,17 +25,17 @@ namespace modelbox {
 
 #define ReturnPortNames(port_list)     \
   std::set<std::string> name_list;     \
-  for (auto& port : port_list) {       \
+  for (auto& port : (port_list)) {     \
     name_list.insert(port->GetName()); \
   }                                    \
   return name_list;
 
-#define ReturnPort(port_list, target_name) \
-  for (auto& port : port_list) {           \
-    if (port->GetName() == target_name) {  \
-      return port;                         \
-    }                                      \
-  }                                        \
+#define ReturnPort(port_list, target_name)  \
+  for (auto& port : (port_list)) {          \
+    if (port->GetName() == (target_name)) { \
+      return port;                          \
+    }                                       \
+  }                                         \
   return nullptr;
 
 #define DEFAULT_QUEUE_SIZE 32
@@ -485,7 +485,7 @@ Status Node::AppendDataContextByEvent(
 Status Node::AppendDataContextByData(
     std::shared_ptr<MatchStreamData> match_stream_data,
     std::set<std::shared_ptr<FlowUnitDataContext>>& data_ctx_set) {
-  modelbox::MatchKey* data_ctx_match_key = nullptr;
+  MatchKey* data_ctx_match_key = nullptr;
   if (GetFlowType() == STREAM) {
     if (GetOutputType() == COLLAPSE) {
       // collapse will match at expand, child stream after expand match at one
@@ -520,13 +520,13 @@ Status Node::AppendDataContextByData(
         data_ctx_set.insert(data_ctx);
       }
       return STATUS_OK;
-    } else {  // COLLAPSE, ORIGIN
-      /**
-       * collapse: collapse dirrerent match_stream concurrently
-       * origin: one match input to one match output
-       **/
-      data_ctx_match_key = match_stream_data->GetStreamMatchKey();
     }
+
+    /**
+     * collapse: collapse dirrerent match_stream concurrently
+     * origin: one match input to one match output
+     **/
+    data_ctx_match_key = match_stream_data->GetStreamMatchKey();
   }
 
   auto data_ctx =
@@ -642,7 +642,7 @@ Status Node::Process(
 Status Node::Send(
     std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list) {
   for (auto& data_ctx : data_ctx_list) {
-    std::unordered_map<std::string, modelbox::BufferPtrList> stream_data_map;
+    std::unordered_map<std::string, BufferPtrList> stream_data_map;
     data_ctx->PopOutputData(stream_data_map);
     auto ret = output_match_stream_mgr_->UpdateStreamInfo(
         stream_data_map, data_ctx->GetOutputPortStreamMeta(),

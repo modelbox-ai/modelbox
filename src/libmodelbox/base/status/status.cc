@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/status.h"
 
 #include <stdio.h>
@@ -176,9 +175,9 @@ std::string Status::WrapErrormsgs() const {
     auto msg = wrap_status_->WrapOnlyErrormsgs(false);
     if (msg.length() > 0) {
       return ErrorCodeMsgs(true) + " -> " + msg;
-    } else {
-      return ErrorCodeMsgs(true);
     }
+
+    return ErrorCodeMsgs(true);
   }
 
   return ErrorCodeMsgs(true);

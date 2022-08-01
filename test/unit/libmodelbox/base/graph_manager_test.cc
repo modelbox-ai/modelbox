@@ -33,10 +33,6 @@
 #include "gtest/gtest.h"
 #include "mock_driver_ctl.h"
 
-using ::testing::_;
-using ::testing::NiceMock;
-using ::testing::Return;
-
 namespace modelbox {
 
 Status SaveConfigFile(std::string &name, std::string &value) {

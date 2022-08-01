@@ -23,8 +23,6 @@
 #define ACL_ENABLE
 #include "image_process.h"
 
-using namespace imageprocess;
-
 ThreadHandler::ThreadHandler(int device_id, int instance_id,
                              std::shared_ptr<modelbox::DataContext> data_ctx)
     : device_id_(device_id), instance_id_(instance_id), data_ctx_(data_ctx) {}
@@ -300,26 +298,30 @@ std::shared_ptr<acldvppPicDesc> AscendVideoDecoder::SetUpFrame(
     std::shared_ptr<DvppPacket> dvpp_packet) {
   auto width = dvpp_packet->GetWidth();
   auto height = dvpp_packet->GetHeight();
-  auto align_width = align_up(width, ASCEND_WIDTH_ALIGN);
-  auto align_height = align_up(height, ASCEND_HEIGHT_ALIGN);
+  auto align_width =
+      imageprocess::align_up(width, imageprocess::ASCEND_WIDTH_ALIGN);
+  auto align_height =
+      imageprocess::align_up(height, imageprocess::ASCEND_HEIGHT_ALIGN);
   auto width_stride = 0;
-  auto ret = GetWidthStride(OUTPUT_PIX_FMT, align_width, width_stride);
+  auto ret =
+      imageprocess::GetWidthStride(OUTPUT_PIX_FMT, align_width, width_stride);
   if (!ret) {
     MBLOG_ERROR << "Get width stride failed, ret " << ret;
     return nullptr;
   }
 
   size_t size = 0;
-  ret = GetImageBytes(OUTPUT_PIX_FMT, align_width, align_height, size);
+  ret = imageprocess::GetImageBytes(OUTPUT_PIX_FMT, align_width, align_height,
+                                    size);
   if (!ret) {
     MBLOG_ERROR << "Get image bytes failed, ret " << ret;
     return nullptr;
   }
 
-  auto dvpp_pic_desc_ptr =
-      CreateImgDesc(size, OUTPUT_PIX_FMT,
-                    ImageShape{width, height, width_stride, align_height},
-                    ImgDescDestroyFlag::NONE);
+  auto dvpp_pic_desc_ptr = CreateImgDesc(
+      size, OUTPUT_PIX_FMT,
+      imageprocess::ImageShape{width, height, width_stride, align_height},
+      imageprocess::ImgDescDestroyFlag::NONE);
   if (dvpp_pic_desc_ptr == nullptr) {
     MBLOG_ERROR << "Create image desc failed, ret " << modelbox::StatusError;
     return nullptr;

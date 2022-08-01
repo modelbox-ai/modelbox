@@ -51,11 +51,6 @@ enum ImageType {
   IMAGE_TYPE_OHTER
 };
 
-std::map<ImageType, std::vector<uint8_t>> ImgStreamFormat{
-    {IMAGE_TYPE_JPEG, {0xff, 0xd8}},
-    {IMAGE_TYPE_PNG, {0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a}},
-    {IMAGE_TYPE_BMP, {0x42, 0x4d}}};
-
 class NvImageDecoderFlowUnit : public modelbox::FlowUnit {
  public:
   NvImageDecoderFlowUnit();

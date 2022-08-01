@@ -105,7 +105,7 @@ std::shared_ptr<OutputBrokerHandle> ObsOutputBroker::Open(
 
   auto handle = std::make_shared<OutputBrokerHandle>();
   std::string uuid;
-  if (modelbox::STATUS_OK != GetUUID(&uuid)) {
+  if (modelbox::STATUS_OK != modelbox::GetUUID(&uuid)) {
     MBLOG_ERROR << "Failed to generate a uuid for the OBS output broker!";
     return nullptr;
   }

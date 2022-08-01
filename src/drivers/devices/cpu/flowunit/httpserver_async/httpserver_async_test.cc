@@ -25,8 +25,6 @@
 
 #define REQUEST_URL "https://localhost:56789"
 
-using ::testing::_;
-
 namespace modelbox {
 class HttpServerAsyncFlowUnitTest : public testing::Test {
  public:

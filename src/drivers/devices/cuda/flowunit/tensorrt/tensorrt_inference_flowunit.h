@@ -43,10 +43,6 @@ const std::string SUFFIX_UFF = "uff";
 const std::string SUFFIX_ONNX = "onnx";
 const std::string SUFFIX_PROTXT = "prototxt";
 
-using namespace nvinfer1;
-using namespace nvcaffeparser1;
-using namespace nvuffparser;
-using namespace nvonnxparser;
 using TensorRTProcess =
     std::function<modelbox::Status(std::shared_ptr<modelbox::DataContext>)>;
 
@@ -135,7 +131,7 @@ class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
       std::shared_ptr<modelbox::Configuration> config);
   modelbox::Status SetUpInferencePlugin(
       std::shared_ptr<modelbox::Configuration> config);
-  void configureBuilder(std::shared_ptr<IBuilder> builder,
+  void configureBuilder(std::shared_ptr<nvinfer1::IBuilder> builder,
                         RndInt8Calibrator& calibrator);
   modelbox::Status PrePareOutput(
       std::shared_ptr<modelbox::DataContext>& data_ctx,
@@ -157,16 +153,16 @@ class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
   void PrintModelBindInfo(const std::vector<std::string>& name_list);
   modelbox::Status UffToTRTModel(
       const std::shared_ptr<modelbox::Configuration>& config,
-      std::shared_ptr<IBuilder>& builder,
-      std::shared_ptr<INetworkDefinition>& network);
+      std::shared_ptr<nvinfer1::IBuilder>& builder,
+      std::shared_ptr<nvinfer1::INetworkDefinition>& network);
   modelbox::Status OnnxToTRTModel(
       const std::shared_ptr<modelbox::Configuration>& config,
-      std::shared_ptr<IBuilder>& builder,
-      std::shared_ptr<INetworkDefinition>& network);
+      std::shared_ptr<nvinfer1::IBuilder>& builder,
+      std::shared_ptr<nvinfer1::INetworkDefinition>& network);
   modelbox::Status CaffeToTRTModel(
       const std::shared_ptr<modelbox::Configuration>& config,
-      std::shared_ptr<IBuilder>& builder,
-      std::shared_ptr<INetworkDefinition>& network);
+      std::shared_ptr<nvinfer1::IBuilder>& builder,
+      std::shared_ptr<nvinfer1::INetworkDefinition>& network);
   void SetPluginFactory(std::string pluginName);
 
   TensorRTProcess pre_process_{nullptr}, post_process_{nullptr};
@@ -176,13 +172,13 @@ class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
   void* driver_handler_{nullptr};
   std::shared_ptr<TensorRTInferencePlugin> inference_plugin_{nullptr};
 
-  std::shared_ptr<ICudaEngine> engine_{nullptr};
-  std::shared_ptr<IExecutionContext> context_{nullptr};
+  std::shared_ptr<nvinfer1::ICudaEngine> engine_{nullptr};
+  std::shared_ptr<nvinfer1::IExecutionContext> context_{nullptr};
   std::shared_ptr<nvinfer1::IPluginFactory> plugin_factory_{nullptr};
   std::map<std::string, nvinfer1::Dims3> input_dims_;
 };
 
-class RndInt8Calibrator : public IInt8EntropyCalibrator {
+class RndInt8Calibrator : public nvinfer1::IInt8EntropyCalibrator {
  public:
   RndInt8Calibrator(int total_samples, std::string cache_file,
                     std::map<std::string, nvinfer1::Dims3>& input_dims);
@@ -192,8 +188,7 @@ class RndInt8Calibrator : public IInt8EntropyCalibrator {
   bool getBatch(void* bindings[], const char* names[],
                 int nbBindings) noexcept override;
   const void* readCalibrationCache(size_t& length) noexcept override;
-  void writeCalibrationCache(const void* /*ptr*/,
-                             size_t /*length*/) noexcept override;
+  void writeCalibrationCache(const void* ptr, size_t length) noexcept override;
 
  private:
   int total_samples_{0};
