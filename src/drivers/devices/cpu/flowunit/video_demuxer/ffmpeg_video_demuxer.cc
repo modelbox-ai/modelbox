@@ -154,8 +154,8 @@ Status FfmpegVideoDemuxer::ReadPacket(std::shared_ptr<AVPacket> &av_packet) {
     return STATUS_FAULT;
   }
 
-  if (av_packet->size <= 0) {
-    MBLOG_ERROR << "Read packet size <= 0";
+  if (av_packet->size < 0) {
+    MBLOG_ERROR << "Read packet size < 0";
     return STATUS_FAULT;
   }
 
@@ -168,6 +168,10 @@ bool FfmpegVideoDemuxer::IsTargetPacket(std::shared_ptr<AVPacket> &av_packet) {
   }
 
   if (key_frame_only_ && av_packet->flags != AV_PKT_FLAG_KEY) {
+    return false;
+  }
+
+  if (av_packet->size == 0) {
     return false;
   }
 
