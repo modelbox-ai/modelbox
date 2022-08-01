@@ -19,8 +19,8 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-DrawBBoxFlowUnit::DrawBBoxFlowUnit(){};
-DrawBBoxFlowUnit::~DrawBBoxFlowUnit(){};
+DrawBBoxFlowUnit::DrawBBoxFlowUnit() = default;
+DrawBBoxFlowUnit::~DrawBBoxFlowUnit() = default;
 
 modelbox::Status DrawBBoxFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

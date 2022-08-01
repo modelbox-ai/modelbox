@@ -41,16 +41,16 @@ namespace modelbox {
 
 class ModelboxServerTest : public testing::Test {
  public:
-  ModelboxServerTest() {}
+  ModelboxServerTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init(false);
     flow_->Register_Test_0_2_Flowunit();
     flow_->Register_Test_OK_2_0_Flowunit();
   };
-  virtual void TearDown() { flow_->Destroy(); };
+  void TearDown() override { flow_->Destroy(); };
 
  private:
   std::shared_ptr<MockFlow> flow_;
@@ -467,7 +467,7 @@ TEST_F(ModelboxServerTest, FlowInfoSpecificPath) {
   server.Start();
   sleep(1);
   std::vector<std::string> dir_list;
-  dir_list.push_back(VIRTUAL_PYTHON_PATH);
+  dir_list.emplace_back(VIRTUAL_PYTHON_PATH);
   auto response = GetFlowInfoSpecificDir(server, dir_list);
   EXPECT_EQ(response.status, HttpStatusCodes::OK);
 }

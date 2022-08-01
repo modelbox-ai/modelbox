@@ -18,8 +18,8 @@
 #include "mean_flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-MeanFlowUnit::MeanFlowUnit(){};
-MeanFlowUnit::~MeanFlowUnit(){};
+MeanFlowUnit::MeanFlowUnit() = default;
+MeanFlowUnit::~MeanFlowUnit() = default;
 
 modelbox::Status MeanFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

@@ -17,8 +17,8 @@
 
 #include "mean_flowunit_base.h"
 
-MeanFlowUnitBase::MeanFlowUnitBase(){};
-MeanFlowUnitBase::~MeanFlowUnitBase(){};
+MeanFlowUnitBase::MeanFlowUnitBase() = default;
+MeanFlowUnitBase::~MeanFlowUnitBase() = default;
 
 modelbox::Status MeanFlowUnitBase::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

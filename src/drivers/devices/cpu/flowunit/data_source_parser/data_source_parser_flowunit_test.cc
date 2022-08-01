@@ -53,7 +53,7 @@ class DataSourceParserFlowUnitTest : public testing::Test {
   void MockRestfulServer(std::shared_ptr<MockFlow> &driver_flow);
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     cert_ = std::string(TEST_DATA_DIR) + "/certificate.pem";
     key_ = std::string(TEST_DATA_DIR) + "/private_key_nopass.pem";
@@ -62,7 +62,7 @@ class DataSourceParserFlowUnitTest : public testing::Test {
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     driver_flow_ = nullptr;
     remove(key_.c_str());
     remove(cert_.c_str());

@@ -42,8 +42,8 @@ class MindSporeInferenceCudaFlowUnitFactory : public modelbox::FlowUnitFactory {
       const std::string &unit_name, const std::string &unit_type,
       const std::string &virtual_type);
 
-  const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
-  const std::string GetVirtualType() { return INFERENCE_TYPE; };
+  std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
+  std::string GetVirtualType() { return INFERENCE_TYPE; };
 
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
   FlowUnitProbe() {

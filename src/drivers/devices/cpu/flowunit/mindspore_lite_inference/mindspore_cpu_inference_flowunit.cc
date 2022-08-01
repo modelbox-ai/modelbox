@@ -16,9 +16,9 @@
 
 #include "mindspore_cpu_inference_flowunit.h"
 
-MindSporeInferenceCPUFlowUnit::MindSporeInferenceCPUFlowUnit(){};
+MindSporeInferenceCPUFlowUnit::MindSporeInferenceCPUFlowUnit() = default;
 
-MindSporeInferenceCPUFlowUnit::~MindSporeInferenceCPUFlowUnit(){};
+MindSporeInferenceCPUFlowUnit::~MindSporeInferenceCPUFlowUnit() = default;
 
 std::shared_ptr<mindspore::DeviceInfoContext> MindSporeInferenceCPUFlowUnit::GetDeviceInfoContext(
     std::shared_ptr<modelbox::Configuration> &config) {

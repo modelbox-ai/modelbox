@@ -98,7 +98,7 @@ class Configuration {
 
   static void Trim(std::string *value);
 
-  static void StringSplit(const std::string &str, const std::string delimiter,
+  static void StringSplit(const std::string &str, std::string delimiter,
                           std::vector<std::string> &sub_str_list);
 
   void Add(const Configuration &config) { store_->Add(*(config.store_)); }
@@ -152,7 +152,7 @@ class Configuration {
 
   uint64_t GetUint64(const std::string &key, uint64_t default_prop = 0) const;
 
-  float GetFloat(const std::string &key, float default_prop = 0.0f) const;
+  float GetFloat(const std::string &key, float default_prop = 0.0F) const;
 
   double GetDouble(const std::string &key, double default_prop = 0.0) const;
 

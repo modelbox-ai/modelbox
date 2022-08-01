@@ -17,8 +17,8 @@
 #include "normalize_flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-NormalizeFlowUnit::NormalizeFlowUnit(){};
-NormalizeFlowUnit::~NormalizeFlowUnit(){};
+NormalizeFlowUnit::NormalizeFlowUnit() = default;
+NormalizeFlowUnit::~NormalizeFlowUnit() = default;
 
 modelbox::Status NormalizeFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

@@ -29,9 +29,9 @@ constexpr const char *MOCK_DRIVER_DEVICE_LIB_PREFIX = "libmodelbox-device-";
 constexpr const char *MOCK_DRIVER_UNIT_LIB_PREFIX = "libmodelbox-unit-";
 constexpr const char *MOCK_DRIVER_GRAPHCONF_LIB_PREFIX = "libmodelbox-graphconf-";
 
-MockDriverDescSetup::MockDriverDescSetup() {}
+MockDriverDescSetup::MockDriverDescSetup() = default;
 
-MockDriverDescSetup::~MockDriverDescSetup() {}
+MockDriverDescSetup::~MockDriverDescSetup() = default;
 
 void MockDriverDescSetup::SetDriverDesc(std::shared_ptr<DriverDesc> desc) {
   desc_ = desc;
@@ -61,7 +61,7 @@ MockDriver *MockDriverDescSetup::GetMockDriver() { return mock_driver_; }
 
 void MockDriverDescSetup::Setup() { mock_driver_->SetDriverDesc(desc_); }
 
-MockDriverCtl::MockDriverCtl() {}
+MockDriverCtl::MockDriverCtl() = default;
 
 MockDriverCtl::~MockDriverCtl() {
   RemoveAllMockDriverFlowUnit();

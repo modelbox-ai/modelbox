@@ -82,12 +82,12 @@ class PopenEnv {
 
  protected:
   friend Popen;
-  
-  const std::vector<std::string> GetEnvs() const;
+
+  std::vector<std::string> GetEnvs() const;
 
   void LoadInherit();
   void LoadEnvFromList(const std::string &item_list);
-  const bool Changed() const;
+  bool Changed() const;
 
  private:
   std::map<std::string, std::string> env_;

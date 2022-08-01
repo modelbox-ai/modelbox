@@ -21,8 +21,8 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-ColorTransposeFlowUnit::ColorTransposeFlowUnit(){};
-ColorTransposeFlowUnit::~ColorTransposeFlowUnit(){};
+ColorTransposeFlowUnit::ColorTransposeFlowUnit() = default;
+ColorTransposeFlowUnit::~ColorTransposeFlowUnit() = default;
 
 modelbox::Status ColorTransposeFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

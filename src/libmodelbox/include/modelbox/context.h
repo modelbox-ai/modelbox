@@ -40,7 +40,7 @@ class HandlerContext {
  public:
   friend class ModelBoxEngine;
   HandlerContext(std::weak_ptr<ModelBoxEngine> &env);
-  virtual ~HandlerContext() {}
+  virtual ~HandlerContext() = default;
 
   virtual Status PushData(const std::string &key,
                           const std::shared_ptr<BufferList> &bufferlist) = 0;
@@ -55,7 +55,7 @@ class HandlerContext {
 
   std::shared_ptr<GraphState> GetGraphState();
 
-  void SetGraphState(const std::shared_ptr<GraphState> &);
+  void SetGraphState(const std::shared_ptr<GraphState> & /*state*/);
 
   virtual void Close(){};
 
@@ -75,16 +75,16 @@ class HandlerContext {
 class InputContext : public HandlerContext {
  public:
   InputContext(std::weak_ptr<ModelBoxEngine> env);
-  ~InputContext();
+  ~InputContext() override;
   void SetExternPtr(std::shared_ptr<void> extern_data_map,
                     std::shared_ptr<BufferList> extern_buffer_list);
   Status PushData(const std::string &key,
-                  const std::shared_ptr<BufferList> &bufferlist);
+                  const std::shared_ptr<BufferList> &bufferlist) override;
 
-  std::shared_ptr<BufferList> GetBufferList(const std::string &key);
+  std::shared_ptr<BufferList> GetBufferList(const std::string &key) override;
 
-  Status RunGraph(const std::shared_ptr<DataHandler> &);
-  void Close();
+  Status RunGraph(const std::shared_ptr<DataHandler> & /*handler*/) override;
+  void Close() override;
 
  private:
   std::weak_ptr<ModelBoxEngine> env_;
@@ -95,13 +95,13 @@ class InputContext : public HandlerContext {
 class StreamContext : public HandlerContext {
  public:
   StreamContext(std::weak_ptr<ModelBoxEngine> env);
-  ~StreamContext();
+  ~StreamContext() override;
   Status PushData(const std::string &key,
-                  const std::shared_ptr<BufferList> &bufferlist);
+                  const std::shared_ptr<BufferList> &bufferlist) override;
 
-  std::shared_ptr<BufferList> GetBufferList(const std::string &key);
+  std::shared_ptr<BufferList> GetBufferList(const std::string &key) override;
 
-  Status RunGraph(const std::shared_ptr<DataHandler> &);
+  Status RunGraph(const std::shared_ptr<DataHandler> & /*handler*/) override;
 
  private:
   bool end_flag_;
@@ -110,13 +110,13 @@ class StreamContext : public HandlerContext {
 class BufferListContext : public HandlerContext {
  public:
   BufferListContext(std::weak_ptr<ModelBoxEngine> env);
-  ~BufferListContext();
+  ~BufferListContext() override;
   Status PushData(const std::string &key,
-                  const std::shared_ptr<BufferList> &bufferlist);
+                  const std::shared_ptr<BufferList> &bufferlist) override;
 
-  std::shared_ptr<BufferList> GetBufferList(const std::string &key);
+  std::shared_ptr<BufferList> GetBufferList(const std::string &key) override;
 
-  Status RunGraph(const std::shared_ptr<DataHandler>&);
+  Status RunGraph(const std::shared_ptr<DataHandler> & /*handler*/) override;
 };
 
 }  // namespace modelbox

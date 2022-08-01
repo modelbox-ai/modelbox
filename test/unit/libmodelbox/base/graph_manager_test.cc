@@ -54,14 +54,14 @@ Status RemoveFile(std::string &name) {
 
 class GraphManagerTest : public testing::Test {
  public:
-  GraphManagerTest() {}
+  GraphManagerTest() = default;
   MockDriverCtl ctl_;
   std::shared_ptr<modelbox::Configuration> config_;
   std::string conf_file_name_;
   std::string conf_file_value_;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     std::shared_ptr<Drivers> drivers_ = Drivers::GetInstance();
 
     modelbox::DriverDesc desc;
@@ -96,7 +96,7 @@ class GraphManagerTest : public testing::Test {
     SaveConfigFile(conf_file_name_, conf_file_value_);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     drivers->Clear();
     RemoveFile(conf_file_name_);

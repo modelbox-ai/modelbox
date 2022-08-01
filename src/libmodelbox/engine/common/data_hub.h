@@ -106,7 +106,7 @@ class PortCompare {
 class DefaultDataHub : public DataHub {
  public:
   DefaultDataHub();
-  virtual ~DefaultDataHub() override;
+  ~DefaultDataHub() override;
 
   Status AddPort(const std::shared_ptr<PriorityPort>& port) override;
   Status SelectActivePort(std::shared_ptr<PriorityPort>* active_port,

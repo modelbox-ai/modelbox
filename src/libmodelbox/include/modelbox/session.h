@@ -39,7 +39,8 @@ class SessionIO {
   virtual Status Recv(OutputBufferList& map_buffer_list, int timeout = 0) = 0;
   virtual Status Close() = 0;
   virtual Status Shutdown() = 0;
-
+  
+  virtual ~SessionIO() = default;
  protected:
   friend class Session;
   virtual void SessionEnd(std::shared_ptr<FlowUnitError> error = nullptr) = 0;
@@ -54,7 +55,7 @@ class Session {
  public:
   Session(std::shared_ptr<StatisticsItem> graph_stats);
 
-  ~Session();
+  virtual ~Session();
 
   void AddStateListener(std::shared_ptr<SessionStateListener> listener);
 
@@ -99,7 +100,7 @@ class SessionManager {
  public:
   SessionManager() = default;
 
-  ~SessionManager() = default;
+  virtual ~SessionManager() = default;
 
   std::shared_ptr<Session> CreateSession(
       std::shared_ptr<StatisticsItem> graph_stats);

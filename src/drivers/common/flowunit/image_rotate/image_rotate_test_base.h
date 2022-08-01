@@ -43,12 +43,12 @@ class ImageRotateFlowUnitTest : public testing::Test {
   std::vector<int32_t> test_rotate_angle_{90, 180, 270};
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
 
  private:

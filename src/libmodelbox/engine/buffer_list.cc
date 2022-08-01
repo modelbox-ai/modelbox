@@ -18,11 +18,11 @@
 
 namespace modelbox {
 
-BufferList::BufferList() : is_contiguous_(false), dev_mem_(nullptr) {}
+BufferList::BufferList() : dev_mem_(nullptr) {}
 
 BufferList::BufferList(const std::shared_ptr<Device>& device,
                        uint32_t device_mem_flags)
-    : is_contiguous_(false), dev_mem_flags_(device_mem_flags) {
+    : dev_mem_flags_(device_mem_flags) {
   if (device) {
     dev_mem_ = device->MemAlloc(0, device_mem_flags);
   }
@@ -204,7 +204,7 @@ std::shared_ptr<Buffer> BufferList::At(size_t idx) {
   return buffer_list_.at(idx);
 }
 
-const std::shared_ptr<Buffer> BufferList::At(size_t idx) const {
+std::shared_ptr<Buffer> BufferList::At(size_t idx) const {
   if (idx >= buffer_list_.size()) {
     return nullptr;
   }

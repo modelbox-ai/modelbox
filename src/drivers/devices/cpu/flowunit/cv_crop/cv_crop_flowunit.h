@@ -56,14 +56,16 @@ const int RGB_CHANNLES = 3;
 class CVCropFlowUnit : public modelbox::FlowUnit {
  public:
   CVCropFlowUnit();
-  virtual ~CVCropFlowUnit();
+  ~CVCropFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
   /* run when processing data */
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 };
 
 #endif  // MODELBOX_FLOWUNIT_CV_CROP_FLOWUNIT_CPU_H_

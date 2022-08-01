@@ -30,13 +30,13 @@
 namespace modelbox {
 class BufferListTest : public testing::Test {
  public:
-  BufferListTest() {}
+  BufferListTest() = default;
 
  protected:
   std::shared_ptr<Device> device_;
   std::shared_ptr<MockDriverCtl> ctl_;
 
-  virtual void SetUp() {
+  void SetUp() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     ctl_ = std::make_shared<MockDriverCtl>();
     modelbox::DriverDesc desc;
@@ -62,7 +62,7 @@ class BufferListTest : public testing::Test {
     device_->SetMemQuota(10240);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     std::shared_ptr<DeviceManager> device_mgr = DeviceManager::GetInstance();
     device_mgr->Clear();
@@ -135,7 +135,7 @@ TEST_F(BufferListTest, Get) {
   buffer_list.Set("Width", 1280);
 
   buffer_list.Set("PTS", 10);
-  buffer_list.Set("FPS", 30.1f);
+  buffer_list.Set("FPS", 30.1F);
 
   int i_value = 0;
   float f_valud = 0.0;
@@ -150,7 +150,7 @@ TEST_F(BufferListTest, Get) {
     EXPECT_EQ(i_value, 10);
 
     EXPECT_TRUE(buffer_list[i]->Get("FPS", f_valud));
-    EXPECT_EQ(f_valud, 30.1f);
+    EXPECT_EQ(f_valud, 30.1F);
   }
 
   std::shared_ptr<BufferList> bl_ptr(&buffer_list, [](void *p) {});

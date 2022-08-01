@@ -26,8 +26,8 @@
 #include "modelbox/base/status.h"
 
 namespace modelbox {
-DeviceManager::DeviceManager() {}
-DeviceManager::~DeviceManager() {}
+DeviceManager::DeviceManager() = default;
+DeviceManager::~DeviceManager() = default;
 
 Status DeviceManager::Register(std::shared_ptr<DeviceFactory> factory) {
   std::string factory_type = factory->GetDeviceFactoryType();

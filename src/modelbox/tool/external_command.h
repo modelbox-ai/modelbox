@@ -27,18 +27,18 @@ namespace modelbox {
 class ExternalCommandKey : public ToolCommand {
  public:
   ExternalCommandKey();
-  virtual ~ExternalCommandKey();
+  ~ExternalCommandKey() override;
 
-  int Run(int argc, char *argv[]);
-  std::string GetHelp();
+  int Run(int argc, char *argv[]) override;
+  std::string GetHelp() override;
 
   Status SetExecuteCmd(const std::string &cmd);
   void SetCommandName(const std::string &name);
   void SetCommandDesc(const std::string &desc);
   void SetHelpCmd(const std::string &help_cmd);
   void SetTimeout(int timeout);
-  std::string GetCommandName();
-  std::string GetCommandDesc();
+  std::string GetCommandName() override;
+  std::string GetCommandDesc() override;
 
  private:
   std::string cmd_;

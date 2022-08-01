@@ -60,9 +60,9 @@ const char* kStatusCodeString[] = {
     "End flag",
 };
 
-Status::Status() {}
+Status::Status() = default;
 
-Status::~Status() {}
+Status::~Status() = default;
 
 Status::Status(const StatusCode& code) { code_ = code; }
 
@@ -120,7 +120,7 @@ Status::operator bool() const { return code_ == STATUS_SUCCESS; }
 
 Status::operator enum StatusCode() const { return code_; }
 
-const std::string Status::ToString() const {
+std::string Status::ToString() const {
   if (errmsg_.length() > 0) {
     std::ostringstream oss;
     oss << "code: " << StrCode() << ", errmsg: " << errmsg_;
@@ -130,7 +130,7 @@ const std::string Status::ToString() const {
   return StrCode();
 }
 
-const std::string Status::StrCode() const {
+std::string Status::StrCode() const {
   if (code_ >= sizeof(kStatusCodeString) / sizeof(char*)) {
     return "";
   }
@@ -142,7 +142,7 @@ void Status::SetErrormsg(const std::string& errmsg) { errmsg_ = errmsg; }
 
 const std::string& Status::Errormsg() const { return errmsg_; }
 
-const std::string Status::ErrorCodeMsgs(bool with_code) const {
+std::string Status::ErrorCodeMsgs(bool with_code) const {
   if (with_code) {
     if (Errormsg().length() > 0) {
       return StrCode() + ", " + Errormsg();
@@ -154,7 +154,7 @@ const std::string Status::ErrorCodeMsgs(bool with_code) const {
   return Errormsg();
 }
 
-const std::string Status::WrapOnlyErrormsgs(bool with_code) const {
+std::string Status::WrapOnlyErrormsgs(bool with_code) const {
   if (wrap_status_ == nullptr) {
     return ErrorCodeMsgs(false);
   }
@@ -171,7 +171,7 @@ const std::string Status::WrapOnlyErrormsgs(bool with_code) const {
   return ErrorCodeMsgs(with_code);
 }
 
-const std::string Status::WrapErrormsgs() const {
+std::string Status::WrapErrormsgs() const {
   if (wrap_status_ != nullptr) {
     auto msg = wrap_status_->WrapOnlyErrormsgs(false);
     if (msg.length() > 0) {

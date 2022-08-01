@@ -23,9 +23,9 @@
 #include "modelbox/common/flowunit_info.h"
 
 namespace modelbox {
-FlowUnitInfo::FlowUnitInfo() {}
+FlowUnitInfo::FlowUnitInfo() = default;
 
-FlowUnitInfo::~FlowUnitInfo() {}
+FlowUnitInfo::~FlowUnitInfo() = default;
 
 Status FlowUnitInfo::Init(std::shared_ptr<Configuration> config) {
   ConfigurationBuilder config_builder;

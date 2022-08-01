@@ -101,7 +101,7 @@ std::string JSFunctionReturn::GetString() {
 
 void *JSFunctionReturn::GetPointer() { return duk_get_pointer(ctx_.get(), -1); }
 
-JSCtx::JSCtx() {}
+JSCtx::JSCtx() = default;
 
 modelbox::Status JSCtx::Init() {
   auto ctx_ptr =

@@ -36,7 +36,7 @@ class CpuUsageData {
   CpuUsageData(TimePoint timestamp, int32_t percentage)
       : timestamp_(timestamp), percentage_(percentage) {}
 
-  virtual ~CpuUsageData() {}
+  virtual ~CpuUsageData() = default;
   TimePoint timestamp_;
   int32_t percentage_{0};  // 0 ~ 100
 };
@@ -49,7 +49,7 @@ class DeviceMemUsageData {
       : device_tag_(device_tag),
         device_mem_(device_mem),
         device_mem_percentage_(device_mem_percentage) {}
-  virtual ~DeviceMemUsageData() {}
+  virtual ~DeviceMemUsageData() = default;
 
   std::string device_tag_;
   int64_t device_mem_{0};
@@ -63,7 +63,7 @@ class MemUsageData {
       : timestamp_(timestamp),
         host_mem_(host_mem),
         host_mem_percentage_(host_mem_percentage) {}
-  virtual ~MemUsageData() {}
+  virtual ~MemUsageData() = default;
 
   void AddDeviceMemUsageData(const std::string& device_tag, int64_t device_mem,
                              int32_t device_mem_percentage) {
@@ -84,7 +84,7 @@ class MemUsageCollector : public PerfCollector {
                         devices)
       : devices_(devices){};
 
-  virtual ~MemUsageCollector() {}
+  virtual ~MemUsageCollector() = default;
 
   void Export(nlohmann::json& perf_data) override;
 
@@ -502,7 +502,7 @@ void FlowUnitPerfCollector::Export(nlohmann::json& perf_data) {
   perf_data["flow_unit_performance"] = flow_unit_perf_json_arr;
 }
 
-FlowUnitPerfCollector::~FlowUnitPerfCollector() {}
+FlowUnitPerfCollector::~FlowUnitPerfCollector() = default;
 
 void FlowUnitPerfCollector::Collect() {
   for (auto device : *devices_) {

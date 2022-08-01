@@ -57,7 +57,8 @@ class RetryContext {
 
 class SourceContext {
  public:
-  SourceContext(std::weak_ptr<SourceParser>, const std::string &plugin_name);
+  SourceContext(std::weak_ptr<SourceParser> /*plugin*/,
+                const std::string &plugin_name);
 
   virtual ~SourceContext();
 

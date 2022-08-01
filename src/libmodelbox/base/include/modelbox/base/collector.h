@@ -43,8 +43,6 @@ class Collector {
       MBLOG_WARN << name << " is already in the map, overwrites it.";
     }
     objs_[name] = obj;
-
-    return;
   }
 
   /**
@@ -59,7 +57,6 @@ class Collector {
     }
 
     objs_.erase(name);
-    return;
   }
 
   /**

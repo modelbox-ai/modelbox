@@ -406,7 +406,7 @@ class DvppChanMgr : public std::enable_shared_from_this<DvppChanMgr> {
     chan_list.push_back(desc);
   }
 
-  ~DvppChanMgr() {
+  virtual ~DvppChanMgr() {
     for (auto &chan_list_item : device_chan_list_) {
       for (auto ptr : chan_list_item.second) {
         acldvppDestroyChannel(ptr);

@@ -38,8 +38,8 @@ static struct option server_log_options[] = {
     {nullptr, 0, nullptr, 0},
 };
 
-ToolCommandLog::ToolCommandLog() {}
-ToolCommandLog::~ToolCommandLog() {}
+ToolCommandLog::ToolCommandLog() = default;
+ToolCommandLog::~ToolCommandLog() = default;
 
 std::string ToolCommandLog::GetHelp() {
   char help[] =
@@ -115,8 +115,8 @@ constexpr const char *CPU_MEMPOOL_TYPE = "cpu";
 constexpr const char *CUDA_MEMPOOL_TYPE = "cuda";
 constexpr const char *ASCEND_MEMPOOL_TYPE = "ascend";
 
-ToolCommandSlab::ToolCommandSlab() {}
-ToolCommandSlab::~ToolCommandSlab() {}
+ToolCommandSlab::ToolCommandSlab() = default;
+ToolCommandSlab::~ToolCommandSlab() = default;
 
 std::string ToolCommandSlab::GetHelp() {
   char help[] =
@@ -308,8 +308,8 @@ static struct option server_statistics_options[] = {
     {nullptr, 0, nullptr, 0},
 };
 
-ToolCommandStatistics::ToolCommandStatistics() {}
-ToolCommandStatistics::~ToolCommandStatistics() {}
+ToolCommandStatistics::ToolCommandStatistics() = default;
+ToolCommandStatistics::~ToolCommandStatistics() = default;
 
 std::string ToolCommandStatistics::GetHelp() {
   char help[] =

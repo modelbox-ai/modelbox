@@ -36,7 +36,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetClass(modelbox::DRIVER_CLASS_INFERENCE);
   desc->SetType(modelbox::DEVICE_TYPE);
   desc->SetDescription(FLOWUNIT_DESC);
-  return;
 }
 
 modelbox::Status DriverInit() {

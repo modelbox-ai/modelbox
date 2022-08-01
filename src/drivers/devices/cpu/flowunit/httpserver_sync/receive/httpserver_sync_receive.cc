@@ -22,8 +22,8 @@
 #include "modelbox/device/cpu/device_cpu.h"
 #include "modelbox/flowunit_api_helper.h"
 
-HTTPServerReceiveSync::HTTPServerReceiveSync(){};
-HTTPServerReceiveSync::~HTTPServerReceiveSync(){};
+HTTPServerReceiveSync::HTTPServerReceiveSync() = default;
+HTTPServerReceiveSync::~HTTPServerReceiveSync() = default;
 
 modelbox::Status HTTPServerReceiveSync::HandleFunc(
     web::http::http_request request) {

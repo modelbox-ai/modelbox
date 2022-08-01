@@ -45,8 +45,8 @@ class ServerTimer : public modelbox::Timer {
   void Stop();
 
  private:
-  ServerTimer(){};
-  virtual ~ServerTimer(){};
+  ServerTimer() = default;
+  ~ServerTimer() override = default;
 };
 
 /**

@@ -53,7 +53,7 @@ using ObsOutputConfigurations =
 class ObsOutputBroker : public OutputBrokerPlugin {
  public:
   ObsOutputBroker();
-  virtual ~ObsOutputBroker();
+  ~ObsOutputBroker() override;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -104,7 +104,7 @@ class ObsOutputBroker : public OutputBrokerPlugin {
 class OBSOutputBrokerFactory : public modelbox::DriverFactory {
  public:
   OBSOutputBrokerFactory() = default;
-  virtual ~OBSOutputBrokerFactory() = default;
+  ~OBSOutputBrokerFactory() override = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> parser =

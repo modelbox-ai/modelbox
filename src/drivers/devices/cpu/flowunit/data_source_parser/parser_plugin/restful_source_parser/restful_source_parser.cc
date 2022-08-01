@@ -19,8 +19,8 @@
 #include <iomanip>
 #include <nlohmann/json.hpp>
 
-RestfulSourceParser::RestfulSourceParser() {}
-RestfulSourceParser::~RestfulSourceParser() {}
+RestfulSourceParser::RestfulSourceParser() = default;
+RestfulSourceParser::~RestfulSourceParser() = default;
 
 modelbox::Status RestfulSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {

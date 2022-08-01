@@ -34,8 +34,8 @@ const std::map<std::string, AlignType> kHorizontalAlignType = {
     {"center", AlignType::CENTER},
     {"right", AlignType::END}};
 
-PaddingFlowUnit::PaddingFlowUnit(){};
-PaddingFlowUnit::~PaddingFlowUnit(){};
+PaddingFlowUnit::PaddingFlowUnit() = default;
+PaddingFlowUnit::~PaddingFlowUnit() = default;
 
 modelbox::Status PaddingFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

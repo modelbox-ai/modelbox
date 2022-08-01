@@ -35,7 +35,7 @@ Ascend::Ascend(const std::shared_ptr<DeviceMemoryManager> &mem_mgr)
 
 Ascend::~Ascend() { aclFinalize(); }
 
-const std::string Ascend::GetType() const { return DEVICE_TYPE; }
+std::string Ascend::GetType() const { return DEVICE_TYPE; }
 
 Status Ascend::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
                              size_t count) {
@@ -57,8 +57,8 @@ Status Ascend::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
 
 bool Ascend::NeedResourceNice() { return true; }
 
-AscendFactory::AscendFactory() {}
-AscendFactory::~AscendFactory() {}
+AscendFactory::AscendFactory() = default;
+AscendFactory::~AscendFactory() = default;
 
 std::map<std::string, std::shared_ptr<DeviceDesc>>
 AscendFactory::DeviceProbe() {
@@ -91,7 +91,7 @@ AscendFactory::DeviceProbe() {
   return device_desc_map;
 }
 
-const std::string AscendFactory::GetDeviceFactoryType() { return DEVICE_TYPE; }
+std::string AscendFactory::GetDeviceFactoryType() { return DEVICE_TYPE; }
 
 std::shared_ptr<Device> AscendFactory::CreateDevice(
     const std::string &device_id) {

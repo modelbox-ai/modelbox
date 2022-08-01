@@ -105,7 +105,6 @@ class VcnRestfulClient {
       VcnRestfulInfo &info);
   void PullKeepAliveThread();
 
- private:
   static std::mutex vcn_client_lock_;
   std::mutex vcn_account_lock_;
   std::vector<std::shared_ptr<VcnAccountRestful>> vcn_accounts_;

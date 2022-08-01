@@ -35,16 +35,15 @@ constexpr const char *FLOWUNIT_DESC =
 class NormalizeFlowUnitV2 : public modelbox::CudaFlowUnit {
  public:
   NormalizeFlowUnitV2();
-  virtual ~NormalizeFlowUnitV2();
+  ~NormalizeFlowUnitV2() override;
 
   modelbox::Status Open(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
   modelbox::Status Close() override { return modelbox::STATUS_OK; }
 
   /* run when processing data */
-  virtual modelbox::Status CudaProcess(
-      std::shared_ptr<modelbox::DataContext> data_ctx,
-      cudaStream_t stream) override;
+  modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
+                               cudaStream_t stream) override;
 
   modelbox::Status DataPre(
       std::shared_ptr<modelbox::DataContext> data_ctx) override {

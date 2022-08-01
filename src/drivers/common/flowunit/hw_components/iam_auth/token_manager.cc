@@ -23,11 +23,10 @@ using namespace concurrency::streams;
 
 namespace modelbox {
 TokenManager::TokenManager()
-    : init_flag_(false),
-      request_credential_uri_("/v3.0/OS-CREDENTIAL/securitytokens"),
+    : request_credential_uri_("/v3.0/OS-CREDENTIAL/securitytokens"),
       request_token_uri_("/v3/auth/tokens") {}
 
-TokenManager::~TokenManager() {}
+TokenManager::~TokenManager() = default;
 
 modelbox::Status TokenManager::Init() {
   if (!init_flag_) {

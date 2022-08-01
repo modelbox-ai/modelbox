@@ -20,8 +20,8 @@
 
 #include "modelbox/flowunit_api_helper.h"
 
-NppiResizeFlowUnit::NppiResizeFlowUnit(){};
-NppiResizeFlowUnit::~NppiResizeFlowUnit(){};
+NppiResizeFlowUnit::NppiResizeFlowUnit() = default;
+NppiResizeFlowUnit::~NppiResizeFlowUnit() = default;
 
 std::map<std::string, NppiInterpolationMode> kNppiResizeInterpolation = {
     {"inter_nn", NPPI_INTER_NN},           {"inter_linear", NPPI_INTER_LINEAR},

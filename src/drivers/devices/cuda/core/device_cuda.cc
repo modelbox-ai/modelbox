@@ -29,9 +29,9 @@ namespace modelbox {
 Cuda::Cuda(const std::shared_ptr<DeviceMemoryManager> &mem_mgr)
     : Device(mem_mgr) {}
 
-Cuda::~Cuda() {}
+Cuda::~Cuda() = default;
 
-const std::string Cuda::GetType() const { return DEVICE_TYPE; }
+std::string Cuda::GetType() const { return DEVICE_TYPE; }
 
 Status Cuda::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
                            size_t count) {
@@ -52,8 +52,8 @@ Status Cuda::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
 
 bool Cuda::NeedResourceNice() { return true; }
 
-CudaFactory::CudaFactory() {}
-CudaFactory::~CudaFactory() {}
+CudaFactory::CudaFactory() = default;
+CudaFactory::~CudaFactory() = default;
 
 std::map<std::string, std::shared_ptr<DeviceDesc>> CudaFactory::DeviceProbe() {
   std::map<std::string, std::shared_ptr<DeviceDesc>> return_map;
@@ -77,7 +77,7 @@ std::map<std::string, std::shared_ptr<DeviceDesc>> CudaFactory::DeviceProbe() {
   return return_map;
 }
 
-const std::string CudaFactory::GetDeviceFactoryType() { return DEVICE_TYPE; }
+std::string CudaFactory::GetDeviceFactoryType() { return DEVICE_TYPE; }
 
 std::vector<std::string> CudaFactory::GetDeviceList() {
   std::vector<std::string> device_list;

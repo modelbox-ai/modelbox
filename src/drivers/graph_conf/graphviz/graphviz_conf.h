@@ -29,7 +29,7 @@ class GraphvizFactory : public GraphConfigFactory {
  public:
   GraphvizFactory();
 
-  virtual ~GraphvizFactory();
+  ~GraphvizFactory() override;
 
   std::shared_ptr<GraphConfig> CreateGraphConfigFromStr(
       const std::string &graph_config) override;
@@ -37,14 +37,14 @@ class GraphvizFactory : public GraphConfigFactory {
   std::shared_ptr<GraphConfig> CreateGraphConfigFromFile(
       const std::string &file_path) override;
 
-  const std::string GetGraphConfFactoryType() override;
+  std::string GetGraphConfFactoryType() override;
 };
 
 class GraphvizConfig : public GraphConfig {
  public:
-  GraphvizConfig(const std::string &graph_conf, const bool is_file);
+  GraphvizConfig(const std::string &graph_conf, bool is_file);
 
-  virtual ~GraphvizConfig();
+  ~GraphvizConfig() override;
 
   std::shared_ptr<GCGraph> Resolve() override;
 
@@ -68,7 +68,6 @@ class GraphvizConfig : public GraphConfig {
   Status TraversalsSubGraph(std::shared_ptr<Agraph_t> g,
                             std::shared_ptr<GCGraph> graph);
 
- private:
   std::string graphviz_conf_;
   bool is_file_;
   std::mutex lock_;

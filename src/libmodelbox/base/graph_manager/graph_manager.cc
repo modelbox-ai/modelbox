@@ -18,9 +18,9 @@
 
 namespace modelbox {
 
-GCNode::GCNode() {}
+GCNode::GCNode() = default;
 
-GCNode::~GCNode() {}
+GCNode::~GCNode() = default;
 
 Status GCNode::Init(const std::string &name,
                     std::shared_ptr<GCGraph> root_graph) {
@@ -32,9 +32,9 @@ Status GCNode::Init(const std::string &name,
   return STATUS_OK;
 }
 
-const std::string GCNode::GetNodeName() const { return name_; }
+std::string GCNode::GetNodeName() const { return name_; }
 
-const std::shared_ptr<Configuration> GCNode::GetConfiguration() const {
+std::shared_ptr<Configuration> GCNode::GetConfiguration() const {
   return configuration_;
 }
 
@@ -54,7 +54,7 @@ std::shared_ptr<GCGraph> GCNode::GetRootGraph() const {
   return root_graph_.lock();
 }
 
-const std::string GCNode::GetNodeType() const { return type_; }
+std::string GCNode::GetNodeType() const { return type_; }
 
 void GCNode::SetNodeType(std::string type) { type_ = type; }
 
@@ -86,9 +86,9 @@ std::shared_ptr<DataHandler> GCNode::GetBindDataHandler() {
   return out_data_handler_.lock();
 }
 
-GCEdge::GCEdge() {}
+GCEdge::GCEdge() = default;
 
-GCEdge::~GCEdge() {}
+GCEdge::~GCEdge() = default;
 
 Status GCEdge::Init(std::shared_ptr<GCGraph> root_graph) {
   root_graph_ = root_graph;
@@ -105,7 +105,7 @@ std::shared_ptr<GCNode> GCEdge::GetHeadNode() const { return head_; }
 
 std::shared_ptr<GCNode> GCEdge::GetTailNode() const { return tail_; }
 
-const std::shared_ptr<Configuration> GCEdge::GetConfiguration() const {
+std::shared_ptr<Configuration> GCEdge::GetConfiguration() const {
   return configuration_;
 }
 
@@ -143,9 +143,9 @@ void GCEdge::SetConfiguration(const std::string &key,
   configuration_->SetProperty(key, sub_str_list);
 }
 
-GCGraph::GCGraph() {}
+GCGraph::GCGraph() = default;
 
-GCGraph::~GCGraph() {}
+GCGraph::~GCGraph() = default;
 
 Status GCGraph::Init(std::shared_ptr<GCGraph> root_graph) {
   root_graph_ = root_graph;
@@ -167,8 +167,7 @@ Status GCGraph::AddSubGraph(std::shared_ptr<GCGraph> subgraph) {
   return STATUS_OK;
 }
 
-const std::shared_ptr<GCGraph> GCGraph::GetSubGraph(
-    const std::string &name) const {
+std::shared_ptr<GCGraph> GCGraph::GetSubGraph(const std::string &name) const {
   auto elem = subgraphs_.find(name);
   if (elem == subgraphs_.end()) {
     return nullptr;
@@ -195,7 +194,7 @@ Status GCGraph::SetFirstNode(std::shared_ptr<GCNode> node) {
   return STATUS_OK;
 }
 
-const std::shared_ptr<GCNode> GCGraph::GetNode(const std::string &name) const {
+std::shared_ptr<GCNode> GCGraph::GetNode(const std::string &name) const {
   auto elem = nodes_.find(name);
   if (elem == nodes_.end()) {
     return nullptr;
@@ -239,7 +238,7 @@ Status GCGraph::AddEdge(std::shared_ptr<GCEdge> edge) {
   return STATUS_OK;
 }
 
-const std::shared_ptr<GCEdge> GCGraph::GetEdge(const std::string &name) const {
+std::shared_ptr<GCEdge> GCGraph::GetEdge(const std::string &name) const {
   auto elem = edges_.find(name);
   if (elem == edges_.end()) {
     return nullptr;
@@ -261,7 +260,7 @@ void GCGraph::ShowAllEdge() const {
   }
 }
 
-const std::shared_ptr<Configuration> GCGraph::GetConfiguration() const {
+std::shared_ptr<Configuration> GCGraph::GetConfiguration() const {
   return configuration_;
 }
 
@@ -275,9 +274,9 @@ void GCGraph::SetConfiguration(const std::string &key,
   configuration_->SetProperty(key, sub_str_list);
 }
 
-GraphConfigManager::GraphConfigManager() {}
+GraphConfigManager::GraphConfigManager() = default;
 
-GraphConfigManager::~GraphConfigManager() {}
+GraphConfigManager::~GraphConfigManager() = default;
 
 Status GraphConfigManager::Initialize(std::shared_ptr<Drivers> driver,
                                       std::shared_ptr<Configuration> config) {
@@ -373,8 +372,8 @@ std::vector<std::string> GraphConfigManager::GetSupportTypes() {
   return ret;
 }
 
-const std::shared_ptr<GraphConfigFactory>
-GraphConfigManager::GetGraphConfFactory(const std::string &type) {
+std::shared_ptr<GraphConfigFactory> GraphConfigManager::GetGraphConfFactory(
+    const std::string &type) {
   auto graph_conf_map = graph_conf_factories_.find(type);
   if (graph_conf_map == graph_conf_factories_.end()) {
     MBLOG_ERROR << "do not find graph config factory type " << type;

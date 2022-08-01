@@ -35,7 +35,7 @@
 
 namespace modelbox {
 
-Control::Control() {}
+Control::Control() = default;
 
 Control::~Control() { Stop(); }
 
@@ -335,8 +335,8 @@ modelbox::Status Control::Stop() {
   return modelbox::STATUS_OK;
 }
 
-ControlStream::ControlStream() {}
-ControlStream::~ControlStream() {}
+ControlStream::ControlStream() = default;
+ControlStream::~ControlStream() = default;
 
 bool ControlStream::HasError() { return has_error_; }
 
@@ -344,8 +344,8 @@ void ControlStream::SetReplyFunc(MsgSendFunc reply_func) {
   reply_func_ = reply_func;
 }
 
-ControlOutStream::ControlOutStream() {}
-ControlOutStream::~ControlOutStream() {}
+ControlOutStream::ControlOutStream() = default;
+ControlOutStream::~ControlOutStream() = default;
 
 void ControlOutStream::ProcessStream(OStream *st) {
   ControlMsgStdout msg;
@@ -363,8 +363,8 @@ void ControlOutStream::ProcessStream(OStream *st) {
   }
 }
 
-ControlErrStream::ControlErrStream() {}
-ControlErrStream::~ControlErrStream() {}
+ControlErrStream::ControlErrStream() = default;
+ControlErrStream::~ControlErrStream() = default;
 
 void ControlErrStream::ProcessStream(OStream *st) {
   ControlMsgErrout msg;

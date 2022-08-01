@@ -26,23 +26,23 @@ constexpr const char *FLOWUNIT_TYPE = "cpu";
 class InferenceTensorflowCpuFlowUnit : public InferenceTensorflowFlowUnit {
  public:
   InferenceTensorflowCpuFlowUnit();
-  virtual ~InferenceTensorflowCpuFlowUnit();
+  ~InferenceTensorflowCpuFlowUnit() override;
 };
 
 class InferenceTensorflowCpuFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   InferenceTensorflowCpuFlowUnitFactory() = default;
-  virtual ~InferenceTensorflowCpuFlowUnitFactory() = default;
+  ~InferenceTensorflowCpuFlowUnitFactory() override = default;
 
   std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type,
-      const std::string &virtual_type);
+      const std::string &virtual_type) override;
 
-  const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
-  const std::string GetVirtualType() { return INFERENCE_TYPE; };
+  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
+  std::string GetVirtualType() override { return INFERENCE_TYPE; };
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
-  FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override {
     return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
   };
 };

@@ -166,7 +166,7 @@ class ModelBoxDirInode : public ModelBoxInode {
   /**
    * @brief destructor
    */
-  virtual ~ModelBoxDirInode();
+  ~ModelBoxDirInode() override;
 
   /**
    * @brief Store stat structure data
@@ -179,7 +179,7 @@ class ModelBoxDirInode : public ModelBoxInode {
    * @param stat output parameter, file stat
    * @return fillup result, whether sucess or not.
    */
-  virtual int FillStat(struct stat *stat);
+  int FillStat(struct stat *stat) override;
 
  private:
   struct stat stat_;
@@ -198,7 +198,7 @@ class ModelBoxFileInode : public ModelBoxInode {
   /**
    * @brief destructor
    */
-  virtual ~ModelBoxFileInode();
+  ~ModelBoxFileInode() override;
 
   /**
    * @brief  Create modelbox fuse file object
@@ -211,7 +211,7 @@ class ModelBoxFileInode : public ModelBoxInode {
    * @param stat output parameter, file stat
    * @return fillup result, whether sucess or not.
    */
-  virtual int FillStat(struct stat *stat) = 0;
+  int FillStat(struct stat *stat) override = 0;
 
   /**
    * @brief Get current inode file path

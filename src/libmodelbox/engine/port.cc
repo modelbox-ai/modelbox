@@ -21,7 +21,7 @@ namespace modelbox {
 Port::Port(const std::string& name, std::shared_ptr<NodeBase> node)
     : name_(name), node_(node) {}
 
-Port::~Port() {}
+Port::~Port() = default;
 
 const std::string& Port::GetName() { return name_; }
 std::shared_ptr<NodeBase> Port::GetNode() {
@@ -75,7 +75,7 @@ std::vector<std::weak_ptr<OutPort>> InPort::GetAllOutPort() {
 OutPort::OutPort(const std::string& name, std::shared_ptr<NodeBase> node)
     : Port(name, node) {}
 
-OutPort::~OutPort() {}
+OutPort::~OutPort() = default;
 
 Status OutPort::Init() {
   auto node = node_.lock();

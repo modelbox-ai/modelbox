@@ -112,7 +112,7 @@ extern void RegLogPrint(LoggerPrint func);
 class LoggerCallback : public Logger {
  public:
   LoggerCallback();
-  virtual ~LoggerCallback();
+  ~LoggerCallback() override;
 
   /**
    * @brief Register va-list log function
@@ -130,13 +130,13 @@ class LoggerCallback : public Logger {
    * @brief Set log level
    * @param level log level
    */
-  virtual void SetLogLevel(LogLevel level);
+  void SetLogLevel(LogLevel level) override;
 
   /**
    * @brief Get log level
    * @return level log level
    */
-  virtual LogLevel GetLogLevel();
+  LogLevel GetLogLevel() override;
 
  private:
   /**
@@ -148,8 +148,8 @@ class LoggerCallback : public Logger {
    * @param format log format
    * @param ap va_list
    */
-  virtual void Vprint(LogLevel level, const char *file, int lineno,
-                      const char *func, const char *format, va_list ap);
+  void Vprint(LogLevel level, const char *file, int lineno, const char *func,
+              const char *format, va_list ap) override;
   /**
    * @brief Output log
    * @param level log level
@@ -158,12 +158,12 @@ class LoggerCallback : public Logger {
    * @param func log function
    * @param msg log message
    */
-  virtual void Print(LogLevel level, const char *file, int lineno,
-                     const char *func, const char *msg);
+  void Print(LogLevel level, const char *file, int lineno, const char *func,
+             const char *msg) override;
 
   LoggerVprint vprint_;
   LoggerPrint print_;
-  LogLevel level_;
+  LogLevel level_{LOG_DEBUG};
 };
 
 /**
@@ -172,7 +172,7 @@ class LoggerCallback : public Logger {
 class LoggerConsole : public Logger {
  public:
   LoggerConsole();
-  virtual ~LoggerConsole();
+  ~LoggerConsole() override;
 
   /**
    * @brief Output log
@@ -184,19 +184,19 @@ class LoggerConsole : public Logger {
    */
 
   void Print(LogLevel level, const char *file, int lineno, const char *func,
-             const char *msg);
+             const char *msg) override;
 
   /**
    * @brief Set log level
    * @param level log level
    */
-  void SetLogLevel(LogLevel level);
+  void SetLogLevel(LogLevel level) override;
 
   /**
    * @brief Get log level
    * @return level log level
    */
-  LogLevel GetLogLevel();
+  LogLevel GetLogLevel() override;
 
  private:
   void SetLogLevelFromEnv();

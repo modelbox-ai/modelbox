@@ -17,8 +17,8 @@
 #include "example.h"
 #include "modelbox/flowunit_api_helper.h"
 
-ExampleFlowUnit::ExampleFlowUnit(){};
-ExampleFlowUnit::~ExampleFlowUnit(){};
+ExampleFlowUnit::ExampleFlowUnit() = default;
+ExampleFlowUnit::~ExampleFlowUnit() = default;
 
 modelbox::Status ExampleFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

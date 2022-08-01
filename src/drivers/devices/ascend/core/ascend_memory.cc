@@ -304,7 +304,7 @@ AscendMemory::AscendMemory(const std::shared_ptr<Device> &device,
                            std::shared_ptr<void> device_mem_ptr, size_t size)
     : DeviceMemory(device, mem_mgr, device_mem_ptr, size) {}
 
-AscendMemory::~AscendMemory() {}
+AscendMemory::~AscendMemory() = default;
 
 Status AscendMemory::BindStream(
     const std::shared_ptr<AscendStream> &stream_ptr) {
@@ -398,7 +398,7 @@ AscendMemoryManager::AscendMemoryManager(const std::string &device_id)
   npu_id_ = atoi(device_id.c_str());
 }
 
-AscendMemoryManager::~AscendMemoryManager() {}
+AscendMemoryManager::~AscendMemoryManager() = default;
 
 Status AscendMemoryManager::Init() { return STATUS_OK; }
 

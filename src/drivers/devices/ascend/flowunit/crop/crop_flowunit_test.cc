@@ -42,7 +42,7 @@ class CropFlowUnitTest : public testing::Test {
   CropFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     // Test ascend runtime
     int32_t count = 0;
     auto dsmi_ret = dsmi_get_device_count(&count);
@@ -52,7 +52,7 @@ class CropFlowUnitTest : public testing::Test {
     }
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     std::shared_ptr<DeviceManager> device_mgr = DeviceManager::GetInstance();
     device_mgr->Clear();

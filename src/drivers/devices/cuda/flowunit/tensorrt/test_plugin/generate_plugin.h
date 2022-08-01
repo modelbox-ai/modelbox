@@ -28,7 +28,7 @@
 class OriginInferencePlugin : public TensorRTInferencePlugin {
  public:
   OriginInferencePlugin() = default;
-  virtual ~OriginInferencePlugin() = default;
+  ~OriginInferencePlugin() override = default;
 
   modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 

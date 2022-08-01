@@ -146,7 +146,7 @@ CudaMemory::CudaMemory(const std::shared_ptr<Device> &device,
                        std::shared_ptr<void> device_mem_ptr, size_t size)
     : DeviceMemory(device, mem_mgr, device_mem_ptr, size, false) {}
 
-CudaMemory::~CudaMemory() {}
+CudaMemory::~CudaMemory() = default;
 
 Status CudaMemory::BindStream(
     const std::shared_ptr<CudaStream> &stream_ptr) {

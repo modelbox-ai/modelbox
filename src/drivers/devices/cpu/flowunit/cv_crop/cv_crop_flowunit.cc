@@ -22,8 +22,8 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 using namespace imageprocess;
-CVCropFlowUnit::CVCropFlowUnit(){};
-CVCropFlowUnit::~CVCropFlowUnit(){};
+CVCropFlowUnit::CVCropFlowUnit() = default;
+CVCropFlowUnit::~CVCropFlowUnit() = default;
 
 modelbox::Status CVCropFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

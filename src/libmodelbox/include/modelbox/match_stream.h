@@ -42,7 +42,7 @@ class MatchKey {
 class MatchStreamData {
  public:
   MatchStreamData() = default;
-  ~MatchStreamData() = default;
+  virtual ~MatchStreamData() = default;
 
   void SetStreamMatchKey(MatchKey* match_at);
 
@@ -74,7 +74,7 @@ class MatchBufferCache {
   MatchBufferCache(
       size_t port_count,
       std::unordered_map<std::string, size_t>* stream_count_each_port);
-  ~MatchBufferCache() = default;
+  virtual ~MatchBufferCache() = default;
 
   Status CacheBuffer(const std::string& port_name,
                      std::shared_ptr<Buffer>& buffer);
@@ -117,7 +117,7 @@ class MatchStreamCache {
       const std::string& node_name, size_t port_count,
       std::unordered_map<std::string, size_t>* stream_count_each_port);
 
-  ~MatchStreamCache() = default;
+  virtual ~MatchStreamCache() = default;
 
   Status CacheBuffer(const std::string& port_name,
                      std::shared_ptr<Buffer>& buffer);
@@ -163,7 +163,7 @@ class InputMatchStreamManager {
   InputMatchStreamManager(const std::string& node_name, size_t queue_size,
                           size_t port_count);
 
-  ~InputMatchStreamManager() = default;
+  virtual ~InputMatchStreamManager() = default;
 
   size_t GetInputStreamCount();
 
@@ -240,7 +240,7 @@ class OutputMatchStreamManager {
   OutputMatchStreamManager(const std::string& node_name,
                            std::set<std::string>&& output_port_names);
 
-  ~OutputMatchStreamManager() = default;
+  virtual ~OutputMatchStreamManager() = default;
 
   size_t GetOutputStreamCount();
 

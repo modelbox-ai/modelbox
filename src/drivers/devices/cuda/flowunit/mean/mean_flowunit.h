@@ -42,13 +42,14 @@ constexpr const char *FLOWUNIT_DESC =
 class MeanFlowUnit : public modelbox::CudaFlowUnit {
  public:
   MeanFlowUnit();
-  virtual ~MeanFlowUnit();
+  ~MeanFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
-  modelbox::Status Close();
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
+  modelbox::Status Close() override;
 
   modelbox::Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                             cudaStream_t stream);
+                               cudaStream_t stream) override;
 
  private:
   bool CheckBufferValid(std::shared_ptr<modelbox::Buffer> buffer, int32_t &width,

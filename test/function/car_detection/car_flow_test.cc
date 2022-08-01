@@ -42,12 +42,12 @@ class CarFlowTest : public testing::Test {
   std::shared_ptr<CarFlow> GetCarFlow();
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
   }
 
-  virtual void TearDown() { car_flow_->Clear(); };
+  void TearDown() override { car_flow_->Clear(); };
 
  private:
   Status AddMockFlowUnit();

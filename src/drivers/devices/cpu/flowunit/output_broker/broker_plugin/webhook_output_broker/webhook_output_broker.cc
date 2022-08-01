@@ -24,8 +24,8 @@
 #include "modelbox/base/uuid.h"
 #include "modelbox/device/cpu/device_cpu.h"
 
-WebhookOutputBroker::WebhookOutputBroker() {}
-WebhookOutputBroker::~WebhookOutputBroker() {}
+WebhookOutputBroker::WebhookOutputBroker() = default;
+WebhookOutputBroker::~WebhookOutputBroker() = default;
 
 modelbox::Status WebhookOutputBroker::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {

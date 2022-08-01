@@ -41,7 +41,7 @@ class NppiCropFlowUnitTest : public testing::Test {
   NppiCropFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -53,7 +53,7 @@ class NppiCropFlowUnitTest : public testing::Test {
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
 
  private:
@@ -117,7 +117,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
       uint32_t batch_size = 10;
 
       std::string img_path = std::string(TEST_ASSETS) + "/test.jpg";
-      cv::Mat img_data = cv::imread(img_path.c_str());
+      cv::Mat img_data = cv::imread(img_path);
       MBLOG_INFO << "image col " << img_data.cols << "  row " << img_data.rows
                  << " channel " << img_data.channels();
       std::vector<size_t> img_shape_vector(
@@ -127,7 +127,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
 
       for (size_t i = 0; i < batch_size; ++i) {
         std::string img_path = std::string(TEST_ASSETS) + "/test.jpg";
-        cv::Mat img_data = cv::imread(img_path.c_str());
+        cv::Mat img_data = cv::imread(img_path);
         int32_t cols = img_data.cols;
         int32_t rows = img_data.rows;
         int32_t channels = img_data.channels();
@@ -219,7 +219,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
                  input_data, input_buf->At(i)->GetBytes());
         std::string name =
             std::string(TEST_DATA_DIR) + "/test" + std::to_string(i) + ".jpg";
-        cv::imwrite(name.c_str(), img_data);
+        cv::imwrite(name, img_data);
       }
 
       MBLOG_INFO << "c3r_test_1_0_nppi_crop process data finish";

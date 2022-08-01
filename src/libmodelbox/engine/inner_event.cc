@@ -19,9 +19,9 @@
 
 namespace modelbox {
 
-FlowUnitEvent::FlowUnitEvent() {}
+FlowUnitEvent::FlowUnitEvent() = default;
 
-FlowUnitEvent::~FlowUnitEvent() {}
+FlowUnitEvent::~FlowUnitEvent() = default;
 
 void FlowUnitEvent::SetPrivate(const std::string &key,
                                std::shared_ptr<void> private_content) {

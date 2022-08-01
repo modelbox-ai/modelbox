@@ -34,7 +34,7 @@ class FlowUnitPluginBase {
 template <typename T>
 class FlowUnitPlugin : public FlowUnitPluginBase {
  public:
-  std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit() {
+  std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit() override {
     return std::make_shared<T>();
   }
 };
@@ -69,10 +69,10 @@ class FlowUnitPluginFactory : public modelbox::FlowUnitFactory {
  public:
   FlowUnitPluginFactory(FlowUnitList *plugin_list)
       : plugin_list_(plugin_list) {}
-  virtual ~FlowUnitPluginFactory() {}
+  ~FlowUnitPluginFactory() override = default;
   std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
-      const std::string &unit_name, const std::string &unit_type) {
-    auto plugin = plugin_list_->GetFlowUnitPlugin(unit_name, unit_type);
+      const std::string &unit_name, const std::string &unit_type) override {
+    auto *plugin = plugin_list_->GetFlowUnitPlugin(unit_name, unit_type);
     if (plugin == nullptr) {
       return nullptr;
     }
@@ -80,7 +80,7 @@ class FlowUnitPluginFactory : public modelbox::FlowUnitFactory {
     return plugin->CreateFlowUnit();
   }
 
-  const std::vector<std::string> GetFlowUnitNames() {
+  std::vector<std::string> GetFlowUnitNames() override {
     std::vector<std::string> result;
 
     auto plugins = plugin_list_->GetFlowUnitPlugins();
@@ -92,7 +92,7 @@ class FlowUnitPluginFactory : public modelbox::FlowUnitFactory {
     return result;
   }
 
-  virtual const std::string GetFlowUnitFactoryType() {
+  std::string GetFlowUnitFactoryType() override {
     auto plugins = plugin_list_->GetFlowUnitPlugins();
     if (plugins.size() <= 0) {
       return "";
@@ -101,7 +101,8 @@ class FlowUnitPluginFactory : public modelbox::FlowUnitFactory {
     return plugins[0]->Desc.GetDriverDesc()->GetType();
   }
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override {
     std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> return_map;
     auto plugins = plugin_list_->GetFlowUnitPlugins();
     for (auto &plugin : plugins) {

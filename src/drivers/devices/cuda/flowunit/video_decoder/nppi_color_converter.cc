@@ -23,7 +23,7 @@ NppiColorConverter::NppiColorConverter()
     : cvt_color_{{"rgb", nppiNV12ToRGB_8u_P2C3R},
                  {"bgr", nppiNV12ToBGR_8u_P2C3R}} {}
 
-NppiColorConverter::~NppiColorConverter() {}
+NppiColorConverter::~NppiColorConverter() = default;
 
 modelbox::Status NppiColorConverter::CvtColor(const uint8_t *src, int32_t width,
                                             int32_t height, uint8_t *dest,

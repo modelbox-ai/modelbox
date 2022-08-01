@@ -24,8 +24,8 @@
 
 class ModelboxPlugin : public modelbox::Plugin {
  public:
-  ModelboxPlugin(){};
-  virtual ~ModelboxPlugin(){};
+  ModelboxPlugin() = default;
+  ~ModelboxPlugin() override = default;
 
   bool Init(std::shared_ptr<modelbox::Configuration> config) override;
   bool Start() override;
@@ -55,7 +55,6 @@ class ModelboxPlugin : public modelbox::Plugin {
                                  const std::string& toml_graph);
   bool CheckJobIdValid(std::string job_id);
 
- private:
   std::string ip_;
   std::string port_;
   std::string default_flow_path_;

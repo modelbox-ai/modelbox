@@ -23,7 +23,7 @@ namespace modelbox {
 class LinuxOSProcess : public OSProcess {
  public:
   LinuxOSProcess();
-  virtual ~LinuxOSProcess();
+  ~LinuxOSProcess() override;
   int32_t GetThreadsNumber(uint32_t pid) override;
   uint32_t GetMemorySize(uint32_t pid) override;
   uint32_t GetMemoryRSS(uint32_t pid) override;
@@ -38,7 +38,7 @@ class LinuxOSProcess : public OSProcess {
 class LinuxOSThread : public OSThread {
  public:
   LinuxOSThread();
-  virtual ~LinuxOSThread();
+  ~LinuxOSThread() override;
 
   std::thread::id GetTid() override;
   Status SetName(const std::string &name) override;
@@ -56,7 +56,7 @@ class LinuxOSThread : public OSThread {
 class LinuxOSInfo : public OSInfo {
  public:
   LinuxOSInfo();
-  virtual ~LinuxOSInfo();
+  ~LinuxOSInfo() override;
 
   Status GetMemoryUsage(size_t *free, size_t *total) override;
 

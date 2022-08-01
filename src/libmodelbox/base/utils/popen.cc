@@ -596,9 +596,9 @@ int Popen::Close() {
   return wstatus;
 }
 
-PopenEnv::PopenEnv() {}
+PopenEnv::PopenEnv() = default;
 
-PopenEnv::~PopenEnv() {}
+PopenEnv::~PopenEnv() = default;
 
 PopenEnv::PopenEnv(const std::string &item_list) { LoadEnvFromList(item_list); }
 
@@ -669,9 +669,9 @@ PopenEnv &PopenEnv::Clear() {
   return *this;
 }
 
-const bool PopenEnv::Changed() const { return load_inherit_; }
+bool PopenEnv::Changed() const { return load_inherit_; }
 
-const std::vector<std::string> PopenEnv::GetEnvs() const {
+std::vector<std::string> PopenEnv::GetEnvs() const {
   std::vector<std::string> envs;
 
   for (auto const &it : env_) {

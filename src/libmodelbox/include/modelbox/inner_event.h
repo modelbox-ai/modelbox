@@ -44,8 +44,7 @@ class FlowUnitInnerEvent {
     EXPAND_NEXT_STREAM,
     COLLAPSE_NEXT_STREAM
   };
-  FlowUnitInnerEvent(EventCode code)
-      : priority_(0), code_(code), match_key_(nullptr){};
+  FlowUnitInnerEvent(EventCode code) : code_(code), match_key_(nullptr){};
   virtual ~FlowUnitInnerEvent() = default;
   void SetDataCtxMatchKey(MatchKey *match_key);
   MatchKey *GetDataCtxMatchKey();

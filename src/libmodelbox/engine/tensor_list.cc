@@ -25,7 +25,7 @@ void TensorList::SetType(ModelBoxDataType type) {
   }
 }
 
-const std::vector<std::vector<size_t>> TensorList::GetShape() const {
+std::vector<std::vector<size_t>> TensorList::GetShape() const {
   std::vector<std::vector<size_t>> shapes(bl_->buffer_list_.size());
   size_t i = 0;
   for (auto& buffer : bl_->buffer_list_) {

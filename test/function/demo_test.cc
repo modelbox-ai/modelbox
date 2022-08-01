@@ -38,11 +38,11 @@ namespace modelbox {
 using ::testing::Sequence;
 class DemoTest : public testing::Test {
  public:
-  DemoTest() {}
+  DemoTest() = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 static bool SkipJudge(const std::string &local_file_path) {

@@ -44,16 +44,17 @@ constexpr const char *FLOWUNIT_DESC =
 class ImageDecoderFlowUnit : public modelbox::FlowUnit {
  public:
   ImageDecoderFlowUnit();
-  virtual ~ImageDecoderFlowUnit();
+  ~ImageDecoderFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
-  modelbox::Status Close();
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
+  modelbox::Status Close() override;
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   cv::Mat BGR2YUV_NV12(const cv::Mat &src_bgr);
 
- private:
   std::string pixel_format_{"bgr"};
 };
 

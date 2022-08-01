@@ -209,7 +209,7 @@ class Timer {
    * @param period schedule period, in millisecond.
    * @param take_owner_ship take ownership of shared_ptr timer_task.
    */
-  void Schedule(const std::shared_ptr<TimerTask> timer_task, uint64_t delay,
+  void Schedule(std::shared_ptr<TimerTask> timer_task, uint64_t delay,
                 uint64_t period, bool take_owner_ship = false);
 
   /**
@@ -296,9 +296,8 @@ class TimerGlobal {
    * @param period schedule period, in millisecond.
    * @param take_owner_ship take ownership of shared_ptr timer_task.
    */
-  static void Schedule(const std::shared_ptr<TimerTask> timer_task,
-                       uint64_t delay, uint64_t period,
-                       bool take_owner_ship = false);
+  static void Schedule(std::shared_ptr<TimerTask> timer_task, uint64_t delay,
+                       uint64_t period, bool take_owner_ship = false);
 
  private:
   TimerGlobal();

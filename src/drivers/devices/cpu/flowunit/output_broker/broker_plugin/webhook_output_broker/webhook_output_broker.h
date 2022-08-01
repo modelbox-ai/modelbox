@@ -37,7 +37,7 @@ class WebhookOutputBroker : public OutputBrokerPlugin {
  public:
   WebhookOutputBroker();
 
-  virtual ~WebhookOutputBroker();
+  ~WebhookOutputBroker() override;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -67,7 +67,7 @@ class WebhookOutputBrokerFactory : public modelbox::DriverFactory {
  public:
   WebhookOutputBrokerFactory() = default;
 
-  virtual ~WebhookOutputBrokerFactory() = default;
+  ~WebhookOutputBrokerFactory() override = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> parser =

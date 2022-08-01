@@ -33,12 +33,12 @@ namespace modelbox {
 
 class FlowUnitTest : public testing::Test {
  public:
-  FlowUnitTest() {}
+  FlowUnitTest() = default;
 
  protected:
   MockDriverCtl ctl;
 
-  virtual void SetUp() {
+  void SetUp() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     modelbox::DriverDesc desc;
     MockFlowUnitDriverDesc desc_flowunit;
@@ -122,7 +122,7 @@ class FlowUnitTest : public testing::Test {
     EXPECT_EQ(status_drivers_add, STATUS_OK);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     std::shared_ptr<DeviceManager> device_mgr = DeviceManager::GetInstance();
     std::shared_ptr<FlowUnitManager> flowunit_mgr =
@@ -353,9 +353,9 @@ TEST_F(FlowUnitTest, FlowUnitDescCheckGroupType) {
 
 class VirtualFlowUnitTest : public testing::Test {
  public:
-  VirtualFlowUnitTest(){};
+  VirtualFlowUnitTest() = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     std::string misc_python_src_path = std::string(PYTHON_PATH);
     misc_python_dest_path =
         std::string(TEST_LIB_DIR) + "/libmodelbox-unit-cpu-python.so";
@@ -367,7 +367,7 @@ class VirtualFlowUnitTest : public testing::Test {
     CopyFile(virtual_python_src_path, virtual_python_dest_path, 0, true);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     std::shared_ptr<DeviceManager> device_mgr = DeviceManager::GetInstance();
     std::shared_ptr<FlowUnitManager> flowunit_mgr =

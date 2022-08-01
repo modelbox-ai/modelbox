@@ -30,44 +30,44 @@
 namespace modelbox {
 class BlockingQueueTest : public testing::Test {
  public:
-  BlockingQueueTest() {}
+  BlockingQueueTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 class PriorityBlockingQueueTest : public testing::Test {
  public:
-  PriorityBlockingQueueTest() {}
+  PriorityBlockingQueueTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 class TestNumber {
  public:
-  TestNumber(){};
+  TestNumber() = default;
   TestNumber(int n) { num_ = n; };
-  virtual ~TestNumber(){};
+  virtual ~TestNumber() = default;
   int Get() { return num_; }
   void operator=(int n) { num_ = n; };
-  const bool operator==(int n) const { return n == num_; }
-  const bool operator==(const TestNumber& t) const { return t.num_ == num_; }
-  const bool operator<(const TestNumber& t) const { return num_ < t.num_; }
-  const bool operator>(const TestNumber& t) const { return num_ > t.num_; }
-  const bool operator<=(const TestNumber& t) const {
+  bool operator==(int n) const { return n == num_; }
+  bool operator==(const TestNumber& t) const { return t.num_ == num_; }
+  bool operator<(const TestNumber& t) const { return num_ < t.num_; }
+  bool operator>(const TestNumber& t) const { return num_ > t.num_; }
+  bool operator<=(const TestNumber& t) const {
     if (num_ == t.num_) {
       return private_num_ >= t.private_num_;
     }
     return num_ <= t.num_;
   }
-  const std::string ToString() const {
+  std::string ToString() const {
     std::ostringstream oss;
     oss << num_;
     return oss.str();

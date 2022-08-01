@@ -59,11 +59,11 @@ Status SubProcessRun(func &&fun, ts &&...params) {
     }
 
     if (WIFSIGNALED(status)) {
-      auto err_msg = "killed by signal " + WTERMSIG(status);
+      const auto *err_msg = "killed by signal " + WTERMSIG(status);
       MBLOG_ERROR << err_msg;
       return {STATUS_FAULT, err_msg};
     } else if (WIFSTOPPED(status)) {
-      auto err_msg = "stopped by signal " + WSTOPSIG(status);
+      const auto *err_msg = "stopped by signal " + WSTOPSIG(status);
       MBLOG_ERROR << err_msg;
       return {STATUS_FAULT, err_msg};
     }

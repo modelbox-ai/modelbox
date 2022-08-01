@@ -92,15 +92,15 @@ class ControlMsg {
 class ControlMsgResult : public ControlMsg {
  public:
   ControlMsgResult();
-  virtual ~ControlMsgResult();
+  ~ControlMsgResult() override;
 
   void SetResult(int result);
 
   int GetResult();
 
  protected:
-  size_t SerializeMsg(uint8_t *buff, size_t buff_max_len);
-  modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len);
+  size_t SerializeMsg(uint8_t *buff, size_t buff_max_len) override;
+  modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len) override;
 
  private:
   int result_;
@@ -109,14 +109,14 @@ class ControlMsgResult : public ControlMsg {
 class ControlMsgString : public ControlMsg {
  public:
   ControlMsgString();
-  virtual ~ControlMsgString();
+  ~ControlMsgString() override;
 
   void SetString(const std::string &str);
   const std::string &GetString();
 
  protected:
-  size_t SerializeMsg(uint8_t *buff, size_t buff_max_len);
-  modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len);
+  size_t SerializeMsg(uint8_t *buff, size_t buff_max_len) override;
+  modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len) override;
 
  private:
   std::string str_;
@@ -125,25 +125,25 @@ class ControlMsgString : public ControlMsg {
 class ControlMsgHelp : public ControlMsgString {
  public:
   ControlMsgHelp();
-  virtual ~ControlMsgHelp();
+  ~ControlMsgHelp() override;
 };
 
 class ControlMsgStdout : public ControlMsgString {
  public:
   ControlMsgStdout();
-  virtual ~ControlMsgStdout();
+  ~ControlMsgStdout() override;
 };
 
 class ControlMsgErrout : public ControlMsgString {
  public:
   ControlMsgErrout();
-  virtual ~ControlMsgErrout();
+  ~ControlMsgErrout() override;
 };
 
 class ControlMsgCmd : public ControlMsg {
  public:
   ControlMsgCmd();
-  virtual ~ControlMsgCmd();
+  ~ControlMsgCmd() override;
 
   void SetArgs(int argc, char *argv[]);
   int GetArgc();
@@ -162,8 +162,8 @@ class ControlMsgCmd : public ControlMsg {
     uint32_t magic;
     char arg[0];
   };
-  size_t SerializeMsg(uint8_t *buff, size_t buff_max_len);
-  modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len);
+  size_t SerializeMsg(uint8_t *buff, size_t buff_max_len) override;
+  modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len) override;
 
  private:
   int argc_;
@@ -173,11 +173,11 @@ class ControlMsgCmd : public ControlMsg {
 class ControlMsgError : public ControlMsg {
  public:
   ControlMsgError();
-  virtual ~ControlMsgError();
+  ~ControlMsgError() override;
 
   void SetError(int err_code, const std::string &err_msg);
 
-  std::string GetErrorMsg(void);
+  std::string GetErrorMsg();
 
   int GetErrorCode();
 
@@ -188,8 +188,8 @@ class ControlMsgError : public ControlMsg {
     char err_msg[0];
   };
 
-  size_t SerializeMsg(uint8_t *buff, size_t buff_max_len);
-  modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len);
+  size_t SerializeMsg(uint8_t *buff, size_t buff_max_len) override;
+  modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len) override;
 
  private:
   int err_code_;

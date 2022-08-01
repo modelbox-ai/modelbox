@@ -31,8 +31,8 @@ constexpr const char *DEVICE_DRIVER_DESCRIPTION = "A cpu device driver";
 class CPU : public Device {
  public:
   CPU(const std::shared_ptr<DeviceMemoryManager> &mem_mgr);
-  virtual ~CPU();
-  const std::string GetType() const override;
+  ~CPU() override;
+  std::string GetType() const override;
 
   Status DeviceExecute(DevExecuteCallBack fun, int32_t priority,
                        size_t count) override;
@@ -41,18 +41,18 @@ class CPU : public Device {
 class CPUFactory : public DeviceFactory {
  public:
   CPUFactory();
-  virtual ~CPUFactory();
+  ~CPUFactory() override;
 
-  std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe();
-  const std::string GetDeviceFactoryType();
-  std::vector<std::string> GetDeviceList();
-  std::shared_ptr<Device> CreateDevice(const std::string &device_id);
+  std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe() override;
+  std::string GetDeviceFactoryType() override;
+  std::vector<std::string> GetDeviceList() override;
+  std::shared_ptr<Device> CreateDevice(const std::string &device_id) override;
 };
 
 class CPUDesc : public DeviceDesc {
  public:
   CPUDesc();
-  virtual ~CPUDesc();
+  ~CPUDesc() override;
 };
 
 }  // namespace modelbox

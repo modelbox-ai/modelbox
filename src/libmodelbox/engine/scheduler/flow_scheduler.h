@@ -82,7 +82,7 @@ class SchedulerPort
   SchedulerPort(const std::string& name);
   SchedulerPort(const std::string& name, size_t event_capacity);
 
-  virtual ~SchedulerPort() = default;
+  ~SchedulerPort() override = default;
 
   Status Init() override { return STATUS_OK; };
 };
@@ -90,7 +90,7 @@ class SchedulerPort
 class FlowScheduler : public Scheduler {
  public:
   FlowScheduler();
-  virtual ~FlowScheduler();
+  ~FlowScheduler() override;
   Status Init(std::shared_ptr<Configuration> config,
               std::shared_ptr<StatisticsItem> stats = nullptr,
               std::shared_ptr<ThreadPool> thread_pool = nullptr) override;

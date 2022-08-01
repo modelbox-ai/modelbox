@@ -27,7 +27,7 @@ Task::Task() {
   already_submit_ = false;
 }
 
-Task::~Task() {}
+Task::~Task() = default;
 
 std::string Task::GetUUID() { return task_uuid_; }
 
@@ -213,7 +213,7 @@ void Task::UpdateTaskStatus(TaskStatus task_status) {
 }
 
 OneShotTask::OneShotTask() : Task() {}
-OneShotTask::~OneShotTask() {}
+OneShotTask::~OneShotTask() = default;
 
 Status PreCheckData(
     std::unordered_map<std::string, std::shared_ptr<BufferList>> datas) {

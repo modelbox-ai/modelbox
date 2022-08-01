@@ -19,17 +19,16 @@
 
 namespace modelbox {
 
-TensorBuffer::TensorBuffer() {}
+TensorBuffer::TensorBuffer() = default;
 
 TensorBuffer::TensorBuffer(const std::shared_ptr<Device>& device)
     : Buffer(device) {}
 TensorBuffer::TensorBuffer(const std::shared_ptr<DeviceMemory>& dev_mem)
     : Buffer(dev_mem) {}
 
-TensorBuffer::TensorBuffer(const TensorBuffer& other)
-    : Buffer(other), shape_(other.shape_), type_(other.type_) {}
+TensorBuffer::TensorBuffer(const TensorBuffer& other) = default;
 
-TensorBuffer::~TensorBuffer() {}
+TensorBuffer::~TensorBuffer() = default;
 
 const std::vector<size_t>& TensorBuffer::Shape() const { return shape_; }
 

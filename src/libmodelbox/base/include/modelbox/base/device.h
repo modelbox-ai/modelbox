@@ -43,7 +43,7 @@ using DeleteFunction = std::function<void(void *)>;
 class CircleQueue {
  public:
   CircleQueue();
-  ~CircleQueue();
+  virtual ~CircleQueue();
 
   void EnQueue(const std::string &data);
   std::string &DeQueue();
@@ -59,8 +59,8 @@ class CircleQueue {
 
 class DeviceDesc {
  public:
-  DeviceDesc(){};
-  virtual ~DeviceDesc(){};
+  DeviceDesc() = default;
+  virtual ~DeviceDesc() = default;
 
   virtual std::string GetDeviceId();
   virtual std::string GetDeviceType();
@@ -90,7 +90,7 @@ class Device : public std::enable_shared_from_this<Device> {
   Device(const std::shared_ptr<DeviceMemoryManager> &mem_mgr);
   Device(size_t thread_count,
          const std::shared_ptr<DeviceMemoryManager> &mem_mgr);
-  virtual ~Device(){};
+  virtual ~Device() = default;
 
   virtual std::string GetDeviceID() const {
     if (device_desc_ != nullptr) {
@@ -100,7 +100,7 @@ class Device : public std::enable_shared_from_this<Device> {
     return "";
   };
 
-  virtual const std::string GetType() const { return ""; };
+  virtual std::string GetType() const { return ""; };
 
   void SetDeviceDesc(std::shared_ptr<DeviceDesc> device_desc);
 
@@ -263,8 +263,8 @@ class Device : public std::enable_shared_from_this<Device> {
 
 class DeviceFactory : public DriverFactory {
  public:
-  DeviceFactory(){};
-  virtual ~DeviceFactory(){};
+  DeviceFactory() = default;
+  ~DeviceFactory() override = default;
 
   virtual std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe() {
     return std::map<std::string, std::shared_ptr<DeviceDesc>>();
@@ -274,7 +274,7 @@ class DeviceFactory : public DriverFactory {
     return nullptr;
   };
 
-  virtual const std::string GetDeviceFactoryType() { return ""; };
+  virtual std::string GetDeviceFactoryType() { return ""; };
 
   virtual std::vector<std::string> GetDeviceList() {
     return std::vector<std::string>();

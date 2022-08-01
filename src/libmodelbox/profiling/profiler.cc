@@ -29,7 +29,7 @@ constexpr const char* PROFILE_DEFAULT_PATH = "/tmp/modelbox/perf";
 
 ProfilerLifeCycle::ProfilerLifeCycle(const std::string& name) : name_(name) {}
 
-ProfilerLifeCycle::~ProfilerLifeCycle() {}
+ProfilerLifeCycle::~ProfilerLifeCycle() = default;
 
 Status ProfilerLifeCycle::Init() {
   if (is_initialized_) {

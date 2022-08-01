@@ -112,8 +112,8 @@ void YoloHelper::GetOneBoundingBox(
   box_h = (float)(exp(anchor_data[3 * step + offset]) * y_bias /
                   param_.input_height_);
 
-  box_x = std::max((box_x - box_w / 2.0f), 0.0f);
-  box_y = std::max((box_y - box_h / 2.0f), 0.0f);
+  box_x = std::max((box_x - box_w / 2.0F), 0.0F);
+  box_y = std::max((box_y - box_h / 2.0F), 0.0F);
   box_w = std::min(box_w, 1 - box_x);
   box_h = std::min(box_h, 1 - box_y);
   if (param_.scale_to_input) {

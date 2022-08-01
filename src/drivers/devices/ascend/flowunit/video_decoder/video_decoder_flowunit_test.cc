@@ -35,10 +35,10 @@ using ::testing::_;
 namespace modelbox {
 class DvppVideoDecoderFlowUnitTest : public testing::Test {
  public:
-  DvppVideoDecoderFlowUnitTest() {}
+  DvppVideoDecoderFlowUnitTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     // Test ascend runtime
     int32_t count = 0;
     auto dsmi_ret = dsmi_get_device_count(&count);
@@ -48,7 +48,7 @@ class DvppVideoDecoderFlowUnitTest : public testing::Test {
     }
   };
 
-  virtual void TearDown(){};
+  void TearDown() override{};
 
  public:
   std::shared_ptr<MockFlow> flow_;

@@ -95,7 +95,7 @@ class FlowUnitPort {
         port_type_(type),
         ext_(ext){};
 
-  virtual ~FlowUnitPort(){};
+  virtual ~FlowUnitPort() = default;
 
   void SetDeviceType(const std::string &device_type) {
     device_type_ = device_type;
@@ -150,7 +150,7 @@ class FlowUnitInput : public FlowUnitPort {
                 const std::string &type,
                 const std::map<std::string, std::string> &ext)
       : FlowUnitPort(name, device_type, type, ext){};
-  virtual ~FlowUnitInput(){};
+  ~FlowUnitInput() override = default;
 };
 
 class FlowUnitOutput : public FlowUnitPort {
@@ -182,13 +182,13 @@ class FlowUnitOutput : public FlowUnitPort {
                  const std::string &type,
                  const std::map<std::string, std::string> &ext)
       : FlowUnitPort(name, device_type, type, ext){};
-  virtual ~FlowUnitOutput(){};
+  ~FlowUnitOutput() override = default;
 };
 
 class FlowUnitOption {
  public:
   FlowUnitOption(const std::string &name, const std::string &type)
-      : option_name_(name), option_type_(type), option_require_{false} {};
+      : option_name_(name), option_type_(type){};
   FlowUnitOption(const std::string &name, const std::string &type, bool require)
       : option_name_(name), option_type_(type), option_require_{require} {};
   FlowUnitOption(const std::string &name, const std::string &type, bool require,
@@ -259,23 +259,14 @@ class FlowUnitOption {
 class FlowUnitDesc {
  public:
   FlowUnitDesc()
-      : output_type_(ORIGIN),
-        flow_type_(NORMAL),
-        condition_type_(NONE),
-        loop_type_(NOT_LOOP),
-        is_stream_same_count_(false),
-        is_collapse_all_(true),
-        is_exception_visible_(false),
-        is_input_contiguous_{true},
-        is_resource_nice_{true},
-        max_batch_size_{0},
-        default_batch_size_{0} {};
-  virtual ~FlowUnitDesc(){};
 
-  const std::string GetFlowUnitName() { return flowunit_name_; };
-  const std::string GetFlowUnitAliasName() { return alias_name_; };
-  const std::string GetFlowUnitArgument() { return argument_; };
-  const bool IsCollapseAll() {
+      = default;
+  virtual ~FlowUnitDesc() = default;
+
+  std::string GetFlowUnitName() { return flowunit_name_; };
+  std::string GetFlowUnitAliasName() { return alias_name_; };
+  std::string GetFlowUnitArgument() { return argument_; };
+  bool IsCollapseAll() {
     if (loop_type_ != LOOP) {
       if (output_type_ != COLLAPSE) {
         return false;
@@ -286,7 +277,7 @@ class FlowUnitDesc {
     return true;
   };
 
-  const bool IsStreamSameCount() {
+  bool IsStreamSameCount() {
     if (flow_type_ == NORMAL) {
       return true;
     }
@@ -297,21 +288,21 @@ class FlowUnitDesc {
 
   bool IsResourceNice() const { return is_resource_nice_; }
 
-  const bool IsExceptionVisible() { return is_exception_visible_; };
+  bool IsExceptionVisible() { return is_exception_visible_; };
 
-  const ConditionType GetConditionType() { return condition_type_; };
+  ConditionType GetConditionType() { return condition_type_; };
 
-  const FlowOutputType GetOutputType() { return output_type_; };
+  FlowOutputType GetOutputType() { return output_type_; };
 
   bool IsUserSetFlowType() { return is_user_set_flow_type_; }
 
-  const FlowType GetFlowType() { return flow_type_; };
+  FlowType GetFlowType() { return flow_type_; };
 
-  const LoopType GetLoopType() { return loop_type_; };
+  LoopType GetLoopType() { return loop_type_; };
 
-  const std::string GetGroupType() { return group_type_; };
+  std::string GetGroupType() { return group_type_; };
 
-  const uint32_t GetMaxBatchSize() {
+  uint32_t GetMaxBatchSize() {
     if (max_batch_size_ != 0) {
       return max_batch_size_;
     }
@@ -323,7 +314,7 @@ class FlowUnitDesc {
     return NORMAL_MAX_BATCH_SIZE;
   };
 
-  const uint32_t GetDefaultBatchSize() {
+  uint32_t GetDefaultBatchSize() {
     if (default_batch_size_ != 0) {
       return default_batch_size_;
     }
@@ -443,18 +434,18 @@ class FlowUnitDesc {
   }
 
  protected:
-  FlowOutputType output_type_;
+  FlowOutputType output_type_{ORIGIN};
 
   bool is_user_set_flow_type_{false};
-  FlowType flow_type_;
+  FlowType flow_type_{NORMAL};
 
-  ConditionType condition_type_;
+  ConditionType condition_type_{NONE};
 
-  LoopType loop_type_;
+  LoopType loop_type_{NOT_LOOP};
 
-  bool is_stream_same_count_;
-  bool is_collapse_all_;
-  bool is_exception_visible_;
+  bool is_stream_same_count_{false};
+  bool is_collapse_all_{true};
+  bool is_exception_visible_{false};
   std::string flowunit_name_;
   std::string group_type_;
   std::string alias_name_;
@@ -465,10 +456,10 @@ class FlowUnitDesc {
   std::vector<FlowUnitOutput> flowunit_output_list_;
   std::vector<FlowUnitOption> flowunit_option_list_;
   std::shared_ptr<DriverDesc> driver_desc_;
-  bool is_input_contiguous_;
-  bool is_resource_nice_;
-  uint32_t max_batch_size_;
-  uint32_t default_batch_size_;
+  bool is_input_contiguous_{true};
+  bool is_resource_nice_{true};
+  uint32_t max_batch_size_{0};
+  uint32_t default_batch_size_{0};
 
  private:
   Status CheckInputDuplication(const FlowUnitInput &flowunit_input);
@@ -612,17 +603,15 @@ class FlowUnitStream {
 
   virtual Status Process(std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
 
-  virtual Status StreamOpen(
-      const std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
+  virtual Status StreamOpen(std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
 
-  virtual Status StreamClose(
-      const std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
+  virtual Status StreamClose(std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
 
   virtual Status ParentStreamOpen(
-      const std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
+      std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
 
   virtual Status ParentStreamClose(
-      const std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
+      std::shared_ptr<FlowUnitStreamContext> ctx) = 0;
 };
 
 /**
@@ -686,14 +675,14 @@ class IFlowUnit {
 
 class FlowUnit : public IFlowUnit {
  public:
-  FlowUnit(){};
-  virtual ~FlowUnit(){};
+  FlowUnit() = default;
+  ~FlowUnit() override = default;
 
   /* called when unit is open for process */
-  virtual Status Open(const std::shared_ptr<Configuration> &config) = 0;
+  Status Open(const std::shared_ptr<Configuration> &config) override = 0;
 
   /* class when unit is close */
-  virtual Status Close() = 0;
+  Status Close() override = 0;
 
   virtual void SetFlowUnitDesc(std::shared_ptr<FlowUnitDesc> desc);
   virtual std::shared_ptr<FlowUnitDesc> GetFlowUnitDesc();
@@ -730,28 +719,26 @@ class FlowUnit : public IFlowUnit {
 
 class FlowUnitFactory : public DriverFactory {
  public:
-  FlowUnitFactory(){};
-  virtual ~FlowUnitFactory(){};
+  FlowUnitFactory() = default;
+  ~FlowUnitFactory() override = default;
 
   virtual std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe() {
     return std::map<std::string, std::shared_ptr<FlowUnitDesc>>();
   };
 
-  virtual void SetDriver(std::shared_ptr<Driver> driver) override {
-    driver_ = driver;
-  }
+  void SetDriver(std::shared_ptr<Driver> driver) override { driver_ = driver; }
 
-  virtual std::shared_ptr<Driver> GetDriver() override { return driver_; }
+  std::shared_ptr<Driver> GetDriver() override { return driver_; }
 
-  virtual const std::string GetFlowUnitFactoryType() { return ""; };
+  virtual std::string GetFlowUnitFactoryType() { return ""; };
 
-  virtual const std::string GetFlowUnitFactoryName() { return ""; };
-  virtual const std::vector<std::string> GetFlowUnitNames() {
+  virtual std::string GetFlowUnitFactoryName() { return ""; };
+  virtual std::vector<std::string> GetFlowUnitNames() {
     return std::vector<std::string>();
   };
 
-  virtual const std::string GetVirtualType() { return ""; };
-  virtual void SetVirtualType(const std::string &virtual_type) { return; };
+  virtual std::string GetVirtualType() { return ""; };
+  virtual void SetVirtualType(const std::string &virtual_type){};
 
   virtual std::shared_ptr<FlowUnit> CreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type) {
@@ -772,9 +759,7 @@ class FlowUnitFactory : public DriverFactory {
 
   virtual void SetFlowUnitFactory(
       std::vector<std::shared_ptr<modelbox::DriverFactory>>
-          bind_flowunit_factory_list) {
-    return;
-  };
+          bind_flowunit_factory_list){};
 
  private:
   std::shared_ptr<Driver> driver_;

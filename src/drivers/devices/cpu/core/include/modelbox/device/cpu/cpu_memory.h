@@ -41,7 +41,7 @@ class CpuMemory : public DeviceMemory {
             const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
             std::shared_ptr<void> device_mem_ptr, size_t size);
 
-  virtual ~CpuMemory() {}
+  ~CpuMemory() override = default;
   /**
    * @brief Read data from other device memory
    * @param src_memory Memory read from
@@ -65,13 +65,13 @@ class CpuMemoryPool : public MemoryPoolBase {
  public:
   CpuMemoryPool();
 
-  virtual ~CpuMemoryPool();
+  ~CpuMemoryPool() override;
 
   Status Init();
 
-  virtual void *MemAlloc(size_t size);
+  void *MemAlloc(size_t size) override;
 
-  virtual void MemFree(void *ptr);
+  void MemFree(void *ptr) override;
 
   virtual void OnTimer();
 
@@ -83,7 +83,7 @@ class CpuMemoryManager : public DeviceMemoryManager {
  public:
   CpuMemoryManager(const std::string &device_id);
 
-  virtual ~CpuMemoryManager();
+  ~CpuMemoryManager() override;
 
   /**
    * @brief Init memory manager

@@ -20,8 +20,8 @@
 
 #include "modelbox/flowunit_api_helper.h"
 
-NppiCropFlowUnit::NppiCropFlowUnit(){};
-NppiCropFlowUnit::~NppiCropFlowUnit(){};
+NppiCropFlowUnit::NppiCropFlowUnit() = default;
+NppiCropFlowUnit::~NppiCropFlowUnit() = default;
 
 std::vector<std::string> kNppiCropMethod = {"u8c3r"};
 

@@ -334,7 +334,7 @@ void FlowUnitDataContext::SendEvent(std::shared_ptr<FlowUnitEvent> event) {
   cur_event_input_data_ = last_input_valid_data_;
 }
 
-const std::shared_ptr<DataMeta> FlowUnitDataContext::GetInputMeta(
+std::shared_ptr<DataMeta> FlowUnitDataContext::GetInputMeta(
     const std::string &port) {
   if (input_port_meta_.find(port) == input_port_meta_.end()) {
     return nullptr;
@@ -342,7 +342,7 @@ const std::shared_ptr<DataMeta> FlowUnitDataContext::GetInputMeta(
   return input_port_meta_.find(port)->second;
 }
 
-const std::shared_ptr<DataMeta> FlowUnitDataContext::GetInputGroupMeta(
+std::shared_ptr<DataMeta> FlowUnitDataContext::GetInputGroupMeta(
     const std::string &port) {
   return GetInputMeta(port);
 }
@@ -975,12 +975,12 @@ std::shared_ptr<void> ExecutorDataContext::GetPrivate(const std::string &key) {
   return origin_ctx_->GetPrivate(key);
 };
 
-const std::shared_ptr<DataMeta> ExecutorDataContext::GetInputMeta(
+std::shared_ptr<DataMeta> ExecutorDataContext::GetInputMeta(
     const std::string &port) {
   return origin_ctx_->GetInputMeta(port);
 };
 
-const std::shared_ptr<DataMeta> ExecutorDataContext::GetInputGroupMeta(
+std::shared_ptr<DataMeta> ExecutorDataContext::GetInputGroupMeta(
     const std::string &port) {
   return origin_ctx_->GetInputGroupMeta(port);
 };

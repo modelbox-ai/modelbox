@@ -22,8 +22,8 @@ namespace modelbox {
 
 static const std::regex REGROUPTYPE("^[A-Z][\\w/]*");
 
-IFlowUnit::IFlowUnit(){};
-IFlowUnit::~IFlowUnit(){};
+IFlowUnit::IFlowUnit() = default;
+IFlowUnit::~IFlowUnit() = default;
 
 /* class when unit is close */
 Status IFlowUnit::Close() { return STATUS_OK; }

@@ -97,7 +97,7 @@ class BufferIndexInfo {
  public:
   BufferIndexInfo() = default;
 
-  ~BufferIndexInfo() = default;
+  virtual ~BufferIndexInfo() = default;
 
   void SetInheritInfo(std::shared_ptr<BufferInheritInfo> inherit_info);
 

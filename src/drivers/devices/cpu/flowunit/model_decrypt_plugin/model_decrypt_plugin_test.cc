@@ -52,12 +52,12 @@ class ModelDecryptPluginTest : public testing::Test {
   CreateDriverFactory driver_func_ = nullptr;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = OpenDriver();
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     if (driver_handler_) {
       dlclose(driver_handler_);
     }

@@ -42,7 +42,7 @@ typedef struct tag_VisInputInfo {
 class VisSourceParser : public DataSourceParserPlugin {
  public:
   VisSourceParser();
-  ~VisSourceParser();
+  ~VisSourceParser() override;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -64,7 +64,7 @@ class VisSourceParser : public DataSourceParserPlugin {
 class VisSourceParserFactory : public modelbox::DriverFactory {
  public:
   VisSourceParserFactory() = default;
-  ~VisSourceParserFactory() = default;
+  ~VisSourceParserFactory() override = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> parser =

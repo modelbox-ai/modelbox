@@ -324,7 +324,7 @@ void YoloBoxVirtualFlowUnitFactory::SetVirtualType(
   virtual_type_ = virtual_type;
 }
 
-const std::string YoloBoxVirtualFlowUnitFactory::GetVirtualType() {
+std::string YoloBoxVirtualFlowUnitFactory::GetVirtualType() {
   return virtual_type_;
 }
 

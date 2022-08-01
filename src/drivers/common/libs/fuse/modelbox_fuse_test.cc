@@ -45,12 +45,12 @@ class ModelBoxFuseTest : public testing::Test {
   ModelBoxFuseTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
 
  private:
@@ -65,18 +65,18 @@ class MockFuseFile : public modelbox::ModelBoxFuseFile {
   virtual ~MockFuseFile() = default;
   
   std::string msg{"Hello, world"};
-  int Open(const std::string &path) { return 0; }
-  int Release() { return 0; }
-  int Read(char *buff, size_t size, off_t off) {
+  int Open(const std::string &path) override { return 0; }
+  int Release() override { return 0; }
+  int Read(char *buff, size_t size, off_t off) override {
     if (off > (off_t)msg.length()) {
       return 0;
     }
     snprintf_s(buff, size, size, "%s", msg.c_str());
     return msg.length();
   }
-  int Write(const char *buff, size_t size, off_t off) { return 0; }
-  int FSync(int isdatasync) { return 0; }
-  int Flush() { return 0; }
+  int Write(const char *buff, size_t size, off_t off) override { return 0; }
+  int FSync(int isdatasync) override { return 0; }
+  int Flush() override { return 0; }
   int FileSize() { return msg.length(); }
   std::string GetMsg() { return msg; }
 };
@@ -84,19 +84,19 @@ class MockFuseFile : public modelbox::ModelBoxFuseFile {
 class MockFuseInode : public modelbox::ModelBoxFileInode {
  public:
   MockFuseInode(const std::string &path) { path_ = path; };
-  virtual ~MockFuseInode(){};
+  ~MockFuseInode() override = default;
 
-  int FillStat(struct stat *stat) {
+  int FillStat(struct stat *stat) override {
     auto inode = std::make_shared<MockFuseFile>();
     stat->st_size = inode->FileSize();
     return 0;
   }
 
-  std::shared_ptr<modelbox::ModelBoxFuseFile> CreateFile() {
+  std::shared_ptr<modelbox::ModelBoxFuseFile> CreateFile() override {
     return std::make_shared<MockFuseFile>();
   }
 
-  std::string GetPath() { return path_; }
+  std::string GetPath() override { return path_; }
 
  private:
   std::string path_;

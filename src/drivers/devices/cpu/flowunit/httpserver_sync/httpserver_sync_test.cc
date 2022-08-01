@@ -35,12 +35,12 @@ class HttpServerSyncFlowUnitTest : public testing::Test {
   HttpServerSyncFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
 
  private:
@@ -378,14 +378,10 @@ TEST_F(HttpServerSyncFlowUnitTest, InitUnit) {
 
   std::vector<std::thread> threads;
   for (int i = 0; i < 5; ++i) {
-    threads.push_back(
-        std::thread(PutRequestSync, uri, client_config, "/restdemo_put"));
-    threads.push_back(
-        std::thread(DelRequestSync, uri, client_config, "/restdemo_del"));
-    threads.push_back(
-        std::thread(PostRequestSync, uri, client_config, "/restdemo_post"));
-    threads.push_back(
-        std::thread(GetRequestSync, uri, client_config, "/restdemo_get"));
+    threads.emplace_back(PutRequestSync, uri, client_config, "/restdemo_put");
+    threads.emplace_back(DelRequestSync, uri, client_config, "/restdemo_del");
+    threads.emplace_back(PostRequestSync, uri, client_config, "/restdemo_post");
+    threads.emplace_back(GetRequestSync, uri, client_config, "/restdemo_get");
   }
   for (auto& th : threads) {
     th.join();
@@ -424,14 +420,14 @@ TEST_F(HttpServerSyncFlowUnitTest, HealthCheck) {
   std::vector<std::thread> threads;
   std::string health_uri = "/health";
   for (int i = 0; i < 5; ++i) {
-    threads.push_back(std::thread(HealthCheckRequesSync, uri, client_config,
-                                  health_uri, web::http::methods::GET));
-    threads.push_back(std::thread(HealthCheckRequesSync, uri, client_config,
-                                  health_uri, web::http::methods::PUT));
-    threads.push_back(std::thread(HealthCheckRequesSync, uri, client_config,
-                                  health_uri, web::http::methods::POST));
-    threads.push_back(std::thread(HealthCheckRequesSync, uri, client_config,
-                                  health_uri, web::http::methods::DEL));
+    threads.emplace_back(HealthCheckRequesSync, uri, client_config, health_uri,
+                         web::http::methods::GET);
+    threads.emplace_back(HealthCheckRequesSync, uri, client_config, health_uri,
+                         web::http::methods::PUT);
+    threads.emplace_back(HealthCheckRequesSync, uri, client_config, health_uri,
+                         web::http::methods::POST);
+    threads.emplace_back(HealthCheckRequesSync, uri, client_config, health_uri,
+                         web::http::methods::DEL);
   }
   for (auto& th : threads) {
     th.join();

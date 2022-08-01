@@ -21,8 +21,8 @@
 
 using namespace modelbox;
 
-VideoDemuxerFlowUnit::VideoDemuxerFlowUnit(){};
-VideoDemuxerFlowUnit::~VideoDemuxerFlowUnit(){};
+VideoDemuxerFlowUnit::VideoDemuxerFlowUnit() = default;
+VideoDemuxerFlowUnit::~VideoDemuxerFlowUnit() = default;
 
 modelbox::Status VideoDemuxerFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

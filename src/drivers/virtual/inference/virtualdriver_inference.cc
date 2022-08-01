@@ -388,7 +388,7 @@ VirtualInferenceFlowUnitDesc::GetConfiguration() {
   return config_;
 }
 
-const std::string VirtualInferenceFlowUnitFactory::GetVirtualType() {
+std::string VirtualInferenceFlowUnitFactory::GetVirtualType() {
   return virtual_type_;
 };
 

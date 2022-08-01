@@ -19,8 +19,8 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-CVResizeFlowUnit::CVResizeFlowUnit(){};
-CVResizeFlowUnit::~CVResizeFlowUnit(){};
+CVResizeFlowUnit::CVResizeFlowUnit() = default;
+CVResizeFlowUnit::~CVResizeFlowUnit() = default;
 
 std::map<std::string, cv::InterpolationFlags> kCVResizeMethod = {
     {"inter_nearest", cv::INTER_NEAREST},

@@ -23,8 +23,8 @@
 #include "modelbox/flowunit_api_helper.h"
 #include "receive/httpserver_sync_receive.h"
 
-HTTPServerReplySync::HTTPServerReplySync(){};
-HTTPServerReplySync::~HTTPServerReplySync(){};
+HTTPServerReplySync::HTTPServerReplySync() = default;
+HTTPServerReplySync::~HTTPServerReplySync() = default;
 
 const static std::map<std::string, std::string> content_type_map_ = {
     {"htm", U("text/html")},

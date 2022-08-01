@@ -160,14 +160,14 @@ class TestNode : public Node {
 
 class NodeTest : public testing::Test {
  public:
-  NodeTest() {}
+  NodeTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init();
   };
-  virtual void TearDown() { flow_->Destroy(); };
+  void TearDown() override { flow_->Destroy(); };
 
  private:
   std::shared_ptr<MockFlow> flow_;
@@ -175,7 +175,7 @@ class NodeTest : public testing::Test {
 
 class NodeRecvTest : public testing::Test {
  public:
-  NodeRecvTest() {}
+  NodeRecvTest() = default;
 
  protected:
   std::shared_ptr<TestNode> node_;
@@ -190,7 +190,7 @@ class NodeRecvTest : public testing::Test {
   std::shared_ptr<Node> node1_;
   std::shared_ptr<Node> node2_;
 
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init();
     auto flowunit_mgr = FlowUnitManager::GetInstance();
@@ -291,7 +291,7 @@ class NodeRecvTest : public testing::Test {
         ->SetInheritInfo(inherit2);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     node_ = nullptr;
     flow_->Destroy();
   };
@@ -302,17 +302,17 @@ class NodeRecvTest : public testing::Test {
 
 class NodeRunTest : public testing::Test {
  public:
-  NodeRunTest() {}
+  NodeRunTest() = default;
   void TestAdd(std::string add_flowunit_name);
   void TestWrongAdd(std::string flowunit_name, Status run_status);
 
  protected:
   std::shared_ptr<MockFlow> flow_;
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init();
   };
-  virtual void TearDown() { flow_->Destroy(); };
+  void TearDown() override { flow_->Destroy(); };
 };
 
 static SessionManager node_test_session_manager;

@@ -41,7 +41,7 @@ class BoundingBox {
 
   BoundingBox(float x, float y, float w, float h, int32_t category, float score)
       : x_(x), y_(y), w_(w), h_(h), category_(category), score_(score) {}
-  ~BoundingBox() {}
+  virtual ~BoundingBox() = default;
 };
 
 constexpr const char *FLOWUNIT_NAME = "yolov3_postprocess";
@@ -68,14 +68,16 @@ constexpr const char *SCALE_TO_INPUT = "scale_to_input";
 class YoloboxFlowUnit : public modelbox::FlowUnit {
  public:
   YoloboxFlowUnit();
-  virtual ~YoloboxFlowUnit();
+  ~YoloboxFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close() { return modelbox::STATUS_OK; };
+  modelbox::Status Close() override { return modelbox::STATUS_OK; };
 
   /* run when processing data */
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   modelbox::Status InitYoloParam(YoloParam &param);
@@ -96,20 +98,20 @@ class YoloboxFlowUnit : public modelbox::FlowUnit {
 class YoloboxFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
   YoloboxFlowUnitDesc() = default;
-  virtual ~YoloboxFlowUnitDesc() = default;
+  ~YoloboxFlowUnitDesc() override = default;
 };
 
 class YoloboxFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   YoloboxFlowUnitFactory() = default;
-  virtual ~YoloboxFlowUnitFactory() = default;
+  ~YoloboxFlowUnitFactory() override = default;
 
   std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type,
       const std::string &virtual_type) override;
 
-  const std::string GetFlowUnitFactoryType() override;
-  const std::string GetVirtualType() override;
+  std::string GetFlowUnitFactoryType() override;
+  std::string GetVirtualType() override;
 
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
   FlowUnitProbe() override;

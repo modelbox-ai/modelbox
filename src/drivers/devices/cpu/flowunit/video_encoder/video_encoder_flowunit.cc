@@ -21,8 +21,8 @@
 
 using namespace modelbox;
 
-VideoEncoderFlowUnit::VideoEncoderFlowUnit(){};
-VideoEncoderFlowUnit::~VideoEncoderFlowUnit(){};
+VideoEncoderFlowUnit::VideoEncoderFlowUnit() = default;
+VideoEncoderFlowUnit::~VideoEncoderFlowUnit() = default;
 
 const std::set<std::string> g_supported_fmt = {"rtsp", "flv", "mp4"};
 

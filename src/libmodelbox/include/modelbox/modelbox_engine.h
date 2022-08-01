@@ -134,25 +134,26 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
                         const std::shared_ptr<DataHandler> &data_handler);
   bool CheckisStream(const std::shared_ptr<FlowUnitDesc> &desc,
                      const std::shared_ptr<DataHandler> &data_handler);
-  Status CheckInputFlowUnit(const std::string &,
-                            std::map<std::string, std::string> &,
-                            const std::shared_ptr<DataHandler> &,
-                            const std::shared_ptr<FlowUnitDesc> &);
+  Status CheckInputFlowUnit(const std::string &name,
+                            std::map<std::string, std::string> &config_map,
+                            const std::shared_ptr<DataHandler> &buffers,
+                            const std::shared_ptr<FlowUnitDesc> &desc);
   std::shared_ptr<DataHandler> ExecuteStreamNode(
-      const std::shared_ptr<FlowUnitDesc> &,
-      const std::shared_ptr<DataHandler> &,
-      std::map<std::string, std::string> &);
+      const std::shared_ptr<FlowUnitDesc> &desc,
+      const std::shared_ptr<DataHandler> &buffers,
+      std::map<std::string, std::string> &config_map);
   std::shared_ptr<DataHandler> ExecuteBufferListNode(
-      const std::string &, std::map<std::string, std::string> &,
-      const std::shared_ptr<DataHandler> &);
-  Status SendExternalData(std::shared_ptr<modelbox::ExternalDataMap> &,
-                          std::shared_ptr<modelbox::BufferList> &,
-                          const std::shared_ptr<GCNode> &);
+      const std::string &name, std::map<std::string, std::string> &config_map,
+      const std::shared_ptr<DataHandler> &buffers);
+  Status SendExternalData(
+      std::shared_ptr<modelbox::ExternalDataMap> &extern_datamap,
+      std::shared_ptr<modelbox::BufferList> &buffer_list,
+      const std::shared_ptr<GCNode> &gcnode);
   std::shared_ptr<GCNode> ProcessOutputHandler(
-      const std::shared_ptr<DataHandler> &, std::shared_ptr<GCNode> &,
-      std::shared_ptr<GCGraph> &);
-  std::shared_ptr<GCNode> ProcessVirtualHandler(std::shared_ptr<GCNode> &,
-                                                std::shared_ptr<GCGraph> &);
+      const std::shared_ptr<DataHandler> &data_handler,
+      std::shared_ptr<GCNode> &gcnode, std::shared_ptr<GCGraph> &root_graph);
+  std::shared_ptr<GCNode> ProcessVirtualHandler(
+      std::shared_ptr<GCNode> &gcnode, std::shared_ptr<GCGraph> &root_graph);
 
  private:
   friend class DataHandler;

@@ -150,7 +150,7 @@ class OneShotTask : public Task {
    * @brief One off data task
    */
   OneShotTask();
-  virtual ~OneShotTask();
+  ~OneShotTask() override;
 
   /**
    * @brief Fill data to task
@@ -177,14 +177,14 @@ class OneShotTask : public Task {
    * @brief Feed data to task
    * @return feed result
    */
-  virtual Status FeedData();
+  Status FeedData() override;
 
   /**
    * @brief Fetch data from task
    * @param fetch_status task status
    * @param output_buf task output data
    */
-  virtual void FetchData(Status fetch_status, OutputBufferList& output_buf);
+  void FetchData(Status fetch_status, OutputBufferList& output_buf) override;
 
  private:
   TaskDataCallback GetDataCallback();

@@ -31,7 +31,7 @@
 #endif
 #include "virtualdriver_inference.h"
 
-TensorRTInferenceFlowUnit::TensorRTInferenceFlowUnit(){};
+TensorRTInferenceFlowUnit::TensorRTInferenceFlowUnit() = default;
 TensorRTInferenceFlowUnit::~TensorRTInferenceFlowUnit() {
   context_ = nullptr;
   engine_ = nullptr;
@@ -53,7 +53,7 @@ RndInt8Calibrator::RndInt8Calibrator(
     int total_samples, std::string cache_file,
     std::map<std::string, nvinfer1::Dims3>& input_dims)
     : total_samples_(total_samples),
-      current_sample_(0),
+
       cache_file_(cache_file) {
   std::default_random_engine generator;
   std::uniform_real_distribution<float> distribution(-1.0F, 1.0F);
@@ -61,7 +61,9 @@ RndInt8Calibrator::RndInt8Calibrator(
     int elemCount = Volume(elem.second);
 
     std::vector<float> rnd_data(elemCount);
-    for (auto& val : rnd_data) val = distribution(generator);
+    for (auto& val : rnd_data) {
+      val = distribution(generator);
+    }
 
     void* data = nullptr;
     if (cudaMalloc(&data, elemCount * sizeof(float)) != 0) {
@@ -80,10 +82,11 @@ RndInt8Calibrator::RndInt8Calibrator(
 }
 
 RndInt8Calibrator::~RndInt8Calibrator() {
-  for (auto& elem : input_device_buffers_)
+  for (auto& elem : input_device_buffers_) {
     if (cudaFree(elem.second) != 0) {
       MBLOG_WARN << "Cuda failure: cudaFree";
     }
+  }
 }
 
 int RndInt8Calibrator::getBatchSize() const noexcept { return 1; }
@@ -115,7 +118,8 @@ const void* RndInt8Calibrator::readCalibrationCache(size_t& length) noexcept {
   return length ? &calibration_cache_[0] : nullptr;
 }
 
-void RndInt8Calibrator::writeCalibrationCache(const void*, size_t) noexcept {}
+void RndInt8Calibrator::writeCalibrationCache(const void* /*ptr*/,
+                                              size_t /*length*/) noexcept {}
 
 modelbox::Status TensorRTInferenceFlowUnit::PreProcess(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
@@ -224,7 +228,7 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpModelFile(
         MBLOG_ERROR << "invalid uffInputs";
         return {modelbox::STATUS_BADCONF, "invalid uffInputs."};
       }
-      params_.uff_input_list.push_back(std::make_pair(name, dims));
+      params_.uff_input_list.emplace_back(name, dims);
     }
 
     return modelbox::STATUS_OK;
@@ -481,7 +485,7 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
     const std::shared_ptr<modelbox::Configuration>& config,
     std::shared_ptr<IBuilder>& builder,
     std::shared_ptr<INetworkDefinition>& network) {
-  int verbosity = (int)nvinfer1::ILogger::Severity::kWARNING;
+  auto verbosity = (int)nvinfer1::ILogger::Severity::kWARNING;
 
   // parse the onnx model to populate the network, then set the outputs
   std::shared_ptr<IParser> parser =
@@ -647,9 +651,9 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    file.seekg(0, file.end);
+    file.seekg(0, std::ifstream::end);
     size = file.tellg();
-    file.seekg(0, file.beg);
+    file.seekg(0, std::ifstream::beg);
     trtModelStream.resize(size);
     file.read(trtModelStream.data(), size);
     file.close();
@@ -750,7 +754,6 @@ void TensorRTInferenceFlowUnit::SetPluginFactory(std::string pluginName) {
   }
 #endif
   MBLOG_DEBUG << "The plugin " << pluginName.c_str() << " is not supported";
-  return;
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::InitConfig(
@@ -1013,8 +1016,9 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateMemory(
     output_buf->Set("type", modelbox::MODELBOX_UINT8);
   } else if (type == "long") {
     output_buf->Set("type", modelbox::MODELBOX_INT16);
-  } else
-    return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
+  } else {
+    return { modelbox::STATUS_NOTSUPPORT, "unsupport output type." };
+  }
 
   output_buf->Set("shape", output_shape);
   buffers[binding_index] = output_buf->MutableData();

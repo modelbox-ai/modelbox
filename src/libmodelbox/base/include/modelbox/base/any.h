@@ -36,7 +36,8 @@ static std::map<size_t, size_t> type_hash_code_map = {
 namespace modelbox {
 class Any {
  public:
-  Any() noexcept : value_ptr_(nullptr) {}
+  // NOLINTNEXTLINE
+  Any() noexcept {};
 
   virtual ~Any() noexcept { delete value_ptr_; }
 
@@ -57,7 +58,6 @@ class Any {
     other.value_ptr_ = nullptr;
   }
 
- public:
   Any& swap(Any& rhs) noexcept {
     std::swap(value_ptr_, rhs.value_ptr_);
     return *this;
@@ -118,7 +118,7 @@ class Any {
 
  protected:
   struct AnyImplBase {
-    virtual ~AnyImplBase() noexcept {}
+    virtual ~AnyImplBase() noexcept = default;
 
     virtual const std::type_info& type() const noexcept = 0;
 
@@ -131,17 +131,17 @@ class Any {
 
     AnyImpl(ValueType&& value) : value_(std::move(value)) {}
 
-    virtual const std::type_info& type() const noexcept {
+    const std::type_info& type() const noexcept override {
       return typeid(ValueType);
     }
 
-    virtual AnyImplBase* clone() const { return new AnyImpl(value_); }
+    AnyImplBase* clone() const override { return new AnyImpl(value_); }
 
     ValueType value_;
   };
 
  private:
-  AnyImplBase* value_ptr_;
+  AnyImplBase* value_ptr_{nullptr};
 };
 
 template <typename ValueType>
@@ -156,7 +156,7 @@ const ValueType* any_cast(const Any* any) noexcept {
 
 template <typename ValueType>
 ValueType any_cast(Any& any) {
-  auto const result = any_cast<typename std::decay<ValueType>::type>(&any);
+  auto* const result = any_cast<typename std::decay<ValueType>::type>(&any);
 
   if (!result) {
     throw std::bad_cast();

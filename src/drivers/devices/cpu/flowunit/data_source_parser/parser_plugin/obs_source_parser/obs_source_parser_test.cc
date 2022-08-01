@@ -42,12 +42,12 @@ class DataSourceObsParserPluginTest : public testing::Test {
   void PreparationToGetCert();
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_->Clear(); };
+  void TearDown() override { driver_flow_->Clear(); };
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
   std::shared_ptr<DriverFlowTest> RunDriverFlow(std::string mock_flowunit_name);
   modelbox::Status SendDataSourceCfg(std::shared_ptr<DriverFlowTest> &driver_flow,

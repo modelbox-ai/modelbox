@@ -30,7 +30,7 @@ constexpr const char *DRIVER_TYPE = "cpu";
 class VcnSourceParser : public DataSourceParserPlugin {
  public:
   VcnSourceParser();
-  ~VcnSourceParser();
+  ~VcnSourceParser() override;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -50,7 +50,7 @@ class VcnSourceParser : public DataSourceParserPlugin {
 class VcnSourceParserFactory : public modelbox::DriverFactory {
  public:
   VcnSourceParserFactory() = default;
-  ~VcnSourceParserFactory() = default;
+  ~VcnSourceParserFactory() override = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> parser =

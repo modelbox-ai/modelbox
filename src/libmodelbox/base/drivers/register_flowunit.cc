@@ -22,7 +22,7 @@ namespace modelbox {
 
 RegisterFlowUnit::RegisterFlowUnit(const std::string &name) { name_ = name; }
 
-RegisterFlowUnit::~RegisterFlowUnit() {}
+RegisterFlowUnit::~RegisterFlowUnit() = default;
 Status RegisterFlowUnit::Open(const std::shared_ptr<Configuration> &config) {
   return STATUS_OK;
 }

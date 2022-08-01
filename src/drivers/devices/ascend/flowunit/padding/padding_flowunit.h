@@ -77,14 +77,16 @@ class ResizeCropParam {
 class PaddingFlowUnit : public modelbox::AscendFlowUnit {
  public:
   PaddingFlowUnit() = default;
-  virtual ~PaddingFlowUnit() = default;
+  ~PaddingFlowUnit() override = default;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
   modelbox::Status AscendProcess(
-      std::shared_ptr<modelbox::DataContext> data_ctx, aclrtStream stream);
+      std::shared_ptr<modelbox::DataContext> data_ctx,
+      aclrtStream stream) override;
 
  private:
   modelbox::Status ProcessOneImg(std::shared_ptr<modelbox::Buffer> &in_image,

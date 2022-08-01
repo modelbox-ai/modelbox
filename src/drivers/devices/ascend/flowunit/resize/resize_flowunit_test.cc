@@ -42,7 +42,7 @@ class ResizeFlowUnitTest : public testing::Test {
   ResizeFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     // Test ascend runtime
     int32_t count = 0;
     auto dsmi_ret = dsmi_get_device_count(&count);
@@ -52,7 +52,7 @@ class ResizeFlowUnitTest : public testing::Test {
     }
   }
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
 
   std::shared_ptr<MockFlow> GetDriverFlow();
 

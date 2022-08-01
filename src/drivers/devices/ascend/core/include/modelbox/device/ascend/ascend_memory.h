@@ -135,7 +135,7 @@ class AscendMemory : public DeviceMemory {
                const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
                std::shared_ptr<void> device_mem_ptr, size_t size);
 
-  virtual ~AscendMemory();
+  ~AscendMemory() override;
 
   /**
    * @brief Get bind ascend stream
@@ -172,13 +172,13 @@ class AscendMemoryPool : public MemoryPoolBase {
  public:
   AscendMemoryPool(AscendMemoryManager *mem_manager);
 
-  virtual ~AscendMemoryPool();
+  ~AscendMemoryPool() override;
 
   Status Init();
 
-  virtual void *MemAlloc(size_t size);
+  void *MemAlloc(size_t size) override;
 
-  virtual void MemFree(void *ptr);
+  void MemFree(void *ptr) override;
 
   virtual void OnTimer();
 
@@ -190,7 +190,7 @@ class AscendMemoryPool : public MemoryPoolBase {
 class AscendMemoryManager : public DeviceMemoryManager {
  public:
   AscendMemoryManager(const std::string &device_id);
-  virtual ~AscendMemoryManager();
+  ~AscendMemoryManager() override;
 
   Status Init();
 

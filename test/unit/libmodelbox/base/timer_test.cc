@@ -27,11 +27,11 @@
 namespace modelbox {
 class TimerTest : public testing::Test {
  public:
-  TimerTest() {}
+  TimerTest() = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 TEST_F(TimerTest, Empty) {

@@ -1005,8 +1005,8 @@ Status FlowUnitExecDataView::PackLoadTasks(
 
     auto exec_data_mapper = item.second;
     executors.push_back(executor);
-    tasks.push_back(std::bind(&FlowUnitExecDataView::DataLoadTask, this, cfg,
-                              flowunit, exec_data_mapper));
+    tasks.emplace_back(std::bind(&FlowUnitExecDataView::DataLoadTask, this, cfg,
+                                 flowunit, exec_data_mapper));
   }
 
   return STATUS_OK;
@@ -1111,7 +1111,7 @@ Status FlowUnitExecDataView::PackSaveTasks(
 
     auto &mapper = mapper_item.second;
     executors.push_back(executor);
-    tasks.push_back(
+    tasks.emplace_back(
         std::bind(&FlowUnitExecDataMapper::SaveDataToExecCtx, mapper.get()));
   }
 

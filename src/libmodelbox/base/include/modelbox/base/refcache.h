@@ -38,8 +38,8 @@ class RefCache;
 template <typename T, typename KEY>
 class RefContainer {
  public:
-  RefContainer() {}
-  virtual ~RefContainer() {}
+  RefContainer() = default;
+  virtual ~RefContainer() = default;
 
   /// reference count
   int refcount_{0};
@@ -122,8 +122,8 @@ class RefInsertTransaction {
 template <typename T, typename KEY = const std::string>
 class RefCache {
  public:
-  RefCache(){};
-  virtual ~RefCache(){};
+  RefCache() = default;
+  virtual ~RefCache() = default;
 
   /**
    * @brief Get reference data from key, when inserting, may blocking.
@@ -324,7 +324,7 @@ class RefCache {
 class RefCacheData : public RefCache<void> {
  public:
   RefCacheData();
-  virtual ~RefCacheData();
+  ~RefCacheData() override;
 };
 
 }  // namespace modelbox

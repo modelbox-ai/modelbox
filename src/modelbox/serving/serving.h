@@ -85,8 +85,6 @@ class ModelServingConfig {
     output_types_ = output_types;
   }
 
-
- public:
   std::string model_entry_;
   std::string model_engine_;
   int64_t max_batch_size_;
@@ -129,7 +127,6 @@ class ModelServing {
   modelbox::Status UpdatePostFlowUnit(const std::string &model_name);
   modelbox::Status UpdateGraphToml(const std::string &model_name);
 
- private:
   std::string model_toml_;
   std::string model_custom_service_file_;
   std::string graph_toml_file_;

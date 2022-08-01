@@ -139,7 +139,7 @@ class Slab {
   friend class SlabCache;
 
   ListHead list;
-  struct SlabObject *objs_{0};
+  struct SlabObject *objs_{nullptr};
   ListHead free_obj_head_;
 
   size_t obj_size_;
@@ -314,7 +314,6 @@ class SlabCacheReclaimer {
   SlabCacheReclaimer();
   void DoReclaim();
 
- private:
   void StartReclaimWorker();
   void StopReclaimWoker();
 

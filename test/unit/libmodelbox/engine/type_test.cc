@@ -26,11 +26,11 @@ namespace modelbox {
 
 class TypeTest : public testing::Test {
  public:
-  TypeTest() {}
+  TypeTest() = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 #define TEST_TYPE_TypeToDataType(TYPE, DATA_TYPE) \

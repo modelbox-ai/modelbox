@@ -61,7 +61,7 @@ class DvppPacket {
 
   DvppPacket() { stream_desc_ = nullptr; };
 
-  virtual ~DvppPacket() {}
+  virtual ~DvppPacket() = default;
 
   acldvppStreamDesc *GetStreamDesc() { return stream_desc_; };
   void SetStreamDesc(acldvppStreamDesc *stream_desc) {
@@ -86,8 +86,8 @@ class DvppPacket {
 
 class DvppFrame {
  public:
-  DvppFrame() {}
-  virtual ~DvppFrame() {}
+  DvppFrame() = default;
+  virtual ~DvppFrame() = default;
 
   std::shared_ptr<acldvppPicDesc> &GetPicDesc() { return pic_desc_; }
 
