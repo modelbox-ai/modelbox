@@ -29,13 +29,13 @@
 namespace modelbox {
 class BufferTest : public testing::Test {
  public:
-  BufferTest() {}
+  BufferTest() = default;
 
  protected:
   std::shared_ptr<Device> device_;
   std::shared_ptr<MockDriverCtl> ctl_;
 
-  virtual void SetUp() {
+  void SetUp() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     ctl_ = std::make_shared<MockDriverCtl>();
     modelbox::DriverDesc desc;
@@ -62,7 +62,7 @@ class BufferTest : public testing::Test {
     device_->SetMemQuota(10240);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     std::shared_ptr<DeviceManager> device_mgr = DeviceManager::GetInstance();
     device_mgr->Clear();
@@ -117,7 +117,7 @@ TEST_F(BufferTest, Get) {
   buffer.Set("Width", 1280);
 
   buffer.Set("PTS", 10);
-  buffer.Set("FPS", 30.1f);
+  buffer.Set("FPS", 30.1F);
 
   int i_value = 0;
   float f_valud = 0.0;
@@ -131,7 +131,7 @@ TEST_F(BufferTest, Get) {
   EXPECT_EQ(i_value, 10);
 
   EXPECT_TRUE(buffer.Get("FPS", f_valud));
-  EXPECT_EQ(f_valud, 30.1f);
+  EXPECT_EQ(f_valud, 30.1F);
 
   std::shared_ptr<Buffer> buf_ptr(&buffer, [](void *p) {});
 
@@ -149,8 +149,8 @@ TEST_F(BufferTest, Get) {
   buffer2.Get("Not_Found", i_value, 1000);
   EXPECT_EQ(i_value, 1000);
 
-  buffer2.Get("Not_Found", f_valud, 100.f);
-  EXPECT_EQ(f_valud, 100.f);
+  buffer2.Get("Not_Found", f_valud, 100.F);
+  EXPECT_EQ(f_valud, 100.F);
 }
 
 TEST_F(BufferTest, GetCast) {
@@ -225,7 +225,7 @@ TEST_F(BufferTest, DeepCopy) {
 class MockBuffer : public Buffer {
  public:
   MockBuffer(const std::shared_ptr<Device> &device) : Buffer(device){};
-  ~MockBuffer() = default;
+  ~MockBuffer() override = default;
   void SetDelayedCopyDestinationDevice(std::shared_ptr<Device> dest_device) {
     Buffer::SetDelayedCopyDestinationDevice(dest_device);
   }

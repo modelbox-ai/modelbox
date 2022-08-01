@@ -777,7 +777,6 @@ class BlockingQueue {
     return true;
   }
 
- protected:
   /**
    * @brief Queue lock
    */
@@ -824,7 +823,7 @@ class PriorityBlockingQueue
   explicit PriorityBlockingQueue(size_t capacity = SIZE_MAX)
       : _BlockingQueue(capacity) {}
 
-  virtual ~PriorityBlockingQueue() = default;
+  ~PriorityBlockingQueue() override = default;
 
   /**
    * @brief Pop a sequence of elems which equal each other from queue at once

@@ -25,13 +25,13 @@ namespace modelbox {
 
 class StatsTest : public testing::Test {
  public:
-  StatsTest() {}
+  StatsTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 TEST_F(StatsTest, OSProcess) {

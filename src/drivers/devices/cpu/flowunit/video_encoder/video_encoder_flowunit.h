@@ -58,25 +58,29 @@ constexpr const char *FRAME_INFO_INPUT = "in_video_frame";
 class VideoEncoderFlowUnit : public modelbox::FlowUnit {
  public:
   VideoEncoderFlowUnit();
-  virtual ~VideoEncoderFlowUnit();
+  ~VideoEncoderFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPre(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPost(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
   modelbox::Status DataGroupPre(
-      std::shared_ptr<modelbox::DataContext> data_ctx) {
+      std::shared_ptr<modelbox::DataContext> data_ctx) override {
     return modelbox::STATUS_OK;
   };
 
   modelbox::Status DataGroupPost(
-      std::shared_ptr<modelbox::DataContext> data_ctx) {
+      std::shared_ptr<modelbox::DataContext> data_ctx) override {
     return modelbox::STATUS_OK;
   };
 

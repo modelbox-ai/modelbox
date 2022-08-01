@@ -21,7 +21,7 @@ namespace modelbox {
 FlowNodeDesc::FlowNodeDesc(const std::string &node_name)
     : node_name_(node_name) {}
 
-FlowNodeDesc::~FlowNodeDesc() {}
+FlowNodeDesc::~FlowNodeDesc() = default;
 
 void FlowNodeDesc::SetNodeName(const std::string &node_name) {
   node_name_ = node_name;

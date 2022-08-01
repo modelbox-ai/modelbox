@@ -26,7 +26,7 @@
 
 class DriverPlugin {
  public:
-  virtual ~DriverPlugin() {}
+  virtual ~DriverPlugin() = default;
 
   DriverPlugin &Init(std::function<modelbox::Status()> func) {
     init_func_ = func;

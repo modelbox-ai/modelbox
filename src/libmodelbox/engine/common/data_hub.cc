@@ -24,7 +24,7 @@
 namespace modelbox {
 
 PriorityPort::PriorityPort(const std::shared_ptr<IPort>& port)
-    : active_time_(GetCurrentTime()), is_running_(false), port_(port) {
+    : active_time_(GetCurrentTime()), port_(port) {
   if (port) {
     priority_ = port->GetPriority();
   } else {
@@ -83,7 +83,7 @@ bool PortCompare::operator()(const std::shared_ptr<PriorityPort>& left,
   return left->port_ < right->port_;
 }
 
-DefaultDataHub::DefaultDataHub() {}
+DefaultDataHub::DefaultDataHub() = default;
 
 DefaultDataHub::~DefaultDataHub() {
   std::lock_guard<std::mutex> guard(active_mutex_);

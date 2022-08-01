@@ -42,7 +42,7 @@ class ColorTransposeFlowUnitTest : public testing::Test {
   ColorTransposeFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -55,7 +55,7 @@ class ColorTransposeFlowUnitTest : public testing::Test {
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
 
   const std::string test_lib_dir = TEST_DRIVER_DIR,
@@ -130,7 +130,7 @@ TEST_F(ColorTransposeFlowUnitTest, ColorTransposeTest) {
   {
     std::string gimg_path = std::string(TEST_ASSETS) + "/test.jpg";
     cv::Mat bgr_img, gray_img, rgb_img;
-    bgr_img = cv::imread(gimg_path.c_str());
+    bgr_img = cv::imread(gimg_path);
 
     cv::cvtColor(bgr_img, rgb_img, CV_BGR2RGB);
     cv::cvtColor(rgb_img, gray_img, CV_RGB2GRAY);

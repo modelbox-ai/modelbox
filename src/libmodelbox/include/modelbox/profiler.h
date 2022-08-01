@@ -131,7 +131,7 @@ class TraceEvent {
   TraceEvent();
 
  private:
-  EventType event_type_;
+  EventType event_type_{EventType::BEGIN};
   TimePoint event_time_;
   std::thread::id thread_id_;
 };
@@ -271,7 +271,7 @@ class Performance : public ProfilerLifeCycle {
  public:
   Performance(std::shared_ptr<DeviceManager> device_mgr,
               std::string& output_dir_path);
-  virtual ~Performance();
+  ~Performance() override;
 
   Status OnInit() override;
 
@@ -309,7 +309,6 @@ class Performance : public ProfilerLifeCycle {
 
   void PerformanceWorker();
 
- private:
   // device type + device id -> std::pair<std::string, std::string>
   std::shared_ptr<std::map<std::string, std::pair<std::string, std::string>>>
       devices_;
@@ -338,7 +337,7 @@ class Trace : public std::enable_shared_from_this<Trace>,
  public:
   Trace(std::string& output_dir_path, std::shared_ptr<Performance> perf,
         bool session_enable);
-  virtual ~Trace();
+  ~Trace() override;
 
   Status OnStart() override;
 
@@ -365,7 +364,6 @@ class Trace : public std::enable_shared_from_this<Trace>,
 
   void TraceWork();
 
- private:
   // FlowUnit name -> FlowUnitTrace, get by lock
   std::map<std::string, std::shared_ptr<FlowUnitTrace>> traces_;
 
@@ -398,7 +396,7 @@ class Profiler : public ProfilerLifeCycle {
   explicit Profiler(std::shared_ptr<DeviceManager> device_mgr,
                     std::shared_ptr<Configuration> config);
 
-  virtual ~Profiler();
+  ~Profiler() override;
 
   Profiler(const Profiler& profiler) = delete;
   Profiler& operator=(const Profiler& profiler) = delete;

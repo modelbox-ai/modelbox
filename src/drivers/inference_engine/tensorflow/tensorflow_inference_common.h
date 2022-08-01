@@ -38,9 +38,8 @@ constexpr const char *TAGS = "serve";
 
 class InferenceTensorflowParams {
  public:
-  InferenceTensorflowParams()
-      : graph(nullptr), session(nullptr), options(nullptr), status(nullptr){};
-  virtual ~InferenceTensorflowParams(){};
+  InferenceTensorflowParams() = default;
+  virtual ~InferenceTensorflowParams() = default;
 
   modelbox::Status Clear();
 
@@ -51,10 +50,10 @@ class InferenceTensorflowParams {
   int device{0};
 
   // Tensorflow Options
-  TF_Graph *graph;
-  TF_Session *session;
-  TF_SessionOptions *options;
-  TF_Status *status;
+  TF_Graph *graph{nullptr};
+  TF_Session *session{nullptr};
+  TF_SessionOptions *options{nullptr};
+  TF_Status *status{nullptr};
   std::vector<uint8_t> config_proto_binary_ = {
       0x32, 0xe,  0x9,  0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc,
       0xec, 0x3f, 0x20, 0x1,  0x2a, 0x1,  0x30, 0x38, 0x1};
@@ -68,9 +67,9 @@ class InferenceTensorflowFlowUnitDesc : public modelbox::FlowUnitDesc {
 
  public:
   InferenceTensorflowFlowUnitDesc() = default;
-  virtual ~InferenceTensorflowFlowUnitDesc() = default;
+  ~InferenceTensorflowFlowUnitDesc() override = default;
 
-  void SetModelEntry(const std::string model_entry);
+  void SetModelEntry(std::string model_entry);
   const std::string GetModelEntry();
 
   std::string model_entry_;
@@ -79,14 +78,16 @@ class InferenceTensorflowFlowUnitDesc : public modelbox::FlowUnitDesc {
 class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
  public:
   InferenceTensorflowFlowUnit();
-  virtual ~InferenceTensorflowFlowUnit();
+  ~InferenceTensorflowFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
   /* run when processing data */
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx,

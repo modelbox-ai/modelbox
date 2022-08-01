@@ -37,7 +37,7 @@ class InferenceMindSporeCPUFlowUnitTest : public testing::Test {
       : mindspore_flow_(std::make_shared<InferenceMindSporeFlowUnitTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = mindspore_flow_->Init();
     EXPECT_EQ(ret, STATUS_OK);
 
@@ -59,7 +59,7 @@ class InferenceMindSporeCPUFlowUnitTest : public testing::Test {
     CopyFile(src_toml_en, dest_toml_file_en, true);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     remove(dest_model_file.c_str());
     remove(dest_toml_file.c_str());
     remove(dest_model_file_en.c_str());

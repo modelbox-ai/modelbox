@@ -115,13 +115,13 @@ class MemoryPoolBase : public MemoryAllocFree,
    * @param size memory size.
    * @return pointer to memory.
    */
-  virtual void *MemAlloc(size_t size);
+  void *MemAlloc(size_t size) override;
 
   /**
    * @brief Free Memory
    * @param ptr to memory.
    */
-  virtual void MemFree(void *ptr);
+  void MemFree(void *ptr) override;
 
   /**
    * @brief Add a new slab cache

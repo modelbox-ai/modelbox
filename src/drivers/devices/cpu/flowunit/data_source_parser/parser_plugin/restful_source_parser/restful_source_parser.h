@@ -38,7 +38,7 @@ typedef struct tag_RestfulInputInfo {
 class RestfulSourceParser : public DataSourceParserPlugin {
  public:
   RestfulSourceParser();
-  ~RestfulSourceParser();
+  ~RestfulSourceParser() override;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -63,7 +63,7 @@ class RestfulSourceParser : public DataSourceParserPlugin {
 class RestfulSourceParserFactory : public modelbox::DriverFactory {
  public:
   RestfulSourceParserFactory() = default;
-  ~RestfulSourceParserFactory() = default;
+  ~RestfulSourceParserFactory() override = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> parser =

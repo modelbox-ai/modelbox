@@ -42,10 +42,10 @@ class DataSourceParserPlugin
 
   virtual modelbox::Status Deinit() = 0;
 
-  virtual modelbox::Status Parse(
+  modelbox::Status Parse(
       std::shared_ptr<modelbox::SessionContext> session_context,
       const std::string &config, std::string &uri,
-      DestroyUriFunc &destroy_uri_func) = 0;
+      DestroyUriFunc &destroy_uri_func) override = 0;
 
   virtual modelbox::Status GetStreamType(const std::string &config,
                                          std::string &stream_type) {
@@ -80,9 +80,9 @@ class DataSourceParserPlugin
     return source_context;
   };
 
-  virtual modelbox::RetryStatus NeedRetry(std::string &stream_type,
-                                          modelbox::Status &last_status,
-                                          int32_t retry_times) {
+  modelbox::RetryStatus NeedRetry(std::string &stream_type,
+                                  modelbox::Status &last_status,
+                                  int32_t retry_times) override {
     if (last_status == modelbox::STATUS_NODATA && stream_type == "file") {
       return modelbox::RETRY_STOP;
     }
@@ -96,6 +96,8 @@ class DataSourceParserPlugin
                << " retry_max_times_: " << retry_max_times_;
     return modelbox::RETRY_NONEED;
   };
+
+  ~DataSourceParserPlugin() override = default;
 
  protected:
   int32_t retry_interval_{1000};  // millisecond

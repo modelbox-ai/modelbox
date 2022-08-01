@@ -51,8 +51,8 @@ static struct option flow_options[] = {
     {nullptr, 0, nullptr, 0},
 };
 
-ToolCommandFlow::ToolCommandFlow() {}
-ToolCommandFlow::~ToolCommandFlow() {}
+ToolCommandFlow::ToolCommandFlow() = default;
+ToolCommandFlow::~ToolCommandFlow() = default;
 
 std::string ToolCommandFlow::GetHelp() {
   char help[] =

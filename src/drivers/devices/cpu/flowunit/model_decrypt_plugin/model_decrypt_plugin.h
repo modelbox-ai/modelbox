@@ -25,12 +25,13 @@
 class ModelDecryptPlugin : public IModelDecryptPlugin {
  public:
   ModelDecryptPlugin() = default;
-  virtual ~ModelDecryptPlugin() = default;
-  virtual modelbox::Status Init(
+  ~ModelDecryptPlugin() override = default;
+  modelbox::Status Init(
       const std::string &fname,
-      const std::shared_ptr<modelbox::Configuration> config);
-  virtual modelbox::Status ModelDecrypt(uint8_t *raw_buf, int64_t raw_len,
-                                        uint8_t *plain_buf, int64_t &plain_len);
+      std::shared_ptr<modelbox::Configuration> config) override;
+  modelbox::Status ModelDecrypt(uint8_t *raw_buf, int64_t raw_len,
+                                uint8_t *plain_buf,
+                                int64_t &plain_len) override;
 
  private:
   std::string rootkey_;
@@ -40,7 +41,7 @@ class ModelDecryptPlugin : public IModelDecryptPlugin {
 class ModelDecryptFactory : public modelbox::DriverFactory {
  public:
   ModelDecryptFactory() = default;
-  virtual ~ModelDecryptFactory() = default;
+  ~ModelDecryptFactory() override = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> model_plugin =

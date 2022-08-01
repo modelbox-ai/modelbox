@@ -45,12 +45,12 @@ class OutputBrokerFlowUnitTest : public testing::Test {
   modelbox::Status HandleFunc(web::http::http_request request);
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_ = nullptr; };
+  void TearDown() override { driver_flow_ = nullptr; };
   std::shared_ptr<MockFlow> GetDriverFlow();
   std::shared_ptr<MockFlow> RunDriverFlow();
   modelbox::Status SendOutputData(std::shared_ptr<MockFlow> &driver_flow,

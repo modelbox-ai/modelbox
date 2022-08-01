@@ -19,9 +19,9 @@
 
 #include "modelbox/base/log.h"
 namespace modelbox {
-BufferType::BufferType() {}
+BufferType::BufferType() = default;
 BufferType::BufferType(const std::string &type) : type_(type) {}
-BufferType::~BufferType() {}
+BufferType::~BufferType() = default;
 
 std::shared_ptr<BufferTypeTree> BufferTypeTree::instance_(nullptr);
 
@@ -124,9 +124,9 @@ std::vector<std::shared_ptr<BufferType>> BufferType::GetChildrenType() {
   return children_;
 }
 
-BufferTypeTree::BufferTypeTree() {}
+BufferTypeTree::BufferTypeTree() = default;
 
-BufferTypeTree::~BufferTypeTree() {}
+BufferTypeTree::~BufferTypeTree() = default;
 
 bool BufferTypeTree::AddRootType(std::string root_type) {
   std::shared_ptr<BufferType> root_buffer_type_ptr = GetType(root_);

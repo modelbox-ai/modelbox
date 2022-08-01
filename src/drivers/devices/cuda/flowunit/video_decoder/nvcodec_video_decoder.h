@@ -35,12 +35,12 @@ class NVDECException : public std::exception {
   NVDECException(const std::string &err_str, const CUresult err_code)
       : err_str_(err_str), err_code_(err_code) {}
 
-  virtual ~NVDECException() throw() {}
-  virtual const char *what() const throw() { return err_str_.c_str(); }
+  ~NVDECException() noexcept override = default;
+  const char *what() const noexcept override { return err_str_.c_str(); }
   CUresult GetErrorCode() const { return err_code_; }
   const std::string &GetErrorString() const { return err_str_; }
   static NVDECException MakeNVDECException(const std::string &err_str,
-                                           const CUresult err_code,
+                                           CUresult err_code,
                                            const std::string &function_name,
                                            const std::string &file_name,
                                            int line_number);
@@ -76,7 +76,7 @@ class NvcodecPacket {
 
   NvcodecPacket() = default;
 
-  virtual ~NvcodecPacket() {}
+  virtual ~NvcodecPacket() = default;
 
   size_t GetSize() { return size_; };
 

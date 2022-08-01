@@ -28,8 +28,8 @@
 std::map<std::string, nvjpegOutputFormat_t> NvImgPixelFormat{
     {"bgr", NVJPEG_OUTPUT_BGR}, {"rgb", NVJPEG_OUTPUT_RGB}};
 
-NvImageDecoderFlowUnit::NvImageDecoderFlowUnit(){};
-NvImageDecoderFlowUnit::~NvImageDecoderFlowUnit(){};
+NvImageDecoderFlowUnit::NvImageDecoderFlowUnit() = default;
+NvImageDecoderFlowUnit::~NvImageDecoderFlowUnit() = default;
 
 modelbox::Status NvImageDecoderFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

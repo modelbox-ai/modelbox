@@ -20,8 +20,8 @@
 
 #include "virtualdriver_inference.h"
 
-MindSporeInferenceFlowUnit::MindSporeInferenceFlowUnit(){};
-MindSporeInferenceFlowUnit::~MindSporeInferenceFlowUnit(){};
+MindSporeInferenceFlowUnit::MindSporeInferenceFlowUnit() = default;
+MindSporeInferenceFlowUnit::~MindSporeInferenceFlowUnit() = default;
 
 std::shared_ptr<mindspore::Context>
 MindSporeInferenceFlowUnit::InitMindSporeContext(

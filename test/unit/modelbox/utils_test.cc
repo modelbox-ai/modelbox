@@ -30,12 +30,12 @@
 namespace modelbox {
 class ServerUtilsTest : public testing::Test {
  public:
-  ServerUtilsTest() {}
-  virtual ~ServerUtilsTest() {}
+  ServerUtilsTest() = default;
+  ~ServerUtilsTest() override = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 TEST_F(ServerUtilsTest, IPMatchClassC) {

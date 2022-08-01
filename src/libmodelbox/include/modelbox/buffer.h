@@ -57,7 +57,7 @@ class BufferMeta {
    * @param is_override override existing meta key
    * @return copy result
    */
-  Status CopyMeta(const std::shared_ptr<BufferMeta> buf_meta,
+  Status CopyMeta(std::shared_ptr<BufferMeta> buf_meta,
                   bool is_override = false);
 
   /**
@@ -229,7 +229,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @param is_override may override existing meta.
    * @return copy result
    */
-  virtual Status CopyMeta(const std::shared_ptr<Buffer> buf,
+  virtual Status CopyMeta(std::shared_ptr<Buffer> buf,
                           bool is_override = false);
 
   /**

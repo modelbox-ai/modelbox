@@ -42,7 +42,7 @@ class MockDriver {
 
     EXPECT_CALL(*this, DriverFini).WillRepeatedly([]() {});
   };
-  virtual ~MockDriver(){};
+  virtual ~MockDriver() = default;
   virtual void SetDriverDesc(std::shared_ptr<modelbox::DriverDesc> desc) {
     desc_ = desc;
   };
@@ -58,7 +58,7 @@ class MockDriver {
 class MockFlowUnitDriverDesc : public modelbox::DriverDesc {
  public:
   MockFlowUnitDriverDesc() = default;
-  virtual ~MockFlowUnitDriverDesc() = default;
+  ~MockFlowUnitDriverDesc() override = default;
 
   void SetMockFlowUnit(std::shared_ptr<MockFlowUnit> mock_flowunit) {
     mock_flowunit_ = mock_flowunit;
@@ -120,7 +120,7 @@ class MockDriverDescSetup {
  private:
   std::string file_path_;
   std::shared_ptr<modelbox::DriverDesc> desc_;
-  void *driver_handler_ = NULL;
+  void *driver_handler_ = nullptr;
   MockDriver *mock_driver_;
 };
 

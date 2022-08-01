@@ -84,7 +84,7 @@ BrokerInstance::BrokerInstance(std::shared_ptr<OutputBrokerPlugin> &plugin,
       handle_(handle),
       data_queue_(name, async_queue_size) {}
 
-BrokerInstance::~BrokerInstance() {}
+BrokerInstance::~BrokerInstance() = default;
 
 void BrokerInstance::SetRetryParam(int64_t retry_count_limit,
                                    size_t retry_interval_base_ms,
@@ -218,8 +218,8 @@ void BrokerInstance::UpdateInstaceState(modelbox::Status write_result) {
   }
 }
 
-OutputBrokerFlowUnit::OutputBrokerFlowUnit(){};
-OutputBrokerFlowUnit::~OutputBrokerFlowUnit(){};
+OutputBrokerFlowUnit::OutputBrokerFlowUnit() = default;
+OutputBrokerFlowUnit::~OutputBrokerFlowUnit() = default;
 
 modelbox::Status OutputBrokerFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {

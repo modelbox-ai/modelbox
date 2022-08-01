@@ -83,7 +83,6 @@ class LeastCommonAncestor {
   void GetIndexPortType(const std::string &node_name,
                         const std::string &port_name, IndexPortType &port_type);
 
- private:
   std::unordered_map<std::string, std::shared_ptr<NodeBase>> all_nodes_;
 
   int nodes_num_;
@@ -144,7 +143,6 @@ class OverHierarchyCheck {
       std::shared_ptr<Node> node,
       const std::unordered_map<std::string, std::string> &end_if_map);
 
- private:
   std::unordered_map<std::string, std::shared_ptr<NodeBase>> all_nodes_;
   std::set<std::shared_ptr<NodeBase>> start_nodes_;
   std::map<std::string, std::string> loop_links_;
@@ -190,7 +188,6 @@ class GraphChecker {
                                       std::string &match_node);
   void UpdateAncestorPath(const std::vector<IndexPort> &values);
 
- private:
   std::vector<std::shared_ptr<NodeBase>> nodes_;
   std::map<std::string, std::string> loop_links_;
   std::vector<std::vector<std::string>> loop_structures_;

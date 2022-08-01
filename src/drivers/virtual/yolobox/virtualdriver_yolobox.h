@@ -31,13 +31,13 @@ const std::vector<std::string> BIND_FLOWUNIT_TYPE{"cpu"};
 class YoloBoxVirtualDriverDesc : public modelbox::VirtualDriverDesc {
  public:
   YoloBoxVirtualDriverDesc() = default;
-  virtual ~YoloBoxVirtualDriverDesc() = default;
+  ~YoloBoxVirtualDriverDesc() override = default;
 };
 
 class YoloBoxVirtualFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
   YoloBoxVirtualFlowUnitDesc() = default;
-  virtual ~YoloBoxVirtualFlowUnitDesc() = default;
+  ~YoloBoxVirtualFlowUnitDesc() override = default;
 
   void SetConfiguration(std::shared_ptr<modelbox::Configuration> config);
   std::shared_ptr<modelbox::Configuration> GetConfiguration();
@@ -51,9 +51,9 @@ class YoloBoxVirtualDriver
       public std::enable_shared_from_this<YoloBoxVirtualDriver> {
  public:
   YoloBoxVirtualDriver() = default;
-  virtual ~YoloBoxVirtualDriver() = default;
+  ~YoloBoxVirtualDriver() override = default;
 
-  std::shared_ptr<modelbox::DriverFactory> CreateFactory();
+  std::shared_ptr<modelbox::DriverFactory> CreateFactory() override;
   std::vector<std::shared_ptr<modelbox::Driver>> GetBindDriver();
   void SetBindDriver(
       std::vector<std::shared_ptr<modelbox::Driver>> driver_list);
@@ -65,9 +65,9 @@ class YoloBoxVirtualDriver
 class YoloBoxVirtualFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   YoloBoxVirtualFlowUnitFactory() = default;
-  virtual ~YoloBoxVirtualFlowUnitFactory() = default;
+  ~YoloBoxVirtualFlowUnitFactory() override = default;
 
-  virtual std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
+  std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type,
       const std::string &virtual_type) override;
 
@@ -77,13 +77,13 @@ class YoloBoxVirtualFlowUnitFactory : public modelbox::FlowUnitFactory {
   void SetFlowUnitFactory(std::vector<std::shared_ptr<modelbox::DriverFactory>>
                               bind_flowunit_factory_list) override;
 
-  const std::string GetVirtualType() override;
+  std::string GetVirtualType() override;
 
   void SetVirtualType(const std::string &virtual_type) override;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override { return driver_; };
 
-  virtual void SetDriver(std::shared_ptr<modelbox::Driver> driver) override {
+  void SetDriver(std::shared_ptr<modelbox::Driver> driver) override {
     driver_ = driver;
   }
 
@@ -105,7 +105,7 @@ class YoloBoxVirtualFlowUnitFactory : public modelbox::FlowUnitFactory {
 class YoloBoxVirtualDriverManager : public modelbox::VirtualDriverManager {
  public:
   YoloBoxVirtualDriverManager() = default;
-  virtual ~YoloBoxVirtualDriverManager() = default;
+  ~YoloBoxVirtualDriverManager() override = default;
 
   modelbox::Status Scan(const std::string &path) override;
   modelbox::Status Add(const std::string &file) override;

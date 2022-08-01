@@ -31,7 +31,7 @@ namespace modelbox {
 
 typedef struct tag_VcnRestfulInfo : public VcnInfo {
   tag_VcnRestfulInfo(const VcnInfo &info) : VcnInfo(info), jsession_id("") {}
-  tag_VcnRestfulInfo() {}
+  tag_VcnRestfulInfo() = default;
   std::string jsession_id;
 } VcnRestfulInfo;
 
@@ -53,7 +53,6 @@ class VcnRestfulWrapper {
   VcnRestfulWrapper();
   virtual ~VcnRestfulWrapper() = default;
 
- public:
   /**
    * @brief   restful login a vcn account
    * @param   restful_info - in, a VcnRestfulInfo object, containing information
@@ -90,7 +89,6 @@ class VcnRestfulWrapper {
                                const httplib::Headers &headers,
                                REQ_METHOD method, httplib::Response &resp);
 
- private:
   HttpcliFuncMap httpcli_func_map_;
 };
 

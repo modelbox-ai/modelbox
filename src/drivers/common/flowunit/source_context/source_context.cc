@@ -26,7 +26,7 @@ SourceContext::SourceContext(std::weak_ptr<SourceParser> plugin,
                              const std::string &plugin_name)
     : plugin_(plugin), plugin_name_(plugin_name) {}
 
-SourceContext::~SourceContext() {}
+SourceContext::~SourceContext() = default;
 
 std::shared_ptr<std::string> SourceContext::GetSourceURL() {
   std::shared_ptr<std::string> uri;

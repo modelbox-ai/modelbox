@@ -31,7 +31,7 @@ SchedulerPort::SchedulerPort(const std::string& name, size_t event_capacity)
   queue_ = std::make_shared<SchedulerQueue>(event_capacity);
 };
 
-FlowScheduler::FlowScheduler() {}
+FlowScheduler::FlowScheduler() = default;
 
 FlowScheduler::~FlowScheduler() {
   if (tp_) {

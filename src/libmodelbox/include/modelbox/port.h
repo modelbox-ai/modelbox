@@ -94,7 +94,7 @@ class IPort : public Port {
  public:
   IPort(const std::string& name, std::shared_ptr<NodeBase> node)
       : Port(name, node){};
-  virtual ~IPort() = default;
+  ~IPort() override = default;
   virtual int32_t GetPriority() const = 0;
   virtual int32_t GetDataCount() const = 0;
   virtual void SetPriority(int32_t priority) = 0;
@@ -118,21 +118,21 @@ class NotifyPort : public IPort {
              uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
       : IPort(name, node),
         priority_(priority),
-        mutex_(),
+
         push_call_back_(nullptr),
         pop_call_back_(nullptr),
         is_activated_(true),
         queue_(
             std::make_shared<PortQueue<QueueType, Compare>>(event_capacity)) {}
 
-  virtual ~NotifyPort() { queue_->Clear(); }
+  ~NotifyPort() override { queue_->Clear(); }
 
   /**
    * @brief Get the Priority
    *
    * @return int
    */
-  virtual int32_t GetPriority() const override {
+  int32_t GetPriority() const override {
     std::shared_ptr<QueueType> data = nullptr;
     if (queue_->Front(&data)) {
       return data->GetPriority();
@@ -146,23 +146,21 @@ class NotifyPort : public IPort {
    *
    * @return int
    */
-  virtual int32_t GetDataCount() const override {
-    return queue_ ? queue_->Size() : 0;
-  }
+  int32_t GetDataCount() const override { return queue_ ? queue_->Size() : 0; }
 
   /**
    * @brief Set the Priority
    *
    * @param priority
    */
-  virtual void SetPriority(int32_t priority) override { priority_ = priority; }
+  void SetPriority(int32_t priority) override { priority_ = priority; }
 
   /**
    * @brief Set the Push Event Call Back Function
    *
    * @param func PushEvent Callback Function
    */
-  virtual void SetPushEventCallBack(const PushCallBack& func) override {
+  void SetPushEventCallBack(const PushCallBack& func) override {
     push_call_back_ = func;
   }
 
@@ -171,7 +169,7 @@ class NotifyPort : public IPort {
    *
    * @param func PopEvent Callback Function
    */
-  virtual void SetPopEventCallBack(const PopCallBack& func) override {
+  void SetPopEventCallBack(const PopCallBack& func) override {
     pop_call_back_ = func;
   }
 
@@ -179,14 +177,14 @@ class NotifyPort : public IPort {
    * @brief Notify PushEvent
    *
    */
-  virtual void NotifyPushEvent(bool update_active_time) override {
+  void NotifyPushEvent(bool update_active_time) override {
     std::lock_guard<std::mutex> lock(mutex_);
     if (push_call_back_) {
       push_call_back_(update_active_time);
     }
   }
 
-  virtual void NotifyPushEvent() override {
+  void NotifyPushEvent() override {
     std::lock_guard<std::mutex> lock(mutex_);
     if (push_call_back_) {
       push_call_back_(true);
@@ -197,7 +195,7 @@ class NotifyPort : public IPort {
    * @brief Notify PopEvent
    *
    */
-  virtual void NotifyPopEvent() override {
+  void NotifyPopEvent() override {
     std::lock_guard<std::mutex> lock(mutex_);
     if (pop_call_back_) {
       pop_call_back_();
@@ -210,13 +208,13 @@ class NotifyPort : public IPort {
    * @return true
    * @return false
    */
-  virtual bool Empty() const override { return queue_->Empty(); };
+  bool Empty() const override { return queue_->Empty(); };
 
-  virtual bool IsActivated() override { return is_activated_; }
+  bool IsActivated() override { return is_activated_; }
 
-  virtual void SetActiveState(bool flag) override { is_activated_ = flag; }
+  void SetActiveState(bool flag) override { is_activated_ = flag; }
 
-  virtual void Shutdown() override {
+  void Shutdown() override {
     std::lock_guard<std::mutex> lock(mutex_);
     push_call_back_ = nullptr;
     pop_call_back_ = nullptr;
@@ -265,7 +263,7 @@ class EventPort : public NotifyPort<FlowUnitInnerEvent, EventCompare> {
   EventPort(const std::string& name, std::shared_ptr<NodeBase> node,
             uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
       : NotifyPort(name, node, priority, event_capacity){};
-  virtual ~EventPort() override = default;
+  ~EventPort() override = default;
 
   Status Init() override { return STATUS_OK; };
 
@@ -284,7 +282,7 @@ class InPort : public NotifyPort<Buffer, CustomCompare> {
          uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
       : NotifyPort(name, node, priority, event_capacity) {}
 
-  virtual ~InPort() override = default;
+  ~InPort() override = default;
 
   Status Init() override;
 
@@ -305,7 +303,7 @@ class OutPort : public Port, public std::enable_shared_from_this<OutPort> {
  public:
   OutPort(const std::string& name, std::shared_ptr<NodeBase> node);
 
-  virtual ~OutPort();
+  ~OutPort() override;
 
   Status Init();
 
@@ -313,9 +311,9 @@ class OutPort : public Port, public std::enable_shared_from_this<OutPort> {
 
   std::set<std::shared_ptr<InPort>> GetConnectInPort();
 
-  bool ConnectPort(std::shared_ptr<InPort>);
+  bool ConnectPort(std::shared_ptr<InPort> /*inport*/);
 
-  void Shutdown();
+  void Shutdown() override;
 
  private:
   std::set<std::shared_ptr<InPort>> connected_input_ports_;

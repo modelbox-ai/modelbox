@@ -29,7 +29,7 @@ constexpr const char *DRIVER_TYPE = "cpu";
 class UrlSourceParser : public DataSourceParserPlugin {
  public:
   UrlSourceParser();
-  virtual ~UrlSourceParser();
+  ~UrlSourceParser() override;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -53,7 +53,7 @@ class UrlSourceParser : public DataSourceParserPlugin {
 class UrlSourceParserFactory : public modelbox::DriverFactory {
  public:
   UrlSourceParserFactory() = default;
-  virtual ~UrlSourceParserFactory() = default;
+  ~UrlSourceParserFactory() override = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> parser =

@@ -34,18 +34,18 @@ namespace modelbox {
 class ManagerTest : public testing::Test {
  public:
  protected:
-  ManagerTest() {}
-  virtual void SetUp(){
+  ManagerTest() = default;
+  void SetUp() override{
 
   };
-  virtual void TearDown(){
+  void TearDown() override{
 
   };
 };
 
 class ManagerTestServer {
  public:
-  ManagerTestServer() {}
+  ManagerTestServer() = default;
   virtual ~ManagerTestServer() { Stop(); }
   void Start() {
     manager_init_server();

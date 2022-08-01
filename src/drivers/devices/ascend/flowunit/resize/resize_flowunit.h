@@ -53,14 +53,16 @@ constexpr const char *OUT_IMG = "out_image";
 class ResizeFlowUnit : public modelbox::AscendFlowUnit {
  public:
   ResizeFlowUnit() = default;
-  virtual ~ResizeFlowUnit() = default;
+  ~ResizeFlowUnit() override = default;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status AscendProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                               aclrtStream stream);
+  modelbox::Status AscendProcess(
+      std::shared_ptr<modelbox::DataContext> data_ctx,
+      aclrtStream stream) override;
 
  private:
   modelbox::Status ProcessOneImg(std::shared_ptr<modelbox::Buffer> &in_image,

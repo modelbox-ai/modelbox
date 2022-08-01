@@ -34,8 +34,8 @@ namespace modelbox {
 class PyLogger : public Logger {
  public:
   using Logger::Logger;
-  virtual ~PyLogger() = default;
-  LogLevel GetLogLevel() {
+  ~PyLogger() override = default;
+  LogLevel GetLogLevel() override {
     PYBIND11_OVERLOAD_PURE(LogLevel, Logger, GetLogLevel);
   }
 };

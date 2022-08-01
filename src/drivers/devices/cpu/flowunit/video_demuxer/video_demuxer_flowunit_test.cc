@@ -32,12 +32,12 @@ using ::testing::_;
 namespace modelbox {
 class VideoDemuxerFlowUnitTest : public testing::Test {
  public:
-  VideoDemuxerFlowUnitTest() {}
-  virtual ~VideoDemuxerFlowUnitTest() {}
+  VideoDemuxerFlowUnitTest() = default;
+  ~VideoDemuxerFlowUnitTest() override = default;
 
  protected:
-  virtual void SetUp(){};
+  void SetUp() override{};
 
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 }  // namespace modelbox

@@ -49,6 +49,7 @@ class DeferGuard {
    * @brief Defer guard with function call
    * @param fn function
    */
+  // NOLINTNEXTLINE
   DeferGuard(Callable &&fn) : fn_(std::forward<Callable>(fn)) {}
 
   /**
@@ -77,6 +78,7 @@ class DeferGuardChain {
    * @param fn function
    */
   template <class Callable>
+  // NOLINTNEXTLINE
   DeferGuardChain(Callable &&fn) : fn_cond_(std::forward<Callable>(fn)) {}
 
   /**
@@ -276,7 +278,7 @@ inline bool RegexMatch(const std::string &str, const std::string &pattern) {
  * @param delim delimiter
  * @return strings splitted
  */
-std::vector<std::string> StringSplit(const std::string &s, const char delim);
+std::vector<std::string> StringSplit(const std::string &s, char delim);
 
 /**
  * @brief Replace string
@@ -330,7 +332,7 @@ uint64_t GetBytesFromReadable(const std::string &size);
  * @brief Get system tick count
  * @return current system tick count
  */
-unsigned long GetTickCount(void);
+unsigned long GetTickCount();
 
 /**
  * @brief Convert json to toml

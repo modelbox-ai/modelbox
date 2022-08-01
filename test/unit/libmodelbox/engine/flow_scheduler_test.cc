@@ -30,22 +30,22 @@ namespace modelbox {
 
 class FlowSchedulerTest : public testing::Test {
  public:
-  FlowSchedulerTest() {}
+  FlowSchedulerTest() = default;
 
  protected:
   std::shared_ptr<MockFlow> flow_;
 
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init();
   };
 
-  virtual void TearDown() { flow_->Destroy(); };
+  void TearDown() override { flow_->Destroy(); };
 };
 
 class MockNode : public Node {
  public:
-  MockNode() {}
+  MockNode() = default;
   MOCK_METHOD1(Run, Status(RunType type));
 };
 

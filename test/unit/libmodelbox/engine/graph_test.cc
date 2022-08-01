@@ -28,10 +28,10 @@ using ::testing::_;
 namespace modelbox {
 class GraphTest : public testing::Test {
  public:
-  GraphTest() {}
+  GraphTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
 
     {
@@ -152,7 +152,7 @@ class GraphTest : public testing::Test {
     flow_->Init(false);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     auto device_mgr = DeviceManager::GetInstance();
     device_mgr->Clear();
     auto flowunit_mgr = FlowUnitManager::GetInstance();
@@ -813,7 +813,7 @@ TEST_F(GraphTest, BuildGraphFromArray) {
 
   std::vector<std::string> graph_config;
   for (size_t i = 0; i < sizeof(conf_file_value) / sizeof(char*); i++) {
-    graph_config.push_back(conf_file_value[i]);
+    graph_config.emplace_back(conf_file_value[i]);
   }
 
   ConfigurationBuilder configbuilder;

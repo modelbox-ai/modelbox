@@ -22,7 +22,7 @@ using namespace pybind11::literals;
 
 static std::mutex reload_mutex;
 
-PythonFlowUnit::PythonFlowUnit(){};
+PythonFlowUnit::PythonFlowUnit() = default;
 PythonFlowUnit::~PythonFlowUnit() {
   py::gil_scoped_acquire interpreter_guard{};
   python_process_.dec_ref();
@@ -266,4 +266,4 @@ void PythonFlowUnitDesc::SetPythonEntry(const std::string python_entry) {
   python_entry_ = python_entry;
 }
 
-const std::string PythonFlowUnitDesc::GetPythonEntry() { return python_entry_; }
+std::string PythonFlowUnitDesc::GetPythonEntry() { return python_entry_; }

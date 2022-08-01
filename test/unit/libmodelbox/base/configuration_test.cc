@@ -25,13 +25,13 @@
 namespace modelbox {
 class ConfigurationTest : public testing::Test {
  public:
-  ConfigurationTest() {}
+  ConfigurationTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 TEST_F(ConfigurationTest, AddPropertyTest) {
@@ -284,21 +284,21 @@ TEST_F(ConfigurationTest, SetPropertyTest) {
   ConfigurationBuilder builder;
   auto config = builder.Build();
   config->SetProperty("1", 1);
-  config->SetProperty("2", 1.2f);
+  config->SetProperty("2", 1.2F);
   config->SetProperty("3", 1.3);
   config->SetProperty("4", false);
   config->SetProperty("5", true);
   config->SetProperty("6", "test");
 
   EXPECT_EQ(config->GetString("1"), "1");
-  EXPECT_FLOAT_EQ(config->GetFloat("2"), 1.2f);
+  EXPECT_FLOAT_EQ(config->GetFloat("2"), 1.2F);
   EXPECT_FLOAT_EQ(config->GetDouble("3"), 1.3);
   EXPECT_EQ(config->GetString("4"), "0");
   EXPECT_EQ(config->GetString("5"), "1");
   EXPECT_EQ(config->GetString("6"), "test");
 
   config->SetProperty("5", std::vector<int32_t>{1, 2, 3});
-  auto float_list = std::vector<float>{1.1f, 2.2f, 3.3f};
+  auto float_list = std::vector<float>{1.1F, 2.2F, 3.3F};
   config->SetProperty("6", float_list);
 
   EXPECT_EQ(config->GetString("5"), "1~2~3");
@@ -312,14 +312,14 @@ TEST_F(ConfigurationTest, SetPropertyTest) {
 TEST_F(ConfigurationTest, SetPropertyWithoutBuilderTest) {
   Configuration config;
   config.SetProperty("1", 1);
-  config.SetProperty("2", 1.2f);
+  config.SetProperty("2", 1.2F);
   config.SetProperty("3", 1.3);
   config.SetProperty("4", false);
   config.SetProperty("5", true);
   config.SetProperty("6", "test");
 
   EXPECT_EQ(config.GetString("1"), "1");
-  EXPECT_FLOAT_EQ(config.GetFloat("2"), 1.2f);
+  EXPECT_FLOAT_EQ(config.GetFloat("2"), 1.2F);
   EXPECT_FLOAT_EQ(config.GetDouble("3"), 1.3);
   EXPECT_EQ(config.GetString("4"), "0");
   EXPECT_EQ(config.GetString("5"), "1");
@@ -332,7 +332,7 @@ TEST_F(ConfigurationTest, GetSubKeysTest) {
   EXPECT_EQ(StatusError, STATUS_SUCCESS);
 
   config->SetProperty("graph.node.1", 1);
-  config->SetProperty("graph.node.2", 1.2f);
+  config->SetProperty("graph.node.2", 1.2F);
   config->SetProperty("device.gpu.0", 1.3);
   config->SetProperty("device.gpu.1", false);
   config->SetProperty("graph.edge.in.1", true);
@@ -398,7 +398,7 @@ TEST_F(ConfigurationTest, GetSubConfigTest) {
   EXPECT_EQ(StatusError, STATUS_SUCCESS);
 
   config->SetProperty("graph.node.1", 1);
-  config->SetProperty("graph.node.2", 1.2f);
+  config->SetProperty("graph.node.2", 1.2F);
   config->SetProperty("device.gpu.0", 1.3);
   config->SetProperty("device.gpu.1", false);
   config->SetProperty("graph.edge.in.1", true);

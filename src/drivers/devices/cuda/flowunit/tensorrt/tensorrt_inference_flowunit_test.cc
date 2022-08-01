@@ -38,7 +38,7 @@ class TensorRTFlowUnitTest : public testing::Test {
   TensorRTFlowUnitTest() : driver_flow_(std::make_shared<DriverFlowTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -51,7 +51,7 @@ class TensorRTFlowUnitTest : public testing::Test {
     EXPECT_EQ(ret, STATUS_OK);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {

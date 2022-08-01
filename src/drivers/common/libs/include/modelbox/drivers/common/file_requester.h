@@ -68,10 +68,10 @@ class FileRequester {
 
   void SetMaxFileReadSize(int read_size);
 
-  ~FileRequester();
+  virtual ~FileRequester();
 
  private:
-  FileRequester() {}
+  FileRequester() = default;
   modelbox::Status Init();
   void HandleFileGet(web::http::http_request request);
   bool IsValidRequest(const web::http::http_request &request);
@@ -81,7 +81,6 @@ class FileRequester {
                       std::shared_ptr<modelbox::FileGetHandler> handler,
                       uint64_t range_start, uint64_t range_end);
 
- private:
   static std::once_flag file_requester_init_flag_;
   std::shared_ptr<web::http::experimental::listener::http_listener> listener_;
   std::unordered_map<std::string, std::shared_ptr<modelbox::FileGetHandler>>

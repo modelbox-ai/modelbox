@@ -39,14 +39,16 @@ const int RGB_CHANNELS = 3;
 class VideoInputFlowUnit : public modelbox::FlowUnit {
  public:
   VideoInputFlowUnit();
-  virtual ~VideoInputFlowUnit();
+  ~VideoInputFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
   /* run when processing data */
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 };
 
 #endif  // MODELBOX_FLOWUNIT_VIDEOINPUTFLOWUNIT_CPU_H_

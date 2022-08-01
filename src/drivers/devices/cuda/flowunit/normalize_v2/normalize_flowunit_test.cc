@@ -41,7 +41,7 @@ class NormalizeV2FlowUnitTest : public testing::Test {
       : driver_flow_(std::make_shared<DriverFlowTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -53,7 +53,7 @@ class NormalizeV2FlowUnitTest : public testing::Test {
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_->Clear(); };
+  void TearDown() override { driver_flow_->Clear(); };
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
 
  private:
@@ -165,7 +165,7 @@ TEST_F(NormalizeV2FlowUnitTest, NormalizeV2Test) {
 
   {
     std::string gimg_path = std::string(TEST_ASSETS) + "/test.jpg";
-    cv::Mat bgr_img = cv::imread(gimg_path.c_str());
+    cv::Mat bgr_img = cv::imread(gimg_path);
 
     cv::Mat bgr_img_float, bgr_img_float_chw;
     bgr_img.convertTo(bgr_img_float, CV_32FC3);

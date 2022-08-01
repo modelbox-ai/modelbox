@@ -382,7 +382,7 @@ void JsPlugin::RegisterStatsNotify(
 #else   // ENABLE_JS_PLUGIN
 JsPlugin::JsPlugin(const std::string &plugin_path)
     : ServerPlugin(plugin_path) {}
-JsPlugin::~JsPlugin() {}
+JsPlugin::~JsPlugin() = default;
 
 modelbox::Status JsPlugin::Init(
     std::shared_ptr<modelbox::Configuration> config) {

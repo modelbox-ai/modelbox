@@ -57,14 +57,16 @@ typedef struct BBox {
 class DrawBBoxFlowUnit : public modelbox::FlowUnit {
  public:
   DrawBBoxFlowUnit();
-  virtual ~DrawBBoxFlowUnit();
+  ~DrawBBoxFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
   /* run when processing data */
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 };
 
 #endif  // MODELBOX_FLOWUNIT_DRAWBBOXFLOWUNIT_CPU_H_

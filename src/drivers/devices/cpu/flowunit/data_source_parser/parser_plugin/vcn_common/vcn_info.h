@@ -51,7 +51,7 @@ class VcnAccountBase {
     streams_count_ = 0;
   };
 
-  virtual ~VcnAccountBase(){};
+  virtual ~VcnAccountBase() = default;
 
   /**
    * @brief   get vcn user name
@@ -83,7 +83,6 @@ class VcnAccountBase {
    */
   uint32_t GetStreamsCount() const { return streams_count_; };
 
- public:
   void AddStream() { ++streams_count_; };
   void RemoveStream() {
     if (streams_count_ > 0) {
@@ -106,7 +105,7 @@ class VcnStreamBase {
   VcnStreamBase(const std::string &url, const std::string &camera_code)
       : url_(url), camera_code_(camera_code){};
 
-  virtual ~VcnStreamBase(){};
+  virtual ~VcnStreamBase() = default;
 
   /**
    * @brief   get stream url

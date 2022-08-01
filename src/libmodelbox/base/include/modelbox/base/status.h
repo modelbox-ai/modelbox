@@ -101,7 +101,7 @@ class Status {
    * @brief Make status to string
    * @return string of status.
    */
-  virtual const std::string ToString() const;
+  virtual std::string ToString() const;
 
   /**
    * @brief Get status code.
@@ -113,7 +113,7 @@ class Status {
    * @brief Get status code in string format.
    * @return status code in string.
    */
-  const std::string StrCode() const;
+  std::string StrCode() const;
 
   /**
    * @brief Set error message to status
@@ -131,7 +131,7 @@ class Status {
    * @brief Get chain error messages.
    * @return error message
    */
-  const std::string WrapErrormsgs() const;
+  std::string WrapErrormsgs() const;
 
   /**
    * @brief Get wrapped status.
@@ -181,8 +181,8 @@ class Status {
   operator enum StatusCode() const;
 
  private:
-  const std::string WrapOnlyErrormsgs(bool with_code) const;
-  const std::string ErrorCodeMsgs(bool with_code) const;
+  std::string WrapOnlyErrormsgs(bool with_code) const;
+  std::string ErrorCodeMsgs(bool with_code) const;
   StatusCode code_ = STATUS_SUCCESS;
   std::string errmsg_ = "";
   std::shared_ptr<Status> wrap_status_;

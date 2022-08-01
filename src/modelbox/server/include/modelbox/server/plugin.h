@@ -31,9 +31,9 @@ class Plugin {
   /**
    * @brief Server plugin
    */
-  Plugin(){};
+  Plugin() = default;
 
-  virtual ~Plugin(){};
+  virtual ~Plugin() = default;
 
   /**
    * @brief Server init

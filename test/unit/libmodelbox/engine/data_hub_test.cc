@@ -27,12 +27,12 @@ namespace modelbox {
 
 class DefaultDataHubTest : public testing::Test {
  public:
-  DefaultDataHubTest() {}
+  DefaultDataHubTest() = default;
 
  protected:
   std::shared_ptr<Node> node_;
-  virtual void SetUp() { node_ = std::make_shared<Node>(); };
-  virtual void TearDown(){};
+  void SetUp() override { node_ = std::make_shared<Node>(); };
+  void TearDown() override{};
 };
 
 TEST_F(DefaultDataHubTest, AddPort) {

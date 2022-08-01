@@ -45,26 +45,26 @@ TEST_F(SessionTest, SessionManage) {
 
 class TestSessionIO : public SessionIO {
  public:
-  virtual Status SetOutputMeta(const std::string &port_name,
-                               std::shared_ptr<DataMeta> meta) {
+  Status SetOutputMeta(const std::string &port_name,
+                       std::shared_ptr<DataMeta> meta) override {
     return STATUS_OK;
   }
-  virtual Status Send(const std::string &port_name,
-                      std::shared_ptr<BufferList> buffer_list) {
+  Status Send(const std::string &port_name,
+              std::shared_ptr<BufferList> buffer_list) override {
     return STATUS_OK;
   }
-  virtual Status Recv(OutputBufferList &map_buffer_list, int timeout = 0) {
+  Status Recv(OutputBufferList &map_buffer_list, int timeout = 0) override {
     return STATUS_OK;
   }
-  virtual Status Close() { return STATUS_OK; }
-  virtual Status Shutdown() { return STATUS_OK; }
+  Status Close() override { return STATUS_OK; }
+  Status Shutdown() override { return STATUS_OK; }
 
   bool TestSessionEnd() { return session_end_; }
 
   std::shared_ptr<FlowUnitError> GetSessionError() { return error_; }
 
  protected:
-  virtual void SessionEnd(std::shared_ptr<FlowUnitError> error = nullptr) {
+  void SessionEnd(std::shared_ptr<FlowUnitError> error = nullptr) override {
     error_ = error;
     session_end_ = true;
   }

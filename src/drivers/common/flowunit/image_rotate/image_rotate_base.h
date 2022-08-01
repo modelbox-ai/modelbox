@@ -26,11 +26,13 @@
 class ImageRotateFlowUnitBase : public modelbox::FlowUnit {
  public:
   ImageRotateFlowUnitBase();
-  virtual ~ImageRotateFlowUnitBase();
+  ~ImageRotateFlowUnitBase() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
-  modelbox::Status Close();
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
+  modelbox::Status Close() override;
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
   virtual modelbox::Status RotateOneImage(
       std::shared_ptr<modelbox::Buffer> input_buffer,

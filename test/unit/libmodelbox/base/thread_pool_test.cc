@@ -19,14 +19,14 @@
 #include "gtest/gtest.h"
 class ThreadPoolTest : public testing::Test {
  public:
-  ThreadPoolTest() {}
-  virtual ~ThreadPoolTest() {}
+  ThreadPoolTest() = default;
+  ~ThreadPoolTest() override = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 int compute(int a, int b) { return a + b; }

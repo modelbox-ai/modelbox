@@ -93,7 +93,7 @@ class ThreadWorker {
   void ChangeNameNow();
 
   void SetCore(bool is_core);
- private:
+
   std::atomic<bool> running_{false};
   std::mutex lock_;
   bool is_joining_;
@@ -234,7 +234,6 @@ class ThreadPool {
 
   bool SubmitTask(ThreadFunction &task);
 
- private:
   std::shared_ptr<BlockingQueue<ThreadFunction>> work_queue_;
   bool quit_{false};
   std::list<std::shared_ptr<ThreadWorker>> workers_;

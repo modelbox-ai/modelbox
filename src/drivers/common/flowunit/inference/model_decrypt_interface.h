@@ -47,7 +47,7 @@ class IModelDecryptPlugin : public modelbox::Driver {
    */
   virtual modelbox::Status Init(
       const std::string& fname,
-      const std::shared_ptr<modelbox::Configuration> config) = 0;
+      std::shared_ptr<modelbox::Configuration> config) = 0;
 
   /**
    * @brief model decrypt implement

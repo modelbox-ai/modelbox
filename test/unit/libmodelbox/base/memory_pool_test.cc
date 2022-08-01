@@ -26,13 +26,13 @@ using namespace modelbox;
 
 class MemoryPoolTest : public testing::Test {
  public:
-  MemoryPoolTest() {}
-  virtual ~MemoryPoolTest() {}
+  MemoryPoolTest() = default;
+  ~MemoryPoolTest() override = default;
 
  protected:
-  virtual void SetUp() {};
+  void SetUp() override{};
 
-  virtual void TearDown() {};
+  void TearDown() override{};
 };
 
 

@@ -36,14 +36,14 @@ constexpr const char *DEFAULT_SCAN_INFO = "/tmp/modelbox-driver-info";
 class Driver;
 class DriverFactory {
  public:
-  DriverFactory(){};
-  virtual ~DriverFactory(){};
+  DriverFactory() = default;
+  virtual ~DriverFactory() = default;
 
   virtual std::shared_ptr<Driver> GetDriver() {
     return std::make_shared<Driver>();
   };
 
-  virtual void SetDriver(std::shared_ptr<Driver> driver) { return; }
+  virtual void SetDriver(std::shared_ptr<Driver> driver) {}
 
  private:
   friend class Driver;
@@ -51,17 +51,17 @@ class DriverFactory {
 
 class DriverDesc {
  public:
-  DriverDesc() : driver_no_delete_(false), global_(false), deep_bind_(false){};
-  virtual ~DriverDesc(){};
-  const std::string GetClass();
-  const std::string GetType();
-  const std::string GetName();
-  const std::string GetDescription();
-  const std::string GetVersion();
-  const std::string GetFilePath();
-  const bool GetNoDelete();
-  const bool GetGlobal();
-  const bool GetDeepBind();
+  DriverDesc() = default;
+  virtual ~DriverDesc() = default;
+  std::string GetClass();
+  std::string GetType();
+  std::string GetName();
+  std::string GetDescription();
+  std::string GetVersion();
+  std::string GetFilePath();
+  bool GetNoDelete();
+  bool GetGlobal();
+  bool GetDeepBind();
 
   void SetClass(const std::string &classname);
   void SetType(const std::string &type);
@@ -74,9 +74,9 @@ class DriverDesc {
   void SetDeepBind(const bool &deep_bind);
 
  protected:
-  bool driver_no_delete_;
-  bool global_;
-  bool deep_bind_;
+  bool driver_no_delete_{false};
+  bool global_{false};
+  bool deep_bind_{false};
   std::string driver_class_;
   std::string driver_type_;
   std::string driver_name_;
@@ -90,14 +90,14 @@ class DriverDesc {
 
 class DriverHandlerInfo {
  public:
-  DriverHandlerInfo() : initialize_count_(0), handler_count_(0){};
-  virtual ~DriverHandlerInfo(){};
+  DriverHandlerInfo() = default;
+  virtual ~DriverHandlerInfo() = default;
 
   int IncHanderRefcnt() { return ++handler_count_; }
   int DecHanderRefcnt() { return --handler_count_; }
 
-  int initialize_count_;
-  int handler_count_;
+  int initialize_count_{0};
+  int handler_count_{0};
   std::mutex initialize_lock_;
 };
 
@@ -143,15 +143,15 @@ class Driver {
 
 class VirtualDriverDesc : public DriverDesc {
  public:
-  VirtualDriverDesc(){};
-  virtual ~VirtualDriverDesc(){};
+  VirtualDriverDesc() = default;
+  ~VirtualDriverDesc() override = default;
 };
 
 class VirtualDriver : public Driver {
  public:
   std::shared_ptr<VirtualDriverDesc> GetVirtualDriverDesc();
   void SetVirtualDriverDesc(std::shared_ptr<VirtualDriverDesc> desc);
-  virtual std::shared_ptr<DriverFactory> CreateFactory();
+  std::shared_ptr<DriverFactory> CreateFactory() override;
   std::vector<std::shared_ptr<modelbox::Driver>> GetBindDriver() {
     return std::vector<std::shared_ptr<modelbox::Driver>>();
   }
@@ -164,7 +164,7 @@ class Drivers;
 class VirtualDriverManager : public DriverFactory {
  public:
   VirtualDriverManager();
-  virtual ~VirtualDriverManager();
+  ~VirtualDriverManager() override;
   virtual Status Add(const std::string &file);
   virtual Status Init(Drivers &driver);
   virtual Status Scan(std::vector<std::string> scan_dirs);
@@ -196,7 +196,7 @@ class Drivers {
  public:
   Drivers()
       : drivers_scan_result_info_(std::make_shared<DriversScanResultInfo>()){};
-  virtual ~Drivers(){};
+  virtual ~Drivers() = default;
 
   /**
    * @brief Set default scan path

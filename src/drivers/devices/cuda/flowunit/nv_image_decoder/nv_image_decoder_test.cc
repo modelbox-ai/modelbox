@@ -43,7 +43,7 @@ class NvImageDecoderFlowUnitTest : public testing::Test {
       : driver_flow_(std::make_shared<DriverFlowTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -55,7 +55,7 @@ class NvImageDecoderFlowUnitTest : public testing::Test {
     EXPECT_EQ(ret, STATUS_OK);
   };
 
-  virtual void TearDown() { driver_flow_->Clear(); };
+  void TearDown() override { driver_flow_->Clear(); };
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
 
  private:
@@ -148,7 +148,7 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
           std::string gimg_path =
               std::string((char*)(*external)[0]->ConstData());
 
-          cv::Mat gimg_data = cv::imread(gimg_path.c_str());
+          cv::Mat gimg_data = cv::imread(gimg_path);
 
           MBLOG_INFO << "gimage col " << gimg_data.cols << "  grow "
                      << gimg_data.rows << " gchannel:" << gimg_data.channels();
@@ -159,7 +159,7 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
           std::vector<size_t> output_bufs_shape;
           for (size_t i = 0; i < batch_size; ++i) {
             std::string img_path = gimg_path;
-            cv::Mat ori_img = cv::imread(img_path.c_str());
+            cv::Mat ori_img = cv::imread(img_path);
             MBLOG_INFO << "input image col " << ori_img.cols << "  row "
                        << ori_img.rows << " channel:" << ori_img.channels()
                        << " encode fmt " << encode_fmt[i];
@@ -271,7 +271,7 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
                                    "/decode_result_" + std::to_string(i) +
                                    ".jpg";
 
-                cv::imwrite(name.c_str(), img_data);
+                cv::imwrite(name, img_data);
               }
 
               return modelbox::STATUS_OK;

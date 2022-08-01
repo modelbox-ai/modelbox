@@ -24,7 +24,7 @@ namespace modelbox {
 class ModelboxServerLogger : public modelbox::Logger {
  public:
   ModelboxServerLogger();
-  virtual ~ModelboxServerLogger();
+  ~ModelboxServerLogger() override;
 
   /**
    * @brief Init server log
@@ -46,19 +46,19 @@ class ModelboxServerLogger : public modelbox::Logger {
    * @param ap va_list
    */
   void Vprint(modelbox::LogLevel level, const char *file, int lineno,
-              const char *func, const char *format, va_list ap);
+              const char *func, const char *format, va_list ap) override;
 
   /**
    * @brief Set log level
    * @param level log level
    */
-  void SetLogLevel(modelbox::LogLevel level);
+  void SetLogLevel(modelbox::LogLevel level) override;
 
   /**
    * @brief Get log level
    * @return level log level
    */
-  modelbox::LogLevel GetLogLevel();
+  modelbox::LogLevel GetLogLevel() override;
 
   /**
    * @brief Enable or disable log to screen.
@@ -73,7 +73,7 @@ class ModelboxServerLogger : public modelbox::Logger {
   void SetLogfile(const std::string &file);
 
  private:
-  bool initialized_;
+  bool initialized_{false};
 };
 
 }  // namespace modelbox

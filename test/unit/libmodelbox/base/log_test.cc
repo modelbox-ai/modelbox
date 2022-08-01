@@ -31,10 +31,10 @@ namespace modelbox {
 
 class LoggerTest : public Logger {
  public:
-  LoggerTest(){};
-  virtual ~LoggerTest(){};
+  LoggerTest() = default;
+  ~LoggerTest() override = default;
   void Vprint(LogLevel level, const char *file, int lineno, const char *func,
-              const char *format, va_list ap) {
+              const char *format, va_list ap) override {
     char msg[1024];
     vsnprintf_s(msg, sizeof(msg), sizeof(msg), format, ap);
     std::unique_lock<std::mutex> lock(mutex_);
@@ -44,8 +44,8 @@ class LoggerTest : public Logger {
     log_msg_ = msg;
     log_a_msg_ = true;
   };
-  void SetLogLevel(LogLevel level) { level_ = level; };
-  LogLevel GetLogLevel() { return level_; };
+  void SetLogLevel(LogLevel level) override { level_ = level; };
+  LogLevel GetLogLevel() override { return level_; };
 
   std::string GetLogMsg() { return log_msg_; }
   void ClearLogMsg() {
@@ -83,14 +83,14 @@ class LoggerTest : public Logger {
 
 class LogTest : public testing::Test {
  public:
-  LogTest() {}
+  LogTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     old_logger_ = ModelBoxLogger.GetLogger();
     old_level_ = ModelBoxLogger.GetLogger()->GetLogLevel();
   };
-  virtual void TearDown() {
+  void TearDown() override {
     ModelBoxLogger.SetLogger(old_logger_);
     ModelBoxLogger.GetLogger()->SetLogLevel(old_level_);
   };

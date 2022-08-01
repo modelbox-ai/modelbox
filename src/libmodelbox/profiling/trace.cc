@@ -239,8 +239,7 @@ void FlowUnitTrace::SetFlowUnitPerfCtx(
 }
 
 TraceEvent::TraceEvent()
-    : event_type_(EventType::BEGIN),
-      event_time_(std::chrono::time_point_cast<std::chrono::milliseconds>(
+    : event_time_(std::chrono::time_point_cast<std::chrono::milliseconds>(
           std::chrono::system_clock::now())),
       thread_id_(std::this_thread::get_id()) {}
 

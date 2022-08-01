@@ -28,14 +28,14 @@ namespace modelbox {
 class LoggerPython : public Logger {
  public:
   LoggerPython();
-  virtual ~LoggerPython();
+  ~LoggerPython() override;
 
-  virtual void Print(LogLevel level, const char *file, int lineno,
-                     const char *func, const char *msg);
+  void Print(LogLevel level, const char *file, int lineno, const char *func,
+             const char *msg) override;
 
-  void SetLogLevel(LogLevel level);
+  void SetLogLevel(LogLevel level) override;
 
-  virtual LogLevel GetLogLevel();
+  LogLevel GetLogLevel() override;
 
   void RegLogFunc(py::function pylog);
 
@@ -54,7 +54,7 @@ class LoggerPythonWapper {
 
   void SetLogLevel(LogLevel level);
 
-  const std::shared_ptr<Logger> GetLogger();
+  std::shared_ptr<Logger> GetLogger();
 
   void SetLogger(std::shared_ptr<Logger> logger);
 

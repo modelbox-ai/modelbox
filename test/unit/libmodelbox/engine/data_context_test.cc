@@ -35,11 +35,11 @@ class TestNode : public Node {
 
 class DataContextTest : public testing::Test {
  public:
-  DataContextTest() {}
-  virtual ~DataContextTest() {}
+  DataContextTest() = default;
+  ~DataContextTest() override = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     session_ = std::make_shared<Session>(nullptr);
     stream_ = std::make_shared<Stream>(session_);
     end_stream_ = std::make_shared<Stream>(session_);
@@ -51,7 +51,7 @@ class DataContextTest : public testing::Test {
     node_ = std::make_shared<TestNode>();
     node_->InitIO(in_port_names_, out_port_names_);
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 
   std::shared_ptr<PortDataMap> BuildData(size_t data_count, bool has_end,
                                          bool expand_from_end = false,

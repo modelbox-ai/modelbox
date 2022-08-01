@@ -28,9 +28,9 @@
 
 namespace modelbox {
 
-VirtualDriverManager::VirtualDriverManager(){};
+VirtualDriverManager::VirtualDriverManager() = default;
 
-VirtualDriverManager::~VirtualDriverManager(){};
+VirtualDriverManager::~VirtualDriverManager() = default;
 
 Status VirtualDriverManager::Add(const std::string &file) { return STATUS_OK; };
 

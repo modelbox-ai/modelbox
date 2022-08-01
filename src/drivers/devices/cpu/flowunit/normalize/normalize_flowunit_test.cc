@@ -36,12 +36,12 @@ class NormalizeCpuFlowUnitTest : public testing::Test {
       : driver_flow_(std::make_shared<DriverFlowTest>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
   }
 
-  virtual void TearDown() { driver_flow_->Clear(); };
+  void TearDown() override { driver_flow_->Clear(); };
 
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
 

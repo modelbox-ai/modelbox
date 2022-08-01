@@ -33,7 +33,7 @@ static std::shared_ptr<DataHandler> err_msg(const Status &status) {
   return data_handler;
 }
 
-ModelBoxEngine::ModelBoxEngine() {}
+ModelBoxEngine::ModelBoxEngine() = default;
 
 ModelBoxEngine::~ModelBoxEngine() { Close(); }
 

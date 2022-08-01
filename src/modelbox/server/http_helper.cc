@@ -536,7 +536,7 @@ Status HttpListener::Register(const std::string &path, const HttpMethod &method,
   };
 
   shared_server_->Register(path, method, support_func);
-  registered_path_method_.push_back(std::make_pair(path, method));
+  registered_path_method_.emplace_back(path, method);
   return STATUS_OK;
 }
 

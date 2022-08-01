@@ -86,7 +86,7 @@ class TokenManager {
    * @return  Successful or not
    */
   modelbox::Status RequestAgencyProjectToken(const AgencyInfo &agency_info,
-                                             const ProjectInfo project_info,
+                                             ProjectInfo project_info,
                                              bool force);
 
   /**
@@ -167,7 +167,7 @@ class TokenManager {
 
   bool IsExpire(const std::string &expire) const;
 
-  bool init_flag_;
+  bool init_flag_{false};
   std::string request_credential_uri_;
   std::string request_token_uri_;
   std::string request_host_;

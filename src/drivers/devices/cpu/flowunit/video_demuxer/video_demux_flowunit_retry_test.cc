@@ -43,9 +43,9 @@ class VideoDemuxerFlowUnitRetryTest : public testing::Test {
                                      const std::string &source_type);
 
  protected:
-  virtual void SetUp(){};
+  void SetUp() override{};
 
-  virtual void TearDown(){};
+  void TearDown() override{};
 
   std::string GetRtspTomlConfig();
 

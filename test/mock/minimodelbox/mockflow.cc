@@ -1634,7 +1634,6 @@ void MockFlow::Register_Dynamic_Get_Config_Other_Flowunit() {
       output_bufs_1->PushBack(buffer_ptr);
     }
     return modelbox::STATUS_OK;
-    ;
   };
 
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();

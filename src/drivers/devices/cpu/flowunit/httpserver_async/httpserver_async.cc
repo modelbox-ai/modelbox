@@ -21,8 +21,8 @@
 #include "modelbox/base/crypto.h"
 #include "modelbox/flowunit_api_helper.h"
 
-HTTPServerAsync::HTTPServerAsync(){};
-HTTPServerAsync::~HTTPServerAsync(){};
+HTTPServerAsync::HTTPServerAsync() = default;
+HTTPServerAsync::~HTTPServerAsync() = default;
 
 modelbox::Status HTTPServerAsync::HandleFunc(web::http::http_request request) {
   if (request.request_uri().to_string() == "/health") {

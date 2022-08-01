@@ -46,13 +46,15 @@ struct RequestInfo {
 class HTTPServerAsync : public modelbox::FlowUnit {
  public:
   HTTPServerAsync();
-  virtual ~HTTPServerAsync();
+  ~HTTPServerAsync() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   modelbox::Status HandleFunc(web::http::http_request request);
@@ -60,7 +62,6 @@ class HTTPServerAsync : public modelbox::FlowUnit {
   modelbox::Status HandleTask(web::http::http_request request,
                               const RequestInfo &request_info);
 
- private:
   std::shared_ptr<web::http::experimental::listener::http_listener> listener_;
   uint64_t keep_alive_time_out_sec_{200};
   std::string request_url_;

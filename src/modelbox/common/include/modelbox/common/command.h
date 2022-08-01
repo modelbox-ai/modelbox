@@ -30,7 +30,7 @@
 
 namespace modelbox {
 
-extern void ToolCommandGetOptReset(void);
+extern void ToolCommandGetOptReset();
 extern std::recursive_mutex ToolCommandGetOptLock;
 
 #define MODELBOX_TOOL_STRCAT_(a, b) a##b
@@ -102,20 +102,20 @@ extern std::recursive_mutex ToolCommandGetOptLock;
 
 class StdOutStream : public OutStream {
  public:
-  StdOutStream() {}
-  virtual ~StdOutStream(){};
+  StdOutStream() = default;
+  virtual ~StdOutStream() = default;
 
  protected:
-  virtual void ProcessStream(OStream *st) { std::cout << st; }
+  void ProcessStream(OStream *st) override { std::cout << st; }
 };
 
 class StdErrStream : public OutStream {
  public:
-  StdErrStream() {}
-  virtual ~StdErrStream() {}
+  StdErrStream() = default;
+  virtual ~StdErrStream() = default;
 
  protected:
-  virtual void ProcessStream(OStream *st) { std::cerr << st; }
+  void ProcessStream(OStream *st) override { std::cerr << st; }
 };
 
 class ToolCommand {
@@ -126,8 +126,8 @@ class ToolCommand {
   std::shared_ptr<OutStream> out_cerr_ = std::make_shared<StdErrStream>();
 
  public:
-  ToolCommand(){};
-  virtual ~ToolCommand(){};
+  ToolCommand() = default;
+  virtual ~ToolCommand() = default;
 
   void SetUp(std::shared_ptr<OutStream> cout, std::shared_ptr<OutStream> cerr) {
     out_cout_ = cout;

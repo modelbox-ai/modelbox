@@ -29,25 +29,25 @@ constexpr const char *STATISTICS_DESC = "control server statistics";
 class ToolCommandLog : public modelbox::ToolCommand {
  public:
   ToolCommandLog();
-  virtual ~ToolCommandLog();
+  ~ToolCommandLog() override;
 
-  int Run(int argc, char *argv[]);
-  std::string GetHelp();
+  int Run(int argc, char *argv[]) override;
+  std::string GetHelp() override;
 
-  std::string GetCommandName() { return "log"; };
-  std::string GetCommandDesc() { return LOG_CONTROL_DESC; };
+  std::string GetCommandName() override { return "log"; };
+  std::string GetCommandDesc() override { return LOG_CONTROL_DESC; };
 };
 
 class ToolCommandSlab : public modelbox::ToolCommand {
  public:
   ToolCommandSlab();
-  virtual ~ToolCommandSlab();
+  ~ToolCommandSlab() override;
 
-  int Run(int argc, char *argv[]);
-  std::string GetHelp();
+  int Run(int argc, char *argv[]) override;
+  std::string GetHelp() override;
 
-  std::string GetCommandName() { return "slab"; };
-  std::string GetCommandDesc() { return SLAB_CONTROL_DESC; };
+  std::string GetCommandName() override { return "slab"; };
+  std::string GetCommandDesc() override { return SLAB_CONTROL_DESC; };
 
  private:
   int RunDeviceOption(int argc, char *argv[]);
@@ -64,12 +64,12 @@ class ToolCommandSlab : public modelbox::ToolCommand {
 class ToolCommandStatistics : public modelbox::ToolCommand {
  public:
   ToolCommandStatistics();
-  virtual ~ToolCommandStatistics();
+  ~ToolCommandStatistics() override;
 
-  int Run(int argc, char *argv[]);
-  std::string GetHelp();
-  std::string GetCommandName() { return "stat"; };
-  std::string GetCommandDesc() { return STATISTICS_DESC; };
+  int Run(int argc, char *argv[]) override;
+  std::string GetHelp() override;
+  std::string GetCommandName() override { return "stat"; };
+  std::string GetCommandDesc() override { return STATISTICS_DESC; };
 };
 
 }  // namespace modelbox

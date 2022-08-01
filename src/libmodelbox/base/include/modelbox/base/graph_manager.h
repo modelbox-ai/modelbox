@@ -42,12 +42,12 @@ class GCNode {
 
   Status Init(const std::string &name, std::shared_ptr<GCGraph> root_graph);
 
-  const std::string GetNodeName() const;
-  const std::shared_ptr<Configuration> GetConfiguration() const;
+  std::string GetNodeName() const;
+  std::shared_ptr<Configuration> GetConfiguration() const;
   std::shared_ptr<const std::set<std::string>> GetInputPorts() const;
   std::shared_ptr<const std::set<std::string>> GetOutputPorts() const;
   std::shared_ptr<GCGraph> GetRootGraph() const;
-  const std::string GetNodeType() const;
+  std::string GetNodeType() const;
 
   void SetNodeType(std::string type);
   void SetConfiguration(const std::string &key, const std::string &value);
@@ -77,7 +77,7 @@ class GCEdge {
   const std::string &GetTailInPort() const;
   std::shared_ptr<GCNode> GetHeadNode() const;
   std::shared_ptr<GCNode> GetTailNode() const;
-  const std::shared_ptr<Configuration> GetConfiguration() const;
+  std::shared_ptr<Configuration> GetConfiguration() const;
   std::shared_ptr<GCGraph> GetRootGraph() const;
 
   Status SetHeadNode(std::shared_ptr<GCNode> node);
@@ -106,24 +106,24 @@ class GCGraph {
   const std::string &GetGraphName() const;
   std::shared_ptr<GCGraph> GetRootGraph() const;
 
-  Status AddSubGraph(const std::shared_ptr<GCGraph> subgraph);
-  const std::shared_ptr<GCGraph> GetSubGraph(const std::string &name) const;
+  Status AddSubGraph(std::shared_ptr<GCGraph> subgraph);
+  std::shared_ptr<GCGraph> GetSubGraph(const std::string &name) const;
   std::map<std::string, const std::shared_ptr<GCGraph>> GetAllSubGraphs() const;
   void ShowAllSubGraph() const;
 
-  Status AddNode(const std::shared_ptr<GCNode> node);
+  Status AddNode(std::shared_ptr<GCNode> node);
   Status SetFirstNode(std::shared_ptr<GCNode> node);
   std::vector<std::shared_ptr<GCNode>> GetFirstNodes();
-  const std::shared_ptr<GCNode> GetNode(const std::string &name) const;
+  std::shared_ptr<GCNode> GetNode(const std::string &name) const;
   std::map<std::string, const std::shared_ptr<GCNode>> GetAllNodes() const;
   void ShowAllNode() const;
 
-  Status AddEdge(const std::shared_ptr<GCEdge> edge);
-  const std::shared_ptr<GCEdge> GetEdge(const std::string &name) const;
+  Status AddEdge(std::shared_ptr<GCEdge> edge);
+  std::shared_ptr<GCEdge> GetEdge(const std::string &name) const;
   std::map<std::string, const std::shared_ptr<GCEdge>> GetAllEdges() const;
   void ShowAllEdge() const;
 
-  const std::shared_ptr<Configuration> GetConfiguration() const;
+  std::shared_ptr<Configuration> GetConfiguration() const;
   void SetConfiguration(const std::string &key, const std::string &value);
   void SetConfiguration(std::shared_ptr<Configuration> &config);
 
@@ -139,23 +139,21 @@ class GCGraph {
 
 class GraphConfig {
  public:
-  GraphConfig(){
-
-  };
-  virtual ~GraphConfig(){};
+  GraphConfig() = default;
+  virtual ~GraphConfig() = default;
 
   virtual std::shared_ptr<GCGraph> Resolve() = 0;
 };
 
 class GraphConfigFactory : public DriverFactory {
  public:
-  GraphConfigFactory(){};
-  virtual ~GraphConfigFactory(){};
+  GraphConfigFactory() = default;
+  ~GraphConfigFactory() override = default;
   virtual std::shared_ptr<GraphConfig> CreateGraphConfigFromStr(
       const std::string &graph_config) = 0;
   virtual std::shared_ptr<GraphConfig> CreateGraphConfigFromFile(
       const std::string &file_path) = 0;
-  virtual const std::string GetGraphConfFactoryType() = 0;
+  virtual std::string GetGraphConfFactoryType() = 0;
 };
 
 class GraphConfigManager {
@@ -183,7 +181,7 @@ class GraphConfigManager {
   std::map<std::string, const std::shared_ptr<GraphConfigFactory>>
   GetGraphConfFactoryList();
 
-  const std::shared_ptr<GraphConfigFactory> GetGraphConfFactory(
+  std::shared_ptr<GraphConfigFactory> GetGraphConfFactory(
       const std::string &type);
 
   std::shared_ptr<GraphConfig> CreateGraphConfig(std::string graph_conf_type,
@@ -192,7 +190,6 @@ class GraphConfigManager {
   std::map<std::string, const std::shared_ptr<GraphConfig>> GetGraphConfList();
   Status DeleteGraphConfig(std::string graph_conf_name);
 
- private:
   std::map<std::string, const std::shared_ptr<GraphConfigFactory>>
       graph_conf_factories_;
   std::map<std::string, const std::shared_ptr<GraphConfig>> graph_conf_list_;

@@ -26,13 +26,13 @@ constexpr const char *HELP_DESC = "Display command help";
 class ToolCommandHelp : public ToolCommand {
  public:
   ToolCommandHelp();
-  virtual ~ToolCommandHelp();
+  ~ToolCommandHelp() override;
 
-  int Run(int argc, char *argv[]);
-  std::string GetHelp();
+  int Run(int argc, char *argv[]) override;
+  std::string GetHelp() override;
 
-  std::string GetCommandName() { return "help"; };
-  std::string GetCommandDesc() { return HELP_DESC; };
+  std::string GetCommandName() override { return "help"; };
+  std::string GetCommandDesc() override { return HELP_DESC; };
 };
 
 }  // namespace modelbox

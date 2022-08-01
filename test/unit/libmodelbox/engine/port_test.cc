@@ -25,24 +25,24 @@ namespace modelbox {
 
 class PortTest : public testing::Test {
  public:
-  PortTest() {}
+  PortTest() = default;
 
  protected:
   std::shared_ptr<Node> node_;
-  virtual void SetUp() {
+  void SetUp() override {
     node_ = std::make_shared<Node>();
     node_->SetFlowUnitInfo("test_2_inputs_2_outputs", "cpu", "0", nullptr);
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 class InPortTest : public testing::Test {
  public:
-  InPortTest() {}
+  InPortTest() = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 TEST_F(PortTest, Construct) {
@@ -77,11 +77,11 @@ TEST_F(InPortTest, GetDataCount) {
 
 class EventPortTest : public testing::Test {
  public:
-  EventPortTest() {}
+  EventPortTest() = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 TEST_F(EventPortTest, Send_Recv) {

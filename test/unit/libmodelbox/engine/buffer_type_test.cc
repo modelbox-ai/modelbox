@@ -20,14 +20,14 @@
 namespace modelbox {
 class BufferTypeTest : public testing::Test {
  public:
-  BufferTypeTest() {}
+  BufferTypeTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override {
     auto *tree = BufferTypeTree::GetInstance();
     tree->AddRootType("raw");
   };
-  virtual void TearDown(){
+  void TearDown() override {
     auto *tree = BufferTypeTree::GetInstance();
     tree->RemoveType("raw");
   };

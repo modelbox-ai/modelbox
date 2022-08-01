@@ -31,10 +31,10 @@
 namespace modelbox {
 class VideoDecoderCudaFlowUnitTest : public testing::Test {
  public:
-  VideoDecoderCudaFlowUnitTest() {}
+  VideoDecoderCudaFlowUnitTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -43,7 +43,7 @@ class VideoDecoderCudaFlowUnitTest : public testing::Test {
     }
   };
 
-  virtual void TearDown(){};
+  void TearDown() override{};
 
  public:
   std::shared_ptr<MockFlow> flow_;

@@ -122,10 +122,10 @@ class IAMAuth {
    */
   void SetUpdateAgentTokenCallBack(std::function<void()> &callback);
 
-  ~IAMAuth() {}
+  virtual ~IAMAuth() = default;
 
  private:
-  IAMAuth() {}
+  IAMAuth() = default;
 
   std::shared_ptr<TokenManager> token_manager_{
       std::make_shared<TokenManager>()};

@@ -56,7 +56,7 @@ Status CpuMemory::Verify() const {
   return STATUS_OK;
 }
 
-CpuMemoryPool::CpuMemoryPool() {}
+CpuMemoryPool::CpuMemoryPool() = default;
 
 Status CpuMemoryPool::Init() {
   auto status = InitSlabCache();

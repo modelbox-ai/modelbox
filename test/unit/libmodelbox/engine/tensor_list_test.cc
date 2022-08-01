@@ -31,16 +31,16 @@
 namespace modelbox {
 class TensorListTest : public testing::Test {
  public:
-  TensorListTest() {}
+  TensorListTest() = default;
 
  protected:
   std::shared_ptr<MockFlow> flow_;
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init();
   };
 
-  virtual void TearDown() { flow_->Destroy(); };
+  void TearDown() override { flow_->Destroy(); };
 };
 
 TEST_F(TensorListTest, TensorList) {
@@ -173,16 +173,16 @@ TEST_F(TensorListTest, SetType) {
 
 class TensorBufferTest : public testing::Test {
  public:
-  TensorBufferTest() {}
+  TensorBufferTest() = default;
 
  protected:
   std::shared_ptr<MockFlow> flow_;
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init();
   };
 
-  virtual void TearDown() { flow_->Destroy(); };
+  void TearDown() override { flow_->Destroy(); };
 };
 
 TEST_F(TensorBufferTest, TensorBuffer) {

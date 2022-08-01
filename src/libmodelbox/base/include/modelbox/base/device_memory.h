@@ -392,7 +392,7 @@ class DeviceMemoryManager
  public:
   DeviceMemoryManager(const std::string &device_id) : device_id_(device_id) {}
 
-  virtual ~DeviceMemoryManager() {}
+  virtual ~DeviceMemoryManager() = default;
 
   /**
    * @brief Set allocatable memory limit

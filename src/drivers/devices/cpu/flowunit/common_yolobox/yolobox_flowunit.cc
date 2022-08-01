@@ -29,9 +29,9 @@
 
 using namespace modelbox;
 
-YoloboxFlowUnit::YoloboxFlowUnit(){};
+YoloboxFlowUnit::YoloboxFlowUnit() = default;
 
-YoloboxFlowUnit::~YoloboxFlowUnit(){};
+YoloboxFlowUnit::~YoloboxFlowUnit() = default;
 
 modelbox::Status YoloboxFlowUnit::InitYoloParam(YoloParam &param) {
   auto config =
@@ -165,7 +165,7 @@ bool Overlap(const BoundingBox &box1, const BoundingBox &box2,
   float top = std::max(box1.y_, box2.y_);
   float down = std::min(box1.y_ + box1.h_, box2.y_ + box2.h_);
   if (left >= right or top >= down) {
-    return 0.0f;
+    return 0.0F;
   }
 
   float inter_area = (right - left) * (down - top);
@@ -240,13 +240,13 @@ modelbox::Status YoloboxFlowUnit::Process(
   return modelbox::STATUS_OK;
 }
 
-const std::string YoloboxFlowUnitFactory::GetFlowUnitFactoryType() {
+std::string YoloboxFlowUnitFactory::GetFlowUnitFactoryType() {
   return DEVICE_TYPE;
-};
+}
 
-const std::string YoloboxFlowUnitFactory::GetVirtualType() {
+std::string YoloboxFlowUnitFactory::GetVirtualType() {
   return YOLO_TYPE;
-};
+}
 
 std::shared_ptr<modelbox::FlowUnit> YoloboxFlowUnitFactory::VirtualCreateFlowUnit(
     const std::string &unit_name, const std::string &unit_type,

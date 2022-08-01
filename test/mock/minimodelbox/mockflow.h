@@ -54,7 +54,6 @@ class MockFlow {
                            create_func,
                        std::string lib_path = TEST_LIB_DIR);
 
- public:
   void Register_Test_0_1_Flowunit();
   void Register_Test_1_0_Flowunit();
   void Register_Test_0_1_Batch_Flowunit();
@@ -151,8 +150,8 @@ class MockFlow {
 class MockFunctionCollection
     : public std::enable_shared_from_this<MockFunctionCollection> {
  public:
-  MockFunctionCollection(){};
-  virtual ~MockFunctionCollection(){};
+  MockFunctionCollection() = default;
+  virtual ~MockFunctionCollection() = default;
 
   void RegisterOpenFunc(
       std::function<Status(const std::shared_ptr<Configuration> &,

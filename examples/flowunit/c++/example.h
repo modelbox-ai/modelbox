@@ -29,15 +29,15 @@ constexpr const char *FLOWUNIT_DESC = "\n\t@Brief: A example flowunit on cpu";
 class ExampleFlowUnit : public modelbox::FlowUnit {
  public:
   ExampleFlowUnit();
-  virtual ~ExampleFlowUnit();
+  ~ExampleFlowUnit() override;
 
   modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
   modelbox::Status Close();
-  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> ct);
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> ct);
-  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> ct);
-  modelbox::Status DataGroupPre(std::shared_ptr<modelbox::DataContext> ct);
-  modelbox::Status DataGroupPost(std::shared_ptr<modelbox::DataContext> ct);
+  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx) override;
+  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx) override;
+  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx) override;
+  modelbox::Status DataGroupPre(std::shared_ptr<modelbox::DataContext> data_ctx) override;
+  modelbox::Status DataGroupPost(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 };
 
 #endif  // MODELBOX_FLOWUNIT_EXAMPLE_CPU_H_

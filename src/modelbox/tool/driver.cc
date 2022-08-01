@@ -57,8 +57,8 @@ static struct option driver_info_options[] = {
 
 REG_MODELBOX_TOOL_COMMAND(ToolCommandDriver)
 
-ToolCommandDriver::ToolCommandDriver() {}
-ToolCommandDriver::~ToolCommandDriver() {}
+ToolCommandDriver::ToolCommandDriver() = default;
+ToolCommandDriver::~ToolCommandDriver() = default;
 
 std::string ToolCommandDriver::GetHelp() {
   char help[] =

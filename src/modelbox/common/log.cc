@@ -78,7 +78,7 @@ modelbox::LogLevel TlogLevelToMblogLevel(tlog_level tlog_level) {
   return level;
 }
 
-ModelboxServerLogger::ModelboxServerLogger() : initialized_(false) {}
+ModelboxServerLogger::ModelboxServerLogger() = default;
 
 ModelboxServerLogger::~ModelboxServerLogger() {
   if (initialized_) {

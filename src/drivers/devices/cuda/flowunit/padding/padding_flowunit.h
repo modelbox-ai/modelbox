@@ -54,7 +54,7 @@ enum class AlignType { BEGIN, CENTER, END };
 class PaddingFlowUnit : public modelbox::CudaFlowUnit {
  public:
   PaddingFlowUnit();
-  virtual ~PaddingFlowUnit();
+  ~PaddingFlowUnit() override;
 
   modelbox::Status Open(
       const std::shared_ptr<modelbox::Configuration> &opts) override;

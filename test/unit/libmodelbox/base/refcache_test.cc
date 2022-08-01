@@ -27,17 +27,17 @@
 namespace modelbox {
 class RefCacheTest : public testing::Test {
  public:
-  RefCacheTest() {}
+  RefCacheTest() = default;
 
  protected:
-  virtual void SetUp(){};
-  virtual void TearDown(){};
+  void SetUp() override{};
+  void TearDown() override{};
 };
 
 class Data {
  public:
-  Data(){};
-  virtual ~Data(){};
+  Data() = default;
+  virtual ~Data() = default;
 };
 
 TEST_F(RefCacheTest, Get) {

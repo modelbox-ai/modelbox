@@ -24,8 +24,8 @@
 #include "modelbox/flowunit_api_helper.h"
 #include "video_decode_common.h"
 
-VideoDecoderFlowUnit::VideoDecoderFlowUnit(){};
-VideoDecoderFlowUnit::~VideoDecoderFlowUnit(){};
+VideoDecoderFlowUnit::VideoDecoderFlowUnit() = default;
+VideoDecoderFlowUnit::~VideoDecoderFlowUnit() = default;
 
 const std::set<std::string> g_supported_pix_fmt = {"nv12", "rgb", "bgr"};
 

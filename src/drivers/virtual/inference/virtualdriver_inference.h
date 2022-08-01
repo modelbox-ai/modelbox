@@ -30,13 +30,13 @@ constexpr const char *VIRTUAL_INFERENCE_FLOWUNIT = "inference";
 class InferenceVirtualDriverDesc : public modelbox::VirtualDriverDesc {
  public:
   InferenceVirtualDriverDesc() = default;
-  virtual ~InferenceVirtualDriverDesc() = default;
+  ~InferenceVirtualDriverDesc() override = default;
 };
 
 class VirtualInferenceFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
   VirtualInferenceFlowUnitDesc() = default;
-  virtual ~VirtualInferenceFlowUnitDesc() = default;
+  ~VirtualInferenceFlowUnitDesc() override = default;
 
   void SetModelEntry(std::string model_entry);
   std::string GetModelEntry();
@@ -54,9 +54,9 @@ class InferenceVirtualDriver
       public std::enable_shared_from_this<InferenceVirtualDriver> {
  public:
   InferenceVirtualDriver() = default;
-  virtual ~InferenceVirtualDriver() = default;
+  ~InferenceVirtualDriver() override = default;
 
-  std::shared_ptr<modelbox::DriverFactory> CreateFactory();
+  std::shared_ptr<modelbox::DriverFactory> CreateFactory() override;
   std::vector<std::shared_ptr<modelbox::Driver>> GetBindDriver();
   void SetBindDriver(
       std::vector<std::shared_ptr<modelbox::Driver>> driver_list);
@@ -69,24 +69,24 @@ class InferenceVirtualDriver
 class VirtualInferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   VirtualInferenceFlowUnitFactory() = default;
-  virtual ~VirtualInferenceFlowUnitFactory() = default;
+  ~VirtualInferenceFlowUnitFactory() override = default;
 
-  virtual std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
+  std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type,
-      const std::string &virtual_type);
+      const std::string &virtual_type) override;
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
-  FlowUnitProbe();
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override;
 
   void SetFlowUnitFactory(std::vector<std::shared_ptr<modelbox::DriverFactory>>
-                              bind_flowunit_factory_list);
+                              bind_flowunit_factory_list) override;
 
-  const std::string GetVirtualType();
-  void SetVirtualType(const std::string &virtual_type);
+  std::string GetVirtualType() override;
+  void SetVirtualType(const std::string &virtual_type) override;
 
-  std::shared_ptr<modelbox::Driver> GetDriver() { return driver_; };
+  std::shared_ptr<modelbox::Driver> GetDriver() override { return driver_; };
 
-  virtual void SetDriver(std::shared_ptr<modelbox::Driver> driver) {
+  void SetDriver(std::shared_ptr<modelbox::Driver> driver) override {
     driver_ = driver;
   }
 
@@ -111,11 +111,11 @@ class VirtualInferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
 class InferenceVirtualDriverManager : public modelbox::VirtualDriverManager {
  public:
   InferenceVirtualDriverManager() = default;
-  virtual ~InferenceVirtualDriverManager() = default;
+  ~InferenceVirtualDriverManager() override = default;
 
-  modelbox::Status Scan(const std::string &path);
-  modelbox::Status Add(const std::string &file);
-  modelbox::Status Init(modelbox::Drivers &driver);
+  modelbox::Status Scan(const std::string &path) override;
+  modelbox::Status Add(const std::string &file) override;
+  modelbox::Status Init(modelbox::Drivers &driver) override;
 
  private:
   modelbox::Status BindBaseDriver(modelbox::Drivers &driver);

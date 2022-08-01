@@ -59,7 +59,7 @@ std::map<ImageType, std::vector<uint8_t>> ImgStreamFormat{
 class NvImageDecoderFlowUnit : public modelbox::FlowUnit {
  public:
   NvImageDecoderFlowUnit();
-  virtual ~NvImageDecoderFlowUnit();
+  ~NvImageDecoderFlowUnit() override;
 
   modelbox::Status Open(
       const std::shared_ptr<modelbox::Configuration> &opts) override;

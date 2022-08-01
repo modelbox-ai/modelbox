@@ -154,7 +154,7 @@ class BufferList {
    * @param idx position of buffer
    * @return pointer to buffer
    */
-  virtual const std::shared_ptr<Buffer> At(size_t idx) const;
+  virtual std::shared_ptr<Buffer> At(size_t idx) const;
 
   /**
    * @brief Push new buffer to buffer list
@@ -271,7 +271,6 @@ class BufferList {
    */
   void SetError(const std::string &error_code, const std::string &error_msg);
 
- public:
   /**
    * @brief push current device data to buffer list.
    * support host data to cpu
@@ -324,12 +323,11 @@ class BufferList {
   Status CopyToNewBufferList(std::shared_ptr<DeviceMemory>& dev_mem);
   Status GenerateDeviceMemory(
       const std::vector<std::shared_ptr<DeviceMemory>>& buffer_dev_mems);
-  bool is_contiguous_;
+  bool is_contiguous_{false};
   std::shared_ptr<DeviceMemory> dev_mem_;
   uint32_t dev_mem_flags_{0};
   std::vector<std::shared_ptr<Buffer>> buffer_list_;
 
- private:
   Status BuildContiguous(std::shared_ptr<modelbox::Device> device,
                          const std::vector<size_t>& data_size_list);
   Status BuildSeparate(std::shared_ptr<modelbox::Device> device,

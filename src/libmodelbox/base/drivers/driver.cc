@@ -39,7 +39,7 @@ namespace modelbox {
 
 constexpr const char *DEFAULT_LD_CACHE = "/etc/ld.so.cache";
 
-Driver::Driver(){};
+Driver::Driver() = default;
 
 Driver::~Driver() {
   if (factory_count_ != 0) {
@@ -259,22 +259,22 @@ std::shared_ptr<DriverDesc> Driver::GetDriverDesc() { return desc_; }
 void Driver::SetDriverDesc(std::shared_ptr<DriverDesc> desc) { desc_ = desc; }
 
 // DriverDesc
-const std::string DriverDesc::GetClass() { return driver_class_; }
+std::string DriverDesc::GetClass() { return driver_class_; }
 
-const std::string DriverDesc::GetType() { return driver_type_; }
+std::string DriverDesc::GetType() { return driver_type_; }
 
-const std::string DriverDesc::GetName() { return driver_name_; }
+std::string DriverDesc::GetName() { return driver_name_; }
 
-const std::string DriverDesc::GetDescription() { return driver_description_; }
+std::string DriverDesc::GetDescription() { return driver_description_; }
 
-const std::string DriverDesc::GetVersion() { return driver_version_; }
+std::string DriverDesc::GetVersion() { return driver_version_; }
 
-const std::string DriverDesc::GetFilePath() { return driver_file_path_; }
+std::string DriverDesc::GetFilePath() { return driver_file_path_; }
 
-const bool DriverDesc::GetNoDelete() { return driver_no_delete_; }
+bool DriverDesc::GetNoDelete() { return driver_no_delete_; }
 
-const bool DriverDesc::GetGlobal() { return global_; }
-const bool DriverDesc::GetDeepBind() { return deep_bind_; }
+bool DriverDesc::GetGlobal() { return global_; }
+bool DriverDesc::GetDeepBind() { return deep_bind_; }
 
 void DriverDesc::SetClass(const std::string &classname) {
   driver_class_ = classname;
@@ -329,7 +329,6 @@ Status DriverDesc::CheckVersion(const std::string &version) {
   if (version_.size() != 3) {
     // "x", "y", "z"
     return {STATUS_BADCONF, "version is invalid"};
-    ;
   }
 
   for (auto &item_version : version_) {
@@ -337,7 +336,6 @@ Status DriverDesc::CheckVersion(const std::string &version) {
       continue;
     }
     return {STATUS_BADCONF, "version is invalid"};
-    ;
   }
 
   return STATUS_SUCCESS;

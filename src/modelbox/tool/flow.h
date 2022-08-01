@@ -26,13 +26,13 @@ constexpr const char *FLOW_DESC = "Run flow, convert config file format";
 class ToolCommandFlow : public ToolCommand {
  public:
   ToolCommandFlow();
-  virtual ~ToolCommandFlow();
+  ~ToolCommandFlow() override;
 
-  int Run(int argc, char *argv[]);
-  std::string GetHelp();
+  int Run(int argc, char *argv[]) override;
+  std::string GetHelp() override;
 
-  std::string GetCommandName() { return "flow"; };
-  std::string GetCommandDesc() { return FLOW_DESC; };
+  std::string GetCommandName() override { return "flow"; };
+  std::string GetCommandDesc() override { return FLOW_DESC; };
 
  protected:
   int RunFlow(const std::string &file);

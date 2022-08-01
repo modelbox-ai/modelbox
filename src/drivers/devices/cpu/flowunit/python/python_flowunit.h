@@ -36,10 +36,10 @@ constexpr const char *FLOWUNIT_TYPE = "cpu";
 class PythonFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
   PythonFlowUnitDesc() = default;
-  virtual ~PythonFlowUnitDesc() = default;
+  ~PythonFlowUnitDesc() override = default;
 
-  void SetPythonEntry(const std::string python_entry);
-  const std::string GetPythonEntry();
+  void SetPythonEntry(std::string python_entry);
+  std::string GetPythonEntry();
 
   std::string python_entry_;
 };
@@ -47,24 +47,30 @@ class PythonFlowUnitDesc : public modelbox::FlowUnitDesc {
 class PythonFlowUnit : public modelbox::FlowUnit {
  public:
   PythonFlowUnit();
-  virtual ~PythonFlowUnit();
+  ~PythonFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPre(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPost(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataGroupPre(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataGroupPre(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataGroupPost(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataGroupPost(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  virtual void SetFlowUnitDesc(std::shared_ptr<modelbox::FlowUnitDesc> desc);
-  virtual std::shared_ptr<modelbox::FlowUnitDesc> GetFlowUnitDesc();
+  void SetFlowUnitDesc(std::shared_ptr<modelbox::FlowUnitDesc> desc) override;
+  std::shared_ptr<modelbox::FlowUnitDesc> GetFlowUnitDesc() override;
 
  private:
   std::shared_ptr<VirtualPythonFlowUnitDesc> python_desc_;
@@ -83,17 +89,18 @@ class PythonFlowUnit : public modelbox::FlowUnit {
 class PythonFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   PythonFlowUnitFactory() = default;
-  virtual ~PythonFlowUnitFactory() = default;
+  ~PythonFlowUnitFactory() override = default;
 
-  virtual std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
-      const std::string &unit_name, const std::string &unit_type) {
+  std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
+      const std::string &unit_name, const std::string &unit_type) override {
     auto python_flowunit = std::make_shared<PythonFlowUnit>();
     return python_flowunit;
   };
 
-  const std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
+  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override {
     return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
   };
 };

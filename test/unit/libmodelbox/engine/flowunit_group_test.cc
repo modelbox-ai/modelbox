@@ -75,16 +75,16 @@ void CheckDataContext(const std::shared_ptr<FlowUnitDataContext>& data_ctx,
 
 class FlowUnitGroupTest : public testing::Test {
  public:
-  FlowUnitGroupTest() {}
+  FlowUnitGroupTest() = default;
 
  protected:
   std::shared_ptr<MockFlow> flow_;
-  virtual void SetUp() {
+  void SetUp() override {
     flow_ = std::make_shared<MockFlow>();
     flow_->Init();
   };
 
-  virtual void TearDown() { flow_->Destroy(); };
+  void TearDown() override { flow_->Destroy(); };
 };
 
 TEST_F(FlowUnitGroupTest, Run2_In_1) {

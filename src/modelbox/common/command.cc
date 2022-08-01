@@ -21,9 +21,9 @@ namespace modelbox {
 
 std::recursive_mutex ToolCommandGetOptLock;
 
-ToolCommandList::ToolCommandList() {}
+ToolCommandList::ToolCommandList() = default;
 
-ToolCommandList::~ToolCommandList() {}
+ToolCommandList::~ToolCommandList() = default;
 
 ToolCommandList *ToolCommandList::Instance() {
   static bool env_set = false;

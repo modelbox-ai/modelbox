@@ -25,7 +25,7 @@
 class ExamplePlugin : public modelbox::Plugin {
  public:
   ExamplePlugin() = default;
-  ~ExamplePlugin() = default;
+  ~ExamplePlugin() override = default;
 
   virtual bool Init(std::shared_ptr<modelbox::Configuration> config) override;
   virtual bool Start() override;

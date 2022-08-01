@@ -55,14 +55,16 @@ constexpr const char *PARSER_RETRY_CONTEXT = "source_context";
 class DataSourceParserFlowUnit : public modelbox::FlowUnit {
  public:
   DataSourceParserFlowUnit();
-  virtual ~DataSourceParserFlowUnit();
+  ~DataSourceParserFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
   /* run when processing data */
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   std::shared_ptr<modelbox::SourceContext> Parse(

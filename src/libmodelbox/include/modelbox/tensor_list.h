@@ -98,7 +98,7 @@ class TensorList {
    * @brief Get tensor list data type
    * @return data type
    */
-  const std::vector<std::vector<size_t>> GetShape() const;
+  std::vector<std::vector<size_t>> GetShape() const;
 
   template <typename T>
   Status Build(const std::vector<std::vector<size_t>>& shape_list) {

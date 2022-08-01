@@ -31,8 +31,8 @@ constexpr const char *DEVICE_DRIVER_DESCRIPTION = "A ascend device driver";
 class Ascend : public Device {
  public:
   Ascend(const std::shared_ptr<DeviceMemoryManager> &mem_mgr);
-  virtual ~Ascend();
-  const std::string GetType() const override;
+  ~Ascend() override;
+  std::string GetType() const override;
 
   Status DeviceExecute(DevExecuteCallBack fun, int32_t priority,
                        size_t count) override;
@@ -43,28 +43,28 @@ class Ascend : public Device {
 class AscendFactory : public DeviceFactory {
  public:
   AscendFactory();
-  virtual ~AscendFactory();
+  ~AscendFactory() override;
 
-  std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe();
-  const std::string GetDeviceFactoryType();
-  std::shared_ptr<Device> CreateDevice(const std::string &device_id);
+  std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe() override;
+  std::string GetDeviceFactoryType() override;
+  std::shared_ptr<Device> CreateDevice(const std::string &device_id) override;
 };
 
 class AscendDesc : public DeviceDesc {
  public:
   AscendDesc() = default;
-  virtual ~AscendDesc() = default;
+  ~AscendDesc() override = default;
 };
 
 class AscendFlowUnit : public FlowUnit {
  public:
   AscendFlowUnit() = default;
-  virtual ~AscendFlowUnit() = default;
+  ~AscendFlowUnit() override = default;
 
   virtual Status AscendProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
                                aclrtStream stream) = 0;
 
-  virtual Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  Status Process(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 };
 
 }  // namespace modelbox

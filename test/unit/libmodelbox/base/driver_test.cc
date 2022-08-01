@@ -43,13 +43,13 @@ namespace modelbox {
 
 class DriverTest : public testing::Test {
  public:
-  DriverTest() {}
+  DriverTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     drivers->Clear();
   };
@@ -613,10 +613,10 @@ TEST_F(DriverTest, DoubleScan) {
 
 class VirtualDriverTest : public testing::Test {
  public:
-  VirtualDriverTest() {}
+  VirtualDriverTest() = default;
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     std::string cpu_python_src_path = std::string(PYTHON_PATH);
     cpu_python_dest_path =
         std::string(TEST_LIB_DIR) + "/libmodelbox-unit-cpu-python.so";
@@ -639,7 +639,7 @@ class VirtualDriverTest : public testing::Test {
     CopyFile(virtual_inference_src_path, virtual_inference_dest_path, 0, true);
   };
 
-  virtual void TearDown() {
+  void TearDown() override {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
     drivers->Clear();
     remove(cpu_python_dest_path.c_str());

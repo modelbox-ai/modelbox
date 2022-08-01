@@ -34,13 +34,13 @@ namespace modelbox {
 
 class SlabTest : public testing::Test {
  public:
-  SlabTest() {}
+  SlabTest() = default;
 
  protected:
-  virtual void SetUp(){
+  void SetUp() override{
 
   };
-  virtual void TearDown(){};
+  void TearDown() override{};
 };
 
 TEST_F(SlabTest, SlabMalloc) {

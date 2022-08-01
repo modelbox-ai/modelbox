@@ -20,8 +20,8 @@
 
 #include <securec.h>
 
-ImageDecoderFlowUnit::ImageDecoderFlowUnit(){};
-ImageDecoderFlowUnit::~ImageDecoderFlowUnit(){};
+ImageDecoderFlowUnit::ImageDecoderFlowUnit() = default;
+ImageDecoderFlowUnit::~ImageDecoderFlowUnit() = default;
 
 std::vector<std::string> CvImgPixelFormat{"bgr", "rgb", "nv12"};
 

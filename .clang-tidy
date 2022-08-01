@@ -20,21 +20,15 @@ Checks: >
   -*,
   modernize-*,
   -modernize-use-trailing-return-type,
-  -modernize-deprecated-headers,
-  -modernize-use-default-member-init,
   -modernize-avoid-c-arrays,
-  -modernize-use-override,
-  -modernize-use-equals-default,
   -modernize-loop-convert,
   -modernize-make-unique,
   -modernize-pass-by-value,
-  -modernize-return-braced-init-list,
   -modernize-use-using,
   -modernize-use-equals-delete,
-  -modernize-use-bool-literals,
-  -modernize-use-emplace,
   -modernize-use-nodiscard,
   -modernize-use-transparent-functors,
+  -modernize-deprecated-headers,
   bugprone-*,
   -bugprone-forwarding-reference-overload,
   -bugprone-lambda-function-name,
@@ -80,8 +74,6 @@ Checks: >
   -readability-container-size-empty,
   -readability-magic-numbers,
   -readability-convert-member-functions-to-static,
-  -readability-const-return-type,
-  -readability-uppercase-literal-suffix,
   -readability-implicit-bool-conversion,
   -readability-make-member-function-const,
   -readability-else-after-return,
@@ -98,6 +90,7 @@ Checks: >
   -google-build-using-namespace,
   -google-build-namespaces,
   -google-global-names-in-headers,
+  
 
 # enable this when required
   # clang-analyzer-*,
@@ -106,5 +99,5 @@ Checks: >
   # clang-analyzer-optin.cplusplus.VirtualCall,
 
 # Turn all the warnings from the checks above into errors.
-HeaderFilterRegex: '^(?!thirdparty/|/usr/include)*$'
+HeaderFilterRegex: '(src|test/unit|test/drivers|test/mock)/*'
 FormatStyle: file

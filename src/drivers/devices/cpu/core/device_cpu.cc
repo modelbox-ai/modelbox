@@ -25,9 +25,9 @@ namespace modelbox {
 CPU::CPU(const std::shared_ptr<DeviceMemoryManager> &mem_mgr)
     : Device(mem_mgr) {}
 
-CPU::~CPU() {}
+CPU::~CPU() = default;
 
-const std::string CPU::GetType() const { return DEVICE_TYPE; }
+std::string CPU::GetType() const { return DEVICE_TYPE; }
 
 Status CPU::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
                           size_t count) {
@@ -59,8 +59,8 @@ Status CPU::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
   return STATUS_OK;
 };
 
-CPUFactory::CPUFactory() {}
-CPUFactory::~CPUFactory() {}
+CPUFactory::CPUFactory() = default;
+CPUFactory::~CPUFactory() = default;
 
 std::map<std::string, std::shared_ptr<DeviceDesc>> CPUFactory::DeviceProbe() {
   std::map<std::string, std::shared_ptr<DeviceDesc>> return_map;
@@ -76,11 +76,11 @@ std::map<std::string, std::shared_ptr<DeviceDesc>> CPUFactory::DeviceProbe() {
   return return_map;
 }
 
-const std::string CPUFactory::GetDeviceFactoryType() { return DEVICE_TYPE; }
+std::string CPUFactory::GetDeviceFactoryType() { return DEVICE_TYPE; }
 
 std::vector<std::string> CPUFactory::GetDeviceList() {
   std::vector<std::string> cpuIds;
-  cpuIds.push_back("0");
+  cpuIds.emplace_back("0");
   return cpuIds;
 }
 
@@ -94,8 +94,8 @@ std::shared_ptr<Device> CPUFactory::CreateDevice(const std::string &device_id) {
   return std::make_shared<CPU>(mem_mgr);
 }
 
-CPUDesc::CPUDesc() {}
+CPUDesc::CPUDesc() = default;
 
-CPUDesc::~CPUDesc() {}
+CPUDesc::~CPUDesc() = default;
 
 }  // namespace modelbox

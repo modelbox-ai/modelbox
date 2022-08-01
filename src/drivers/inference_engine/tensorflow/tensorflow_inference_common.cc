@@ -94,7 +94,7 @@ modelbox::Status InferenceTensorflowParams::Clear() {
   return modelbox::STATUS_OK;
 }
 
-InferenceTensorflowFlowUnit::InferenceTensorflowFlowUnit(){};
+InferenceTensorflowFlowUnit::InferenceTensorflowFlowUnit() = default;
 InferenceTensorflowFlowUnit::~InferenceTensorflowFlowUnit() {
   pre_process_ = nullptr;
   post_process_ = nullptr;

@@ -40,9 +40,9 @@ namespace modelbox {
 OSInfo *os = &LinuxOSInfo::GetInstance();
 
 // OSProcess
-LinuxOSProcess::LinuxOSProcess() {}
+LinuxOSProcess::LinuxOSProcess() = default;
 
-LinuxOSProcess::~LinuxOSProcess() {}
+LinuxOSProcess::~LinuxOSProcess() = default;
 
 uint32_t LinuxOSProcess::GetPid() { return getpid(); }
 
@@ -65,8 +65,8 @@ std::vector<uint32_t> LinuxOSProcess::GetTotalTime(uint32_t pid) {
 }
 
 // OSThread
-LinuxOSThread::LinuxOSThread(){};
-LinuxOSThread::~LinuxOSThread(){};
+LinuxOSThread::LinuxOSThread() = default;
+LinuxOSThread::~LinuxOSThread() = default;
 
 uint32_t LinuxOSProcess::GetPPid() { return 0; };
 
@@ -102,7 +102,7 @@ LinuxOSInfo::LinuxOSInfo() {
   Thread = std::make_shared<LinuxOSThread>();
 };
 
-LinuxOSInfo::~LinuxOSInfo(){};
+LinuxOSInfo::~LinuxOSInfo() = default;
 
 LinuxOSInfo &LinuxOSInfo::GetInstance() {
   static LinuxOSInfo os;

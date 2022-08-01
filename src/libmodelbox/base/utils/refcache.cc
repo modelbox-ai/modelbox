@@ -19,8 +19,8 @@
 
 namespace modelbox {
 
-RefCacheData::RefCacheData() {}
+RefCacheData::RefCacheData() = default;
 
-RefCacheData::~RefCacheData() {}
+RefCacheData::~RefCacheData() = default;
 
 }  // namespace modelbox

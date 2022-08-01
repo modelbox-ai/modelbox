@@ -57,7 +57,7 @@ typedef struct {
 class NppiResizeFlowUnit : public modelbox::CudaFlowUnit {
  public:
   NppiResizeFlowUnit();
-  virtual ~NppiResizeFlowUnit();
+  ~NppiResizeFlowUnit() override;
 
   modelbox::Status Open(
       const std::shared_ptr<modelbox::Configuration> &opts) override;

@@ -18,7 +18,7 @@ class CommonYoloboxFlowUintTest : public testing::Test {
   CommonYoloboxFlowUintTest() : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     auto ret = AddMockFlowUnit();
     EXPECT_EQ(ret, STATUS_OK);
 
@@ -29,7 +29,7 @@ class CommonYoloboxFlowUintTest : public testing::Test {
     CopyFile(src_toml, dest_toml, 0);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     auto ret = remove(dest_toml.c_str());
     EXPECT_EQ(ret, 0);
     ret = remove(yolobox_dir.c_str());
@@ -126,8 +126,8 @@ TEST_F(CommonYoloboxFlowUintTest, Process) {
                    << "]"
                    << " score:" << boxes[bbox_idx].score_
                    << ", category:" << boxes[bbox_idx].category_;
-        const float w_scale = 1920 / 800.0f;
-        const float h_scale = 1080 / 480.0f;
+        const float w_scale = 1920 / 800.0F;
+        const float h_scale = 1080 / 480.0F;
         EXPECT_NEAR(boxes[bbox_idx].x_ * w_scale, result[bbox_idx][0], 0.1);
         EXPECT_NEAR(boxes[bbox_idx].y_ * h_scale, result[bbox_idx][1], 0.1);
         EXPECT_NEAR(boxes[bbox_idx].w_ * w_scale, result[bbox_idx][2], 0.1);

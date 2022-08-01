@@ -21,8 +21,8 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-VideoInputFlowUnit::VideoInputFlowUnit(){};
-VideoInputFlowUnit::~VideoInputFlowUnit(){};
+VideoInputFlowUnit::VideoInputFlowUnit() = default;
+VideoInputFlowUnit::~VideoInputFlowUnit() = default;
 
 modelbox::Status VideoInputFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
