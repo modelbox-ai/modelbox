@@ -14,8 +14,28 @@
  * limitations under the License.
  */
 
-
 #include "driver_util.h"
 
 namespace driverutil {
+
+std::string string_masking(const std::string &input) {
+  std::regex url_auth_pattern("://[^ /]*?:[^ /]*?@");
+  auto output = std::regex_replace(input, url_auth_pattern, "://*:*@");
+
+  std::regex pattern_ak(R"("ak"[ ]*?:[ ]*?".*?")");
+  output = std::regex_replace(output, pattern_ak, R"("ak":"*")");
+
+  std::regex pattern_sk(R"("sk"[ ]*?:[ ]*?".*?")");
+  output = std::regex_replace(output, pattern_sk, R"("sk":"*")");
+
+  std::regex pattern_token(R"("securityToken"[ ]*?:[ ]*?".*?")");
+  output = std::regex_replace(output, pattern_token, R"("securityToken":"*")");
+
+  std::regex pattern_vcn_pwd(R"("vcn_stream_pwd"[ ]*?:[ ]*?".*?")");
+  output =
+      std::regex_replace(output, pattern_vcn_pwd, R"("vcn_stream_pwd":"*")");
+
+  return std::move(output);
+}
+
 }  // namespace driverutil

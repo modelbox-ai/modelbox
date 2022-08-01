@@ -61,7 +61,9 @@ RndInt8Calibrator::RndInt8Calibrator(
     int elemCount = Volume(elem.second);
 
     std::vector<float> rnd_data(elemCount);
-    for (auto& val : rnd_data) val = distribution(generator);
+    for (auto& val : rnd_data) {
+      val = distribution(generator);
+    }
 
     void* data = nullptr;
     if (cudaMalloc(&data, elemCount * sizeof(float)) != 0) {
@@ -80,10 +82,11 @@ RndInt8Calibrator::RndInt8Calibrator(
 }
 
 RndInt8Calibrator::~RndInt8Calibrator() {
-  for (auto& elem : input_device_buffers_)
+  for (auto& elem : input_device_buffers_) {
     if (cudaFree(elem.second) != 0) {
       MBLOG_WARN << "Cuda failure: cudaFree";
     }
+  }
 }
 
 int RndInt8Calibrator::getBatchSize() const noexcept { return 1; }
@@ -115,7 +118,8 @@ const void* RndInt8Calibrator::readCalibrationCache(size_t& length) noexcept {
   return length ? &calibration_cache_[0] : nullptr;
 }
 
-void RndInt8Calibrator::writeCalibrationCache(const void*, size_t) noexcept {}
+void RndInt8Calibrator::writeCalibrationCache(const void* /*ptr*/,
+                                              size_t /*length*/) noexcept {}
 
 modelbox::Status TensorRTInferenceFlowUnit::PreProcess(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
@@ -261,7 +265,9 @@ void TensorRTInferenceFlowUnit::configureBuilder(
   if (params_.use_DLACore >= 0) {
     builder->setDefaultDeviceType(nvinfer1::DeviceType::kDLA);
     builder->setDLACore(params_.use_DLACore);
-    if (params_.allow_GPUFallback) builder->allowGPUFallback(true);
+    if (params_.allow_GPUFallback) {
+      builder->allowGPUFallback(true);
+    }
   }
 #endif
 }
@@ -341,8 +347,8 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
   } else {
     blobNameToTensor = parser->parse(
         params_.deploy_file.c_str(),
-        params_.model_file.empty() ? 0 : params_.model_file.c_str(), *network,
-        params_.fp16 ? DataType::kHALF : DataType::kFLOAT);
+        params_.model_file.empty() ? nullptr : params_.model_file.c_str(),
+        *network, params_.fp16 ? DataType::kHALF : DataType::kFLOAT);
   }
   if (!blobNameToTensor) {
     return {modelbox::STATUS_FAULT, "parser caffe model failed."};
@@ -481,7 +487,7 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
     const std::shared_ptr<modelbox::Configuration>& config,
     std::shared_ptr<IBuilder>& builder,
     std::shared_ptr<INetworkDefinition>& network) {
-  int verbosity = (int)nvinfer1::ILogger::Severity::kWARNING;
+  auto verbosity = (int)nvinfer1::ILogger::Severity::kWARNING;
 
   // parse the onnx model to populate the network, then set the outputs
   std::shared_ptr<IParser> parser =
@@ -647,9 +653,9 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    file.seekg(0, file.end);
+    file.seekg(0, std::ifstream::end);
     size = file.tellg();
-    file.seekg(0, file.beg);
+    file.seekg(0, std::ifstream::beg);
     trtModelStream.resize(size);
     file.read(trtModelStream.data(), size);
     file.close();
@@ -750,7 +756,6 @@ void TensorRTInferenceFlowUnit::SetPluginFactory(std::string pluginName) {
   }
 #endif
   MBLOG_DEBUG << "The plugin " << pluginName.c_str() << " is not supported";
-  return;
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::InitConfig(
@@ -1013,8 +1018,9 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateMemory(
     output_buf->Set("type", modelbox::MODELBOX_UINT8);
   } else if (type == "long") {
     output_buf->Set("type", modelbox::MODELBOX_INT16);
-  } else
-    return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
+  } else {
+    return { modelbox::STATUS_NOTSUPPORT, "unsupport output type." };
+  }
 
   output_buf->Set("shape", output_shape);
   buffers[binding_index] = output_buf->MutableData();

@@ -20,6 +20,8 @@
 
 #include <algorithm>
 
+#include "driver_util.h"
+
 using namespace modelbox;
 
 #define GET_FFMPEG_ERR(err_num, var_name)        \
@@ -67,7 +69,7 @@ Status FfmpegVideoDemuxer::Demux(std::shared_ptr<AVPacket> &av_packet) {
 
 void FfmpegVideoDemuxer::LogStreamInfo() {
   MBLOG_INFO << "demux info:";
-  MBLOG_INFO << "source url: " << source_url_;
+  MBLOG_INFO << "source url: " << driverutil::string_masking(source_url_);
   MBLOG_INFO << "key frame only: " << key_frame_only_;
   MBLOG_INFO << "codec id: " << codec_id_;
   MBLOG_INFO << "profile id: " << profile_id_;
@@ -144,7 +146,7 @@ Status FfmpegVideoDemuxer::ReadPacket(std::shared_ptr<AVPacket> &av_packet) {
   }
 
   if (ret == AVERROR_EOF) {
-    MBLOG_INFO << "Stream " << source_url_ << " is end";
+    MBLOG_INFO << "Stream " << driverutil::string_masking(source_url_) << " is end";
     return STATUS_NODATA;
   }
 
@@ -260,7 +262,7 @@ Status FfmpegVideoDemuxer::GetStreamTimeInfo() {
   if (entry != nullptr) {
     creation_time_ = atol(entry->value);
   } else {
-    MBLOG_INFO << "Stream " << source_url_ << " creation time is null";
+    MBLOG_INFO << "Stream " << driverutil::string_masking(source_url_) << " creation time is null";
   }
 
   time_base_ = av_q2d(format_ctx_->streams[stream_id_]->time_base) * 1000;
@@ -278,7 +280,7 @@ Status FfmpegVideoDemuxer::GetStreamFrameInfo() {
   if (entry != nullptr) {
     frame_rotate_ = (atol(entry->value) % 360 + 360) % 360;
   } else {
-    MBLOG_INFO << "Stream " << source_url_ << " rotate is null";
+    MBLOG_INFO << "Stream " << driverutil::string_masking(source_url_) << " rotate is null";
   }
   RescaleFrameRate(frame_rate_numerator_, frame_rate_denominator_);
   frame_count_ = format_ctx_->streams[stream_id_]->nb_frames;
