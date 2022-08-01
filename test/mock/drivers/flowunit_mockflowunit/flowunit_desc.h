@@ -26,6 +26,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-extern "C" MockDriverFlowUnit *GetDriverMock();
+extern "C" modelbox::MockDriverFlowUnit *GetDriverMock();
 
 #endif  // MODELBOX_FLOWUNIT_DESC_H_

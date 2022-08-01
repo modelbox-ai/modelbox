@@ -16,8 +16,6 @@
 
 #include "virtualdriver_yolobox.h"
 
-using namespace modelbox;
-
 constexpr const char *VIRTUAL_FLOWUNIT_TYPE = "yolo_postprocess";
 
 std::shared_ptr<modelbox::DriverFactory> YoloBoxVirtualDriver::CreateFactory() {
@@ -73,7 +71,7 @@ modelbox::Status YoloBoxVirtualDriverManager::Scan(const std::string &path) {
       MBLOG_INFO << "Add virtual driver " << config_file << " success";
     }
 
-    if (result == STATUS_NOTSUPPORT) {
+    if (result == modelbox::STATUS_NOTSUPPORT) {
       MBLOG_DEBUG << "add file: " << config_file << " failed, "
                   << result.WrapErrormsgs();
     } else if (!result) {
@@ -92,65 +90,66 @@ modelbox::Status YoloBoxVirtualDriverManager::Add(const std::string &file) {
   std::string description;
   std::string entry;
   std::string flowunit_type;
-  auto builder = std::make_shared<ConfigurationBuilder>();
-  std::shared_ptr<Configuration> config = builder->Build(file);
+  auto builder = std::make_shared<modelbox::ConfigurationBuilder>();
+  std::shared_ptr<modelbox::Configuration> config = builder->Build(file);
   if (config == nullptr) {
-    MBLOG_ERROR << StatusError.Errormsg();
-    return STATUS_BADCONF;
+    MBLOG_ERROR << modelbox::StatusError.Errormsg();
+    return modelbox::STATUS_BADCONF;
   }
 
   flowunit_type = config->GetString("base.type");
   if (flowunit_type.empty()) {
     auto err_msg = "config " + file + " the config does not have 'type'.";
     MBLOG_ERROR << err_msg;
-    return {STATUS_BADCONF, err_msg};
+    return {modelbox::STATUS_BADCONF, err_msg};
   }
 
   if (flowunit_type != VIRTUAL_FLOWUNIT_TYPE) {
     auto err_msg = "config " + file + " type is " + flowunit_type +
                    ", will not load as " + std::string(VIRTUAL_FLOWUNIT_TYPE);
-    return {STATUS_NOTSUPPORT, err_msg};
+    return {modelbox::STATUS_NOTSUPPORT, err_msg};
   }
 
   name = config->GetString("base.name");
   if (name.empty()) {
     auto err_msg = "config " + file + " does not have 'name'.";
     MBLOG_ERROR << err_msg;
-    return {STATUS_BADCONF, err_msg};
+    return {modelbox::STATUS_BADCONF, err_msg};
   }
 
   type = config->GetString("base.device");
   if (type.empty()) {
     auto err_msg = "config " + file + " does not have 'device'.";
     MBLOG_ERROR << err_msg;
-    return {STATUS_BADCONF, err_msg};
+    return {modelbox::STATUS_BADCONF, err_msg};
   }
 
   version = config->GetString("base.version");
   if (version.empty()) {
     auto err_msg = "config " + file + " does not have 'version'.";
     MBLOG_ERROR << err_msg;
-    return {STATUS_BADCONF, err_msg};
+    return {modelbox::STATUS_BADCONF, err_msg};
   }
 
   description = config->GetString("base.description");
   if (description.empty()) {
     auto err_msg = "config " + file + " does not have 'description'.";
     MBLOG_ERROR << err_msg;
-    return {STATUS_BADCONF, err_msg};
+    return {modelbox::STATUS_BADCONF, err_msg};
   }
 
   std::shared_ptr<YoloBoxVirtualDriver> driver =
       std::make_shared<YoloBoxVirtualDriver>();
-  std::shared_ptr<DriverDesc> driver_desc = std::make_shared<DriverDesc>();
+  std::shared_ptr<modelbox::DriverDesc> driver_desc =
+      std::make_shared<modelbox::DriverDesc>();
   driver_desc->SetClass(modelbox::DRIVER_CLASS_FLOWUNIT);
   driver_desc->SetFilePath(file);
   driver_desc->SetName(name);
   driver_desc->SetType(type);
   auto status = driver_desc->SetVersion(version);
-  if (status != STATUS_SUCCESS) {
+  if (status != modelbox::STATUS_SUCCESS) {
     auto err_msg = "SetVersion failed, version: " + version;
-    return {STATUS_FAULT, err_msg};
+    return {modelbox::STATUS_FAULT, err_msg};
   }
 
   driver_desc->SetDescription(description);
@@ -158,7 +157,7 @@ modelbox::Status YoloBoxVirtualDriverManager::Add(const std::string &file) {
   driver->SetVirtual(true);
   driver->SetBindDriver(flowunit_driver_list_);
   drivers_list_.push_back(driver);
-  return STATUS_OK;
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status YoloBoxVirtualDriverManager::GetTargetDriverList(
@@ -257,9 +256,9 @@ YoloBoxVirtualFlowUnitFactory::FlowUnitProbe() {
   flowunit_desc->SetVirtualType(VIRTUAL_FLOWUNIT_TYPE);
   flowunit_desc->SetInputContiguous(false);
 
-  std::shared_ptr<ConfigurationBuilder> builder =
-      std::make_shared<ConfigurationBuilder>();
-  std::shared_ptr<Configuration> config = builder->Build(toml_file);
+  std::shared_ptr<modelbox::ConfigurationBuilder> builder =
+      std::make_shared<modelbox::ConfigurationBuilder>();
+  std::shared_ptr<modelbox::Configuration> config = builder->Build(toml_file);
 
   auto ret = FillInput(config, flowunit_desc);
   if (!ret) {

@@ -23,9 +23,7 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 
-using namespace modelbox;
-
-Status FfmpegWriter::Open(const std::string &format_name,
+modelbox::Status FfmpegWriter::Open(const std::string &format_name,
                           const std::string &destination_url) {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
   av_register_all();
@@ -34,7 +32,7 @@ Status FfmpegWriter::Open(const std::string &format_name,
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, ffmpeg_err);
     MBLOG_ERROR << "avformat_network_init, err " << ffmpeg_err;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   format_name_ = format_name;
@@ -48,7 +46,7 @@ Status FfmpegWriter::Open(const std::string &format_name,
     MBLOG_ERROR << "avformat_alloc_output_context2 failed, format "
                 << format_name << ", dest_url " << destination_url << ", ret "
                 << ffmpeg_err;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   format_ctx_.reset(format_ctx,
@@ -60,11 +58,11 @@ Status FfmpegWriter::Open(const std::string &format_name,
       GET_FFMPEG_ERR(ret, ffmpeg_err);
       MBLOG_ERROR << "avio_open2 failed, url " << destination_url << ", format "
                   << format_name << ", ret " << ffmpeg_err;
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
   }
 
   MBLOG_INFO << "Open url " << destination_url << ", format " << format_name
              << " success";
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }

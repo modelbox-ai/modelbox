@@ -44,7 +44,7 @@ class RegisterFlowUnit : public FlowUnit {
   std::function<Status(std::shared_ptr<DataContext>)> callback_{nullptr};
 };
 
-class RegisterFlowUnitFactory : public modelbox::FlowUnitFactory {
+class RegisterFlowUnitFactory : public FlowUnitFactory {
  public:
   RegisterFlowUnitFactory() = default;
   RegisterFlowUnitFactory(
@@ -53,13 +53,13 @@ class RegisterFlowUnitFactory : public modelbox::FlowUnitFactory {
       const std::function<Status(std::shared_ptr<DataContext>)> &callback);
   ~RegisterFlowUnitFactory() override = default;
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+  std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe()
       override {
     return desc_map_;
   }
 
   std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
-  std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
+  std::shared_ptr<FlowUnit> CreateFlowUnit(
       const std::string &name, const std::string &unit_type) override;
 
  private:
@@ -68,7 +68,7 @@ class RegisterFlowUnitFactory : public modelbox::FlowUnitFactory {
   std::vector<std::string> input_ports_;
   std::vector<std::string> output_ports_;
   std::function<Status(std::shared_ptr<DataContext>)> callback_;
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> desc_map_;
+  std::map<std::string, std::shared_ptr<FlowUnitDesc>> desc_map_;
 };
 
 }  // namespace modelbox

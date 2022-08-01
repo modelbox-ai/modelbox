@@ -19,8 +19,6 @@
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
-using namespace modelbox;
-
 VideoDemuxerFlowUnit::VideoDemuxerFlowUnit() = default;
 VideoDemuxerFlowUnit::~VideoDemuxerFlowUnit() = default;
 
@@ -32,11 +30,12 @@ modelbox::Status VideoDemuxerFlowUnit::Open(
 modelbox::Status VideoDemuxerFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status VideoDemuxerFlowUnit::Reconnect(
-    Status &status, std::shared_ptr<modelbox::DataContext> &data_ctx) {
+    modelbox::Status &status,
+    std::shared_ptr<modelbox::DataContext> &data_ctx) {
   auto ret = modelbox::STATUS_CONTINUE;
   DeferCond { return ret == modelbox::STATUS_SUCCESS; };
   DeferCondAdd { WriteEnd(data_ctx); };
-  auto source_context = std::static_pointer_cast<SourceContext>(
+  auto source_context = std::static_pointer_cast<modelbox::SourceContext>(
       data_ctx->GetPrivate(DEMUX_RETRY_CONTEXT));
   if (source_context == nullptr) {
     if (status == modelbox::STATUS_NODATA) {
@@ -48,14 +47,15 @@ modelbox::Status VideoDemuxerFlowUnit::Reconnect(
 
   source_context->SetLastProcessStatus(status);
   auto retry_status = source_context->NeedRetry();
-  if (retry_status == RETRY_NONEED) {
+  if (retry_status == modelbox::RETRY_NONEED) {
     ret = modelbox::STATUS_FAULT;
-  } else if (retry_status == RETRY_STOP) {
+  } else if (retry_status == modelbox::RETRY_STOP) {
     ret = modelbox::STATUS_SUCCESS;
   } else {
-    auto timer_task = std::static_pointer_cast<TimerTask>(
+    auto timer_task = std::static_pointer_cast<modelbox::TimerTask>(
         data_ctx->GetPrivate(DEMUX_TIMER_TASK));
-    TimerGlobal::Schedule(timer_task, source_context->GetRetryInterval(), 0);
+    modelbox::TimerGlobal::Schedule(timer_task,
+                                    source_context->GetRetryInterval(), 0);
   }
   return ret;
 }
@@ -64,7 +64,7 @@ modelbox::Status VideoDemuxerFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto video_demuxer = std::static_pointer_cast<FfmpegVideoDemuxer>(
       data_ctx->GetPrivate(DEMUXER_CTX));
-  Status demux_status = modelbox::STATUS_FAULT;
+  modelbox::Status demux_status = modelbox::STATUS_FAULT;
   std::shared_ptr<AVPacket> pkt;
   if (video_demuxer != nullptr) {
     demux_status = video_demuxer->Demux(pkt);
@@ -76,9 +76,9 @@ modelbox::Status VideoDemuxerFlowUnit::Process(
       return ret;
     }
 
-    auto event = std::make_shared<FlowUnitEvent>();
+    auto event = std::make_shared<modelbox::FlowUnitEvent>();
     data_ctx->SendEvent(event);
-    return STATUS_CONTINUE;
+    return modelbox::STATUS_CONTINUE;
   }
 
   return Reconnect(demux_status, data_ctx);
@@ -134,7 +134,7 @@ modelbox::Status VideoDemuxerFlowUnit::WriteData(
   packet_buffer->Set("height", frame_height);
   packet_buffer->Set("rotate_angle", rotate_angle);
   packet_buffer->Set("duration", video_demuxer->GetDuration());
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoDemuxerFlowUnit::CreateRetryTask(
@@ -144,7 +144,7 @@ modelbox::Status VideoDemuxerFlowUnit::CreateRetryTask(
     return modelbox::STATUS_FAULT;
   }
 
-  auto source_context = std::static_pointer_cast<SourceContext>(
+  auto source_context = std::static_pointer_cast<modelbox::SourceContext>(
       stream_meta->GetMeta(DEMUX_RETRY_CONTEXT));
   if (source_context == nullptr) {
     return modelbox::STATUS_FAULT;
@@ -154,25 +154,27 @@ modelbox::Status VideoDemuxerFlowUnit::CreateRetryTask(
   source_context->SetLastProcessStatus(modelbox::STATUS_FAULT);
   std::weak_ptr<VideoDemuxerFlowUnit> flowunit = shared_from_this();
   std::weak_ptr<modelbox::DataContext> data_ctx_weak = data_ctx;
-  auto timer_task = std::make_shared<TimerTask>([flowunit, data_ctx_weak]() {
-    std::shared_ptr<VideoDemuxerFlowUnit> flow_unit_ = flowunit.lock();
-    std::shared_ptr<modelbox::DataContext> data_context = data_ctx_weak.lock();
-    if (flow_unit_ == nullptr || data_context == nullptr) {
-      return;
-    }
+  auto timer_task =
+      std::make_shared<modelbox::TimerTask>([flowunit, data_ctx_weak]() {
+        std::shared_ptr<VideoDemuxerFlowUnit> flow_unit_ = flowunit.lock();
+        std::shared_ptr<modelbox::DataContext> data_context =
+            data_ctx_weak.lock();
+        if (flow_unit_ == nullptr || data_context == nullptr) {
+          return;
+        }
 
-    auto event = std::make_shared<FlowUnitEvent>();
-    auto source_context = std::static_pointer_cast<SourceContext>(
-        data_context->GetPrivate(DEMUX_RETRY_CONTEXT));
-    auto source_url = source_context->GetSourceURL();
-    modelbox::Status status = modelbox::STATUS_FAULT;
-    if (source_url) {
-      auto status = flow_unit_->InitDemuxer(data_context, source_url);
-    }
+        auto event = std::make_shared<modelbox::FlowUnitEvent>();
+        auto source_context = std::static_pointer_cast<modelbox::SourceContext>(
+            data_context->GetPrivate(DEMUX_RETRY_CONTEXT));
+        auto source_url = source_context->GetSourceURL();
+        modelbox::Status status = modelbox::STATUS_FAULT;
+        if (source_url) {
+          auto status = flow_unit_->InitDemuxer(data_context, source_url);
+        }
 
-    source_context->SetLastProcessStatus(status);
-    data_context->SendEvent(event);
-  });
+        source_context->SetLastProcessStatus(status);
+        data_context->SendEvent(event);
+      });
   timer_task->SetName("DemuxerReconnect");
   data_ctx->SetPrivate(DEMUX_TIMER_TASK, timer_task);
   return modelbox::STATUS_OK;
@@ -215,13 +217,13 @@ modelbox::Status VideoDemuxerFlowUnit::DataPre(
   auto source_url_ptr = GetSourceUrl(data_ctx);
   if (source_url_ptr == nullptr) {
     MBLOG_ERROR << "Source url is null, please fill input url correctly";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto codec_id = std::make_shared<AVCodecID>();
   auto profile_id = std::make_shared<int32_t>();
   auto source_url = std::make_shared<std::string>();
-  auto meta = std::make_shared<DataMeta>();
+  auto meta = std::make_shared<modelbox::DataMeta>();
   meta->SetMeta(CODEC_META, codec_id);
   meta->SetMeta(PROFILE_META, profile_id);
   meta->SetMeta(SOURCE_URL, source_url);
@@ -258,23 +260,23 @@ modelbox::Status VideoDemuxerFlowUnit::InitDemuxer(
     std::shared_ptr<std::string> &source_url) {
   auto reader = std::make_shared<FfmpegReader>();
   auto ret = reader->Open(*source_url);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_INFO << "Open reader falied, set DEMUX_STATUS failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   auto video_demuxer = std::make_shared<FfmpegVideoDemuxer>();
   ret = video_demuxer->Init(reader, key_frame_only_);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_INFO << "video demux init falied, set DEMUX_STATUS failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
   video_demuxer->LogStreamInfo();
 
   auto codec_id = video_demuxer->GetCodecID();
   auto profile_id = video_demuxer->GetProfileID();
   // reset meta value
-  auto meta = std::static_pointer_cast<DataMeta>(
+  auto meta = std::static_pointer_cast<modelbox::DataMeta>(
       data_ctx->GetPrivate(VIDEO_PACKET_OUTPUT));
   auto code_meta = std::static_pointer_cast<int>(meta->GetMeta(CODEC_META));
   *code_meta = codec_id;
@@ -289,12 +291,12 @@ modelbox::Status VideoDemuxerFlowUnit::InitDemuxer(
   data_ctx->SetPrivate(SOURCE_URL, source_url);
 
   UpdateStatsInfo(data_ctx, video_demuxer);
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoDemuxerFlowUnit::DataPost(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
-  auto timer_task = std::static_pointer_cast<TimerTask>(
+  auto timer_task = std::static_pointer_cast<modelbox::TimerTask>(
       data_ctx->GetPrivate(DEMUX_TIMER_TASK));
 
   if (timer_task) {
@@ -308,7 +310,7 @@ MODELBOX_FLOWUNIT(VideoDemuxerFlowUnit, desc) {
   desc.SetFlowUnitGroupType("Video");
   desc.AddFlowUnitInput({STREAM_META_INPUT});
   desc.AddFlowUnitOutput({VIDEO_PACKET_OUTPUT});
-  desc.SetFlowType(FlowType::STREAM);
+  desc.SetFlowType(modelbox::FlowType::STREAM);
   desc.SetStreamSameCount(false);
   desc.SetDescription(FLOWUNIT_DESC);
 }

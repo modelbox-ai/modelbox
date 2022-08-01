@@ -36,6 +36,7 @@ InputVirtualNode::~InputVirtualNode() = default;
 Status InputVirtualNode::Init(const std::set<std::string>& input_port_names,
                               const std::set<std::string>& output_port_names,
                               std::shared_ptr<Configuration> config) {
+  // NOLINTNEXTLINE
   auto status = NodeBase::Init(input_port_names, output_port_names, config);
   if (status != STATUS_SUCCESS) {
     return status;
@@ -113,6 +114,7 @@ OutputVirtualNode::~OutputVirtualNode() = default;
 Status OutputVirtualNode::Init(const std::set<std::string>& input_port_names,
                                const std::set<std::string>& output_port_names,
                                std::shared_ptr<Configuration> config) {
+  // NOLINTNEXTLINE
   auto status = NodeBase::Init(input_port_names, output_port_names, config);
   if (status != STATUS_SUCCESS) {
     return status;
@@ -355,6 +357,7 @@ Status OutputUnmatchVirtualNode::Init(
     need_move_to_device_ = true;
   }
 
+  // NOLINTNEXTLINE
   return NodeBase::Init(input_port_names, output_port_names, config);
 }
 

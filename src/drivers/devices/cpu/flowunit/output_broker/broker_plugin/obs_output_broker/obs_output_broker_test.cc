@@ -31,8 +31,6 @@
 #include "gtest/gtest.h"
 #include "iam_auth.h"
 
-using ::testing::_;
-
 using ObsOutputDataPack = struct _OutputDataPack {
   std::string output_data;
   std::string output_file_name;

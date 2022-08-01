@@ -97,7 +97,7 @@ modelbox::Status ObsSourceParser::Parse(
   obs_opt.user_id = download_info.user_id;
 
   std::string uuid;
-  if (modelbox::STATUS_OK != GetUUID(&uuid)) {
+  if (modelbox::STATUS_OK != modelbox::GetUUID(&uuid)) {
     MBLOG_WARN << "Failed to generate a uuid for the OBS output broker! Use "
                   "default id: yyyymmddhhmmss";
     time_t now = time(nullptr);

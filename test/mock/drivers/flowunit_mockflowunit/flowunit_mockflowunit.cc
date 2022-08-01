@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-
 #include "flowunit_mockflowunit.h"
+
+namespace modelbox {
 
 MockDriverFlowUnit MockDriverFlowUnit::desc_;
 
-std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
+std::map<std::string, std::shared_ptr<FlowUnitDesc>>
 MockFlowUnitFactory::FlowUnitProbe() {
-  auto tmp_map = std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
+  auto tmp_map = std::map<std::string, std::shared_ptr<FlowUnitDesc>>();
   if (flowunit_desc_.size() > 0) {
     for (auto &desc : flowunit_desc_) {
       tmp_map.insert(std::make_pair(desc->GetFlowUnitName(), desc));
     }
   }
-  
+
   if (bind_mock_flowunit_ != nullptr) {
     auto desc = bind_mock_flowunit_->GetFlowUnitDesc();
     tmp_map.insert(std::make_pair(
@@ -37,7 +38,7 @@ MockFlowUnitFactory::FlowUnitProbe() {
   return tmp_map;
 }
 
-std::shared_ptr<modelbox::FlowUnit> MockFlowUnitFactory::CreateFlowUnit(
+std::shared_ptr<FlowUnit> MockFlowUnitFactory::CreateFlowUnit(
     const std::string &name, const std::string &type) {
   if (flowunit_create_func_) {
     return flowunit_create_func_(name, type);
@@ -56,13 +57,14 @@ void MockFlowUnitFactory::SetMockFunctionFlowUnit(
 }
 
 void MockFlowUnitFactory::SetMockCreateFlowUnitFunc(
-    std::function<std::shared_ptr<modelbox::FlowUnit>(const std::string &name,
-                                                    const std::string &type)>
+    std::function<std::shared_ptr<FlowUnit>(const std::string &name,
+                                            const std::string &type)>
         create_func) {
   flowunit_create_func_ = create_func;
 }
 
 void MockFlowUnitFactory::SetMockFlowUnitDesc(
-    std::vector<std::shared_ptr<modelbox::FlowUnitDesc>> descs) {
+    std::vector<std::shared_ptr<FlowUnitDesc>> descs) {
   flowunit_desc_ = descs;
 }
+}  // namespace modelbox

@@ -30,8 +30,7 @@
 #include "modelbox/base/utils.h"
 #include "modelbox/buffer.h"
 
-using ::testing::_;
-using namespace tensorflow_inference;
+using namespace tensorflow_inference; // NOLINT
 
 namespace modelbox {
 class InferenceTensorflowCpuFlowUnitTest : public testing::Test {

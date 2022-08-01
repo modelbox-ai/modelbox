@@ -14,27 +14,29 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/uuid.h"
 
 #include "modelbox/base/utils.h"
 
 #define UUID_GENERATION_PATH "/proc/sys/kernel/random/uuid"
 
-modelbox::Status GetUUID(std::string* uuid) {
+namespace modelbox {
+
+Status GetUUID(std::string* uuid) {
   char tmp[UUID_LENGTH];
   FILE* fd = fopen(UUID_GENERATION_PATH, "r");
   if (fd == nullptr) {
-    return modelbox::STATUS_FAULT;
+    return STATUS_FAULT;
   }
   Defer { fclose(fd); };
 
   size_t result = fread(tmp, 1, UUID_LENGTH - 1, fd);
   if (result != UUID_LENGTH - 1) {
-    return modelbox::STATUS_FAULT;
+    return STATUS_FAULT;
   }
 
   tmp[UUID_LENGTH - 1] = '\0';
   *uuid = std::string(tmp);
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
+}  // namespace modelbox

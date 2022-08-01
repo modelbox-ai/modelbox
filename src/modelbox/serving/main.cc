@@ -35,8 +35,6 @@
 #include "modelbox/common/utils.h"
 #include "serving.h"
 
-using namespace modelbox;
-
 static int g_sig_list[] = {
     SIGIO,   SIGPWR,    SIGSTKFLT, SIGPROF, SIGINT,  SIGTERM,
     SIGBUS,  SIGVTALRM, SIGTRAP,   SIGXCPU, SIGXFSZ, SIGILL,
@@ -113,7 +111,8 @@ static void modelbox_sig_handler(int volatile sig_no, siginfo_t *sig_info,
 }
 
 static int modelbox_reg_signal() {
-  if (modelbox_sig_register(g_sig_list, g_sig_num, modelbox_sig_handler) != 0) {
+  if (modelbox::modelbox_sig_register(g_sig_list, g_sig_num,
+                                      modelbox_sig_handler) != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
   }
@@ -127,13 +126,15 @@ int modelbox_serving_init() {
     return 1;
   }
 
-  if (modelbox_root_dir().length() > 0) {
-    std::string default_scanpath = modelbox_full_path(
-        std::string(MODELBOX_ROOT_VAR) + MODELBOX_DEFAULT_DRIVER_PATH);
+  if (modelbox::modelbox_root_dir().length() > 0) {
+    std::string default_scanpath =
+        modelbox::modelbox_full_path(std::string(modelbox::MODELBOX_ROOT_VAR) +
+                                     MODELBOX_DEFAULT_DRIVER_PATH);
     modelbox::Drivers::SetDefaultScanPath(default_scanpath);
 
-    std::string default_driver_info_path = modelbox_full_path(
-        std::string(MODELBOX_ROOT_VAR) + "/var/run/modelbox-driver-info");
+    std::string default_driver_info_path =
+        modelbox::modelbox_full_path(std::string(modelbox::MODELBOX_ROOT_VAR) +
+                                     "/var/run/modelbox-driver-info");
     modelbox::Drivers::SetDefaultInfoPath(default_driver_info_path);
   }
 
@@ -156,9 +157,9 @@ int modelbox_serving_generate_template(const std::string &model_name,
 int modelbox_run() {
   auto p = std::make_shared<modelbox::Popen>();
   std::string modelbox_bin{"/etc/init.d/modelbox"};
-  if (modelbox_root_dir().length() > 0) {
-    modelbox_bin =
-        modelbox_full_path(std::string(MODELBOX_ROOT_VAR) + modelbox_bin);
+  if (modelbox::modelbox_root_dir().length() > 0) {
+    modelbox_bin = modelbox::modelbox_full_path(
+        std::string(modelbox::MODELBOX_ROOT_VAR) + modelbox_bin);
   }
 
   modelbox_bin += " restart";

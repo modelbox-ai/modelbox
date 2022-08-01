@@ -33,7 +33,6 @@
 #include "modelbox/buffer.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
 namespace modelbox {
 class CVCropFlowUnitTest : public testing::Test {
  public:
@@ -67,7 +66,7 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
         GenerateFlowunitDesc("test_0_1_cv_crop", {}, {"Out_img", "Out_box"});
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(16);
-    auto open_func = [=](const std::shared_ptr<Configuration>& opts,
+    auto open_func = [=](const std::shared_ptr<Configuration> &opts,
                          std::shared_ptr<MockFlowUnit> mock_flowunit) {
       std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
       mock_flowunit_wp = mock_flowunit;
@@ -253,7 +252,7 @@ TEST_F(CVCropFlowUnitTest, InitUnit) {
 
   std::vector<std::string> filePath;
   ListFiles(std::string(TEST_DATA_DIR), "*", &filePath);
-  for (auto& elem : filePath) {
+  for (auto &elem : filePath) {
     MBLOG_DEBUG << "filePath: " << elem;
   }
 

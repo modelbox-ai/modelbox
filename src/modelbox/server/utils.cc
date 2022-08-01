@@ -53,9 +53,9 @@ modelbox::Status IPACL::AddCidr(const std::string &cidr) {
     std::pair<uint32_t, uint32_t> acl(mask, shift);
     ipv4_acl_.emplace_back(acl);
     return modelbox::STATUS_OK;
-  } else {
-    return modelbox::STATUS_NOTSUPPORT;
   }
+
+  return modelbox::STATUS_NOTSUPPORT;
 }
 
 modelbox::Status IPACL::IsMatch(const std::string &ipaddr) {
@@ -115,7 +115,7 @@ Status SplitIPPort(const std::string host, std::string &ip, std::string &port) {
 
   port = host.substr(pos + 1, host.length());
   int n_port = atol(port.c_str());
-  if (n_port <=0 || n_port > 65535) {
+  if (n_port <= 0 || n_port > 65535) {
     const auto *msg = "invalid port";
     return {STATUS_INVALID, msg};
   }

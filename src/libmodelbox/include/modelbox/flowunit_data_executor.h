@@ -116,11 +116,10 @@ class FlowUnitExecData {
 
   void FillErrorOutput(size_t out_count, bool data_in_one_port);
 
-  Status SaveProcessOneToOne(
-      std::shared_ptr<modelbox::BufferListMap> parent_data, size_t data_count,
-      bool data_in_one_port);
+  Status SaveProcessOneToOne(std::shared_ptr<BufferListMap> parent_data,
+                             size_t data_count, bool data_in_one_port);
 
-  Status SaveProcessNToM(std::shared_ptr<modelbox::BufferListMap> parent_data);
+  Status SaveProcessNToM(std::shared_ptr<BufferListMap> parent_data);
 
   std::shared_ptr<FlowUnit> fu_;
   std::shared_ptr<BufferListMap> in_data_;
@@ -163,7 +162,7 @@ class FlowUnitExecDataMapper {
   Status CheckOutputDataNumber(bool data_in_one_port);
 
   Status CheckStatus(bool one_to_one, bool data_in_one_port);
-  
+
   Status SetupUserOutput(bool one_to_one, bool data_in_one_port);
 
   Status SaveDataToExecCtx();

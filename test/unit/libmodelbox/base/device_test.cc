@@ -33,7 +33,6 @@
 #include "mock_driver_ctl.h"
 
 using ::testing::_;
-using ::testing::Return;
 
 namespace modelbox {
 

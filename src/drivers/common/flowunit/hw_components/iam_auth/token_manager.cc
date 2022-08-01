@@ -12,14 +12,13 @@
 #include "modelbox/base/log.h"
 #include "signer.h"
 
-using namespace std;
-using namespace web;
-using namespace web::http;
-using namespace web::http::client;
-using namespace utility;
-using namespace concurrency::streams;
+using namespace web;                   // NOLINT
+using namespace web::http;             // NOLINT
+using namespace web::http::client;     // NOLINT
+using namespace utility;               // NOLINT
+using namespace concurrency::streams;  // NOLINT
 
-#define INTERVAL_TIME 3600 * 1000
+#define INTERVAL_TIME (3600 * 1000)
 
 namespace modelbox {
 TokenManager::TokenManager()

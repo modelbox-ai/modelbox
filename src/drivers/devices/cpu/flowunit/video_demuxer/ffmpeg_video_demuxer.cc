@@ -22,49 +22,48 @@
 
 #include "driver_util.h"
 
-using namespace modelbox;
-
 #define GET_FFMPEG_ERR(err_num, var_name)        \
   char var_name[AV_ERROR_MAX_STRING_SIZE] = {0}; \
   av_make_error_string(var_name, AV_ERROR_MAX_STRING_SIZE, err_num);
 
-Status FfmpegVideoDemuxer::Init(std::shared_ptr<FfmpegReader> &reader,
-                                bool key_frame_only) {
+modelbox::Status FfmpegVideoDemuxer::Init(std::shared_ptr<FfmpegReader> &reader,
+                                          bool key_frame_only) {
   source_url_ = reader->GetSourceURL();
   format_ctx_ = reader->GetCtx();
   reader_ = reader;
   auto ret = SetupStreamInfo();
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   ret = GetStreamParam();
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   key_frame_only_ = key_frame_only;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status FfmpegVideoDemuxer::Demux(std::shared_ptr<AVPacket> &av_packet) {
+modelbox::Status FfmpegVideoDemuxer::Demux(
+    std::shared_ptr<AVPacket> &av_packet) {
   if (format_ctx_ == nullptr) {
     MBLOG_ERROR << "ffmpeg format context is null, init first";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   reader_->ResetStartTime();
   auto ret = ReadPacket(av_packet);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   ret = BsfProcess(av_packet);
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 void FfmpegVideoDemuxer::LogStreamInfo() {
@@ -126,12 +125,13 @@ int64_t FfmpegVideoDemuxer::GetDuration() {
   return 0;
 }
 
-Status FfmpegVideoDemuxer::ReadPacket(std::shared_ptr<AVPacket> &av_packet) {
+modelbox::Status FfmpegVideoDemuxer::ReadPacket(
+    std::shared_ptr<AVPacket> &av_packet) {
   int32_t ret = 0;
   auto *packet_ptr = av_packet_alloc();
   if (packet_ptr == nullptr) {
     MBLOG_ERROR << "ReadPacket alloc packet failed";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   av_packet.reset(packet_ptr,
@@ -147,21 +147,21 @@ Status FfmpegVideoDemuxer::ReadPacket(std::shared_ptr<AVPacket> &av_packet) {
 
   if (ret == AVERROR_EOF) {
     MBLOG_INFO << "Stream " << driverutil::string_masking(source_url_) << " is end";
-    return STATUS_NODATA;
+    return modelbox::STATUS_NODATA;
   }
 
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, err_str);
     MBLOG_ERROR << "av_read_frame failed, err " << err_str;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   if (av_packet->size < 0) {
     MBLOG_ERROR << "Read packet size < 0";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 bool FfmpegVideoDemuxer::IsTargetPacket(std::shared_ptr<AVPacket> &av_packet) {
@@ -180,7 +180,8 @@ bool FfmpegVideoDemuxer::IsTargetPacket(std::shared_ptr<AVPacket> &av_packet) {
   return true;
 }
 
-Status FfmpegVideoDemuxer::BsfProcess(std::shared_ptr<AVPacket> &av_packet) {
+modelbox::Status FfmpegVideoDemuxer::BsfProcess(
+    std::shared_ptr<AVPacket> &av_packet) {
   for (size_t i = 0; i < bsf_ctx_list_.size(); ++i) {
     auto &bsf_ctx = bsf_ctx_list_[i];
     auto &bsf_name = bsf_name_list_[i];
@@ -193,7 +194,7 @@ Status FfmpegVideoDemuxer::BsfProcess(std::shared_ptr<AVPacket> &av_packet) {
       GET_FFMPEG_ERR(ret, err_str);
       MBLOG_ERROR << "Bit stream filter[" << bsf_name
                   << "] send packet failed, ret " << err_str;
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
 
     ret = av_bsf_receive_packet(bsf_ctx.get(), av_packet.get());
@@ -201,62 +202,62 @@ Status FfmpegVideoDemuxer::BsfProcess(std::shared_ptr<AVPacket> &av_packet) {
       GET_FFMPEG_ERR(ret, err_str);
       MBLOG_ERROR << "Bit stream filter[" << bsf_name
                   << "] receive packet failed, ret " << err_str;
-      return STATUS_FAULT;
+      return modelbox::STATUS_FAULT;
     }
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status FfmpegVideoDemuxer::SetupStreamInfo() {
+modelbox::Status FfmpegVideoDemuxer::SetupStreamInfo() {
   auto ret = avformat_find_stream_info(format_ctx_.get(), nullptr);
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, err_str);
     MBLOG_ERROR << "Find stream info failed, err " << err_str;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   stream_id_ = av_find_best_stream(format_ctx_.get(), AVMEDIA_TYPE_VIDEO, -1,
                                    -1, nullptr, 0);
   if (stream_id_ < 0) {
     MBLOG_ERROR << "Count find a stream";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status FfmpegVideoDemuxer::GetStreamParam() {
+modelbox::Status FfmpegVideoDemuxer::GetStreamParam() {
   auto ret = GetStreamCodecID();
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   ret = GetStreamTimeInfo();
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   ret = GetStreamFrameInfo();
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
   ret = GetStreamBsfInfo();
-  if (ret != STATUS_SUCCESS) {
+  if (ret != modelbox::STATUS_SUCCESS) {
     return ret;
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status FfmpegVideoDemuxer::GetStreamCodecID() {
+modelbox::Status FfmpegVideoDemuxer::GetStreamCodecID() {
   codec_id_ = format_ctx_->streams[stream_id_]->codecpar->codec_id;
   profile_id_ = format_ctx_->streams[stream_id_]->codecpar->profile & 0xFF;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status FfmpegVideoDemuxer::GetStreamTimeInfo() {
+modelbox::Status FfmpegVideoDemuxer::GetStreamTimeInfo() {
   auto *entry =
       av_dict_get(format_ctx_->metadata, "creation_timestamp", nullptr, 0);
   if (entry != nullptr) {
@@ -266,10 +267,10 @@ Status FfmpegVideoDemuxer::GetStreamTimeInfo() {
   }
 
   time_base_ = av_q2d(format_ctx_->streams[stream_id_]->time_base) * 1000;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status FfmpegVideoDemuxer::GetStreamFrameInfo() {
+modelbox::Status FfmpegVideoDemuxer::GetStreamFrameInfo() {
   frame_width_ = format_ctx_->streams[stream_id_]->codecpar->width;
   frame_height_ = format_ctx_->streams[stream_id_]->codecpar->height;
   frame_rate_numerator_ = format_ctx_->streams[stream_id_]->avg_frame_rate.num;
@@ -284,7 +285,7 @@ Status FfmpegVideoDemuxer::GetStreamFrameInfo() {
   }
   RescaleFrameRate(frame_rate_numerator_, frame_rate_denominator_);
   frame_count_ = format_ctx_->streams[stream_id_]->nb_frames;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 void FfmpegVideoDemuxer::RescaleFrameRate(int32_t &frame_rate_numerator,
@@ -303,7 +304,7 @@ void FfmpegVideoDemuxer::RescaleFrameRate(int32_t &frame_rate_numerator,
   }
 }
 
-Status FfmpegVideoDemuxer::GetStreamBsfInfo() {
+modelbox::Status FfmpegVideoDemuxer::GetStreamBsfInfo() {
   auto *extra_data = format_ctx_->streams[stream_id_]->codecpar->extradata;
   auto extra_size = format_ctx_->streams[stream_id_]->codecpar->extradata_size;
   std::stringstream extra_data_log;
@@ -315,20 +316,18 @@ Status FfmpegVideoDemuxer::GetStreamBsfInfo() {
   std::string bsf_name;
   auto ret = GetBsfName(format_ctx_->streams[stream_id_]->codecpar->codec_tag,
                         codec_id_, extra_data, extra_size, bsf_name);
-  if (ret != STATUS_SUCCESS) {
-    return STATUS_FAULT;
+  if (ret != modelbox::STATUS_SUCCESS) {
+    return modelbox::STATUS_FAULT;
   }
 
   bsf_name_list_.push_back(bsf_name);
   bsf_ctx_list_.push_back(CreateBsfCtx(bsf_name));
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-modelbox::Status FfmpegVideoDemuxer::GetBsfName(uint32_t codec_tag,
-                                                AVCodecID codec_id,
-                                                uint8_t *extra_data,
-                                                size_t extra_size,
-                                                std::string &bsf_name) {
+modelbox::Status FfmpegVideoDemuxer::GetBsfName(
+    uint32_t codec_tag, AVCodecID codec_id, uint8_t *extra_data,
+    size_t extra_size, std::string &bsf_name) {
   char fourcc_str_array[AV_FOURCC_MAX_STRING_SIZE] = {0};
   char *fourcc = av_fourcc_make_string(fourcc_str_array, codec_tag);
   if (fourcc) {
@@ -350,7 +349,7 @@ modelbox::Status FfmpegVideoDemuxer::GetBsfName(uint32_t codec_tag,
     bsf_name = "dump_extra";
   }
 
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 bool FfmpegVideoDemuxer::IsAnnexb(const uint8_t *extra_data,

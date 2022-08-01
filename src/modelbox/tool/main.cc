@@ -32,8 +32,6 @@
 #include "modelbox/common/log.h"
 #include "modelbox/common/utils.h"
 
-using namespace modelbox;
-
 #define TMP_BUFF_LEN_32 32
 #define MODELBOX_TOOL_LOG_PATH \
   "${MODELBOX_ROOT}/var/log/modelbox/modelbox-tool.log"
@@ -48,7 +46,7 @@ static int g_sig_num = sizeof(g_sig_list) / sizeof(g_sig_list[0]);
 static bool kVerbose = false;
 std::string kLogLevel = "ERROR";
 std::string kLogFile;
-std::shared_ptr<ModelboxServerLogger> modelbox::kServerLogger;
+std::shared_ptr<modelbox::ModelboxServerLogger> kToolLogger;
 
 enum MODELBOX_TOOL_COMMAND {
   MODELBOX_TOOL_COMMAND_KEY,
@@ -129,8 +127,8 @@ static void modelbox_tool_sig_handler(int volatile sig_no, siginfo_t *sig_info,
 }
 
 static int modelbox_tool_init_bbox() {
-  if (modelbox_sig_register(g_sig_list, g_sig_num, modelbox_tool_sig_handler) !=
-      0) {
+  if (modelbox::modelbox_sig_register(g_sig_list, g_sig_num,
+                                      modelbox_tool_sig_handler) != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
   }
@@ -139,15 +137,15 @@ static int modelbox_tool_init_bbox() {
 }
 
 int modelbox_tool_init_log() {
-  kServerLogger = std::make_shared<ModelboxServerLogger>();
-  if (kServerLogger->Init(kLogFile, 1024 * 1024, 32, kVerbose) == false) {
+  kToolLogger = std::make_shared<modelbox::ModelboxServerLogger>();
+  if (kToolLogger->Init(kLogFile, 1024 * 1024, 32, kVerbose) == false) {
     fprintf(stderr, "init logger failed.\n");
     return 1;
   }
 
-  ModelBoxLogger.SetLogger(kServerLogger);
+  ModelBoxLogger.SetLogger(kToolLogger);
   auto log_level = modelbox::LogLevelStrToLevel(kLogLevel);
-  kServerLogger->SetLogLevel(log_level);
+  kToolLogger->SetLogLevel(log_level);
 
   return 0;
 }
@@ -163,13 +161,15 @@ int modelbox_tool_init() {
   }
 
   /* if in standalone mode */
-  if (modelbox_root_dir().length() > 0) {
-    std::string default_scanpath = modelbox_full_path(
-        std::string(MODELBOX_ROOT_VAR) + MODELBOX_DEFAULT_DRIVER_PATH);
+  if (modelbox::modelbox_root_dir().length() > 0) {
+    std::string default_scanpath =
+        modelbox::modelbox_full_path(std::string(modelbox::MODELBOX_ROOT_VAR) +
+                                     MODELBOX_DEFAULT_DRIVER_PATH);
     modelbox::Drivers::SetDefaultScanPath(default_scanpath);
 
-    std::string default_driver_info_path = modelbox_full_path(
-        std::string(MODELBOX_ROOT_VAR) + "/var/run/modelbox-driver-info");
+    std::string default_driver_info_path =
+        modelbox::modelbox_full_path(std::string(modelbox::MODELBOX_ROOT_VAR) +
+                                     "/var/run/modelbox-driver-info");
     modelbox::Drivers::SetDefaultInfoPath(default_driver_info_path);
   }
 
@@ -202,7 +202,7 @@ int modelbox_tool_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
-  kLogFile = modelbox_full_path(MODELBOX_TOOL_LOG_PATH);
+  kLogFile = modelbox::modelbox_full_path(MODELBOX_TOOL_LOG_PATH);
   int cmdtype = 0;
 
   modelbox::ExternalCommandLoader::Load();
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
       kLogLevel = optarg;
       break;
     case MODELBOX_TOOL_COMMAND_LOG_PATH:
-      kLogFile = modelbox_full_path(optarg);
+      kLogFile = modelbox::modelbox_full_path(optarg);
       break;
     case MODELBOX_TOOL_COMMAND_HELP:
       showhelp();

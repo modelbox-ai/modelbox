@@ -251,7 +251,8 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpModelFile(
 }
 
 void TensorRTInferenceFlowUnit::configureBuilder(
-    std::shared_ptr<IBuilder> builder, RndInt8Calibrator& calibrator) {
+    std::shared_ptr<nvinfer1::IBuilder> builder,
+    RndInt8Calibrator& calibrator) {
 #ifndef TENSORRT8
   builder->setMaxWorkspaceSize(static_cast<unsigned int>(params_.workspace_size)
                                << 20);
@@ -303,8 +304,8 @@ void TensorRTInferenceFlowUnit::PrintModelBindInfo(
 
 modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
     const std::shared_ptr<modelbox::Configuration>& config,
-    std::shared_ptr<IBuilder>& builder,
-    std::shared_ptr<INetworkDefinition>& network) {
+    std::shared_ptr<nvinfer1::IBuilder>& builder,
+    std::shared_ptr<nvinfer1::INetworkDefinition>& network) {
 #ifndef TENSORRT8
   // parse the caffe model to populate the network, then set the outputs
   std::shared_ptr<ICaffeParser> parser =
@@ -397,8 +398,8 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
 
 modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
     const std::shared_ptr<modelbox::Configuration>& config,
-    std::shared_ptr<IBuilder>& builder,
-    std::shared_ptr<INetworkDefinition>& network) {
+    std::shared_ptr<nvinfer1::IBuilder>& builder,
+    std::shared_ptr<nvinfer1::INetworkDefinition>& network) {
 #ifndef TENSORRT8
   // parse the uff model to populate the network, then set the outputs
   std::shared_ptr<IUffParser> parser = TensorRTInferObject(createUffParser());
@@ -485,12 +486,12 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
 
 modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
     const std::shared_ptr<modelbox::Configuration>& config,
-    std::shared_ptr<IBuilder>& builder,
-    std::shared_ptr<INetworkDefinition>& network) {
+    std::shared_ptr<nvinfer1::IBuilder>& builder,
+    std::shared_ptr<nvinfer1::INetworkDefinition>& network) {
   auto verbosity = (int)nvinfer1::ILogger::Severity::kWARNING;
 
   // parse the onnx model to populate the network, then set the outputs
-  std::shared_ptr<IParser> parser =
+  std::shared_ptr<nvonnxparser::IParser> parser =
       TensorRTInferObject(nvonnxparser::createParser(*network, gLogger));
   if (parser == nullptr) {
     auto err_msg = "create parser from onnx model engine failed.";
@@ -528,23 +529,29 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
     nvinfer1::Dims dims = input->getDimensions();
     if (dims.d[0] == -1) {
       dims.d[0] = 1;
-      profile->setDimensions(input->getName(), OptProfileSelector::kMIN, dims);
+      profile->setDimensions(input->getName(),
+                             nvinfer1::OptProfileSelector::kMIN, dims);
       dims.d[0] = params_.onnx_opt_batch_size;
-      profile->setDimensions(input->getName(), OptProfileSelector::kOPT, dims);
+      profile->setDimensions(input->getName(),
+                             nvinfer1::OptProfileSelector::kOPT, dims);
       dims.d[0] = params_.onnx_max_batch_size;
-      profile->setDimensions(input->getName(), OptProfileSelector::kMAX, dims);
+      profile->setDimensions(input->getName(),
+                             nvinfer1::OptProfileSelector::kMAX, dims);
     } else {
-      profile->setDimensions(input->getName(), OptProfileSelector::kMIN, dims);
-      profile->setDimensions(input->getName(), OptProfileSelector::kOPT, dims);
-      profile->setDimensions(input->getName(), OptProfileSelector::kMAX, dims);
+      profile->setDimensions(input->getName(),
+                             nvinfer1::OptProfileSelector::kMIN, dims);
+      profile->setDimensions(input->getName(),
+                             nvinfer1::OptProfileSelector::kOPT, dims);
+      profile->setDimensions(input->getName(),
+                             nvinfer1::OptProfileSelector::kMAX, dims);
     }
   }
   builder_config->addOptimizationProfile(profile);
 #ifdef TENSORRT8
   auto serialized_engine = TensorRTInferObject(
       builder->buildSerializedNetwork(*network, *builder_config));
-  std::shared_ptr<IRuntime> infer =
-      TensorRTInferObject(createInferRuntime(gLogger));
+  std::shared_ptr<nvinfer1::IRuntime> infer =
+      TensorRTInferObject(nvinfer1::createInferRuntime(gLogger));
   if (infer == nullptr) {
     auto err_msg = "create runtime from model_file engine failed.";
     MBLOG_ERROR << err_msg;
@@ -602,8 +609,8 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
 modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
     const std::shared_ptr<modelbox::Configuration>& config) {
   MBLOG_INFO << "engines: " << params_.engine;
-  std::shared_ptr<IRuntime> infer =
-      TensorRTInferObject(createInferRuntime(gLogger));
+  std::shared_ptr<nvinfer1::IRuntime> infer =
+      TensorRTInferObject(nvinfer1::createInferRuntime(gLogger));
   if (infer == nullptr) {
     auto err_msg = "create runtime from model_file engine failed.";
     MBLOG_ERROR << err_msg;
@@ -706,8 +713,8 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(
     return EngineToModel(config);
   }
 
-  std::shared_ptr<IBuilder> builder =
-      TensorRTInferObject(createInferBuilder(gLogger));
+  std::shared_ptr<nvinfer1::IBuilder> builder =
+      TensorRTInferObject(nvinfer1::createInferBuilder(gLogger));
   if (builder == nullptr) {
     auto err_msg = "create builder failed.";
     MBLOG_ERROR << err_msg;
@@ -716,12 +723,12 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(
 
   // parse the caffe model to populate the network, then set the outputs
 #if defined(TENSORRT7) || defined(TENSORRT8)
-  std::shared_ptr<INetworkDefinition> network =
+  std::shared_ptr<nvinfer1::INetworkDefinition> network =
       TensorRTInferObject(builder->createNetworkV2(
           1U << static_cast<int>(
-              NetworkDefinitionCreationFlag::kEXPLICIT_BATCH)));
+              nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH)));
 #else
-  std::shared_ptr<INetworkDefinition> network =
+  std::shared_ptr<nvinfer1::INetworkDefinition> network =
       TensorRTInferObject(builder->createNetwork());
 #endif
   if (network == nullptr) {
@@ -929,16 +936,16 @@ modelbox::Status TensorRTInferenceFlowUnit::BindMemory(
   nvinfer1::DataType data_type =
       engine_->getBindingDataType((int)binding_index);
   switch (data_type) {
-    case DataType::kFLOAT:
+    case nvinfer1::DataType::kFLOAT:
       data_type_size = sizeof(float);
       break;
-    case DataType::kHALF:
+    case nvinfer1::DataType::kHALF:
       data_type_size = sizeof(short);
       break;
-    case DataType::kINT8:
+    case nvinfer1::DataType::kINT8:
       data_type_size = sizeof(char);
       break;
-    case DataType::kINT32:
+    case nvinfer1::DataType::kINT32:
       data_type_size = sizeof(int);
       break;
     default:
@@ -985,16 +992,16 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateMemory(
   const nvinfer1::DataType data_type =
       engine_->getBindingDataType((int)binding_index);
   switch (data_type) {
-    case DataType::kFLOAT:
+    case nvinfer1::DataType::kFLOAT:
       data_type_size = sizeof(float);
       break;
-    case DataType::kHALF:
+    case nvinfer1::DataType::kHALF:
       data_type_size = sizeof(short);
       break;
-    case DataType::kINT8:
+    case nvinfer1::DataType::kINT8:
       data_type_size = sizeof(char);
       break;
-    case DataType::kINT32:
+    case nvinfer1::DataType::kINT32:
       data_type_size = sizeof(int);
       break;
     default:
@@ -1019,7 +1026,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateMemory(
   } else if (type == "long") {
     output_buf->Set("type", modelbox::MODELBOX_INT16);
   } else {
-    return { modelbox::STATUS_NOTSUPPORT, "unsupport output type." };
+    return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
   }
 
   output_buf->Set("shape", output_shape);

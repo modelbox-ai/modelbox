@@ -30,8 +30,6 @@
 #include "modelbox/buffer.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 
 class DataSourceGeneratorFlowUnitTest : public testing::Test {

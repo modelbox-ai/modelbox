@@ -59,8 +59,6 @@ typedef struct {
   int32_t height;
   int32_t channel;
 } ImageSize;
-
-using namespace imageprocess;
 class NppiCropFlowUnit : public modelbox::CudaFlowUnit {
  public:
   NppiCropFlowUnit();
@@ -76,7 +74,7 @@ class NppiCropFlowUnit : public modelbox::CudaFlowUnit {
 
  private:
   modelbox::Status NppiCrop_u8_c3r(const u_char *p_src_data, ImageSize src_size,
-                                   u_char *p_dst_data, RoiBox dst_size);
+                                   u_char *p_dst_data, imageprocess::RoiBox dst_size);
 
   modelbox::Status ProcessOneImage(
       std::shared_ptr<modelbox::BufferList> &input_img_buffer_list,

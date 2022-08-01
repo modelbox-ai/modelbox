@@ -21,8 +21,6 @@
 
 #include <regex>
 
-using namespace modelbox;
-
 #define GET_FFMPEG_ERR(err_num, var_name)        \
   char var_name[AV_ERROR_MAX_STRING_SIZE] = {0}; \
   av_make_error_string(var_name, AV_ERROR_MAX_STRING_SIZE, err_num);
@@ -48,7 +46,7 @@ modelbox::Status FfmpegReader::Open(const std::string &source_url) {
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, err_str);
     MBLOG_ERROR << "avformat_network_init failed, err " << err_str;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   origin_source_url_ = source_url;
@@ -73,14 +71,14 @@ modelbox::Status FfmpegReader::Open(const std::string &source_url) {
     GET_FFMPEG_ERR(ret, err_str);
     MBLOG_ERROR << "avformat open input[" << format_source_url_
                 << "] failed, err " << err_str;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   MBLOG_INFO << "Open source " << format_source_url_ << " success, format "
              << ctx->iformat->long_name << " : " << ctx->iformat->name;
   format_ctx_.reset(ctx,
                     [](AVFormatContext *ctx) { avformat_close_input(&ctx); });
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
 std::shared_ptr<AVFormatContext> FfmpegReader::GetCtx() { return format_ctx_; }

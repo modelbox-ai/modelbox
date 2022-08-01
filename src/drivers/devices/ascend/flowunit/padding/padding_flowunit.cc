@@ -15,13 +15,12 @@
  */
 
 #include "padding_flowunit.h"
+
 #include "image_process.h"
 #include "modelbox/flowunit_api_helper.h"
 
-using namespace imageprocess;
-
 #define YUV420SP_SIZE(width, height) ((width) * (height)*3 / 2)
-#define ALIGNMENT_DOWN(size) (size & 0xfffffffe)
+#define ALIGNMENT_DOWN(size) ((size)&0xfffffffe)
 #define MINI_WIDTH_STRIDE 32
 #define MINI_WIDTHE_OFFSET 15
 
@@ -92,11 +91,14 @@ modelbox::Status PaddingFlowUnit::Open(
   }
   interpolation_ = interpolation_item->second;
 
-  out_image_.width_stride_ = align_up(out_image_.width_, ASCEND_WIDTH_ALIGN);
-  out_image_.height_stride_ = align_up(out_image_.height_, ASCEND_HEIGHT_ALIGN);
+  out_image_.width_stride_ = imageprocess::align_up(
+      out_image_.width_, imageprocess::ASCEND_WIDTH_ALIGN);
+  out_image_.height_stride_ = imageprocess::align_up(
+      out_image_.height_, imageprocess::ASCEND_HEIGHT_ALIGN);
   size_t buffer_size = 0;
-  auto ret = GetImageBytes(output_img_pix_fmt, out_image_.width_stride_,
-                           out_image_.height_stride_, buffer_size);
+  auto ret =
+      imageprocess::GetImageBytes(output_img_pix_fmt, out_image_.width_stride_,
+                                  out_image_.height_stride_, buffer_size);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "get image bytes failed, err " << ret;
     return ret;
@@ -170,11 +172,14 @@ modelbox::Status PaddingFlowUnit::AscendProcess(
   }
 
   auto output_img_buffer_list = data_ctx->Output(OUT_IMG);
-  out_image_.width_stride_ = align_up(out_image_.width_, ASCEND_WIDTH_ALIGN);
-  out_image_.height_stride_ = align_up(out_image_.height_, ASCEND_HEIGHT_ALIGN);
+  out_image_.width_stride_ = imageprocess::align_up(
+      out_image_.width_, imageprocess::ASCEND_WIDTH_ALIGN);
+  out_image_.height_stride_ = imageprocess::align_up(
+      out_image_.height_, imageprocess::ASCEND_HEIGHT_ALIGN);
   size_t buffer_size = 0;
-  auto ret = GetImageBytes(output_img_pix_fmt, out_image_.width_stride_,
-                           out_image_.height_stride_, buffer_size);
+  auto ret =
+      imageprocess::GetImageBytes(output_img_pix_fmt, out_image_.width_stride_,
+                                  out_image_.height_stride_, buffer_size);
   if (!ret) {
     MBLOG_ERROR << "get image bytes failed, err " << ret;
     return ret;
@@ -219,12 +224,14 @@ modelbox::Status SetInImageSize(std::shared_ptr<modelbox::Buffer> &in_image,
     return {modelbox::STATUS_FAULT, "get in_image pix_fmt failed"};
   }
 
-  ori_image.width_stride_ = align_up(ori_image.width_, ASCEND_WIDTH_ALIGN);
+  ori_image.width_stride_ = imageprocess::align_up(
+      ori_image.width_, imageprocess::ASCEND_WIDTH_ALIGN);
   ori_image.width_stride_ = ori_image.width_stride_ < MINI_WIDTH_STRIDE
                                 ? MINI_WIDTH_STRIDE
                                 : ori_image.width_stride_;
 
-  ori_image.height_stride_ = align_up(ori_image.height_, ASCEND_HEIGHT_ALIGN);
+  ori_image.height_stride_ = imageprocess::align_up(
+      ori_image.height_, imageprocess::ASCEND_HEIGHT_ALIGN);
   return modelbox::STATUS_SUCCESS;
 }
 
@@ -273,7 +280,8 @@ modelbox::Status PaddingFlowUnit::ProcessOneImg(
     return status_ret;
   }
 
-  return SetOutImgMeta(out_image, output_img_pix_fmt, param.out_img_desc);
+  return imageprocess::SetOutImgMeta(out_image, output_img_pix_fmt,
+                                     param.out_img_desc);
 }
 
 modelbox::Status PaddingFlowUnit::CreateDesc(
@@ -285,11 +293,12 @@ modelbox::Status PaddingFlowUnit::CreateDesc(
             "Input mem not aligned, ptr " + std::to_string((uintptr_t)buffer)};
   }
 
-  pic_desc = CreateImgDesc(
-      buffer_size, (void *)buffer, pix_fmt,
-      ImageShape{image_size.width_, image_size.height_,
-                 image_size.width_stride_, image_size.height_stride_},
-      ImgDescDestroyFlag::DESC_ONLY);
+  pic_desc =
+      CreateImgDesc(buffer_size, (void *)buffer, pix_fmt,
+                    imageprocess::ImageShape{
+                        image_size.width_, image_size.height_,
+                        image_size.width_stride_, image_size.height_stride_},
+                    imageprocess::ImgDescDestroyFlag::DESC_ONLY);
   if (pic_desc == nullptr) {
     MBLOG_ERROR << "CreateImgDesc failed";
     return modelbox::StatusError;
@@ -407,7 +416,7 @@ uint32_t PaddingFlowUnit::GetAlignOffset(AlignType type, uint32_t dest_range,
 
 modelbox::Status PaddingFlowUnit::CropResizeAndPaste(ResizeCropParam &param,
                                                      aclrtStream stream) {
-  auto chan_desc = GetDvppChannel(dev_id_);
+  auto chan_desc = imageprocess::GetDvppChannel(dev_id_);
   if (chan_desc == nullptr) {
     MBLOG_ERROR << "Get dvpp channel failed";
     return {modelbox::STATUS_FAULT, "Get dvpp channel failed"};

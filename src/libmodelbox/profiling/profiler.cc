@@ -161,7 +161,7 @@ Status Profiler::InitProfilerDir() {
       filter_dir + "|" + "((" + filter_dir + ")/.*)";
   std::regex valid_str(black_dir_str);
 
-  output_dir_path_ = modelbox::PathCanonicalize(output_dir_path_);
+  output_dir_path_ = PathCanonicalize(output_dir_path_);
   if (std::regex_match(output_dir_path_, valid_str)) {
     MBLOG_ERROR << "profiler dir invalid, please type valid profiler dir.";
     return STATUS_FAULT;

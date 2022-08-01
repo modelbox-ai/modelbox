@@ -31,7 +31,7 @@ bool CheckRoiValid(const ImageRect &roi) {
 
 int32_t Mean_PLANAR_32f_P3R(const float *pSrcPlanarData, int width, int height,
                             const ImageRect &srcRoi, const ImageMean_32f &mean,
-                            const cudaStream_t stream) {
+                            cudaStream_t stream) {
   NppStatus status = NPP_ERROR;
 
   if (nullptr == pSrcPlanarData) {

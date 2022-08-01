@@ -32,10 +32,6 @@
 
 #include "upsample-layer.h"
 
-using namespace nvinfer1;
-using namespace nvcaffeparser1;
-using namespace plugin;
-
 static constexpr float NEG_SLOPE2 = 0.1;
 static constexpr float UPSAMPLE_SCALE2 = 2.0;
 static constexpr int CUDA_THREAD_NUM2 = 512;

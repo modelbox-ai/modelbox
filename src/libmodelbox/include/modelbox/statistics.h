@@ -229,9 +229,9 @@ class StatisticsNotifyConsumers {
 
   virtual ~StatisticsNotifyConsumers();
 
-  modelbox::Status AddConsumer(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
+  Status AddConsumer(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
 
-  modelbox::Status DelConsumer(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
+  Status DelConsumer(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
 
   std::list<std::shared_ptr<StatisticsNotifyCfg>> GetConsumers(
       const StatisticsNotifyType& type);
@@ -249,8 +249,8 @@ class StatisticsNotifyConsumers {
 };
 
 using StatisticsForEachFunc =
-    std::function<modelbox::Status(const std::shared_ptr<StatisticsItem>& item,
-                                   const std::string relative_path)>;
+    std::function<Status(const std::shared_ptr<StatisticsItem>& item,
+                         const std::string relative_path)>;
 
 /**
  * @brief A statistics tree
@@ -302,7 +302,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
           std::is_same<T, uint64_t>::value || std::is_same<T, float>::value ||
           std::is_same<T, double>::value ||
           std::is_same<T, std::string>::value>::type>
-  modelbox::Status SetValue(const T& value);
+  Status SetValue(const T& value);
 
   /**
    * @brief new_value = old_value + value
@@ -316,7 +316,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
           std::is_same<T, int64_t>::value || std::is_same<T, uint64_t>::value ||
           std::is_same<T, float>::value ||
           std::is_same<T, double>::value>::type>
-  modelbox::Status IncreaseValue(const T& value);
+  Status IncreaseValue(const T& value);
 
   /**
    * @brief new_value = old_value + value, will create new item if not exist
@@ -331,8 +331,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
           std::is_same<T, int64_t>::value || std::is_same<T, uint64_t>::value ||
           std::is_same<T, float>::value ||
           std::is_same<T, double>::value>::type>
-  modelbox::Status IncreaseValue(const std::string& sub_item_name,
-                                 const T& value);
+  Status IncreaseValue(const std::string& sub_item_name, const T& value);
 
   /**
    * @brief Get value
@@ -347,7 +346,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
           std::is_same<T, uint64_t>::value || std::is_same<T, float>::value ||
           std::is_same<T, double>::value ||
           std::is_same<T, std::string>::value>::type>
-  modelbox::Status GetValue(T& value);
+  Status GetValue(T& value);
 
   /**
    * @brief Get value
@@ -360,7 +359,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
       return nullptr;
     }
 
-    StatusError = modelbox::STATUS_OK;
+    StatusError = STATUS_OK;
     return std::make_shared<StatisticsValue>(value_);
   }
 
@@ -376,7 +375,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
           std::is_same<T, uint64_t>::value || std::is_same<T, float>::value ||
           std::is_same<T, double>::value ||
           std::is_same<T, std::string>::value>::type>
-  std::tuple<modelbox::Status, T> GetValue();
+  std::tuple<Status, T> GetValue();
 
   /**
    * @brief Add new item as child, it is not a leaf item, can not set value
@@ -448,8 +447,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
    * @param recursive recursive for each
    * @return Status of func if not ok
    */
-  modelbox::Status ForEach(const StatisticsForEachFunc& func,
-                           bool recursive = false);
+  Status ForEach(const StatisticsForEachFunc& func, bool recursive = false);
 
   /**
    * @brief Register notify for item, notify type {CREATE, DELETE, CHANGE,
@@ -457,8 +455,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
    * @param cfg Config for notify
    * @return Result for register
    */
-  modelbox::Status RegisterNotify(
-      const std::shared_ptr<StatisticsNotifyCfg>& cfg);
+  Status RegisterNotify(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
 
   /**
    * @brief UnRegister notify with the cfg used in register
@@ -471,25 +468,24 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
    * @param type Notify type
    * @return Result for notify submit
    */
-  modelbox::Status Notify(const StatisticsNotifyType& type);
+  Status Notify(const StatisticsNotifyType& type);
 
  private:
   StatisticsItem(const std::string& parent_path, const std::string& name,
                  std::weak_ptr<StatisticsItem> parent);
 
-  modelbox::Status AddNotify(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
+  Status AddNotify(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
 
   void DelNotify(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
 
-  modelbox::Status AddChildrenNotify(
-      const std::shared_ptr<StatisticsNotifyCfg>& cfg);
+  Status AddChildrenNotify(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
 
   void DelChildrenNotify(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
 
   std::string GetRelativePath(const std::string& base_path);
 
-  modelbox::Status ForEachInner(const StatisticsForEachFunc& func,
-                                bool recursive, const std::string& base_path);
+  Status ForEachInner(const StatisticsForEachFunc& func, bool recursive,
+                      const std::string& base_path);
 
   std::shared_ptr<StatisticsItem> AddItemInner(const std::string& name,
                                                std::shared_ptr<Any> value);
@@ -520,10 +516,9 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
 };
 
 template <typename T, typename>
-modelbox::Status StatisticsItem::SetValue(const T& value) {
+Status StatisticsItem::SetValue(const T& value) {
   if (!IsLeaf()) {
-    return {modelbox::STATUS_NOTSUPPORT,
-            "This is not a leaf node, set value failed."};
+    return {STATUS_NOTSUPPORT, "This is not a leaf node, set value failed."};
   }
 
   std::lock_guard<std::mutex> lck(value_lock_);
@@ -534,40 +529,40 @@ modelbox::Status StatisticsItem::SetValue(const T& value) {
     Notify(StatisticsNotifyType::CHANGE);
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 template <typename T, typename>
-modelbox::Status StatisticsItem::IncreaseValue(const T& value) {
+Status StatisticsItem::IncreaseValue(const T& value) {
   if (!IsLeaf()) {
-    return {modelbox::STATUS_NOTSUPPORT,
+    return {STATUS_NOTSUPPORT,
             "This is not a leaf node, increase value failed."};
   }
 
   std::lock_guard<std::mutex> lck(value_lock_);
   if (value_ == nullptr) {
-    return modelbox::STATUS_INVALID;
+    return STATUS_INVALID;
   }
 
   if (value_->type() != typeid(value)) {
-    return modelbox::STATUS_INVALID;
+    return STATUS_INVALID;
   }
 
   auto old_val = any_cast<T>(*value_);
   value_ = std::make_shared<Any>(old_val + value);
   Notify(StatisticsNotifyType::CHANGE);
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 template <typename T, typename>
-modelbox::Status StatisticsItem::IncreaseValue(const std::string& sub_item_name,
-                                               const T& value) {
+Status StatisticsItem::IncreaseValue(const std::string& sub_item_name,
+                                     const T& value) {
   if (!is_alive_) {
     return {STATUS_FAULT, "This item is disposed"};
   }
 
   if (IsLeaf()) {
-    return {modelbox::STATUS_NOTSUPPORT, "This is a leaf node, has no child."};
+    return {STATUS_NOTSUPPORT, "This is a leaf node, has no child."};
   }
 
   std::lock_guard<std::mutex> lck(children_lock_);
@@ -582,27 +577,26 @@ modelbox::Status StatisticsItem::IncreaseValue(const std::string& sub_item_name,
 }
 
 template <typename T, typename>
-modelbox::Status StatisticsItem::GetValue(T& value) {
+Status StatisticsItem::GetValue(T& value) {
   if (!IsLeaf()) {
-    return {modelbox::STATUS_NOTSUPPORT,
-            "This is not a leaf node, get value failed."};
+    return {STATUS_NOTSUPPORT, "This is not a leaf node, get value failed."};
   }
 
   std::lock_guard<std::mutex> lck(value_lock_);
   if (value_ == nullptr) {
-    return modelbox::STATUS_NODATA;
+    return STATUS_NODATA;
   }
 
   if (value_->type() != typeid(value)) {
-    return modelbox::STATUS_INVALID;
+    return STATUS_INVALID;
   }
 
   value = any_cast<T>(*value_);
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 template <typename T, typename>
-std::tuple<modelbox::Status, T> StatisticsItem::GetValue() {
+std::tuple<Status, T> StatisticsItem::GetValue() {
   T value;
   auto ret = GetValue(value);
   return std::make_tuple(ret, value);

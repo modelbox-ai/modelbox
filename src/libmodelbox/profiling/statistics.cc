@@ -66,19 +66,33 @@ bool StatisticsValue::GetString(std::string& val) { return GetValue(val); }
 std::string StatisticsValue::ToString() {
   if (IsInt32()) {
     return ToString<int32_t>();
-  } else if (IsUint32()) {
+  }
+
+  if (IsUint32()) {
     return ToString<uint32_t>();
-  } else if (IsInt64()) {
+  }
+
+  if (IsInt64()) {
     return ToString<int64_t>();
-  } else if (IsUint64()) {
+  }
+
+  if (IsUint64()) {
     return ToString<uint64_t>();
-  } else if (IsFloat()) {
+  }
+
+  if (IsFloat()) {
     return ToString<float>();
-  } else if (IsDouble()) {
+  }
+
+  if (IsDouble()) {
     return ToString<double>();
-  } else if (IsBool()) {
+  }
+
+  if (IsBool()) {
     return ToString<bool>();
-  } else if (IsString()) {
+  }
+
+  if (IsString()) {
     std::string val;
     GetValue(val);
     return val;
@@ -116,17 +130,17 @@ StatisticsNotifyConsumers::StatisticsNotifyConsumers() {
 
 StatisticsNotifyConsumers::~StatisticsNotifyConsumers() { Clear(); }
 
-modelbox::Status StatisticsNotifyConsumers::AddConsumer(
+Status StatisticsNotifyConsumers::AddConsumer(
     const std::shared_ptr<StatisticsNotifyCfg>& cfg) {
   for (const auto& type : cfg->type_set_) {
     std::lock_guard<std::mutex> lck(*cfg_map_lock_[type]);
     cfg_map_[type].push_back(cfg);
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
-modelbox::Status StatisticsNotifyConsumers::DelConsumer(
+Status StatisticsNotifyConsumers::DelConsumer(
     const std::shared_ptr<StatisticsNotifyCfg>& cfg) {
   for (const auto& type : cfg->type_set_) {
     std::lock_guard<std::mutex> lck(*cfg_map_lock_[type]);
@@ -142,7 +156,7 @@ modelbox::Status StatisticsNotifyConsumers::DelConsumer(
         });
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 std::list<std::shared_ptr<StatisticsNotifyCfg>>
@@ -334,10 +348,10 @@ std::set<std::string> StatisticsItem::GetItemNames() {
   return children_name_set_;
 }
 
-modelbox::Status StatisticsItem::ForEach(const StatisticsForEachFunc& func,
-                                         bool recursive) {
+Status StatisticsItem::ForEach(const StatisticsForEachFunc& func,
+                               bool recursive) {
   ForEachInner(func, recursive, path_);
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 std::string StatisticsItem::GetRelativePath(const std::string& base_path) {
@@ -348,9 +362,9 @@ std::string StatisticsItem::GetRelativePath(const std::string& base_path) {
   return path_.substr(base_path.size() + 1);
 }
 
-modelbox::Status StatisticsItem::ForEachInner(const StatisticsForEachFunc& func,
-                                              bool recursive,
-                                              const std::string& base_path) {
+Status StatisticsItem::ForEachInner(const StatisticsForEachFunc& func,
+                                    bool recursive,
+                                    const std::string& base_path) {
   std::map<std::string, std::shared_ptr<StatisticsItem>> childrens;
   {
     std::lock_guard<std::mutex> lck(children_lock_);
@@ -372,13 +386,13 @@ modelbox::Status StatisticsItem::ForEachInner(const StatisticsForEachFunc& func,
     }
   }
 
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
-modelbox::Status StatisticsItem::RegisterNotify(
+Status StatisticsItem::RegisterNotify(
     const std::shared_ptr<StatisticsNotifyCfg>& cfg) {
   if (cfg == nullptr) {
-    return modelbox::STATUS_INVALID;
+    return STATUS_INVALID;
   }
 
   if (cfg->path_pattern_.empty()) {
@@ -402,24 +416,24 @@ void StatisticsItem::UnRegisterNotify(
   DelChildrenNotify(cfg);
 }
 
-modelbox::Status StatisticsItem::Notify(const StatisticsNotifyType& type) {
+Status StatisticsItem::Notify(const StatisticsNotifyType& type) {
   auto consumer_list = consumers_.GetConsumers(type);
   if (consumer_list.empty()) {
-    return modelbox::STATUS_OK;
+    return STATUS_OK;
   }
 
   if (type == StatisticsNotifyType::CHANGE) {
     // Avoid lock frequently
     if ((std::chrono::steady_clock::now() - last_change_notify_time_) <
         std::chrono::seconds(1)) {
-      return modelbox::STATUS_BUSY;
+      return STATUS_BUSY;
     }
 
     // Avoid data race
     std::lock_guard<std::mutex> lck(last_change_notify_time_lock_);
     auto now = std::chrono::steady_clock::now();
     if ((now - last_change_notify_time_) < std::chrono::seconds(1)) {
-      return modelbox::STATUS_BUSY;
+      return STATUS_BUSY;
     }
 
     last_change_notify_time_ = now;
@@ -428,7 +442,7 @@ modelbox::Status StatisticsItem::Notify(const StatisticsNotifyType& type) {
   auto msg = std::make_shared<StatisticsNotifyMsg>(path_, GetValue(), type);
   if (thread_pool_ == nullptr) {
     MBLOG_ERROR << "Thread pool is nullptr, can not submit notify action";
-    return modelbox::STATUS_INVALID;
+    return STATUS_INVALID;
   }
 
   auto notify_action = [consumer_list, msg]() {
@@ -437,19 +451,19 @@ modelbox::Status StatisticsItem::Notify(const StatisticsNotifyType& type) {
     }
   };
   thread_pool_->Submit(notify_action);
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
-modelbox::Status StatisticsItem::AddNotify(
+Status StatisticsItem::AddNotify(
     const std::shared_ptr<StatisticsNotifyCfg>& cfg) {
   consumers_.AddConsumer(cfg);
   if (cfg->type_set_.find(StatisticsNotifyType::TIMER) ==
       cfg->type_set_.end()) {
-    return modelbox::STATUS_OK;
+    return STATUS_OK;
   }
 
   if (notify_timer_ == nullptr) {
-    return modelbox::STATUS_INVALID;
+    return STATUS_INVALID;
   }
 
   auto timer_task = std::make_shared<TimerTask>();
@@ -466,7 +480,7 @@ modelbox::Status StatisticsItem::AddNotify(
   });
   notify_timer_->Schedule(timer_task, cfg->delay_, cfg->interval_);
   cfg->BindTimerTask(timer_task);
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 void StatisticsItem::DelNotify(
@@ -474,7 +488,7 @@ void StatisticsItem::DelNotify(
   consumers_.DelConsumer(cfg);
 }
 
-modelbox::Status StatisticsItem::AddChildrenNotify(
+Status StatisticsItem::AddChildrenNotify(
     const std::shared_ptr<StatisticsNotifyCfg>& cfg) {
   auto root_path = cfg->GetRootPath();
   auto child_cfg = std::make_shared<StatisticsNotifyCfg>(*cfg);
@@ -500,7 +514,7 @@ modelbox::Status StatisticsItem::AddChildrenNotify(
   std::lock_guard<std::mutex> cfg_lck(child_notify_cfg_lock_);
   auto& cfg_list = children_notify_cfg_map_[root_path];
   cfg_list.push_back(child_cfg);
-  return modelbox::STATUS_OK;
+  return STATUS_OK;
 }
 
 void StatisticsItem::DelChildrenNotify(

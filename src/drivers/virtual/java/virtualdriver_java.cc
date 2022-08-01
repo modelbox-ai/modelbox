@@ -18,8 +18,6 @@
 
 #include <libgen.h>
 
-using namespace modelbox;
-
 constexpr const char *VIRTUAL_FLOWUNIT_TYPE = "java";
 
 void VirtualJavaFlowUnitDesc::SetJarEntry(std::string java_entry) {
@@ -78,7 +76,7 @@ modelbox::Status JavaVirtualDriverManager::Scan(const std::string &path) {
       MBLOG_INFO << "Add virtual driver " << driver_file << " success";
     }
 
-    if (result == STATUS_NOTSUPPORT) {
+    if (result == modelbox::STATUS_NOTSUPPORT) {
       MBLOG_DEBUG << "add file: " << driver_file << " failed, "
                   << result.WrapErrormsgs();
     } else if (!result) {
@@ -92,62 +90,64 @@ modelbox::Status JavaVirtualDriverManager::Scan(const std::string &path) {
 
 modelbox::Status JavaVirtualDriverManager::Add(const std::string &file) {
   std::string name, type, version, description, entry, flowunit_type;
-  std::shared_ptr<ConfigurationBuilder> builder =
-      std::make_shared<ConfigurationBuilder>();
-  std::shared_ptr<Configuration> config = builder->Build(file);
+  std::shared_ptr<modelbox::ConfigurationBuilder> builder =
+      std::make_shared<modelbox::ConfigurationBuilder>();
+  std::shared_ptr<modelbox::Configuration> config = builder->Build(file);
   if (config == nullptr) {
-    auto err_msg = StatusError.Errormsg();
+    auto err_msg = modelbox::StatusError.Errormsg();
     MBLOG_ERROR << err_msg;
-    return {STATUS_BADCONF, err_msg};
+    return {modelbox::STATUS_BADCONF, err_msg};
   }
 
   flowunit_type = config->GetString("base.type");
   if (flowunit_type.empty()) {
     MBLOG_ERROR << "the config does not have 'type'.";
-    return {STATUS_BADCONF, "the config does not have 'type'."};
+    return {modelbox::STATUS_BADCONF, "the config does not have 'type'."};
   }
 
   if (flowunit_type != VIRTUAL_FLOWUNIT_TYPE) {
     auto err_msg = "the config type is " + flowunit_type +
                    ", but the so type is " + std::string(VIRTUAL_FLOWUNIT_TYPE);
-    return {STATUS_NOTSUPPORT, err_msg};
+    return {modelbox::STATUS_NOTSUPPORT, err_msg};
   }
 
   name = config->GetString("base.name");
   if (name.empty()) {
     MBLOG_ERROR << "the config does not have 'name'.";
-    return {STATUS_BADCONF, "the config does not have 'name'."};
+    return {modelbox::STATUS_BADCONF, "the config does not have 'name'."};
   }
 
   type = config->GetString("base.device");
   if (type.empty()) {
     MBLOG_ERROR << "the config does not have 'device'.";
-    return {STATUS_BADCONF, "the config does not have 'device'."};
+    return {modelbox::STATUS_BADCONF, "the config does not have 'device'."};
   }
 
   version = config->GetString("base.version");
   if (version.empty()) {
     MBLOG_ERROR << "the config does not have 'version'.";
-    return {STATUS_BADCONF, "the config does not have 'version'."};
+    return {modelbox::STATUS_BADCONF, "the config does not have 'version'."};
   }
 
   description = config->GetString("base.description");
   if (description.empty()) {
     MBLOG_ERROR << "the config does not have 'description'.";
-    return {STATUS_BADCONF, "the config does not have 'description'."};
+    return {modelbox::STATUS_BADCONF,
+            "the config does not have 'description'."};
   }
 
   std::shared_ptr<JavaVirtualDriver> driver =
       std::make_shared<JavaVirtualDriver>();
-  std::shared_ptr<DriverDesc> driver_desc = std::make_shared<DriverDesc>();
+  std::shared_ptr<modelbox::DriverDesc> driver_desc =
+      std::make_shared<modelbox::DriverDesc>();
   driver_desc->SetClass("DRIVER-FLOWUNIT");
   driver_desc->SetFilePath(file);
   driver_desc->SetName(name);
   driver_desc->SetType(type);
   auto status = driver_desc->SetVersion(version);
-  if (status != STATUS_SUCCESS) {
+  if (status != modelbox::STATUS_SUCCESS) {
     auto err_msg = "SetVersion failed, version: " + version;
-    return {STATUS_FAULT, err_msg};
+    return {modelbox::STATUS_FAULT, err_msg};
   }
 
   driver_desc->SetDescription(description);
@@ -155,7 +155,7 @@ modelbox::Status JavaVirtualDriverManager::Add(const std::string &file) {
   driver->SetVirtual(true);
   driver->SetBindDriver(java_flowunit_driver_list_);
   drivers_list_.push_back(driver);
-  return STATUS_OK;
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status JavaVirtualDriverManager::BindBaseDriver(
@@ -290,30 +290,30 @@ void VirtualJavaFlowUnitFactory::FillFlowUnitType(
 
   auto is_stream = config->GetBool("base.stream", true);
   if (is_stream) {
-    flowunit_desc->SetFlowType(STREAM);
+    flowunit_desc->SetFlowType(modelbox::STREAM);
   } else {
-    flowunit_desc->SetFlowType(NORMAL);
+    flowunit_desc->SetFlowType(modelbox::NORMAL);
   }
 
   auto is_condition = config->GetBool("base.condition", false);
   if (is_condition) {
-    flowunit_desc->SetConditionType(IF_ELSE);
+    flowunit_desc->SetConditionType(modelbox::IF_ELSE);
   } else {
-    flowunit_desc->SetConditionType(NONE);
+    flowunit_desc->SetConditionType(modelbox::NONE);
   }
 
-  flowunit_desc->SetOutputType(ORIGIN);
+  flowunit_desc->SetOutputType(modelbox::ORIGIN);
 
   auto is_collapse = config->GetBool("base.collapse", false);
   if (is_collapse) {
-    flowunit_desc->SetOutputType(COLLAPSE);
+    flowunit_desc->SetOutputType(modelbox::COLLAPSE);
     auto is_collapse_all = config->GetBool("base.collapse_all", true);
     flowunit_desc->SetCollapseAll(is_collapse_all);
   }
 
   auto is_expand = config->GetBool("base.expand", false);
   if (is_expand) {
-    flowunit_desc->SetOutputType(EXPAND);
+    flowunit_desc->SetOutputType(modelbox::EXPAND);
   }
 
   auto is_same_count = config->GetBool("base.stream_same_count", false);
@@ -331,11 +331,11 @@ VirtualJavaFlowUnitFactory::FlowUnitProbe() {
   auto toml_file = driver_desc->GetFilePath();
   std::shared_ptr<VirtualJavaFlowUnitDesc> flowunit_desc =
       std::make_shared<VirtualJavaFlowUnitDesc>();
-  Status status;
+  modelbox::Status status;
 
-  std::shared_ptr<ConfigurationBuilder> builder =
-      std::make_shared<ConfigurationBuilder>();
-  std::shared_ptr<Configuration> config = builder->Build(toml_file);
+  std::shared_ptr<modelbox::ConfigurationBuilder> builder =
+      std::make_shared<modelbox::ConfigurationBuilder>();
+  std::shared_ptr<modelbox::Configuration> config = builder->Build(toml_file);
 
   std::string device;
   auto ret = FillBaseInfo(config, flowunit_desc, toml_file, &device);

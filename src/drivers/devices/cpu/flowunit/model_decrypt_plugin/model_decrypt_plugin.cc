@@ -22,42 +22,43 @@
 #include "modelbox/base/status.h"
 #include "modelbox/base/utils.h"
 
-using namespace modelbox;
-
-Status ModelDecryptPlugin::Init(
+modelbox::Status ModelDecryptPlugin::Init(
     const std::string &fname,
     const std::shared_ptr<modelbox::Configuration> config) {
   rootkey_ = config->GetString("encryption.rootkey");
   en_pass_ = config->GetString("encryption.passwd");
   if (rootkey_.empty() || en_pass_.empty()) {
     MBLOG_ERROR << "passwd is empty";
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }
 
-Status ModelDecryptPlugin::ModelDecrypt(uint8_t *raw_buf, int64_t raw_len,
-                                        uint8_t *plain_buf,
-                                        int64_t &plain_len) {
+modelbox::Status ModelDecryptPlugin::ModelDecrypt(uint8_t *raw_buf,
+                                                  int64_t raw_len,
+                                                  uint8_t *plain_buf,
+                                                  int64_t &plain_len) {
   std::vector<char> pass;
-  auto ret = PassDecrypt(en_pass_, rootkey_, &pass, DEFAULT_CIPHER_AES256_CBC);
-  if (ret != STATUS_SUCCESS) {
+  auto ret = modelbox::PassDecrypt(en_pass_, rootkey_, &pass,
+                                   modelbox::DEFAULT_CIPHER_AES256_CBC);
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "decrypt passwd err:" << ret;
     return ret;
   }
 
   std::vector<unsigned char> iv;
-  iv.resize(IV_LEN + MAX_PASSWORD_LEN);
-  Base64Decode(en_pass_, &iv);
+  iv.resize(modelbox::IV_LEN + modelbox::MAX_PASSWORD_LEN);
+  modelbox::Base64Decode(en_pass_, &iv);
 
   int out_len;
-  ret = Decrypt(DEFAULT_CIPHER_AES256_CBC, raw_buf, raw_len, plain_buf,
-                &out_len, plain_len, (unsigned char *)pass.data(), iv.data());
-  if (ret != STATUS_SUCCESS) {
+  ret = modelbox::Decrypt(modelbox::DEFAULT_CIPHER_AES256_CBC, raw_buf, raw_len,
+                          plain_buf, &out_len, plain_len,
+                          (unsigned char *)pass.data(), iv.data());
+  if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "decrypt model err:" << ret;
     return ret;
   }
 
   plain_len = out_len;
-  return STATUS_SUCCESS;
+  return modelbox::STATUS_SUCCESS;
 }

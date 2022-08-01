@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/memory_pool.h"
-#include "gtest/gtest.h"
-#include "modelbox/base/utils.h"
-#include "securec.h"
+
 #include <memory>
 #include <thread>
 
-using namespace modelbox;
+#include "gtest/gtest.h"
+#include "modelbox/base/utils.h"
+#include "securec.h"
+
+namespace modelbox {
 
 class MemoryPoolTest : public testing::Test {
  public:
@@ -34,7 +35,6 @@ class MemoryPoolTest : public testing::Test {
 
   void TearDown() override{};
 };
-
 
 TEST_F(MemoryPoolTest, MemoryPool) {
   MemoryPoolBase p;
@@ -104,3 +104,5 @@ TEST_F(MemoryPoolTest, MemoryPoolShrinkExpire) {
   p.ShrinkSlabCache(4, 0, 1);
   EXPECT_EQ(p.GetAllObjectNum(), 0);
 }
+
+}  // namespace modelbox

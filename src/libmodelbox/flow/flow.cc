@@ -20,7 +20,7 @@
 
 #include "modelbox/base/timer.h"
 
-using namespace modelbox;
+namespace modelbox {
 
 Status FlowSetupLog(std::shared_ptr<Configuration> config) {
   if (!config) {
@@ -262,7 +262,9 @@ Status Flow::GuessConfFormat(const std::string& configfile,
   if (extension == "json") {
     *format = FORMAT_JSON;
     return STATUS_OK;
-  } else if (extension == "toml") {
+  }
+
+  if (extension == "toml") {
     *format = FORMAT_TOML;
     return STATUS_OK;
   }
@@ -376,16 +378,16 @@ Status Flow::GetGraphFilePathByName(const std::string& flow_name,
                                     std::string& graph_path) {
   std::vector<std::string> toml_list;
   std::string filter = "*.toml";
-  auto status = modelbox::ListSubDirectoryFiles(graph_dir, filter, &toml_list);
-  if (status != modelbox::STATUS_OK) {
+  auto status = ListSubDirectoryFiles(graph_dir, filter, &toml_list);
+  if (status != STATUS_OK) {
     MBLOG_WARN << "find " << flow_name << " toml file in directory "
                << graph_dir << " failed.";
   }
 
   filter = "*.json";
   std::vector<std::string> json_list;
-  status = modelbox::ListSubDirectoryFiles(graph_dir, filter, &json_list);
-  if (status != modelbox::STATUS_OK) {
+  status = ListSubDirectoryFiles(graph_dir, filter, &json_list);
+  if (status != STATUS_OK) {
     MBLOG_WARN << "find " << flow_name << " json file in directory "
                << graph_dir << " failed.";
   }
@@ -603,3 +605,4 @@ std::string Flow::GetGraphName() const {
 
   return graph_->GetName();
 }
+}  // namespace modelbox

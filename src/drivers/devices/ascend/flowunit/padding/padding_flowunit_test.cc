@@ -34,8 +34,6 @@
 #include "modelbox/buffer.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 
 Status yuvI420ToNV12(uint8_t *in_data, int32_t w, int32_t h,

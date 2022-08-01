@@ -106,10 +106,9 @@ std::shared_ptr<DeviceMemory> DeviceMemory::Combine(
           : IsContiguous(mem_list, true);
   if (contiguous) {
     return CombineContinuous(mem_list, total_size, target_device);
-  } else {
-    return CombineFragment(mem_list, total_size, target_device,
-                           target_mem_flags);
   }
+
+  return CombineFragment(mem_list, total_size, target_device, target_mem_flags);
 }
 
 std::shared_ptr<DeviceMemory> DeviceMemory::CombineContinuous(
@@ -138,16 +137,16 @@ std::shared_ptr<DeviceMemory> DeviceMemory::CombineContinuous(
 
   if (target_device == nullptr || target_device == mem->device_) {
     return continuous_mem;
-  } else {
-    auto new_device_mem = target_device->MemAlloc(total_size);
-    if (new_device_mem == nullptr) {
-      MBLOG_ERROR << "Mem alloc failed, size " << total_size;
-      return nullptr;
-    }
-
-    new_device_mem->ReadFrom(continuous_mem, 0, total_size);
-    return new_device_mem;
   }
+
+  auto new_device_mem = target_device->MemAlloc(total_size);
+  if (new_device_mem == nullptr) {
+    MBLOG_ERROR << "Mem alloc failed, size " << total_size;
+    return nullptr;
+  }
+
+  new_device_mem->ReadFrom(continuous_mem, 0, total_size);
+  return new_device_mem;
 }
 
 std::shared_ptr<DeviceMemory> DeviceMemory::CombineFragment(

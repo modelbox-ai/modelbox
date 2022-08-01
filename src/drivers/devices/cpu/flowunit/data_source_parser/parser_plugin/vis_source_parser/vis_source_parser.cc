@@ -125,7 +125,9 @@ modelbox::Status VisSourceParser::Parse(
           }
           MBLOG_DEBUG << "pull_flow_address: " << uri;
           return modelbox::STATUS_OK;
-        } else if (resp_json.contains("hls_pull_flow_address")) {
+        }
+
+        if (resp_json.contains("hls_pull_flow_address")) {
           uri = resp_json["hls_pull_flow_address"].get<std::string>();
           if (uri.empty()) {
             MBLOG_ERROR << "hls_pull_flow_address is empty!";
@@ -133,10 +135,10 @@ modelbox::Status VisSourceParser::Parse(
           }
           MBLOG_DEBUG << "hls_pull_flow_address: " << uri;
           return modelbox::STATUS_OK;
-        } else {
-          MBLOG_ERROR << "No avaliable pull flow address string in response.";
-          return modelbox::STATUS_BADCONF;
         }
+
+        MBLOG_ERROR << "No avaliable pull flow address string in response.";
+        return modelbox::STATUS_BADCONF;
       } catch (const std::exception &e) {
         MBLOG_ERROR << "Parse response body to json failed, detail: "
                     << e.what();

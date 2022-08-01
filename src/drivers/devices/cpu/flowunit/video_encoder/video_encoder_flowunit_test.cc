@@ -28,8 +28,6 @@
 #include "gtest/gtest.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 class VideoEncoderFlowUnitTest : public testing::Test {
  public:

@@ -144,22 +144,24 @@ extern std::shared_ptr<modelbox::DriverFactory> FlowUnitCreateFactory()
 #define MODELBOX_FLOWUINT_PLUGIN_DECLEAR(clazz) \
   FlowUnitPlugin<clazz> MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz);
 
-#define MODELBOX_FLOWUNIT_SETTER(clazz, desc)                                    \
-  void FlowUnitPluginInit_##clazz(modelbox::FlowUnitDesc &desc);                \
-  auto unused_##clazz = []() {                                                 \
-    auto func = []() {                                                         \
-      FlowUnitPluginInit_##clazz(MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz).Desc); \
-      auto driver_desc =                                                       \
-          std::make_shared<modelbox::DriverDesc>(MODELBOX_DRIVER_PLUGIN->Desc);    \
-      MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz).Desc.SetDriverDesc(driver_desc);  \
-      MODELBOX_DRIVER_PLUGIN->SetCreateFacotryFunc(FlowUnitCreateFactory);       \
-      MODELBOX_FLOWUNIT_PLUGIN_LIST->AddFlowUnitPlugin(                          \
-          &MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz));                            \
-    };                                                                         \
-    MODELBOX_DRIVER_PLUGIN_INIT_FUNC(func);                                      \
-    return true;                                                               \
-  }();                                                                         \
-  void FlowUnitPluginInit_##clazz(modelbox::FlowUnitDesc &desc)
+#define MODELBOX_FLOWUNIT_SETTER(clazz, desc)                              \
+  void FlowUnitPluginInit_##clazz(modelbox::FlowUnitDesc &(desc));         \
+  auto unused_##clazz = []() {                                             \
+    auto func = []() {                                                     \
+      FlowUnitPluginInit_##clazz(                                          \
+          MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz).Desc);                  \
+      auto driver_desc = std::make_shared<modelbox::DriverDesc>(           \
+          MODELBOX_DRIVER_PLUGIN->Desc);                                   \
+      MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz).Desc.SetDriverDesc(         \
+          driver_desc);                                                    \
+      MODELBOX_DRIVER_PLUGIN->SetCreateFacotryFunc(FlowUnitCreateFactory); \
+      MODELBOX_FLOWUNIT_PLUGIN_LIST->AddFlowUnitPlugin(                    \
+          &MODELBOX_FLOWUINT_PLUGIN_VAR_NAME(clazz));                      \
+    };                                                                     \
+    MODELBOX_DRIVER_PLUGIN_INIT_FUNC(func);                                \
+    return true;                                                           \
+  }();                                                                     \
+  void FlowUnitPluginInit_##clazz(modelbox::FlowUnitDesc &(desc))
 
 /**
  * @brief Define an new flowunit driver

@@ -758,8 +758,7 @@ class FlowUnitFactory : public DriverFactory {
   }
 
   virtual void SetFlowUnitFactory(
-      std::vector<std::shared_ptr<modelbox::DriverFactory>>
-          bind_flowunit_factory_list){};
+      std::vector<std::shared_ptr<DriverFactory>> bind_flowunit_factory_list){};
 
  private:
   std::shared_ptr<Driver> driver_;
@@ -819,21 +818,20 @@ class FlowUnitManager {
   std::shared_ptr<DeviceManager> GetDeviceManager();
 
  private:
-  modelbox::Status CheckParams(const std::string &unit_name,
-                               const std::string &unit_type,
-                               const std::string &unit_device_id);
+  Status CheckParams(const std::string &unit_name, const std::string &unit_type,
+                     const std::string &unit_device_id);
 
-  modelbox::Status ParseUnitDeviceConf(const std::string &unit_name,
-                                       const std::string &unit_type,
-                                       const std::string &unit_device_id,
-                                       FlowUnitDeviceConfig &dev_cfg);
+  Status ParseUnitDeviceConf(const std::string &unit_name,
+                             const std::string &unit_type,
+                             const std::string &unit_device_id,
+                             FlowUnitDeviceConfig &dev_cfg);
 
-  modelbox::Status ParseUserDeviceConf(const std::string &unit_type,
-                                       const std::string &unit_device_id,
-                                       FlowUnitDeviceConfig &dev_cfg);
+  Status ParseUserDeviceConf(const std::string &unit_type,
+                             const std::string &unit_device_id,
+                             FlowUnitDeviceConfig &dev_cfg);
 
-  modelbox::Status AutoFillDeviceConf(const std::string &unit_name,
-                                      FlowUnitDeviceConfig &dev_cfg);
+  Status AutoFillDeviceConf(const std::string &unit_name,
+                            FlowUnitDeviceConfig &dev_cfg);
 
   void SetDeviceManager(std::shared_ptr<DeviceManager> device_mgr);
   std::shared_ptr<FlowUnit> CreateSingleFlowUnit(

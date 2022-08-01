@@ -169,22 +169,22 @@ std::string LinuxOSInfo::GetMacAddress(const std::string &nic) {
 
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (sock == -1) {
-    modelbox::StatusError = {modelbox::STATUS_FAULT, "create socket failed."};
+    StatusError = {STATUS_FAULT, "create socket failed."};
     return mac;
-  };
+  }
   Defer { close(sock); };
 
   ifc.ifc_len = sizeof(buf);
   ifc.ifc_buf = buf;
   if (ioctl(sock, SIOCGIFCONF, &ifc) == -1) {
-    modelbox::StatusError = {modelbox::STATUS_FAULT, "get socket info failed."};
+    StatusError = {STATUS_FAULT, "get socket info failed."};
     return mac;
-  };
+  }
 
   struct ifreq *it = ifc.ifc_req;
   const struct ifreq *const end = it + (ifc.ifc_len / sizeof(struct ifreq));
 
-  modelbox::StatusError = {modelbox::STATUS_NOTFOUND, "not found nic"};
+  StatusError = {STATUS_NOTFOUND, "not found nic"};
   for (; it != end; ++it) {
     strncpy_s(ifr.ifr_name, IFNAMSIZ, it->ifr_name, IFNAMSIZ);
     if (ioctl(sock, SIOCGIFFLAGS, &ifr) != 0) {

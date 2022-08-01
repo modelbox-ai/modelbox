@@ -331,13 +331,14 @@ extern std::shared_ptr<const void> LogSetLogID(const char *id);
                                     : __FILE__)
 #endif
 
-/* 
-  Log may crash when the shared library loaded by deepbind and call this log API. 
-  The reason is symbol copy-relocation, About copy-relocation, read here:
+/*
+  Log may crash when the shared library loaded by deepbind and call this log
+  API. The reason is symbol copy-relocation, About copy-relocation, read here:
   https://stackoverflow.com/questions/37296995/dynamic-loading-of-shared-library-with-rtld-deepbind
-  Setting the symbol to weak allows the deepbind library to use the first symbol without error. 
-  If there is still a problem, you can use macros MBLOG_LIBRARY_DEEPBIND.
-  but this will cause a little slower when calling log API.
+  Setting the symbol to weak allows the deepbind library to use the first symbol
+  without error. If there is still a problem, you can use macros
+  MBLOG_LIBRARY_DEEPBIND. but this will cause a little slower when calling log
+  API.
 */
 #ifdef MBLOG_LIBRARY_DEEPBIND
 #define ModelBoxLogger modelbox::GetLogger()

@@ -62,7 +62,9 @@ TEST_F(PopenTest, OpenCaptureOutput) {
     ret = p.WaitForLineRead(1000);
     if (ret < 0) {
       break;
-    } else if (ret == 0) {
+    }
+
+    if (ret == 0) {
       continue;
     }
 
@@ -103,7 +105,9 @@ TEST_F(PopenTest, OpenTimeout) {
     ret = p.WaitForLineRead();
     if (ret < 0) {
       break;
-    } else if (ret == 0) {
+    }
+
+    if (ret == 0) {
       continue;
     }
 
@@ -221,9 +225,10 @@ TEST_F(PopenTest, OpenCmdLine) {
 
 TEST_F(PopenTest, OpenEnvCheck) {
   Popen p;
-  PopenEnv env ="TEST_ENV_1=a TEST_ENV_2=b";
+  PopenEnv env = "TEST_ENV_1=a TEST_ENV_2=b";
   env.Rmv("USER");
-  p.Open("/bin/bash -c \"echo $USER && echo $TEST_ENV_1; echo $TEST_ENV_2\"", 100, "r", env);
+  p.Open("/bin/bash -c \"echo $USER && echo $TEST_ENV_1; echo $TEST_ENV_2\"",
+         100, "r", env);
   std::string line;
   p.ReadOutLine(line);
   EXPECT_EQ(line, "\n");
@@ -250,7 +255,7 @@ TEST_F(PopenTest, OpenReadAll) {
   EXPECT_EQ(ret, 0);
 
   auto count_line = [](const std::string &str) {
-    size_t i = 0; 
+    size_t i = 0;
     int count = 0;
     for (i = 0; i < str.length(); i++) {
       if (str.c_str()[i] == '\n' || str.c_str()[i] == '\0') {
@@ -260,7 +265,7 @@ TEST_F(PopenTest, OpenReadAll) {
 
     return count;
   };
-  
+
   ret = p.Close();
   EXPECT_EQ(count_line(out), 100);
   EXPECT_EQ(count_line(err), 100);
@@ -269,8 +274,7 @@ TEST_F(PopenTest, OpenReadAll) {
 
 TEST_F(PopenTest, OpenNotExists) {
   Popen p;
-  std::string cmd =
-      "/NOT-EXIST";
+  std::string cmd = "/NOT-EXIST";
   p.Open(cmd, 1000, "re");
 
   std::string out;
@@ -279,7 +283,7 @@ TEST_F(PopenTest, OpenNotExists) {
   EXPECT_EQ(ret, 0);
 
   EXPECT_GT(err.find_first_of(cmd), 0);
-  
+
   ret = p.Close();
   EXPECT_EQ(ret, 256);
 }

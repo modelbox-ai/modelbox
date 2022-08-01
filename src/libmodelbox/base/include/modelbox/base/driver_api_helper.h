@@ -145,7 +145,7 @@ extern std::shared_ptr<DriverPlugin> ModelBoxGetDriverPlugin()
   MODELBOX_DRIVER_INIT()             \
   MODELBOX_DRIVER_FINI()
 
-#define MODELBOX_DRIVER_SETTER(desc) void DriverPluginInit(DriverPlugin &desc)
+#define MODELBOX_DRIVER_SETTER(desc) void DriverPluginInit(DriverPlugin &(desc))
 
 #define MODELBOX_DRIVER(desc)  \
   MODELBOX_DRIVER_DEFINE(desc) \
