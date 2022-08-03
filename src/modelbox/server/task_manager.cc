@@ -16,10 +16,12 @@
 
 #include <modelbox/server/task.h>
 #include <modelbox/server/task_manager.h>
+
+#include <utility>
 namespace modelbox {
 
 TaskManager::TaskManager(std::shared_ptr<Flow> flow, uint32_t task_num_limits) {
-  flow_ = flow;
+  flow_ = std::move(flow);
   thread_pool_ = std::make_shared<ThreadPool>(0, task_num_limits);
   task_num_limits_ = task_num_limits;
   avaiable_task_counts_ = 0;
@@ -28,7 +30,7 @@ TaskManager::TaskManager(std::shared_ptr<Flow> flow, uint32_t task_num_limits) {
 }
 TaskManager::~TaskManager() { Stop(); }
 
-Status TaskManager::Submit(std::shared_ptr<Task> task) {
+Status TaskManager::Submit(const std::shared_ptr<Task>& task) {
   std::unique_lock<std::mutex> guard(new_del_lock_);
   if (avaiable_task_counts_ >= task_num_limits_) {
     MBLOG_INFO << "Running Task exceed task_num_limits "
@@ -68,7 +70,7 @@ void TaskManager::ReceiveWork() {
     auto select_status = selector_->SelectExternalData(
         external_list, std::chrono::milliseconds(200));
 
-    for (auto external : external_list) {
+    for (const auto& external : external_list) {
       std::unique_lock<std::mutex> map_guard(map_lock_);
       auto task_iter = external_task_maps_.find(external);
       if (task_iter == external_task_maps_.end()) {
@@ -143,7 +145,7 @@ std::shared_ptr<ExternalDataSelect> TaskManager::GetSelector() {
   return selector_;
 }
 
-Status TaskManager::DeleteTaskById(std::string taskid) {
+Status TaskManager::DeleteTaskById(const std::string& taskid) {
   std::unique_lock<std::mutex> guard(map_lock_);
   if (task_maps_.find(taskid) == task_maps_.end()) {
     return {STATUS_NOTFOUND, "task can not be found"};
@@ -160,7 +162,7 @@ Status TaskManager::DeleteTaskById(std::string taskid) {
   return STATUS_SUCCESS;
 }
 
-std::shared_ptr<Task> TaskManager::GetTaskById(std::string taskid) {
+std::shared_ptr<Task> TaskManager::GetTaskById(const std::string& taskid) {
   std::unique_lock<std::mutex> guard(map_lock_);
   if (task_maps_.find(taskid) == task_maps_.end()) {
     return nullptr;
@@ -184,7 +186,7 @@ std::vector<std::shared_ptr<Task>> TaskManager::GetAllTasks() {
   return task_list;
 }
 
-void TaskManager::RegisterTask(std::shared_ptr<Task> task) {
+void TaskManager::RegisterTask(const std::shared_ptr<Task>& task) {
   std::unique_lock<std::mutex> guard(map_lock_);
   task->SetTaskManager(shared_from_this());
   auto external_data = task->GetExternalData();

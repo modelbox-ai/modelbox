@@ -20,14 +20,16 @@
 #include <modelbox/port.h>
 #include <modelbox/session_context.h>
 
+#include <utility>
+
 namespace modelbox {
 
 ExternalDataImpl::ExternalDataImpl(std::shared_ptr<InPort> port,
                                    std::shared_ptr<Device> device,
-                                   std::shared_ptr<Stream> init_stream)
+                                   const std::shared_ptr<Stream> &init_stream)
     : root_buffer_(std::make_shared<BufferIndexInfo>()),
-      ext_port_(port),
-      device_(device),
+      ext_port_(std::move(port)),
+      device_(std::move(device)),
       input_stream_(init_stream),
       session_(init_stream->GetSession()),
       session_ctx_(init_stream->GetSession()->GetSessionCtx()) {}
@@ -133,9 +135,9 @@ FlowUnitDataContext::~FlowUnitDataContext() {
   }
 }
 
-FlowUnitDataContext::FlowUnitDataContext(Node *node,
-                                         MatchKey *data_ctx_match_key,
-                                         std::shared_ptr<Session> session) {
+FlowUnitDataContext::FlowUnitDataContext(
+    Node *node, MatchKey *data_ctx_match_key,
+    const std::shared_ptr<Session> &session) {
   user_event_ = nullptr;
   node_ = node;
   data_ctx_match_key_ = data_ctx_match_key;
@@ -149,12 +151,12 @@ FlowUnitDataContext::FlowUnitDataContext(Node *node,
 
 void FlowUnitDataContext::WriteInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {
-  SetCurrentInputData(stream_data_map);
+  SetCurrentInputData(std::move(stream_data_map));
 }
 
 void FlowUnitDataContext::SetCurrentInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {
-  cur_input_ = stream_data_map;
+  cur_input_ = std::move(stream_data_map);
   std::set<size_t> error_index_set;
   std::set<size_t> valid_index_set;
   for (auto &port_data_item : *cur_input_) {
@@ -265,11 +267,12 @@ std::shared_ptr<BufferListMap> FlowUnitDataContext::Input() const {
 std::shared_ptr<BufferListMap> FlowUnitDataContext::Output() {
   return std::shared_ptr<BufferListMap>(&(cur_output_valid_data_),
                                         [](BufferListMap *buffer_list_map) {});
-};
+}
 
 std::shared_ptr<BufferList> FlowUnitDataContext::External() { return nullptr; }
 
-void FlowUnitDataContext::SetEvent(std::shared_ptr<FlowUnitEvent> event) {
+void FlowUnitDataContext::SetEvent(
+    const std::shared_ptr<FlowUnitEvent> &event) {
   if (wait_user_events_.find(event) == wait_user_events_.end()) {
     // not sent by user, should not cause data process
     SetSkippable(true);
@@ -422,7 +425,7 @@ void FlowUnitDataContext::SetOutput(
   cur_output_valid_data_ = data_list;
 }
 
-void FlowUnitDataContext::SetStatus(Status status) {
+void FlowUnitDataContext::SetStatus(const Status &status) {
   process_status_ = status;
   last_process_status_ = status;
 }
@@ -738,7 +741,8 @@ Status FlowUnitDataContext::GenerateOutput() {
                                       placeholder_data_list.size());
 
     // merge buffer by input index
-    auto compare = [](std::shared_ptr<Buffer> b1, std::shared_ptr<Buffer> b2) {
+    auto compare = [](const std::shared_ptr<Buffer> &b1,
+                      const std::shared_ptr<Buffer> &b2) {
       if (b1 == nullptr) {
         // condition output, will be removed in node stream manage
         return true;
@@ -791,7 +795,7 @@ Status FlowUnitDataContext::UpdateOutputIndexInfo() {
 }
 
 std::shared_ptr<BufferProcessInfo> FlowUnitDataContext::GetCurNodeProcessInfo(
-    std::shared_ptr<BufferIndexInfo> index_info) {
+    const std::shared_ptr<BufferIndexInfo> &index_info) {
   auto cur_node_process_info = index_info->GetProcessInfo();
   if (cur_node_process_info != nullptr) {
     return cur_node_process_info;
@@ -932,7 +936,8 @@ void FlowUnitDataContext::UpdateInputInfo() {
 ExecutorDataContext::ExecutorDataContext(
     std::shared_ptr<FlowUnitDataContext> origin_ctx,
     std::shared_ptr<FlowUnitExecData> data)
-    : origin_ctx_(origin_ctx), data_(data){};
+    : origin_ctx_(std::move(origin_ctx)),
+      data_(std::move(data)){};
 
 std::shared_ptr<BufferList> ExecutorDataContext::Input(
     const std::string &port) const {
@@ -969,32 +974,34 @@ void ExecutorDataContext::SendEvent(std::shared_ptr<FlowUnitEvent> event) {
 void ExecutorDataContext::SetPrivate(const std::string &key,
                                      std::shared_ptr<void> private_content) {
   origin_ctx_->SetPrivate(key, private_content);
-};
+}
 
 std::shared_ptr<void> ExecutorDataContext::GetPrivate(const std::string &key) {
   return origin_ctx_->GetPrivate(key);
-};
+}
 
 std::shared_ptr<DataMeta> ExecutorDataContext::GetInputMeta(
     const std::string &port) {
   return origin_ctx_->GetInputMeta(port);
-};
+}
 
 std::shared_ptr<DataMeta> ExecutorDataContext::GetInputGroupMeta(
     const std::string &port) {
   return origin_ctx_->GetInputGroupMeta(port);
-};
+}
 
 void ExecutorDataContext::SetOutputMeta(const std::string &port,
                                         std::shared_ptr<DataMeta> data_meta) {
   origin_ctx_->SetOutputMeta(port, data_meta);
-};
+}
 
 std::shared_ptr<SessionContext> ExecutorDataContext::GetSessionContext() {
   return origin_ctx_->GetSessionContext();
-};
+}
 
-void ExecutorDataContext::SetStatus(Status status) { data_->SetStatus(status); }
+void ExecutorDataContext::SetStatus(const Status &status) {
+  data_->SetStatus(status);
+}
 
 std::shared_ptr<Configuration> ExecutorDataContext::GetSessionConfig() {
   return origin_ctx_->GetSessionConfig();
@@ -1006,7 +1013,8 @@ std::shared_ptr<StatisticsItem> ExecutorDataContext::GetStatistics(
 }
 
 NormalFlowUnitDataContext::NormalFlowUnitDataContext(
-    Node *node, MatchKey *data_ctx_match_key, std::shared_ptr<Session> session)
+    Node *node, MatchKey *data_ctx_match_key,
+    const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 void NormalFlowUnitDataContext::UpdateProcessState() {
@@ -1025,8 +1033,8 @@ bool NormalFlowUnitDataContext::NeedStreamEndFlag() {
 }
 
 void NormalFlowUnitDataContext::UpdateBufferIndexInfo(
-    std::shared_ptr<BufferIndexInfo> cur_buffer,
-    std::shared_ptr<BufferIndexInfo> parent_buffer) {
+    const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+    const std::shared_ptr<BufferIndexInfo> &parent_buffer) {
   if (node_->GetConditionType() == ConditionType::IF_ELSE) {
     cur_buffer->GetProcessInfo()->SetType(BufferProcessType::CONDITION_START);
     auto inherit_info = std::make_shared<BufferInheritInfo>();
@@ -1041,7 +1049,8 @@ void NormalFlowUnitDataContext::UpdateBufferIndexInfo(
 }
 
 LoopNormalFlowUnitDataContext::LoopNormalFlowUnitDataContext(
-    Node *node, MatchKey *data_ctx_match_key, std::shared_ptr<Session> session)
+    Node *node, MatchKey *data_ctx_match_key,
+    const std::shared_ptr<Session> &session)
     : NormalFlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 Status LoopNormalFlowUnitDataContext::GenerateOutput() {
@@ -1122,7 +1131,8 @@ Status LoopNormalFlowUnitDataContext::CheckOutputData() {
 }
 
 StreamFlowUnitDataContext::StreamFlowUnitDataContext(
-    Node *node, MatchKey *data_ctx_match_key, std::shared_ptr<Session> session)
+    Node *node, MatchKey *data_ctx_match_key,
+    const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 bool StreamFlowUnitDataContext::IsDataPre() {
@@ -1158,13 +1168,14 @@ bool StreamFlowUnitDataContext::NeedStreamEndFlag() {
 }
 
 void StreamFlowUnitDataContext::UpdateBufferIndexInfo(
-    std::shared_ptr<BufferIndexInfo> cur_buffer,
-    std::shared_ptr<BufferIndexInfo> parent_buffer) {
+    const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+    const std::shared_ptr<BufferIndexInfo> &parent_buffer) {
   cur_buffer->SetInheritInfo(parent_buffer->GetInheritInfo());
 }
 
 NormalExpandFlowUnitDataContext::NormalExpandFlowUnitDataContext(
-    Node *node, MatchKey *data_ctx_match_key, std::shared_ptr<Session> session)
+    Node *node, MatchKey *data_ctx_match_key,
+    const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 void NormalExpandFlowUnitDataContext::UpdateProcessState() {
@@ -1180,8 +1191,8 @@ bool NormalExpandFlowUnitDataContext::NeedStreamEndFlag() {
 }
 
 void NormalExpandFlowUnitDataContext::UpdateBufferIndexInfo(
-    std::shared_ptr<BufferIndexInfo> cur_buffer,
-    std::shared_ptr<BufferIndexInfo> parent_buffer) {
+    const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+    const std::shared_ptr<BufferIndexInfo> &parent_buffer) {
   cur_buffer->GetProcessInfo()->SetType(BufferProcessType::EXPAND);
 
   auto inherit_info = std::make_shared<BufferInheritInfo>();
@@ -1191,7 +1202,8 @@ void NormalExpandFlowUnitDataContext::UpdateBufferIndexInfo(
 }
 
 StreamExpandFlowUnitDataContext::StreamExpandFlowUnitDataContext(
-    Node *node, MatchKey *data_ctx_match_key, std::shared_ptr<Session> session)
+    Node *node, MatchKey *data_ctx_match_key,
+    const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 void StreamExpandFlowUnitDataContext::WriteInputData(
@@ -1256,7 +1268,7 @@ StreamExpandFlowUnitDataContext::ReadFirstInCache() {
 }
 
 bool StreamExpandFlowUnitDataContext::IsNextExpand(
-    std::shared_ptr<PortDataMap> data) {
+    const std::shared_ptr<PortDataMap> &data) {
   // test cur input is next buffer to process
   auto &first_input = data->begin()->second.front();
   auto first_input_index = BufferManageView::GetIndexInfo(first_input);
@@ -1344,8 +1356,8 @@ bool StreamExpandFlowUnitDataContext::NeedStreamEndFlag() {
 }
 
 void StreamExpandFlowUnitDataContext::UpdateBufferIndexInfo(
-    std::shared_ptr<BufferIndexInfo> cur_buffer,
-    std::shared_ptr<BufferIndexInfo> parent_buffer) {
+    const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+    const std::shared_ptr<BufferIndexInfo> &parent_buffer) {
   cur_buffer->GetProcessInfo()->SetType(BufferProcessType::EXPAND);
 
   auto inherit_info = std::make_shared<BufferInheritInfo>();
@@ -1355,7 +1367,8 @@ void StreamExpandFlowUnitDataContext::UpdateBufferIndexInfo(
 }
 
 NormalCollapseFlowUnitDataContext::NormalCollapseFlowUnitDataContext(
-    Node *node, MatchKey *data_ctx_match_key, std::shared_ptr<Session> session)
+    Node *node, MatchKey *data_ctx_match_key,
+    const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 bool NormalCollapseFlowUnitDataContext::IsDataPre() {
@@ -1371,7 +1384,7 @@ void NormalCollapseFlowUnitDataContext::UpdateProcessState() {
   if (input_has_stream_end_) {
     is_datapre_error_ = false;
   }
-};
+}
 
 Status NormalCollapseFlowUnitDataContext::GenerateOutputError() {
   FillErrorOutput(false, "", "", false);
@@ -1429,8 +1442,8 @@ Status NormalCollapseFlowUnitDataContext::GenerateOutputPlaceholder() {
 }
 
 void NormalCollapseFlowUnitDataContext::UpdateBufferIndexInfo(
-    std::shared_ptr<BufferIndexInfo> cur_buffer,
-    std::shared_ptr<BufferIndexInfo> parent_buffer) {
+    const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+    const std::shared_ptr<BufferIndexInfo> &parent_buffer) {
   cur_buffer->GetProcessInfo()->SetType(BufferProcessType::COLLAPSE);
 
   auto expand_from_buffer = parent_buffer->GetInheritInfo()->GetInheritFrom();
@@ -1439,7 +1452,8 @@ void NormalCollapseFlowUnitDataContext::UpdateBufferIndexInfo(
 }
 
 StreamCollapseFlowUnitDataContext::StreamCollapseFlowUnitDataContext(
-    Node *node, MatchKey *data_ctx_match_key, std::shared_ptr<Session> session)
+    Node *node, MatchKey *data_ctx_match_key,
+    const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
 void StreamCollapseFlowUnitDataContext::WriteInputData(
@@ -1449,7 +1463,7 @@ void StreamCollapseFlowUnitDataContext::WriteInputData(
 }
 
 void StreamCollapseFlowUnitDataContext::AppendToCache(
-    std::shared_ptr<PortDataMap> stream_data_map) {
+    const std::shared_ptr<PortDataMap> &stream_data_map) {
   auto first_buffer = stream_data_map->begin()->second.front();
   auto buffer_index = BufferManageView::GetIndexInfo(first_buffer);
   auto expand_from = buffer_index->GetInheritInfo()->GetInheritFrom();
@@ -1591,8 +1605,8 @@ Status StreamCollapseFlowUnitDataContext::GenerateOutputPlaceholder() {
 }
 
 void StreamCollapseFlowUnitDataContext::UpdateBufferIndexInfo(
-    std::shared_ptr<BufferIndexInfo> cur_buffer,
-    std::shared_ptr<BufferIndexInfo> parent_buffer) {
+    const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+    const std::shared_ptr<BufferIndexInfo> &parent_buffer) {
   cur_buffer->GetProcessInfo()->SetType(BufferProcessType::COLLAPSE);
 
   auto expand_from_buffer = parent_buffer->GetInheritInfo()->GetInheritFrom();

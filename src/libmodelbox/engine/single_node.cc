@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/single_node.h"
 
 namespace modelbox {
@@ -25,10 +27,11 @@ SingleNode::SingleNode(const std::string& unit_name,
                        std::shared_ptr<Configuration> config,
                        std::shared_ptr<Profiler> profiler,
                        std::shared_ptr<StatisticsItem> graph_stats)
-    : config_(config) {
-  SetFlowUnitInfo(unit_name, unit_type, unit_device_id, flowunit_mgr);
-  SetProfiler(profiler);
-  SetStats(graph_stats);
+    : config_(std::move(config)) {
+  SetFlowUnitInfo(unit_name, unit_type, unit_device_id,
+                  std::move(flowunit_mgr));
+  SetProfiler(std::move(profiler));
+  SetStats(std::move(graph_stats));
 }
 
 Status SingleNode::Init() {

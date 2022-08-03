@@ -115,7 +115,7 @@ TEST_F(CropFlowUnitTest, RunUnit) {
   auto in_box_buffer_list = extern_data->CreateBufferList();
   in_box_buffer_list->Build({sizeof(int32_t) * 4});
   auto in_box_buffer = in_box_buffer_list->At(0);
-  auto data_ptr = (int32_t*)in_box_buffer->MutableData();
+  auto *data_ptr = (int32_t *)in_box_buffer->MutableData();
   data_ptr[0] = 30;
   data_ptr[1] = 0;
   data_ptr[2] = 128;

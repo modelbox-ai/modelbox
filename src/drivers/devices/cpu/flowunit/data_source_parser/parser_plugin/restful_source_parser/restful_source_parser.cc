@@ -34,7 +34,7 @@ modelbox::Status RestfulSourceParser::Init(
 modelbox::Status RestfulSourceParser::Deinit() { return modelbox::STATUS_OK; }
 
 modelbox::Status RestfulSourceParser::Parse(
-    std::shared_ptr<modelbox::SessionContext> session_context,
+    const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
     DestroyUriFunc &destroy_uri_func) {
   RestfulInputInfo input_info;
@@ -83,9 +83,8 @@ modelbox::Status RestfulSourceParser::GetRestfulInfo(
         auto param_value = broker_json["param_value"].get<std::string>();
         MBLOG_DEBUG << "param_key " << param_key << ", param_value "
                     << param_value;
-        encode_params = encode_params +
-                        web::uri::encode_data_string(param_key) + "=" +
-                        web::uri::encode_data_string(param_value) + "&";
+        encode_params += web::uri::encode_data_string(param_key) + "=" +
+                         web::uri::encode_data_string(param_value) + "&";
       }
       input_info.encode_full_url =
           request_url + "?" +
@@ -172,8 +171,8 @@ modelbox::Status RestfulSourceParser::ProcessRestfulResponse(
       if (rtsp_url_path.empty()) {
         MBLOG_ERROR << "rtsp_url_path is empty!";
       }
-      for (size_t i = 0; i < rtsp_url_path.size(); ++i) {
-        resp_json = resp_json[rtsp_url_path[i]];
+      for (const auto &url_path : rtsp_url_path) {
+        resp_json = resp_json[url_path];
       }
       uri = resp_json;
       if (uri.empty()) {

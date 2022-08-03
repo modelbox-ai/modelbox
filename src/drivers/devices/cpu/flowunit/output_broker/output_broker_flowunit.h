@@ -56,7 +56,7 @@ using BrokerNames = std::vector<std::string>;
 
 class BrokerDataQueue {
  public:
-  BrokerDataQueue(const std::string &broker_name, size_t queue_size);
+  BrokerDataQueue(std::string broker_name, size_t queue_size);
 
   virtual ~BrokerDataQueue() = default;
 

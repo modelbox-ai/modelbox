@@ -128,7 +128,7 @@ modelbox::Status ObsClient::InitObsSdk() {
   obs_status ret_status = OBS_STATUS_BUTT;
   ret_status = obs_initialize(OBS_INIT_ALL);
   if (OBS_STATUS_OK != ret_status) {
-    auto obs_err = obs_get_status_name(ret_status);
+    const auto *obs_err = obs_get_status_name(ret_status);
     std::string err_msg = "Failed to initialize OBS SDK";
     if (obs_err) {
       err_msg += ", ";
@@ -255,7 +255,7 @@ std::shared_ptr<FILE> ObsClient::OpenLocalFile(
     return nullptr;
   }
 
-  std::string path = full_file_path.substr(0, full_file_path.rfind("/"));
+  std::string path = full_file_path.substr(0, full_file_path.rfind('/'));
 
   if (modelbox::CreateDirectory(path) != modelbox::STATUS_OK) {
     MBLOG_ERROR << "Failed to create folder for obs object (" << full_file_path
@@ -468,7 +468,7 @@ modelbox::Status ObsClient::GetObject(const ObsOptions &opt,
   }
 
   if (OBS_STATUS_OK != data.ret_status) {
-    auto obs_status_name = obs_get_status_name(data.ret_status);
+    const auto *obs_status_name = obs_get_status_name(data.ret_status);
     if (obs_status_name == nullptr) {
       obs_status_name = "null";
     }
@@ -687,7 +687,7 @@ obs_status ResponsePropertiesCallback(const obs_response_properties *properties,
 void ListObjectCompleteCallback(obs_status status,
                                 const obs_error_details *error,
                                 void *callback_data) {
-  auto data = (GetObjectListData *)callback_data;
+  auto *data = (GetObjectListData *)callback_data;
   data->ret_status = status;
 
   if (data->ret_status == OBS_STATUS_OK && error && error->message) {
@@ -707,7 +707,7 @@ obs_status ListObjectsCallback(int is_truncated, const char *next_marker,
     return OBS_STATUS_AbortedByCallback;
   }
 
-  auto data = (GetObjectListData *)callback_data;
+  auto *data = (GetObjectListData *)callback_data;
 
   data->is_truncated = is_truncated;
   // This is tricky.  S3 doesn't return the NextMarker if there is no
@@ -763,7 +763,7 @@ void GetObjectCompleteCallback(obs_status status,
   if (OBS_STATUS_OK != status) {
     MBLOG_WARN << "OBS status: " << status;
   }
-  auto data = (GetObjectCallbackData *)callback_data;
+  auto *data = (GetObjectCallbackData *)callback_data;
   if (nullptr == data) {
     return;
   }
@@ -772,7 +772,7 @@ void GetObjectCompleteCallback(obs_status status,
 
 obs_status GetObjectDataCallback(int buffer_size, const char *buffer,
                                  void *callback_data) {
-  auto data = (GetObjectCallbackData *)callback_data;
+  auto *data = (GetObjectCallbackData *)callback_data;
   if (nullptr == data || nullptr == data->out_file) {
     return OBS_STATUS_AbortedByCallback;
   }
@@ -783,12 +783,12 @@ obs_status GetObjectDataCallback(int buffer_size, const char *buffer,
 void PutBufferCompleteCallback(obs_status status,
                                const obs_error_details *error,
                                void *callback_data) {
-  auto data = (PutBufferObjectCallbackData *)callback_data;
+  auto *data = (PutBufferObjectCallbackData *)callback_data;
   data->ret_status = status;
 }
 
 int PutBufferDataCallback(int buffer_size, char *buffer, void *callback_data) {
-  auto data = (PutBufferObjectCallbackData *)callback_data;
+  auto *data = (PutBufferObjectCallbackData *)callback_data;
 
   int toRead = 0;
   if (data->buffer_size) {
@@ -812,7 +812,7 @@ int PutBufferDataCallback(int buffer_size, char *buffer, void *callback_data) {
 
 obs_status GetObjectSizeCallback(const obs_response_properties *properties,
                                  void *callback_data) {
-  auto data = (GetObejectSizeCallbackData *)callback_data;
+  auto *data = (GetObejectSizeCallbackData *)callback_data;
   data->content_length = properties->content_length;
   return OBS_STATUS_OK;
 }
@@ -820,13 +820,13 @@ obs_status GetObjectSizeCallback(const obs_response_properties *properties,
 void GetObjectSizeCompleteCallback(obs_status status,
                                    const obs_error_details *error,
                                    void *callback_data) {
-  auto data = (GetObejectSizeCallbackData *)callback_data;
+  auto *data = (GetObejectSizeCallbackData *)callback_data;
   data->ret_status = status;
 }
 
 obs_status GetBufferCallback(int buffer_size, const char *buffer,
                              void *callback_data) {
-  auto data = (GetBufferCallbackData *)callback_data;
+  auto *data = (GetBufferCallbackData *)callback_data;
   if (nullptr == data || nullptr == data->get_buffer) {
     return OBS_STATUS_AbortedByCallback;
   }
@@ -844,7 +844,7 @@ obs_status GetBufferCallback(int buffer_size, const char *buffer,
 void GetBufferCompleteCallback(obs_status status,
                                const obs_error_details *error,
                                void *callback_data) {
-  auto data = (GetBufferCallbackData *)callback_data;
+  auto *data = (GetBufferCallbackData *)callback_data;
   data->ret_status = status;
 }
 

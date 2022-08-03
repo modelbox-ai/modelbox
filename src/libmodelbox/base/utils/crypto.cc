@@ -135,7 +135,7 @@ Status Base64Encode(const unsigned char *input, size_t input_len,
   return STATUS_OK;
 }
 
-Status Base64Encode(const std::vector<unsigned char> input,
+Status Base64Encode(const std::vector<unsigned char> &input,
                     std::string *output) {
   return Base64Encode(input.data(), input.size(), output);
 }

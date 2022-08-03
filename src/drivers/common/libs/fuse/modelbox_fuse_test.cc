@@ -164,8 +164,8 @@ TEST_F(ModelBoxFuseTest, FuseMountCheckFile) {
       }
       totalnum++;
 
-      if (strncmp(ent->d_name, ".", PATH_MAX) == 0 ||
-          strncmp(ent->d_name, "..", PATH_MAX) == 0) {
+      if (strncmp(ent->d_name, ".", PATH_MAX - 1) == 0 ||
+          strncmp(ent->d_name, "..", PATH_MAX - 1) == 0) {
         continue;
       }
 

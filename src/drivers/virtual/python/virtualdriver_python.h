@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_VIRTUAL_DRIVER_PYTHON_H_
 #define MODELBOX_VIRTUAL_DRIVER_PYTHON_H_
 
@@ -43,7 +42,7 @@ class VirtualPythonFlowUnitDesc : public modelbox::FlowUnitDesc {
   void SetPythonEntry(std::string python_entry);
   std::string GetPythonEntry();
 
-  void SetConfiguration(std::shared_ptr<modelbox::Configuration> config);
+  void SetConfiguration(const std::shared_ptr<modelbox::Configuration> &config);
   std::shared_ptr<modelbox::Configuration> GetConfiguration();
 
   void SetPythonFilePath(const std::string &path) { python_file_path_ = path; }
@@ -64,7 +63,8 @@ class PythonVirtualDriver
 
   std::shared_ptr<modelbox::DriverFactory> CreateFactory() override;
   std::vector<std::shared_ptr<modelbox::Driver>> GetBindDriver();
-  void SetBindDriver(std::vector<std::shared_ptr<modelbox::Driver>> driver_list);
+  void SetBindDriver(
+      const std::vector<std::shared_ptr<modelbox::Driver>> &driver_list);
 
  private:
   std::vector<std::shared_ptr<modelbox::Driver>> python_flowunit_driver_;
@@ -81,12 +81,13 @@ class VirtualPythonFlowUnitFactory : public modelbox::FlowUnitFactory {
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
       override;
 
-  void SetFlowUnitFactory(std::vector<std::shared_ptr<modelbox::DriverFactory>>
-                              bind_flowunit_factory_list) override;
+  void SetFlowUnitFactory(
+      const std::vector<std::shared_ptr<modelbox::DriverFactory>>
+          &bind_flowunit_factory_list) override;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override { return driver_; };
 
-  void SetDriver(std::shared_ptr<modelbox::Driver> driver) override {
+  void SetDriver(const std::shared_ptr<modelbox::Driver> &driver) override {
     driver_ = driver;
   }
 

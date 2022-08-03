@@ -30,7 +30,7 @@ namespace modelbox {
 
 class ServerPlugin {
  public:
-  ServerPlugin(const std::string &plugin_path);
+  ServerPlugin(std::string plugin_path);
   virtual ~ServerPlugin() = default;
 
   virtual modelbox::Status Init(
@@ -81,7 +81,7 @@ class JsPlugin : public ServerPlugin {
   modelbox::Status Stop() override;
 
   void RegisterStatsNotify(
-      std::string path_pattern,
+      const std::string &path_pattern,
       const std::set<modelbox::StatisticsNotifyType> &type_list,
       const std::string &func_name, void *priv_data, size_t delay = 0,
       size_t interval = 0);

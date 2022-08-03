@@ -129,9 +129,8 @@ Status ExternalDataSimple::GetResult(const std::string& port_name,
       auto temp_buffer = data_map_->CreateBufferList();
       temp_buffer->Assign(buffers);
       temp_buffer->MoveAllBufferToTargetDevice();
-      for (auto buffer_iter = temp_buffer->begin();
-           buffer_iter != temp_buffer->end(); buffer_iter++) {
-        buffer_list_map_[iter.first].push(*buffer_iter);
+      for (auto& buffer_iter : *temp_buffer) {
+        buffer_list_map_[iter.first].push(buffer_iter);
       }
     }
   }

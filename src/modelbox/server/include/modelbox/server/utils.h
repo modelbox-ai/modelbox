@@ -58,13 +58,13 @@ class IPACL {
   modelbox::Status IsMatch(const std::string &ipaddr);
 
  private:
-  uint32_t GetIPV4Addr(std::shared_ptr<struct addrinfo> addrinfo);
+  uint32_t GetIPV4Addr(const std::shared_ptr<struct addrinfo> &addrinfo);
   std::shared_ptr<struct addrinfo> GetAddrInfo(const std::string &host);
 
   std::vector<std::pair<uint32_t, uint32_t>> ipv4_acl_;
 };
 
-Status SplitIPPort(std::string host, std::string &ip, std::string &port);
+Status SplitIPPort(const std::string &host, std::string &ip, std::string &port);
 
 }  // namespace modelbox
 

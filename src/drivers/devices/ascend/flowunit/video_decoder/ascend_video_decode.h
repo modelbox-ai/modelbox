@@ -38,7 +38,7 @@ constexpr const char *OUTPUT_PIX_FMT = "nv12";
 class ThreadHandler {
  public:
   ThreadHandler(int device_id, int instance_id,
-                std::shared_ptr<modelbox::DataContext> data_ctx);
+                const std::shared_ptr<modelbox::DataContext> &data_ctx);
   virtual ~ThreadHandler();
 
   modelbox::Status CreateThread();
@@ -119,11 +119,11 @@ class AscendVideoDecoder {
                      int32_t rate_den, int32_t format, int32_t entype);
   virtual ~AscendVideoDecoder();
 
-  modelbox::Status Init(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Init(const std::shared_ptr<modelbox::DataContext> &data_ctx);
 
   modelbox::Status Decode(
-      std::shared_ptr<DvppPacket> dvpp_packet,
-      std::shared_ptr<DvppVideoDecodeContext> dvpp_decoder_ctx);
+      const std::shared_ptr<DvppPacket> &dvpp_packet,
+      const std::shared_ptr<DvppVideoDecodeContext> &dvpp_decoder_ctx);
 
   int32_t GetRateNum() { return rate_num_; }
   int32_t GetRateDen() { return rate_den_; }
@@ -132,10 +132,10 @@ class AscendVideoDecoder {
   static void Callback(acldvppStreamDesc *input, acldvppPicDesc *output,
                        void *userData);
   modelbox::Status ProcessLastPacket(
-      std::shared_ptr<DvppPacket> dvpp_packet,
-      std::shared_ptr<DvppVideoDecodeContext> dvpp_decoder_ctx);
+      const std::shared_ptr<DvppPacket> &dvpp_packet,
+      const std::shared_ptr<DvppVideoDecodeContext> &dvpp_decoder_ctx);
   std::shared_ptr<acldvppPicDesc> SetUpFrame(
-      std::shared_ptr<DvppPacket> dvpp_packet);
+      const std::shared_ptr<DvppPacket> &dvpp_packet);
   int32_t instance_id_{0};
   int32_t device_id_{0};
   int32_t rate_num_{0};

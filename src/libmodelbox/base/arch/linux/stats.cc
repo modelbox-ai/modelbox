@@ -80,34 +80,34 @@ Status LinuxOSThread::SetName(const std::string &name) {
 Status LinuxOSThread::SetThreadPriority(const std::thread::id &thread,
                                         int32_t priority) {
   return STATUS_OK;
-};
+}
 
 Status LinuxOSThread::SetThreadLogicalCPUAffinity(
     const std::thread::id &thread, const std::vector<int16_t> &l_cpus) {
   return STATUS_OK;
-};
+}
 
 Status LinuxOSThread::SetThreadPhysicalCPUAffinity(
     const std::thread::id &thread, const std::vector<int16_t> &p_cpus) {
   return STATUS_OK;
-};
+}
 
 int32_t LinuxOSThread::GetThreadPriority(const std::thread::id &thread) {
   return 0;
-};
+}
 
 // OSInfo
 LinuxOSInfo::LinuxOSInfo() {
   Process = std::make_shared<LinuxOSProcess>();
   Thread = std::make_shared<LinuxOSThread>();
-};
+}
 
 LinuxOSInfo::~LinuxOSInfo() = default;
 
 LinuxOSInfo &LinuxOSInfo::GetInstance() {
   static LinuxOSInfo os;
   return os;
-};
+}
 
 Status LinuxOSInfo::GetMemoryUsage(size_t *free, size_t *total) {
   struct sysinfo si;
@@ -131,13 +131,13 @@ Status LinuxOSInfo::GetMemoryUsage(size_t *free, size_t *total) {
 std::vector<uint32_t> LinuxOSInfo::GetCpuRunTime() {
   std::vector<uint32_t> ss{0, 0};
   return ss;
-};
+}
 
 int32_t LinuxOSInfo::GetPhysicalCpuNumbers() { return 1; };
 
 int32_t LinuxOSInfo::GetLogicalCpuNumbers() {
   return sysconf(_SC_NPROCESSORS_ONLN);
-};
+}
 
 std::string LinuxOSInfo::GetSystemID() {
   std::string result;

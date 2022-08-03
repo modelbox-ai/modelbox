@@ -76,16 +76,16 @@ static void Register_Test_0_1_Batch_Flowunit(
           }));
 
   EXPECT_CALL(*mock_flowunit, DataPre(_))
-      .WillRepeatedly(
-          testing::Invoke([&](std::shared_ptr<modelbox::DataContext> data_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [&](const std::shared_ptr<modelbox::DataContext> &data_ctx) {
             MBLOG_INFO << "test_0_1_batch "
                        << "DataPre";
             return modelbox::STATUS_OK;
           }));
 
   EXPECT_CALL(*mock_flowunit, DataPost(_))
-      .WillRepeatedly(
-          testing::Invoke([&](std::shared_ptr<modelbox::DataContext> data_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [&](const std::shared_ptr<modelbox::DataContext> &data_ctx) {
             MBLOG_INFO << "test_0_1_batch "
                        << "DataPost";
             return modelbox::STATUS_OK;
@@ -93,8 +93,8 @@ static void Register_Test_0_1_Batch_Flowunit(
 
   EXPECT_CALL(*mock_flowunit,
               Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
-      .WillRepeatedly(
-          testing::Invoke([=](std::shared_ptr<modelbox::DataContext> op_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [=](const std::shared_ptr<modelbox::DataContext> &op_ctx) {
             auto output_buf_1 = op_ctx->Output("Out_1");
             std::vector<size_t> shape_vector(10, 8 * sizeof(float));
             modelbox::ModelBoxDataType type = modelbox::MODELBOX_FLOAT;
@@ -154,16 +154,16 @@ static void Register_Test_1_0_Batch_Flowunit(
           }));
 
   EXPECT_CALL(*mock_flowunit, DataPre(_))
-      .WillRepeatedly(
-          testing::Invoke([&](std::shared_ptr<modelbox::DataContext> data_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [&](const std::shared_ptr<modelbox::DataContext> &data_ctx) {
             MBLOG_INFO << "test_1_0_batch "
                        << "DataPre";
             return modelbox::STATUS_OK;
           }));
 
   EXPECT_CALL(*mock_flowunit, DataPost(_))
-      .WillRepeatedly(
-          testing::Invoke([&](std::shared_ptr<modelbox::DataContext> data_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [&](const std::shared_ptr<modelbox::DataContext> &data_ctx) {
             MBLOG_INFO << "test_1_0_batch "
                        << "DataPost";
             return modelbox::STATUS_STOP;
@@ -171,8 +171,8 @@ static void Register_Test_1_0_Batch_Flowunit(
 
   EXPECT_CALL(*mock_flowunit,
               Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
-      .WillRepeatedly(
-          testing::Invoke([=](std::shared_ptr<modelbox::DataContext> op_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [=](const std::shared_ptr<modelbox::DataContext> &op_ctx) {
             std::shared_ptr<modelbox::BufferList> input_bufs =
                 op_ctx->Input("In_1");
             EXPECT_EQ(input_bufs->Size(), 10);
@@ -260,16 +260,16 @@ static void Register_Test_0_1_Flowunit(
           }));
 
   EXPECT_CALL(*mock_flowunit, DataPre(_))
-      .WillRepeatedly(
-          testing::Invoke([&](std::shared_ptr<modelbox::DataContext> data_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [&](const std::shared_ptr<modelbox::DataContext> &data_ctx) {
             MBLOG_INFO << "test_0_1 "
                        << "DataPre";
             return modelbox::STATUS_OK;
           }));
 
   EXPECT_CALL(*mock_flowunit, DataPost(_))
-      .WillRepeatedly(
-          testing::Invoke([&](std::shared_ptr<modelbox::DataContext> data_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [&](const std::shared_ptr<modelbox::DataContext> &data_ctx) {
             MBLOG_INFO << "test_0_1 "
                        << "DataPost";
             return modelbox::STATUS_OK;
@@ -277,8 +277,8 @@ static void Register_Test_0_1_Flowunit(
 
   EXPECT_CALL(*mock_flowunit,
               Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
-      .WillRepeatedly(
-          testing::Invoke([=](std::shared_ptr<modelbox::DataContext> op_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [=](const std::shared_ptr<modelbox::DataContext> &op_ctx) {
             auto output_buf_1 = op_ctx->Output("Out_1");
             std::vector<size_t> shape_vector(1, 8 * sizeof(float));
             modelbox::ModelBoxDataType type = modelbox::MODELBOX_FLOAT;
@@ -336,16 +336,16 @@ static void Register_Test_1_0_Flowunit(
           }));
 
   EXPECT_CALL(*mock_flowunit, DataPre(_))
-      .WillRepeatedly(
-          testing::Invoke([&](std::shared_ptr<modelbox::DataContext> data_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [&](const std::shared_ptr<modelbox::DataContext> &data_ctx) {
             MBLOG_INFO << "test_1_0 "
                        << "DataPre";
             return modelbox::STATUS_OK;
           }));
 
   EXPECT_CALL(*mock_flowunit, DataPost(_))
-      .WillRepeatedly(
-          testing::Invoke([&](std::shared_ptr<modelbox::DataContext> data_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [&](const std::shared_ptr<modelbox::DataContext> &data_ctx) {
             MBLOG_INFO << "test_1_0 "
                        << "DataPost";
             return modelbox::STATUS_STOP;
@@ -353,8 +353,8 @@ static void Register_Test_1_0_Flowunit(
 
   EXPECT_CALL(*mock_flowunit,
               Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
-      .WillRepeatedly(
-          testing::Invoke([=](std::shared_ptr<modelbox::DataContext> op_ctx) {
+      .WillRepeatedly(testing::Invoke(
+          [=](const std::shared_ptr<modelbox::DataContext> &op_ctx) {
             std::shared_ptr<modelbox::BufferList> input_bufs =
                 op_ctx->Input("In_1");
             EXPECT_EQ(input_bufs->Size(), 1);

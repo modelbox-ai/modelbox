@@ -19,6 +19,7 @@
 #include <functional>
 #include <future>
 #include <thread>
+#include <utility>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -227,7 +228,7 @@ class MockBuffer : public Buffer {
   MockBuffer(const std::shared_ptr<Device> &device) : Buffer(device){};
   ~MockBuffer() override = default;
   void SetDelayedCopyDestinationDevice(std::shared_ptr<Device> dest_device) {
-    Buffer::SetDelayedCopyDestinationDevice(dest_device);
+    Buffer::SetDelayedCopyDestinationDevice(std::move(dest_device));
   }
 };
 

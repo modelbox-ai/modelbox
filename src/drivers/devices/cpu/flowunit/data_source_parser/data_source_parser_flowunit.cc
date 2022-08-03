@@ -114,7 +114,7 @@ modelbox::Status DataSourceParserFlowUnit::Process(
 }
 
 std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
-    std::shared_ptr<modelbox::SessionContext> session_context,
+    const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &source_type, const std::string &data_source_cfg,
     std::shared_ptr<std::string> &uri) {
   auto plugin = GetPlugin(source_type);

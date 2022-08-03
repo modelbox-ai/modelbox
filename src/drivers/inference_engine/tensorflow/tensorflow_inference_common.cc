@@ -19,6 +19,8 @@
 #include <model_decrypt.h>
 #include <modelbox/base/crypto.h>
 
+#include <utility>
+
 #include "modelbox/base/status.h"
 #include "virtualdriver_inference.h"
 
@@ -154,7 +156,7 @@ modelbox::Status InferenceTensorflowFlowUnit::LoadGraph(
     return {modelbox::STATUS_FAULT, "TF_NewGraph() failed."};
   }
 
-  auto opts = TF_NewImportGraphDefOptions();
+  auto *opts = TF_NewImportGraphDefOptions();
   if (nullptr == opts) {
     TF_DeleteGraph(params_.graph);
     auto err_msg = "TF_NewImportGraphDefOptions() failed: " +
@@ -268,13 +270,13 @@ modelbox::Status InferenceTensorflowFlowUnit::NewSession(
   if (is_save_model) {
     TF_Buffer *metagraph = TF_NewBuffer();
     if (metagraph == nullptr) {
-      auto err_msg = "TF_NewBuffer metagraph failed.";
+      const auto *err_msg = "TF_NewBuffer metagraph failed.";
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
     params_.graph = TF_NewGraph();
     if (params_.graph == nullptr) {
-      auto err_msg = "TF_NewGraph graph failed.";
+      const auto *err_msg = "TF_NewGraph graph failed.";
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
@@ -321,7 +323,7 @@ static void StringHex2Hex(const std::vector<std::string> &string_vector,
     uint8_vector.clear();
   }
 
-  for (auto &str : string_vector) {
+  for (const auto &str : string_vector) {
     auto num = std::stoul(str, nullptr, 16);
     uint8_vector.push_back((uint8_t)num);
   }
@@ -421,7 +423,7 @@ modelbox::Status InferenceTensorflowFlowUnit::Open(
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::SetUpInferencePlugin(
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration> &config) {
   if (plugin_.empty()) {
     pre_process_ = std::bind(&InferenceTensorflowFlowUnit::PreProcess, this,
                              std::placeholders::_1, std::placeholders::_2);
@@ -439,7 +441,7 @@ modelbox::Status InferenceTensorflowFlowUnit::SetUpInferencePlugin(
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
-    std::shared_ptr<modelbox::DataContext> data_ctx,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<TF_Tensor *> &input_tf_tensor_list) {
   int index = 0;
   modelbox::Status status;
@@ -475,7 +477,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
     std::vector<int64_t> tf_dims{static_cast<int64_t>(input_buf->Size())};
     copy(buffer_shape.begin(), buffer_shape.end(), back_inserter(tf_dims));
 
-    auto buf_list_ptr = new std::shared_ptr<modelbox::BufferList>(input_buf);
+    auto *buf_list_ptr = new std::shared_ptr<modelbox::BufferList>(input_buf);
     TF_Tensor *input_tensor = TF_NewTensor(
         tf_type, tf_dims.data(), tf_dims.size(),
         const_cast<void *>(input_buf->ConstData()), input_buf->GetBytes(),
@@ -496,12 +498,12 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::PostProcess(
-    std::shared_ptr<modelbox::DataContext> data_ctx,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<TF_Tensor *> &output_tf_tensor_list) {
   int index = 0;
   for (const auto &output_name : params_.output_name_list_) {
     auto tensor_byte = TF_TensorByteSize(output_tf_tensor_list[index]);
-    auto tensor_data = TF_TensorData(output_tf_tensor_list[index]);
+    auto *tensor_data = TF_TensorData(output_tf_tensor_list[index]);
     std::vector<size_t> output_shape;
 
     int64_t num_dims = TF_NumDims(output_tf_tensor_list[index]);
@@ -540,12 +542,12 @@ modelbox::Status InferenceTensorflowFlowUnit::PostProcess(
 }
 
 modelbox::Status InferenceTensorflowFlowUnit::SetUpDynamicLibrary(
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration> &config) {
   typedef std::shared_ptr<InferencePlugin> (*PluginObject)();
   auto status = modelbox::STATUS_OK;
   void *driver_handler = dlopen(plugin_.c_str(), RTLD_NOW | RTLD_LOCAL);
   if (driver_handler == nullptr) {
-    auto dl_errmsg = dlerror();
+    auto *dl_errmsg = dlerror();
     auto err_msg = "dlopen " + plugin_ + " failed";
     if (dl_errmsg) {
       err_msg += ", error: " + std::string(dl_errmsg);
@@ -566,7 +568,7 @@ modelbox::Status InferenceTensorflowFlowUnit::SetUpDynamicLibrary(
   auto create_plugin =
       reinterpret_cast<PluginObject>(dlsym(driver_handler, "CreatePlugin"));
   if (create_plugin == nullptr) {
-    auto dlerr_msg = dlerror();
+    auto *dlerr_msg = dlerror();
     std::string err_msg = "dlsym CreatePlugin failed";
     if (dlerr_msg) {
       err_msg += " error: ";
@@ -580,7 +582,7 @@ modelbox::Status InferenceTensorflowFlowUnit::SetUpDynamicLibrary(
 
   std::shared_ptr<InferencePlugin> inference_plugin = create_plugin();
   if (inference_plugin == nullptr) {
-    auto err_msg = "CreatePlugin failed";
+    const auto *err_msg = "CreatePlugin failed";
     MBLOG_ERROR << err_msg;
     status = {modelbox::STATUS_FAULT, err_msg};
     return status;
@@ -594,8 +596,8 @@ modelbox::Status InferenceTensorflowFlowUnit::SetUpDynamicLibrary(
     return status;
   }
 
-  driver_handler_ = std::move(driver_handler);
-  inference_plugin_ = std::move(inference_plugin);
+  driver_handler_ = driver_handler;
+  inference_plugin_ = inference_plugin;
 
   pre_process_ = std::bind(&InferencePlugin::PreProcess, inference_plugin_,
                            std::placeholders::_1, std::placeholders::_2);
@@ -660,7 +662,7 @@ modelbox::Status InferenceTensorflowFlowUnit::CreateOutputBufferList(
   } else if (type_output_temp == "long") {
     output_buffer_list->Set("type", modelbox::MODELBOX_INT64);
   } else {
-    return { modelbox::STATUS_NOTSUPPORT, "unsupport output type." };
+    return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
   }
 
   if (status != modelbox::STATUS_OK) {
@@ -702,11 +704,10 @@ modelbox::Status InferenceTensorflowFlowUnit::Close() {
   return params_.Clear();
 }
 
-void InferenceTensorflowFlowUnitDesc::SetModelEntry(
-    const std::string model_entry) {
-  model_entry_ = model_entry;
+void InferenceTensorflowFlowUnitDesc::SetModelEntry(std::string model_entry) {
+  model_entry_ = std::move(model_entry);
 }
 
-const std::string InferenceTensorflowFlowUnitDesc::GetModelEntry() {
+std::string InferenceTensorflowFlowUnitDesc::GetModelEntry() {
   return model_entry_;
 }

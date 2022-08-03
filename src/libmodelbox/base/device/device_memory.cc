@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/base/device_memory.h"
 
 #include "modelbox/base/device.h"
@@ -26,8 +28,8 @@ const uint64_t DeviceMemory::MEM_MAGIC_CODE = 0x446d4d654d6f5279;
 
 DeviceMemory::DeviceMemory(const std::shared_ptr<Device> &device,
                            const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-                           std::shared_ptr<void> device_mem_ptr, size_t size,
-                           bool is_host_mem)
+                           const std::shared_ptr<void> &device_mem_ptr,
+                           size_t size, bool is_host_mem)
     : is_host_mem_(is_host_mem),
       device_(device),
       mem_mgr_(mem_mgr),
@@ -87,7 +89,7 @@ bool DeviceMemory::IsContiguous(
 
 std::shared_ptr<DeviceMemory> DeviceMemory::Combine(
     const std::vector<std::shared_ptr<DeviceMemory>> &mem_list,
-    std::shared_ptr<Device> target_device, uint32_t target_mem_flags) {
+    const std::shared_ptr<Device> &target_device, uint32_t target_mem_flags) {
   if (mem_list.empty()) {
     MBLOG_ERROR << "Combine mem list is empty";
     return nullptr;
@@ -113,7 +115,7 @@ std::shared_ptr<DeviceMemory> DeviceMemory::Combine(
 
 std::shared_ptr<DeviceMemory> DeviceMemory::CombineContinuous(
     const std::vector<std::shared_ptr<DeviceMemory>> &mem_list,
-    size_t total_size, std::shared_ptr<Device> target_device) {
+    size_t total_size, const std::shared_ptr<Device> &target_device) {
   auto first_mem_ptr = std::min_element(
       mem_list.begin(), mem_list.end(),
       [](const std::shared_ptr<DeviceMemory> &mem1,
@@ -598,7 +600,8 @@ std::shared_ptr<DeviceMemory> DeviceMemory::Clone(bool is_copy) {
   return new_device_memory;
 }
 
-Status DeviceMemory::MemAcquire(std::shared_ptr<void> mem_ptr, size_t size) {
+Status DeviceMemory::MemAcquire(const std::shared_ptr<void> &mem_ptr,
+                                size_t size) {
   if (mem_ptr == nullptr) {
     MBLOG_ERROR << "Mem acquire mem_ptr is nullptr";
     return STATUS_INVALID;
@@ -658,12 +661,11 @@ Status DeviceMemoryManager::Read(const void *device_data, size_t device_size,
               DeviceMemoryCopyKind::ToHost);
 }
 
-DeviceMemoryLog::DeviceMemoryLog(const std::string &memory_id,
-                                 const std::string &user_id,
-                                 const std::string &device_id, size_t size)
-    : memory_id_(memory_id),
-      user_id_(user_id),
-      device_id_(device_id),
+DeviceMemoryLog::DeviceMemoryLog(std::string memory_id, std::string user_id,
+                                 std::string device_id, size_t size)
+    : memory_id_(std::move(memory_id)),
+      user_id_(std::move(user_id)),
+      device_id_(std::move(device_id)),
       size_(size) {}
 
 DeviceMemoryLog::~DeviceMemoryLog() = default;

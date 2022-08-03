@@ -31,18 +31,18 @@ const std::vector<std::string> BIND_JAVA_FLOWUNIT_TYPE{"cpu"};
 class JavaVirtualDriverDesc : public modelbox::VirtualDriverDesc {
  public:
   JavaVirtualDriverDesc() = default;
-  virtual ~JavaVirtualDriverDesc() = default;
+  ~JavaVirtualDriverDesc() override = default;
 };
 
 class VirtualJavaFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
   VirtualJavaFlowUnitDesc() = default;
-  virtual ~VirtualJavaFlowUnitDesc() = default;
+  ~VirtualJavaFlowUnitDesc() override = default;
 
-  void SetJarEntry(std::string python_entry);
+  void SetJarEntry(std::string java_entry);
   std::string GetJarEntry();
 
-  void SetConfiguration(std::shared_ptr<modelbox::Configuration> config);
+  void SetConfiguration(const std::shared_ptr<modelbox::Configuration> &config);
   std::shared_ptr<modelbox::Configuration> GetConfiguration();
 
   void SetJarFilePath(const std::string &path) { jar_file_path_ = path; }
@@ -59,12 +59,12 @@ class JavaVirtualDriver
       public std::enable_shared_from_this<JavaVirtualDriver> {
  public:
   JavaVirtualDriver() = default;
-  virtual ~JavaVirtualDriver() = default;
+  ~JavaVirtualDriver() override = default;
 
-  std::shared_ptr<modelbox::DriverFactory> CreateFactory();
+  std::shared_ptr<modelbox::DriverFactory> CreateFactory() override;
   std::vector<std::shared_ptr<modelbox::Driver>> GetBindDriver();
   void SetBindDriver(
-      std::vector<std::shared_ptr<modelbox::Driver>> driver_list);
+      const std::vector<std::shared_ptr<modelbox::Driver>> &driver_list);
 
  private:
   std::vector<std::shared_ptr<modelbox::Driver>> java_flowunit_driver_;
@@ -73,20 +73,21 @@ class JavaVirtualDriver
 class VirtualJavaFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   VirtualJavaFlowUnitFactory() = default;
-  virtual ~VirtualJavaFlowUnitFactory() = default;
+  ~VirtualJavaFlowUnitFactory() override = default;
 
   std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type) override;
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
-  FlowUnitProbe() override;
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override;
 
-  void SetFlowUnitFactory(std::vector<std::shared_ptr<modelbox::DriverFactory>>
-                              bind_flowunit_factory_list) override;
+  void SetFlowUnitFactory(
+      const std::vector<std::shared_ptr<modelbox::DriverFactory>>
+          &bind_flowunit_factory_list) override;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override { return driver_; };
 
-  virtual void SetDriver(std::shared_ptr<modelbox::Driver> driver) override {
+  void SetDriver(const std::shared_ptr<modelbox::Driver> &driver) override {
     driver_ = driver;
   }
 
@@ -114,14 +115,14 @@ class VirtualJavaFlowUnitFactory : public modelbox::FlowUnitFactory {
 class JavaVirtualDriverManager : public modelbox::VirtualDriverManager {
  public:
   JavaVirtualDriverManager() = default;
-  virtual ~JavaVirtualDriverManager() = default;
+  ~JavaVirtualDriverManager() override = default;
 
-  modelbox::Status Scan(const std::string &path);
-  modelbox::Status Add(const std::string &path);
-  modelbox::Status Init(modelbox::Drivers &driver);
+  modelbox::Status Scan(const std::string &path) override;
+  modelbox::Status Add(const std::string &file) override;
+  modelbox::Status Init(modelbox::Drivers &driver) override;
 
  private:
-  modelbox::Status BindBaseDriver(modelbox::Drivers &drivers);
+  modelbox::Status BindBaseDriver(modelbox::Drivers &driver);
   std::vector<std::shared_ptr<modelbox::Driver>> java_flowunit_driver_list_;
 };
 

@@ -86,7 +86,7 @@ class TokenManager {
    * @return  Successful or not
    */
   modelbox::Status RequestAgencyProjectToken(const AgencyInfo &agency_info,
-                                             ProjectInfo project_info,
+                                             const ProjectInfo &project_info,
                                              bool force);
 
   /**

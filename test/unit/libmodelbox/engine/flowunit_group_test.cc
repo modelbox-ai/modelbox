@@ -29,7 +29,8 @@
 namespace modelbox {
 
 std::shared_ptr<FlowUnitDataContext> BuildFlowUnitDataContext(
-    size_t size, int& begin_data, Node* node, std::shared_ptr<Device> device) {
+    size_t size, int& begin_data, Node* node,
+    const std::shared_ptr<Device>& device) {
   auto stream_data_map = std::make_shared<PortDataMap>();
   const auto& input_ports = node->GetInputPorts();
   for (const auto& in_port : input_ports) {
@@ -107,10 +108,8 @@ TEST_F(FlowUnitGroupTest, Run2_In_1) {
   FlowUnitGroup fug("iflow_add_1", "cpu", "0", config, nullptr);
   fug.Init({"In_1"}, {"Out_1"}, flowunit_mgr_);
   fug.SetNode(node_);
-  fug.Open(
-      [](std::shared_ptr<Device> /*unused*/) -> std::shared_ptr<ExternalData> {
-        return nullptr;
-      });
+  fug.Open([](const std::shared_ptr<Device>& /*unused*/)
+               -> std::shared_ptr<ExternalData> { return nullptr; });
   fug.Run(data_ctx_list);
 
   int check_data = 0;
@@ -144,10 +143,8 @@ TEST_F(FlowUnitGroupTest, Run2_In_2) {
   FlowUnitGroup fug("add", "cpu", "0", config, nullptr);
   fug.Init({"In_1", "In_2"}, {"Out_1"}, flowunit_mgr_);
   fug.SetNode(node_);
-  fug.Open(
-      [](std::shared_ptr<Device> /*unused*/) -> std::shared_ptr<ExternalData> {
-        return nullptr;
-      });
+  fug.Open([](const std::shared_ptr<Device>& /*unused*/)
+               -> std::shared_ptr<ExternalData> { return nullptr; });
   fug.Run(data_ctx_list);
 
   int check_data = 0;
@@ -182,10 +179,8 @@ TEST_F(FlowUnitGroupTest, Run2_Status_Error) {
   FlowUnitGroup fug("add_1_and_error", "cpu", "0", config, nullptr);
   fug.Init({"In_1"}, {"Out_1"}, flowunit_mgr_);
   fug.SetNode(node_);
-  fug.Open(
-      [](std::shared_ptr<Device> /*unused*/) -> std::shared_ptr<ExternalData> {
-        return nullptr;
-      });
+  fug.Open([](const std::shared_ptr<Device>& /*unused*/)
+               -> std::shared_ptr<ExternalData> { return nullptr; });
   fug.Run(data_ctx_list);
 
   int check_data = 0;
@@ -241,10 +236,8 @@ TEST_F(FlowUnitGroupTest, Run2_Condition) {
   FlowUnitGroup fug("test_condition", "cpu", "0", config, nullptr);
   fug.Init({"In_1"}, {"Out_1", "Out_2"}, flowunit_mgr_);
   fug.SetNode(node_);
-  fug.Open(
-      [](std::shared_ptr<Device> /*unused*/) -> std::shared_ptr<ExternalData> {
-        return nullptr;
-      });
+  fug.Open([](const std::shared_ptr<Device>& /*unused*/)
+               -> std::shared_ptr<ExternalData> { return nullptr; });
   fug.Run(data_ctx_list);
 
   int check_data = 0;
@@ -308,8 +301,8 @@ TEST_F(FlowUnitGroupTest, Open_Close) {
 
   bool flag = false;
 
-  auto func_2 =
-      [&](std::shared_ptr<Device> event) -> std::shared_ptr<ExternalData> {
+  auto func_2 = [&](const std::shared_ptr<Device>& event)
+      -> std::shared_ptr<ExternalData> {
     flag = true;
     return nullptr;
   };

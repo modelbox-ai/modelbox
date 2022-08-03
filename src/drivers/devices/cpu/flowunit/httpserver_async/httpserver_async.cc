@@ -38,7 +38,8 @@ modelbox::Status HTTPServerAsync::HandleFunc(web::http::http_request request) {
   }
 
   request.extract_string().then(
-      [request, request_info, this](pplx::task<utility::string_t> t) mutable {
+      [request, request_info,
+       this](const pplx::task<utility::string_t> &t) mutable {
         try {
           request_info.request_body = t.get();
           auto handle_status = HandleTask(request, request_info);
@@ -57,8 +58,8 @@ modelbox::Status HTTPServerAsync::HandleFunc(web::http::http_request request) {
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status HTTPServerAsync::HandleTask(web::http::http_request request,
-                                             const RequestInfo &request_info) {
+modelbox::Status HTTPServerAsync::HandleTask(
+    const web::http::http_request &request, const RequestInfo &request_info) {
   auto http_limiter = HttpRequestLimiter::GetInstance();
   if (http_limiter == nullptr) {
     return modelbox::STATUS_BUSY;
@@ -182,18 +183,22 @@ modelbox::Status HTTPServerAsync::Open(
   listener_ =
       std::make_shared<web::http::experimental::listener::http_listener>(
           request_url_, server_config);
-  listener_->support(
-      web::http::methods::POST,
-      [this](web::http::http_request request) { this->HandleFunc(request); });
-  listener_->support(
-      web::http::methods::PUT,
-      [this](web::http::http_request request) { this->HandleFunc(request); });
-  listener_->support(
-      web::http::methods::GET,
-      [this](web::http::http_request request) { this->HandleFunc(request); });
-  listener_->support(
-      web::http::methods::DEL,
-      [this](web::http::http_request request) { this->HandleFunc(request); });
+  listener_->support(web::http::methods::POST,
+                     [this](const web::http::http_request &request) {
+                       this->HandleFunc(request);
+                     });
+  listener_->support(web::http::methods::PUT,
+                     [this](const web::http::http_request &request) {
+                       this->HandleFunc(request);
+                     });
+  listener_->support(web::http::methods::GET,
+                     [this](const web::http::http_request &request) {
+                       this->HandleFunc(request);
+                     });
+  listener_->support(web::http::methods::DEL,
+                     [this](const web::http::http_request &request) {
+                       this->HandleFunc(request);
+                     });
 
   listener_->support(web::http::methods::TRCE, HandleUnSupportMethod);
   listener_->support(web::http::methods::OPTIONS, HandleUnSupportMethod);

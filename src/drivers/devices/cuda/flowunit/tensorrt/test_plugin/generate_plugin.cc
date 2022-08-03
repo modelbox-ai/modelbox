@@ -24,7 +24,8 @@ std::shared_ptr<TensorRTInferencePlugin> CreatePlugin() {
 modelbox::Status OriginInferencePlugin::PluginInit(
     std::shared_ptr<modelbox::Configuration> config) {
   modelbox::Status status = modelbox::STATUS_OK;
-  std::vector<std::string> names, types;
+  std::vector<std::string> names;
+  std::vector<std::string> types;
   status = SetUpInputOutput(config, "input", names, types);
   if (status != modelbox::STATUS_OK) {
     auto err_msg = "set up input failed, error: " + status.WrapErrormsgs();
@@ -47,12 +48,16 @@ modelbox::Status OriginInferencePlugin::PluginInit(
 }
 
 modelbox::Status OriginInferencePlugin::SetUpInputOutput(
-    std::shared_ptr<modelbox::Configuration> config, const std::string &type,
-    std::vector<std::string> &names, std::vector<std::string> &types) {
+    const std::shared_ptr<modelbox::Configuration> &config,
+    const std::string &type, std::vector<std::string> &names,
+    std::vector<std::string> &types) {
   auto keys = config->GetSubKeys(type);
   for (unsigned int i = 1; i <= keys.size(); ++i) {
-    std::string inner_name, inner_type;
-    auto key = type + "." + type + std::to_string(i);
+    std::string inner_name;
+    std::string inner_type;
+    auto key = type + ".";
+    key += type;
+    key += std::to_string(i);
     auto item_table = config->GetSubKeys(key);
     if (item_table.empty()) {
       auto err_msg = "the key " + key + " is not found in config file.";

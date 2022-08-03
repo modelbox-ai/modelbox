@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/graph.h"
 
 #include "modelbox/base/log.h"
@@ -50,10 +52,10 @@ Graph::~Graph() {
   }
 }
 
-Status Graph::Initialize(std::shared_ptr<FlowUnitManager> flowunit_mgr,
-                         std::shared_ptr<DeviceManager> device_mgr,
+Status Graph::Initialize(const std::shared_ptr<FlowUnitManager> &flowunit_mgr,
+                         const std::shared_ptr<DeviceManager> &device_mgr,
                          std::shared_ptr<Profiler> profiler,
-                         std::shared_ptr<Configuration> config) {
+                         const std::shared_ptr<Configuration> &config) {
   if (flowunit_mgr == nullptr || device_mgr == nullptr || config == nullptr) {
     const auto *msg = "argument is invalid";
     auto ret = Status(STATUS_INVALID, msg);
@@ -63,7 +65,7 @@ Status Graph::Initialize(std::shared_ptr<FlowUnitManager> flowunit_mgr,
 
   flowunit_mgr_ = flowunit_mgr;
   device_mgr_ = device_mgr;
-  profiler_ = profiler;
+  profiler_ = std::move(profiler);
   flow_stats_ = Statistics::GetGlobalItem()->GetItem(STATISTICS_ITEM_FLOW);
   config_ = config;
   auto ret = GetUUID(&id_);
@@ -109,7 +111,7 @@ Status Graph::CheckLoopStructureNode() {
   return status;
 }
 
-void Graph::ShowGraphInfo(std::shared_ptr<GCGraph> g) {
+void Graph::ShowGraphInfo(const std::shared_ptr<GCGraph> &g) {
   name_ = g->GetGraphName();
   MBLOG_INFO << "Build graph name:" << name_ << ", id:" << id_;
   g->ShowAllSubGraph();
@@ -132,7 +134,7 @@ Status Graph::CheckGraph() {
   return res;
 }
 
-Status Graph::Build(std::shared_ptr<GCGraph> g) {
+Status Graph::Build(const std::shared_ptr<GCGraph> &g) {
   if (g == nullptr) {
     return STATUS_INVALID;
   }
@@ -213,7 +215,7 @@ Status Graph::Build(std::shared_ptr<GCGraph> g) {
   return STATUS_OK;
 }
 
-Status Graph::AddNode(std::shared_ptr<NodeBase> node) {
+Status Graph::AddNode(const std::shared_ptr<NodeBase> &node) {
   if (node == nullptr) {
     const auto *msg = "node is null pointer.";
     return {STATUS_INVALID, msg};
@@ -322,8 +324,8 @@ Status Graph::AddLink(const std::string &srcNodeName,
   return AddLink(srcPort, dstPort);
 }
 
-Status Graph::AddLink(std::shared_ptr<OutPort> src,
-                      std::shared_ptr<InPort> dst) {
+Status Graph::AddLink(const std::shared_ptr<OutPort> &src,
+                      const std::shared_ptr<InPort> &dst) {
   if (src == nullptr) {
     const auto *msg = "src port is null pointer.";
     return {STATUS_INVALID, msg};
@@ -369,7 +371,7 @@ Status Graph::AddLink(std::shared_ptr<OutPort> src,
 }
 
 std::set<std::shared_ptr<InPort>> Graph::GetDstPortsByPort(
-    std::shared_ptr<OutPort> port) const {
+    const std::shared_ptr<OutPort> &port) const {
   std::set<std::shared_ptr<InPort>> ports;
   if (port == nullptr) {
     return ports;
@@ -385,7 +387,7 @@ std::set<std::shared_ptr<InPort>> Graph::GetDstPortsByPort(
 }
 
 std::set<std::shared_ptr<OutPort>> Graph::GetSrcPortsByPort(
-    std::shared_ptr<InPort> port) const {
+    const std::shared_ptr<InPort> &port) const {
   std::set<std::shared_ptr<OutPort>> ports;
   if (port == nullptr) {
     return ports;
@@ -428,7 +430,7 @@ std::set<std::shared_ptr<NodeBase>> Graph::GetEndPointNodes() const {
   std::set<std::shared_ptr<NodeBase>> endNode;
   for (const auto &node : nodes_) {
     auto outports = node.second->GetOutputPorts();
-    for (auto iter : outports) {
+    for (const auto &iter : outports) {
       if (iter->GetConnectInPort().size() <= 0) {
         endNode.insert(node.second);
       }
@@ -456,9 +458,9 @@ std::set<std::shared_ptr<NodeBase>> Graph::GetDstNodesByNode(
   }
 
   auto outports = node->GetOutputPorts();
-  for (auto port : outports) {
+  for (const auto &port : outports) {
     auto linkPorts = GetDstPortsByPort(port);
-    for (auto linkport : linkPorts) {
+    for (const auto &linkport : linkPorts) {
       nodes.insert(linkport->GetNode());
     }
   }
@@ -475,9 +477,9 @@ std::set<std::shared_ptr<NodeBase>> Graph::GetSrcNodesByNode(
   }
 
   auto inports = node->GetInputPorts();
-  for (auto port : inports) {
+  for (const auto &port : inports) {
     auto linkPorts = GetSrcPortsByPort(port);
-    for (auto linkport : linkPorts) {
+    for (const auto &linkport : linkPorts) {
       nodes.insert(linkport->GetNode());
     }
   }
@@ -498,8 +500,8 @@ std::shared_ptr<ExternalDataMap> Graph::CreateExternalDataMap() {
   return extern_data;
 }
 
-Status Graph::UpdateGraphConfigToNode(std::shared_ptr<GCGraph> g,
-                                      const std::shared_ptr<GCNode> node) {
+Status Graph::UpdateGraphConfigToNode(const std::shared_ptr<GCGraph> &g,
+                                      const std::shared_ptr<GCNode> &node) {
   auto graph_config = g->GetConfiguration();
   auto node_config = node->GetConfiguration();
   auto update_node_config = [=](const std::string &key) {
@@ -522,8 +524,9 @@ Status Graph::UpdateGraphConfigToNode(std::shared_ptr<GCGraph> g,
   return STATUS_OK;
 }
 
-Status Graph::BuildFlowunitNode(std::shared_ptr<GCGraph> g,
-                                std::shared_ptr<GCNode> gcnode, bool strict) {
+Status Graph::BuildFlowunitNode(const std::shared_ptr<GCGraph> &g,
+                                const std::shared_ptr<GCNode> &gcnode,
+                                bool strict) {
   auto name = gcnode->GetNodeName();
   auto node_config = gcnode->GetConfiguration();
   auto device = node_config->GetString(GRAPH_KEY_DEVICE, "");
@@ -574,7 +577,7 @@ Status Graph::BuildFlowunitNode(std::shared_ptr<GCGraph> g,
   return STATUS_SUCCESS;
 }
 
-Status Graph::BuildInputNode(std::shared_ptr<GCNode> gcnode) {
+Status Graph::BuildInputNode(const std::shared_ptr<GCNode> &gcnode) {
   auto name = gcnode->GetNodeName();
   auto node_config = gcnode->GetConfiguration();
   if (input_node_ports_.find(name) != input_node_ports_.end()) {
@@ -586,7 +589,7 @@ Status Graph::BuildInputNode(std::shared_ptr<GCNode> gcnode) {
   return STATUS_SUCCESS;
 }
 
-Status Graph::BuildOutputNode(std::shared_ptr<GCNode> gcnode) {
+Status Graph::BuildOutputNode(const std::shared_ptr<GCNode> &gcnode) {
   auto name = gcnode->GetNodeName();
   auto node_config = gcnode->GetConfiguration();
   if (output_node_ports_.find(name) != output_node_ports_.end()) {
@@ -598,8 +601,8 @@ Status Graph::BuildOutputNode(std::shared_ptr<GCNode> gcnode) {
   return STATUS_SUCCESS;
 }
 
-Status Graph::BuildNode(std::shared_ptr<GCGraph> g,
-                        std::shared_ptr<GCNode> gcnode, bool strict) {
+Status Graph::BuildNode(const std::shared_ptr<GCGraph> &g,
+                        const std::shared_ptr<GCNode> &gcnode, bool strict) {
   auto name = gcnode->GetNodeName();
   auto node_config = gcnode->GetConfiguration();
   auto type = node_config->GetString(GRAPH_NODE_TYPE, "");
@@ -627,7 +630,7 @@ Status Graph::BuildNode(std::shared_ptr<GCGraph> g,
   return status;
 }
 
-Status Graph::BuildNodes(std::shared_ptr<GCGraph> g) {
+Status Graph::BuildNodes(const std::shared_ptr<GCGraph> &g) {
   auto strict = config_->GetBool("graph.strict", true);
 
   auto nodes = g->GetAllNodes();
@@ -647,7 +650,7 @@ Status Graph::BuildNodes(std::shared_ptr<GCGraph> g) {
   return STATUS_OK;
 }
 
-Status Graph::BuildVirtualNodes(std::shared_ptr<GCGraph> g) {
+Status Graph::BuildVirtualNodes(const std::shared_ptr<GCGraph> &g) {
   if (!input_node_ports_.empty()) {
     input_node_name_ = *input_node_ports_.begin();
     input_node_ = std::make_shared<InputVirtualNode>("cpu", "0", device_mgr_);
@@ -694,7 +697,7 @@ Status Graph::BuildVirtualNodes(std::shared_ptr<GCGraph> g) {
   return STATUS_OK;
 }
 
-Status Graph::BuildEdges(std::shared_ptr<GCGraph> g) {
+Status Graph::BuildEdges(const std::shared_ptr<GCGraph> &g) {
   auto edges = g->GetAllEdges();
   for (auto &ite : edges) {
     auto gcedge = ite.second;
@@ -771,7 +774,7 @@ void Graph::CloseNodes() const {
   }
 }
 
-Status Graph::BuildGraph(std::shared_ptr<GCGraph> g) {
+Status Graph::BuildGraph(const std::shared_ptr<GCGraph> &g) {
   auto status = BuildNodes(g);
   if (!status) {
     return status;
@@ -813,10 +816,10 @@ Status Graph::IsValidGraph() const {
 }
 
 Status Graph::IsAllPortConnect() const {
-  for (auto node : nodes_) {
+  for (const auto &node : nodes_) {
     // 某些输入port、输出port是可选的, TODO
     auto inports = node.second->GetInputPorts();
-    for (auto port : inports) {
+    for (const auto &port : inports) {
       auto ite = dst_to_src_.find(port);
       if (ite == dst_to_src_.end()) {
         auto msg = "in port is not connect. node: " + node.second->GetName() +
@@ -826,7 +829,7 @@ Status Graph::IsAllPortConnect() const {
     }
 
     auto outports = node.second->GetOutputPorts();
-    for (auto port : outports) {
+    for (const auto &port : outports) {
       auto ite = src_to_dst_.find(port);
       if (ite == src_to_dst_.end()) {
         auto msg = "out port is not connect. node: " + node.second->GetName() +
@@ -845,8 +848,8 @@ Status Graph::IsAllNodeConnect() const {
     nodeType[node.first] = idx++;
   }
 
-  for (auto link : src_to_dst_) {
-    for (auto linkport : link.second) {
+  for (const auto &link : src_to_dst_) {
+    for (const auto &linkport : link.second) {
       auto srcNode = link.first->GetNode();
       auto dstNode = linkport->GetNode();
       auto srcType = nodeType[srcNode->GetName()];
@@ -861,7 +864,7 @@ Status Graph::IsAllNodeConnect() const {
       MBLOG_DEBUG << msg;
 
       auto mergeType = srcType < dstType ? srcType : dstType;
-      for (auto node : nodeType) {
+      for (const auto &node : nodeType) {
         if (node.second == srcType || node.second == dstType) {
           nodeType[node.first] = mergeType;
           auto msg = "merge. src: " + node.first + ", " +
@@ -873,12 +876,12 @@ Status Graph::IsAllNodeConnect() const {
     }
   }
 
-  for (auto node : nodeType) {
+  for (const auto &node : nodeType) {
     auto msg = "node: " + node.first + " #" + std::to_string(node.second);
     MBLOG_INFO << msg;
   }
   auto firstType = nodeType.begin();
-  for (auto node : nodeType) {
+  for (const auto &node : nodeType) {
     if (node.second != firstType->second) {
       const auto *msg = "not all node union.";
       return Status(STATUS_BADCONF, msg);
@@ -889,9 +892,9 @@ Status Graph::IsAllNodeConnect() const {
 }
 
 Status Graph::UpdatePriority() {
-  auto callback = [](std::shared_ptr<NodeBase> node, int order) {
+  auto callback = [](const std::shared_ptr<NodeBase> &node, int order) {
     auto inports = node->GetInputPorts();
-    for (auto port : inports) {
+    for (const auto &port : inports) {
       port->SetPriority(order);
       auto msg = "set priority. node: " + node->GetName() +
                  " port: " + port->GetName() +
@@ -904,11 +907,10 @@ Status Graph::UpdatePriority() {
   return Topology(callback);
 }
 
-Status Graph::Topology(
-    std::function<bool(std::shared_ptr<NodeBase> node, int order)> callback)
-    const {
+Status Graph::Topology(const std::function<bool(std::shared_ptr<NodeBase> node,
+                                                int order)> &callback) const {
   int idx = 0;
-  for (auto node : topo_order_) {
+  for (const auto &node : topo_order_) {
     auto ret = callback(node, idx);
     if (!ret) {
       auto msg = "callback fail. topo idx: " + std::to_string(idx) + ", " +
@@ -1068,7 +1070,7 @@ Status Graph::GenerateTopology() {
       MBLOG_DEBUG << msg;
       topoNode.push_back(node);
       auto dstNodes = GetDstNodesByNode(node->GetName());
-      for (auto dstNode : dstNodes) {
+      for (const auto &dstNode : dstNodes) {
         connectNode.insert(dstNode);
         auto msg = "add connect node. " + node->GetName() + " -> " +
                    dstNode->GetName();
@@ -1078,7 +1080,7 @@ Status Graph::GenerateTopology() {
   }
 
   auto i = 0;
-  for (auto node : topoNode) {
+  for (const auto &node : topoNode) {
     auto msg = "topo index: " + std::to_string(i) + ", " + node->GetName();
     MBLOG_INFO << msg;
     ++i;

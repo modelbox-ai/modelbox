@@ -21,8 +21,9 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
-#include <iomanip>
 #include <functional>
+#include <iomanip>
+#include <utility>
 
 #include "config.h"
 #include "modelbox/base/configuration.h"
@@ -40,7 +41,7 @@ Control::Control() = default;
 Control::~Control() { Stop(); }
 
 modelbox::Status Control::Init(
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration> &config) {
   config_ = config;
   auto ret = modelbox::STATUS_OK;
   DeferCond { return ret != modelbox::STATUS_OK; };
@@ -90,7 +91,7 @@ modelbox::Status Control::Init(
   return modelbox::STATUS_OK;
 }
 
-int Control::ProcessHelp(std::shared_ptr<ControlMsgHelp> msg,
+int Control::ProcessHelp(const std::shared_ptr<ControlMsgHelp> &msg,
                          MsgSendFunc reply_func) {
   auto cmds = modelbox::ToolCommandList::Instance()->GetAllCommands();
   if (cmds.size() == 0) {
@@ -98,7 +99,7 @@ int Control::ProcessHelp(std::shared_ptr<ControlMsgHelp> msg,
   }
 
   auto out_msg = std::make_shared<ControlOutStream>();
-  out_msg->SetReplyFunc(reply_func);
+  out_msg->SetReplyFunc(std::move(reply_func));
 
   *out_msg->Stream() << "Server command lists:\n";
   for (auto &cmd : cmds) {
@@ -110,8 +111,8 @@ int Control::ProcessHelp(std::shared_ptr<ControlMsgHelp> msg,
   return 0;
 }
 
-int Control::ProcessCmd(std::shared_ptr<ControlMsgCmd> msg,
-                        MsgSendFunc reply_func) {
+int Control::ProcessCmd(const std::shared_ptr<ControlMsgCmd> &msg,
+                        const MsgSendFunc &reply_func) {
   auto args = msg->GetArgv();
   int argc = args.size();
   char *argv[argc];
@@ -141,7 +142,7 @@ int Control::ProcessCmd(std::shared_ptr<ControlMsgCmd> msg,
   return cmd->Run(argc, argv);
 }
 
-void Control::ProcessMsg(std::shared_ptr<ControlMsg> msg,
+void Control::ProcessMsg(const std::shared_ptr<ControlMsg> &msg,
                          MsgSendFunc reply_func) {
   int process_ret = 0;
   modelbox::Status ret = modelbox::STATUS_OK;
@@ -194,7 +195,7 @@ void Control::ProcessMsg(std::shared_ptr<ControlMsg> msg,
 }
 
 void Control::ReplyMsgError(int err_code, const std::string &err_msg,
-                            MsgSendFunc reply_func) {
+                            const MsgSendFunc &reply_func) {
   ControlMsgError msg_err;
   msg_err.SetError(err_code, err_msg);
   if (msg_err.Serialize() != modelbox::STATUS_OK) {
@@ -203,7 +204,7 @@ void Control::ReplyMsgError(int err_code, const std::string &err_msg,
   reply_func(msg_err.GetData(), msg_err.GetDataLen());
 }
 
-modelbox::Status Control::RecvMsg(std::shared_ptr<ControlMsg> recv_msg) {
+modelbox::Status Control::RecvMsg(const std::shared_ptr<ControlMsg> &recv_msg) {
   struct sockaddr_un client;
   socklen_t client_len = sizeof(client);
 
@@ -341,7 +342,7 @@ ControlStream::~ControlStream() = default;
 bool ControlStream::HasError() { return has_error_; }
 
 void ControlStream::SetReplyFunc(MsgSendFunc reply_func) {
-  reply_func_ = reply_func;
+  reply_func_ = std::move(reply_func);
 }
 
 ControlOutStream::ControlOutStream() = default;

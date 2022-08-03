@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/flow_graph_desc.h"
 
 #include "modelbox/base/register_flowunit.h"
@@ -57,7 +59,7 @@ Status FlowGraphDesc::Init() {
   return Init(flow_cfg);
 }
 
-Status FlowGraphDesc::Init(std::shared_ptr<FlowConfig> config) {
+Status FlowGraphDesc::Init(const std::shared_ptr<FlowConfig> &config) {
   if (is_init_) {
     return STATUS_OK;
   }
@@ -122,13 +124,15 @@ std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddInput(
 
 // add output
 
-void FlowGraphDesc::AddOutput(const std::string &output_name,
-                              std::shared_ptr<FlowPortDesc> source_node_port) {
+void FlowGraphDesc::AddOutput(
+    const std::string &output_name,
+    const std::shared_ptr<FlowPortDesc> &source_node_port) {
   AddOutput(output_name, "cpu", source_node_port);
 }
 
-void FlowGraphDesc::AddOutput(const std::string &output_name,
-                              std::shared_ptr<FlowNodeDesc> source_node) {
+void FlowGraphDesc::AddOutput(
+    const std::string &output_name,
+    const std::shared_ptr<FlowNodeDesc> &source_node) {
   if (source_node == nullptr) {
     MBLOG_ERROR << "add output " << output_name
                 << " failed, source_node is null";
@@ -195,7 +199,7 @@ std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
 std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
     const std::string &flowunit_name, const std::string &device,
     const std::vector<std::string> &config,
-    std::shared_ptr<FlowNodeDesc> source_node) {
+    const std::shared_ptr<FlowNodeDesc> &source_node) {
   return AddNode(flowunit_name, device, config, {{"", (*source_node)[0]}});
 }
 
@@ -208,7 +212,7 @@ std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
 
 std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
     const std::string &flowunit_name, const std::string &device,
-    std::shared_ptr<FlowNodeDesc> source_node) {
+    const std::shared_ptr<FlowNodeDesc> &source_node) {
   return AddNode(flowunit_name, device, {}, source_node);
 }
 
@@ -261,7 +265,7 @@ std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddFunction(
     const std::function<Status(std::shared_ptr<DataContext>)> &func,
     const std::vector<std::string> &input_name_list,
     const std::vector<std::string> &output_name_list,
-    std::shared_ptr<FlowNodeDesc> source_node) {
+    const std::shared_ptr<FlowNodeDesc> &source_node) {
   if (input_name_list.empty()) {
     MBLOG_ERROR << "function node input ports is not defined";
     build_status_ = STATUS_FAULT;
@@ -296,12 +300,12 @@ std::shared_ptr<GCGraph> FlowGraphDesc::GetGCGraph() {
   return gcgraph;
 }
 
-void FlowGraphDesc::GenGCNodes(std::shared_ptr<GCGraph> gcgraph) {
+void FlowGraphDesc::GenGCNodes(const std::shared_ptr<GCGraph> &gcgraph) {
   for (auto &node_desc : node_desc_list_) {
     auto gcnode = std::make_shared<GCNode>();
     gcnode->Init(node_desc->GetNodeName(), gcgraph);
     const auto &node_config = node_desc->GetNodeConfig();
-    for (auto config_item : node_config) {
+    for (const auto &config_item : node_config) {
       auto split_pos = config_item.find('=');
       auto key = config_item.substr(0, split_pos);
       auto value = config_item.substr(split_pos + 1);
@@ -311,7 +315,7 @@ void FlowGraphDesc::GenGCNodes(std::shared_ptr<GCGraph> gcgraph) {
   }
 }
 
-void FlowGraphDesc::GenGCEdges(std::shared_ptr<GCGraph> gcgraph) {
+void FlowGraphDesc::GenGCEdges(const std::shared_ptr<GCGraph> &gcgraph) {
   for (auto &node_desc : node_desc_list_) {
     auto dest_node_name = node_desc->GetNodeName();
     const auto &input_links = node_desc->GetInputLinks();
@@ -344,9 +348,9 @@ std::shared_ptr<FlowUnitManager> FlowGraphDesc::GetFlowUnitManager() {
   return flowunit_mgr_;
 }
 
-void FlowGraphDesc::AddOutput(const std::string &output_name,
-                              const std::string &device,
-                              std::shared_ptr<FlowPortDesc> source_node_port) {
+void FlowGraphDesc::AddOutput(
+    const std::string &output_name, const std::string &device,
+    const std::shared_ptr<FlowPortDesc> &source_node_port) {
   if (!is_init_) {
     MBLOG_ERROR << "Should call init first";
     build_status_ = STATUS_FAULT;
@@ -376,14 +380,14 @@ void FlowGraphDesc::AddOutput(const std::string &output_name,
 
 bool FlowGraphDesc::FormatInputLinks(
     const std::string &flowunit_name,
-    std::shared_ptr<FlowUnitDesc> flowunit_desc,
+    const std::shared_ptr<FlowUnitDesc> &flowunit_desc,
     const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
         &origin_source_node_ports,
     std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
         &format_source_node_ports) {
   auto input_list = flowunit_desc->GetFlowUnitInput();
   std::unordered_set<std::string> input_names;
-  for (auto input_desc : input_list) {
+  for (const auto &input_desc : input_list) {
     input_names.insert(input_desc.GetPortName());
   }
   size_t port_idx = 0;
@@ -422,7 +426,7 @@ bool FlowGraphDesc::CheckInputLinks(
     const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
         &input_links) {
   std::unordered_set<std::string> input_names;
-  for (auto input_name : defined_ports) {
+  for (const auto &input_name : defined_ports) {
     input_names.insert(input_name);
   }
 

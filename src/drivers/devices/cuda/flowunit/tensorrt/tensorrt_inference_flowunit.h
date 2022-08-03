@@ -119,19 +119,19 @@ class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
                                cudaStream_t stream) override;
 
  private:
-  void SetUpOtherConfig(std::shared_ptr<modelbox::Configuration> config);
+  void SetUpOtherConfig(const std::shared_ptr<modelbox::Configuration>& config);
   modelbox::Status InitConfig(
       const std::shared_ptr<modelbox::Configuration>& fu_config);
   modelbox::Status CreateEngine(
       const std::shared_ptr<modelbox::Configuration>& config);
   modelbox::Status SetUpModelFile(
-      std::shared_ptr<modelbox::Configuration> config,
+      const std::shared_ptr<modelbox::Configuration>& config,
       const std::string& model_file);
   modelbox::Status SetUpDynamicLibrary(
-      std::shared_ptr<modelbox::Configuration> config);
+      const std::shared_ptr<modelbox::Configuration>& config);
   modelbox::Status SetUpInferencePlugin(
-      std::shared_ptr<modelbox::Configuration> config);
-  void configureBuilder(std::shared_ptr<nvinfer1::IBuilder> builder,
+      const std::shared_ptr<modelbox::Configuration>& config);
+  void configureBuilder(const std::shared_ptr<nvinfer1::IBuilder>& builder,
                         RndInt8Calibrator& calibrator);
   modelbox::Status PrePareOutput(
       std::shared_ptr<modelbox::DataContext>& data_ctx,
@@ -139,8 +139,10 @@ class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
   modelbox::Status PrePareInput(
       std::shared_ptr<modelbox::DataContext>& data_ctx,
       std::vector<void*>& memory);
-  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx);
-  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status PreProcess(
+      const std::shared_ptr<modelbox::DataContext>& data_ctx);
+  modelbox::Status PostProcess(
+      const std::shared_ptr<modelbox::DataContext>& data_ctx);
   modelbox::Status CreateMemory(
       std::vector<void*>& buffers, const std::string& name,
       const std::string& type,
@@ -163,7 +165,7 @@ class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
       const std::shared_ptr<modelbox::Configuration>& config,
       std::shared_ptr<nvinfer1::IBuilder>& builder,
       std::shared_ptr<nvinfer1::INetworkDefinition>& network);
-  void SetPluginFactory(std::string pluginName);
+  void SetPluginFactory(const std::string& pluginName);
 
   TensorRTProcess pre_process_{nullptr}, post_process_{nullptr};
   TensorRTProcess data_pre_{nullptr}, data_post_{nullptr};

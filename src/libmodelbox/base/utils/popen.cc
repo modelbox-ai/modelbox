@@ -35,9 +35,7 @@ int ParserArg(const std::string &cmd, std::vector<std::string> &args) {
   std::string arg;
   char quoteChar = 0;
 
-  for (std::string::const_iterator it = cmd.begin(), it_end = cmd.end();
-       it != it_end; ++it) {
-    char ch = *it;
+  for (char ch : cmd) {
     if (quoteChar == '\\') {
       arg.push_back(ch);
       quoteChar = 0;
@@ -458,7 +456,7 @@ int Popen::TimeOutLeft() {
 }
 
 int Popen::WaitForFds(std::vector<struct stdfd *> fds, int timeout,
-                      std::function<int(struct stdfd *, int)> func) {
+                      const std::function<int(struct stdfd *, int)> &func) {
   struct pollfd fdset[fds.size()];
   int fds_count = fds.size();
   int eof_count = fds.size();

@@ -50,8 +50,9 @@ class OriginInferencePlugin : public InferencePlugin {
       size_t tensor_byte, int index);
 
   modelbox::Status SetUpInputOutput(
-      std::shared_ptr<modelbox::Configuration> config, const std::string &type,
-      std::vector<std::string> &names, std::vector<std::string> &types);
+      const std::shared_ptr<modelbox::Configuration> &config,
+      const std::string &type, std::vector<std::string> &names,
+      std::vector<std::string> &types);
 
   std::vector<std::string> input_name_list_, output_name_list_;
   std::vector<std::string> input_type_list_, output_type_list_;

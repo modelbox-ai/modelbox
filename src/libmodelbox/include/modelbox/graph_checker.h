@@ -21,6 +21,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "modelbox/base/status.h"
@@ -40,9 +41,11 @@ enum IndexPortType { INPUT, OUTPUT, UNKNOWN };
 class IndexPort {
  public:
   IndexPort() = default;
-  IndexPort(const std::string &node, const std::string &port,
+  IndexPort(std::string node, std::string port,
             const IndexPortType &type = IndexPortType::UNKNOWN)
-      : node_name(node), port_name(port), port_type(type) {}
+      : node_name(std::move(node)),
+        port_name(std::move(port)),
+        port_type(type) {}
   virtual ~IndexPort() = default;
 
   std::string ToString() const {
@@ -59,8 +62,7 @@ using NodeStreamConnection = std::map<std::string, std::vector<IndexPort>>;
 class LeastCommonAncestor {
  public:
   LeastCommonAncestor(
-      const std::unordered_map<std::string, std::shared_ptr<NodeBase>>
-          &all_nodes);
+      std::unordered_map<std::string, std::shared_ptr<NodeBase>> all_nodes);
   virtual ~LeastCommonAncestor();
   void Update(const std::vector<IndexPort> &values,
               const std::unordered_map<std::string, std::string> &match_map);
@@ -97,11 +99,11 @@ class OverHierarchyCheck {
   OverHierarchyCheck(
       const std::unordered_map<std::string, std::shared_ptr<NodeBase>>
           &all_nodes,
-      const std::set<std::shared_ptr<NodeBase>> &start_nodes,
-      const std::map<std::string, std::string> &loop_links,
-      const std::vector<std::vector<std::string>> &loop_structures,
-      const std::map<std::shared_ptr<OutPort>,
-                     std::set<std::shared_ptr<InPort>>> &edges);
+      std::set<std::shared_ptr<NodeBase>> start_nodes,
+      std::map<std::string, std::string> loop_links,
+      std::vector<std::vector<std::string>> loop_structures,
+      std::map<std::shared_ptr<OutPort>, std::set<std::shared_ptr<InPort>>>
+          edges);
   virtual ~OverHierarchyCheck();
 
   Status Check(
@@ -112,35 +114,35 @@ class OverHierarchyCheck {
       const std::unordered_map<std::string, std::string> &end_if_map);
 
  private:
-  void InitFirstNode(std::shared_ptr<Node> node);
+  void InitFirstNode(const std::shared_ptr<Node> &node);
   Status CheckInputPortsColorReady(
       std::shared_ptr<IndexPort> &index_port,
       const std::vector<std::shared_ptr<InPort>> &input_ports);
   Status CheckInputPorts(
-      std::shared_ptr<Node> node,
+      const std::shared_ptr<Node> &node,
       const std::unordered_map<std::string,
                                std::unordered_map<std::string, std::string>>
           &graph_single_port_match_map);
   void GetColorMap(
-      std::shared_ptr<Node> node,
+      const std::shared_ptr<Node> &node,
       const std::vector<std::shared_ptr<OutPort>> &output_ports,
       const std::unordered_map<std::string, std::string> &graph_match_map,
       const std::unordered_map<std::string,
                                std::unordered_map<std::string, std::string>>
           &graph_single_port_match_map,
       const std::unordered_map<std::string, std::string> &end_if_map);
-  std::shared_ptr<NodeBase> FindLoopLinkNode(std::shared_ptr<Node> node);
-  void SetOutPortColor(std::shared_ptr<Node> node,
+  std::shared_ptr<NodeBase> FindLoopLinkNode(const std::shared_ptr<Node> &node);
+  void SetOutPortColor(const std::shared_ptr<Node> &node,
                        const std::vector<std::shared_ptr<OutPort>> &out_ports,
                        const std::vector<int> &new_color);
   bool CheckEndIfPort(
-      std::shared_ptr<InPort> input_port,
+      const std::shared_ptr<InPort> &input_port,
       const std::shared_ptr<IndexPort> &index_port,
       const std::unordered_map<std::string,
                                std::unordered_map<std::string, std::string>>
           &graph_single_port_match_map);
   bool CheckEndIfNode(
-      std::shared_ptr<Node> node,
+      const std::shared_ptr<Node> &node,
       const std::unordered_map<std::string, std::string> &end_if_map);
 
   std::unordered_map<std::string, std::shared_ptr<NodeBase>> all_nodes_;
@@ -157,8 +159,8 @@ class GraphChecker {
  public:
   GraphChecker(const std::vector<std::shared_ptr<NodeBase>> &nodes,
                const std::set<std::shared_ptr<NodeBase>> &start_nodes,
-               const std::map<std::string, std::string> &loop_links,
-               const std::vector<std::vector<std::string>> &loop_structures,
+               std::map<std::string, std::string> loop_links,
+               std::vector<std::vector<std::string>> loop_structures,
                const std::map<std::shared_ptr<OutPort>,
                               std::set<std::shared_ptr<InPort>>> &edges);
   virtual ~GraphChecker();
@@ -168,11 +170,11 @@ class GraphChecker {
   Status Check();
 
  private:
-  Status CalNodeStreamMap(std::shared_ptr<NodeBase> node,
+  Status CalNodeStreamMap(const std::shared_ptr<NodeBase> &node,
                           NodeStreamConnection &node_stream_map);
-  Status CheckNodeMatch(std::shared_ptr<Node> node,
+  Status CheckNodeMatch(const std::shared_ptr<Node> &node,
                         const NodeStreamConnection &node_stream_map);
-  Status CheckCollapseMatch(std::shared_ptr<Node> node);
+  Status CheckCollapseMatch(const std::shared_ptr<Node> &node);
   Status CheckBranchPathMatch(const std::string &start, const std::string &end);
   Status CheckOverHierarchyMatch();
   Status CheckUnmatchExpands(size_t size);

@@ -158,8 +158,8 @@ class VcnStream : public VcnStreamBase {
   friend class modelbox::VcnClient;
 
  public:
-  VcnStream(const std::string &url, const std::string &camera_code,
-            const int32_t session_id, std::shared_ptr<VcnAccount> account)
+  VcnStream(std::string url, std::string camera_code,
+            int32_t session_id, std::shared_ptr<VcnAccount> account)
       : VcnStreamBase(url, camera_code),
         account_(account),
         session_id_(session_id){};

@@ -89,8 +89,8 @@ class VideoEncoderFlowUnit : public modelbox::FlowUnit {
                               std::string &dest_url);
 
   modelbox::Status ReadFrames(
-      std::shared_ptr<FfmpegColorConverter> color_cvt,
-      std::shared_ptr<modelbox::DataContext> data_ctx,
+      const std::shared_ptr<FfmpegColorConverter> &color_cvt,
+      const std::shared_ptr<modelbox::DataContext> &data_ctx,
       std::vector<std::shared_ptr<AVFrame>> &av_frame_list);
 
   modelbox::Status ReadFrameFromBuffer(
@@ -98,8 +98,9 @@ class VideoEncoderFlowUnit : public modelbox::FlowUnit {
       std::shared_ptr<AVFrame> &av_frame);
 
   modelbox::Status CvtFrameToYUV420P(
-      std::shared_ptr<FfmpegColorConverter> color_cvt,
-      std::shared_ptr<AVFrame> origin, std::shared_ptr<AVFrame> &yuv420p_frame);
+      const std::shared_ptr<FfmpegColorConverter> &color_cvt,
+      const std::shared_ptr<AVFrame> &origin,
+      std::shared_ptr<AVFrame> &yuv420p_frame);
 
   modelbox::Status EncodeFrame(
       const std::shared_ptr<FfmpegVideoEncoder> &encoder,

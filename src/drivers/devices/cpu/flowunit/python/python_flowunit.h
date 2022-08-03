@@ -38,7 +38,7 @@ class PythonFlowUnitDesc : public modelbox::FlowUnitDesc {
   PythonFlowUnitDesc() = default;
   ~PythonFlowUnitDesc() override = default;
 
-  void SetPythonEntry(std::string python_entry);
+  void SetPythonEntry(const std::string &python_entry);
   std::string GetPythonEntry();
 
   std::string python_entry_;

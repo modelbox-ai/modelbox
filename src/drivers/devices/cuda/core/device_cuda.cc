@@ -33,7 +33,7 @@ Cuda::~Cuda() = default;
 
 std::string Cuda::GetType() const { return DEVICE_TYPE; }
 
-Status Cuda::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
+Status Cuda::DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
                            size_t count) {
   if (0 == count) {
     return STATUS_OK;

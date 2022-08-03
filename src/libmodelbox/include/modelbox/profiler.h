@@ -65,7 +65,7 @@ constexpr uint32_t DEFAULT_WRITE_TRACE_INTERVAL = 600;
 
 class ProfilerLifeCycle {
  public:
-  ProfilerLifeCycle(const std::string& name);
+  ProfilerLifeCycle(std::string name);
 
   virtual ~ProfilerLifeCycle();
 
@@ -167,11 +167,11 @@ class TraceSlice {
 
  protected:
   TraceSlice(TraceSliceType& slice_type, std::string session,
-             std::shared_ptr<FlowUnitTrace> flow_unit_trace_ptr,
+             const std::shared_ptr<FlowUnitTrace>& flow_unit_trace_ptr,
              std::shared_ptr<FlowUnitPerfCtx> flow_unit_perf_ctx);
 
   TraceSlice(TraceSliceType& slice_type, std::string session,
-             std::shared_ptr<FlowUnitTrace> flow_unit_trace_ptr,
+             const std::shared_ptr<FlowUnitTrace>& flow_unit_trace_ptr,
              std::shared_ptr<TraceEvent> begin,
              std::shared_ptr<TraceEvent> end);
 
@@ -203,12 +203,12 @@ class FlowUnitTrace : public std::enable_shared_from_this<FlowUnitTrace> {
 
   void GetTraceSlices(std::vector<std::shared_ptr<TraceSlice>>& trace_slices);
 
-  Status AddTraceSlice(std::shared_ptr<TraceSlice> trace_slice);
+  Status AddTraceSlice(const std::shared_ptr<TraceSlice>& trace_slice);
 
   void SetFlowUnitPerfCtx(std::shared_ptr<FlowUnitPerfCtx> flow_unit_perf_ctx);
 
  protected:
-  explicit FlowUnitTrace(const std::string& flow_unit_name);
+  explicit FlowUnitTrace(std::string flow_unit_name);
 
  private:
   std::string flow_unit_name_;
@@ -335,7 +335,7 @@ class Performance : public ProfilerLifeCycle {
 class Trace : public std::enable_shared_from_this<Trace>,
               public ProfilerLifeCycle {
  public:
-  Trace(std::string& output_dir_path, std::shared_ptr<Performance> perf,
+  Trace(std::string output_dir_path, std::shared_ptr<Performance> perf,
         bool session_enable);
   ~Trace() override;
 

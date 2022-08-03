@@ -18,10 +18,8 @@
 
 #include "modelbox/device/cpu/device_cpu.h"
 
-JavaFlowUnit::JavaFlowUnit(){};
-JavaFlowUnit::~JavaFlowUnit(){
-
-};
+JavaFlowUnit::JavaFlowUnit() = default;
+JavaFlowUnit::~JavaFlowUnit() = default;
 
 modelbox::Status JavaFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration>& opts) {
@@ -82,8 +80,8 @@ std::shared_ptr<modelbox::FlowUnitDesc> JavaFlowUnit::GetFlowUnitDesc() {
   return nullptr;
 }
 
-void JavaFlowUnitDesc::SetJavaEntry(const std::string java_entry) {
+void JavaFlowUnitDesc::SetJavaEntry(const std::string& java_entry) {
   java_entry_ = java_entry;
 }
 
-const std::string JavaFlowUnitDesc::GetJavaEntry() { return java_entry_; }
+std::string JavaFlowUnitDesc::GetJavaEntry() { return java_entry_; }

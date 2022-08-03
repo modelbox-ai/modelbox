@@ -21,6 +21,7 @@
 #include <modelbox/base/timer.h>
 
 #include <mutex>
+#include <utility>
 #include <vector>
 
 #include "vcn_info.h"
@@ -75,7 +76,7 @@ class VcnRestfulClient {
    * @return  Successful or not
    */
   modelbox::Status SetRestfulWrapper(
-      std::shared_ptr<VcnRestfulWrapper> _restful_wrapper);
+      const std::shared_ptr<VcnRestfulWrapper> &_restful_wrapper);
 
   void SetKeepAliveInterval(int32_t keep_alive_interval) {
     keep_alive_interval_ = keep_alive_interval;
@@ -117,10 +118,10 @@ class VcnRestfulClient {
 class VcnAccountRestful : public VcnAccountBase {
  public:
   VcnAccountRestful(const VcnInfo &info)
-      : VcnAccountBase(info), session_id_(""), keep_alive_time_(0) {}
+      : VcnAccountBase(info), keep_alive_time_(0) {}
 
   std::string GetSessionId() const { return session_id_; }
-  void SetSessionId(const std::string session_id) { session_id_ = session_id; }
+  void SetSessionId(const std::string &session_id) { session_id_ = session_id; }
 
   /**
    * @brief   get keep alive use restful
@@ -138,9 +139,10 @@ class VcnAccountRestful : public VcnAccountBase {
 
 class VcnStreamRestful : public VcnStreamBase {
  public:
-  VcnStreamRestful(const std::string &url, const std::string &camera_code,
-                   const std::shared_ptr<VcnAccountRestful> &account)
-      : VcnStreamBase(url, camera_code), account_(account) {}
+  VcnStreamRestful(std::string url, std::string camera_code,
+                   std::shared_ptr<VcnAccountRestful> account)
+      : VcnStreamBase(std::move(url), std::move(camera_code)),
+        account_(std::move(account)) {}
 
   std::shared_ptr<VcnAccountRestful> GetAccount() { return account_; }
 

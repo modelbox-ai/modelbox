@@ -21,13 +21,14 @@
 #include <modelbox/base/log.h>
 
 #include <cstdint>
+#include <utility>
 
 modelbox::Status AtcInference::Init(
     const std::string &model_file,
     const std::shared_ptr<modelbox::Configuration> &config,
-    std::vector<std::string> unit_input_list,
-    std::vector<std::string> unit_output_list,
-    std::shared_ptr<modelbox::Drivers> drivers_ptr) {
+    const std::vector<std::string> &unit_input_list,
+    const std::vector<std::string> &unit_output_list,
+    const std::shared_ptr<modelbox::Drivers> &drivers_ptr) {
   model_file_ = model_file;
   auto ret = ParseConfig(config);
   if (ret != modelbox::STATUS_SUCCESS) {
@@ -102,7 +103,7 @@ modelbox::Status AtcInference::LoadModel(
 }
 
 modelbox::Status AtcInference::GetModelDesc() {
-  auto desc = aclmdlCreateDesc();
+  auto *desc = aclmdlCreateDesc();
   if (desc == nullptr) {
     MBLOG_ERROR << "aclmdlCreateDesc failed";
     return modelbox::STATUS_FAULT;
@@ -119,8 +120,8 @@ modelbox::Status AtcInference::GetModelDesc() {
 }
 
 modelbox::Status AtcInference::CheckModelIO(
-    std::vector<std::string> unit_input_list,
-    std::vector<std::string> unit_output_list) {
+    const std::vector<std::string> &unit_input_list,
+    const std::vector<std::string> &unit_output_list) {
   std::set<std::string> unit_input_set(unit_input_list.begin(),
                                        unit_input_list.end());
   std::set<std::string> unit_output_set(unit_output_list.begin(),
@@ -159,7 +160,7 @@ void AtcInference::ReadModelInfo() {
   auto output_num = aclmdlGetNumOutputs(model_desc_.get());
   std::stringstream model_info;
   model_info << "Model:" << model_file_ << std::endl;
-  auto desc_ptr = model_desc_.get();
+  auto *desc_ptr = model_desc_.get();
   LogBatchInfo(desc_ptr, model_info);
   model_info << "Input:" << std::endl;
   aclmdlIODims dims;
@@ -349,9 +350,9 @@ modelbox::Status AtcInference::PrepareOutput(
 }
 
 std::shared_ptr<aclmdlDataset> AtcInference::CreateDataSet(
-    std::shared_ptr<modelbox::BufferListMap> buffer_list_map,
+    const std::shared_ptr<modelbox::BufferListMap> &buffer_list_map,
     std::vector<std::string> &name_list) {
-  auto data_set_ptr = aclmdlCreateDataset();
+  auto *data_set_ptr = aclmdlCreateDataset();
   if (data_set_ptr == nullptr) {
     MBLOG_ERROR << "aclmdlCreateDataset return null";
     return nullptr;
@@ -374,7 +375,7 @@ std::shared_ptr<aclmdlDataset> AtcInference::CreateDataSet(
       return nullptr;
     }
 
-    auto data_buffer = aclCreateDataBuffer(
+    auto *data_buffer = aclCreateDataBuffer(
         const_cast<void *>(buffer_list->ConstData()), buffer_list->GetBytes());
     if (data_buffer == nullptr) {
       MBLOG_ERROR << "Create data set buffer for tensor " << tensor_name

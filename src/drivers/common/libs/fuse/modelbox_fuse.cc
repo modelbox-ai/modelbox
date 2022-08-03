@@ -25,6 +25,7 @@
 #include <ostream>
 #include <sstream>
 #include <thread>
+#include <utility>
 
 namespace modelbox {
 
@@ -202,8 +203,8 @@ Status ModelBoxFuse::InitLowLevelFuse() {
     return {STATUS_FAULT, err};
   }
 
-  auto fuse = fuse_new(chan, &args, &kModelboxFuseOperation,
-                       sizeof(kModelboxFuseOperation), this);
+  auto *fuse = fuse_new(chan, &args, &kModelboxFuseOperation,
+                        sizeof(kModelboxFuseOperation), this);
   if (fuse == nullptr) {
     fuse_unmount(mount_point_.c_str(), chan);
     return {STATUS_FAULT, "new fuse failed."};
@@ -232,7 +233,8 @@ void ModelBoxFuse::SetMountPoint(const std::string &path) {
   mount_point_ = path;
 }
 
-Status ModelBoxFuse::AddFuseFile(std::shared_ptr<ModelBoxFileInode> fuse_file) {
+Status ModelBoxFuse::AddFuseFile(
+    const std::shared_ptr<ModelBoxFileInode> &fuse_file) {
   auto path = fuse_file->GetPath();
   auto entry = root_entry_->LookUp(path);
   if (entry) {
@@ -381,7 +383,7 @@ int ModelBoxFuse::ReadDir(const char *path, void *buff, fuse_fill_dir_t filler,
                           off_t offset, struct fuse_file_info *fi) {
   auto *entry = (std::shared_ptr<ModelBoxDEntry> *)(fi->fh);
 
-  for (auto child : (*entry)->Children()) {
+  for (const auto &child : (*entry)->Children()) {
     struct stat st;
     auto inode = child->GetInode();
     if (inode == nullptr) {
@@ -396,10 +398,9 @@ int ModelBoxFuse::ReadDir(const char *path, void *buff, fuse_fill_dir_t filler,
 
   const char *const dots[] = {".", ".."};
 
-  for (int i = 0; i < 2; i++) {
+  for (const auto *str : dots) {
     struct stat st;
     FillDefaultStat(&st);
-    const char *const str = dots[i];
     int res = filler(buff, str, &st, 0);
     if (res != 0) {
       MBLOG_WARN << "fill stat failed for " << str;
@@ -566,7 +567,7 @@ ModelBoxInode::~ModelBoxInode() = default;
 
 int ModelBoxInode::FillStat(struct stat *stat) { return 0; };
 
-void ModelBoxInode::SetDEntry(std::shared_ptr<ModelBoxDEntry> dentry) {
+void ModelBoxInode::SetDEntry(const std::shared_ptr<ModelBoxDEntry> &dentry) {
   dentry_ = dentry;
 }
 
@@ -602,7 +603,7 @@ ModelBoxFileInode::~ModelBoxFileInode() = default;
 ModelBoxDEntry::ModelBoxDEntry() = default;
 ModelBoxDEntry::~ModelBoxDEntry() = default;
 
-void ModelBoxDEntry::SetParent(std::shared_ptr<ModelBoxDEntry> dentry) {
+void ModelBoxDEntry::SetParent(const std::shared_ptr<ModelBoxDEntry> &dentry) {
   parent_ = dentry;
 }
 
@@ -647,8 +648,8 @@ std::shared_ptr<ModelBoxDEntry> ModelBoxDEntry::LookUp(
   return cur_entry->LookUp(names);
 }
 
-int ModelBoxDEntry::AddChild(std::shared_ptr<ModelBoxDEntry> dentry) {
-  auto &name = dentry->GetName();
+int ModelBoxDEntry::AddChild(const std::shared_ptr<ModelBoxDEntry> &dentry) {
+  const auto &name = dentry->GetName();
   std::unique_lock<std::mutex> lock(children_lock_);
   auto itr = children_.find(name);
   if (itr != children_.end()) {
@@ -691,7 +692,7 @@ void ModelBoxDEntry::SetName(const std::string &name) { name_ = name; }
 
 const std::string &ModelBoxDEntry::GetName() { return name_; }
 
-void ModelBoxDEntry::SetInode(std::shared_ptr<ModelBoxInode> inode) {
+void ModelBoxDEntry::SetInode(const std::shared_ptr<ModelBoxInode> &inode) {
   inode_ = inode;
   inode_->SetDEntry(shared_from_this());
 }

@@ -33,7 +33,7 @@ constexpr const char *ROOT_BUFFER_TYPE = "RAW";
 class BufferType {
  public:
   BufferType();
-  BufferType(const std::string &type);
+  BufferType(std::string type);
   virtual ~BufferType();
   const std::string &GetType() const;
   std::shared_ptr<BufferType> GetParentType();
@@ -41,8 +41,8 @@ class BufferType {
 
  private:
   void SetType(std::string type);
-  bool AddChildType(std::shared_ptr<BufferType> child);
-  bool AddParentType(std::shared_ptr<BufferType> parent);
+  bool AddChildType(const std::shared_ptr<BufferType> &child);
+  bool AddParentType(const std::shared_ptr<BufferType> &parent);
   void RemoveType();
   void ClearChildType();
   void ClearParentType();
@@ -56,11 +56,11 @@ class BufferType {
 
 class BufferTypeTree {
  public:
-  bool AddRootType(std::string root_type);
-  bool AddType(std::string type, std::string parent_type);
-  bool RemoveType(std::string type);
-  bool IsCompatible(std::string type, std::string ancestor_type);
-  std::shared_ptr<BufferType> GetType(std::string type);
+  bool AddRootType(const std::string &root_type);
+  bool AddType(const std::string &type, const std::string &parent_type);
+  bool RemoveType(const std::string &type);
+  bool IsCompatible(const std::string &type, const std::string &ancestor_type);
+  std::shared_ptr<BufferType> GetType(const std::string &type);
   static BufferTypeTree *GetInstance() {
     if (nullptr == instance_) {
       instance_.reset(new BufferTypeTree());

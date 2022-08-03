@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
 #
@@ -15,5 +15,12 @@
 # limitations under the License.
 
 # wrap for clang-tidy, patch command line.
-ARGS=$(echo $@ | sed 's/-fno-gnu-unique//g')
+ARGS=$(echo $@ | sed 's/-fno-gnu-unique//g' | sed 's/-rdynamic//g')
+if [ "$1" = "-fix" ]; then
+    sourcefile="$2"
+    if [ -e "$sourcefile" ]; then
+        exec {lockfd}<$sourcefile
+        flock -x $lockfd
+    fi
+fi
 exec clang-tidy ${ARGS}

@@ -29,7 +29,7 @@ SchedulerPort::SchedulerPort(const std::string& name)
 SchedulerPort::SchedulerPort(const std::string& name, size_t event_capacity)
     : NotifyPort(name, nullptr, 0, event_capacity) {
   queue_ = std::make_shared<SchedulerQueue>(event_capacity);
-};
+}
 
 FlowScheduler::FlowScheduler() = default;
 
@@ -166,8 +166,9 @@ void FlowScheduler::SendSchedulerCommand(
   scheduler_event_port_->NotifyPushEvent();
 }
 
-void FlowScheduler::RunWapper(std::shared_ptr<NodeBase> node, RunType type,
-                              std::shared_ptr<PriorityPort> active_port) {
+void FlowScheduler::RunWapper(
+    const std::shared_ptr<NodeBase>& node, RunType type,
+    const std::shared_ptr<PriorityPort>& active_port) {
   Status status = STATUS_FAULT;
   try {
     MBLOG_DEBUG << "run " << node->GetName() << " begin";
@@ -196,7 +197,8 @@ void FlowScheduler::RunWapper(std::shared_ptr<NodeBase> node, RunType type,
   }
 }
 
-Status FlowScheduler::RunNode(std::shared_ptr<PriorityPort> active_port) {
+Status FlowScheduler::RunNode(
+    const std::shared_ptr<PriorityPort>& active_port) {
   if (tp_ == nullptr) {
     return {STATUS_FAULT, "scheduler not init."};
   }
@@ -235,7 +237,8 @@ Status FlowScheduler::RunNode(std::shared_ptr<PriorityPort> active_port) {
   return STATUS_OK;
 }
 
-Status FlowScheduler::RunCommand(std::shared_ptr<PriorityPort> active_port) {
+Status FlowScheduler::RunCommand(
+    const std::shared_ptr<PriorityPort>& active_port) {
   auto port = active_port->GetPort();
   if (!port) {
     return {STATUS_INVALID,
@@ -286,9 +289,9 @@ void FlowScheduler::CheckScheduleStatus(const bool& printlog) {
   // possible cause is that the threads in the thread pool are exhausted.
   bool is_print_threadpool = false;
   bool is_no_response = false;
-  for (auto iter : node_port_map_) {
+  for (const auto& iter : node_port_map_) {
     auto node = iter.first;
-    for (auto port_iter : iter.second) {
+    for (const auto& port_iter : iter.second) {
       if (!port_iter->GetPort()) {
         continue;
       }

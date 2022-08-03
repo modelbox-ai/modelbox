@@ -66,7 +66,8 @@ TEST_F(FlowGraphTest, AddNodeTest) {
 
 TEST_F(FlowGraphTest, AddFuncTest) {
   auto input1 = graph_desc_->AddInput("input1");
-  auto process_func = [](std::shared_ptr<DataContext> data_context) -> Status {
+  auto process_func =
+      [](const std::shared_ptr<DataContext> &data_context) -> Status {
     auto input = data_context->Input("in_1");
     const auto *in_data = (const uint8_t *)(input->ConstBufferData(0));
 

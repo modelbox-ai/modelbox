@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "modelbox/base/device.h"
@@ -29,7 +30,7 @@ namespace modelbox {
 DeviceManager::DeviceManager() = default;
 DeviceManager::~DeviceManager() = default;
 
-Status DeviceManager::Register(std::shared_ptr<DeviceFactory> factory) {
+Status DeviceManager::Register(const std::shared_ptr<DeviceFactory> &factory) {
   std::string factory_type = factory->GetDeviceFactoryType();
   if (device_factory_.count(factory_type)) {
     MBLOG_WARN << "The type " << factory_type << " has already existed.";
@@ -53,8 +54,8 @@ void DeviceManager::Clear() {
   device_factory_.clear();
 }
 
-Status DeviceManager::Initialize(std::shared_ptr<Drivers> driver,
-                                 std::shared_ptr<Configuration> config) {
+Status DeviceManager::Initialize(const std::shared_ptr<Drivers> &driver,
+                                 const std::shared_ptr<Configuration> &config) {
   if (driver == nullptr) {
     return STATUS_FAULT;
   }
@@ -76,7 +77,8 @@ Status DeviceManager::CheckDeviceManagerInit() {
   return STATUS_OK;
 }
 
-Status DeviceManager::InitDeviceFactory(std::shared_ptr<Drivers> driver) {
+Status DeviceManager::InitDeviceFactory(
+    const std::shared_ptr<Drivers> &driver) {
   std::vector<std::shared_ptr<Driver>> driver_list =
       driver->GetDriverListByClass("DRIVER-DEVICE");
   std::shared_ptr<DriverDesc> desc;
@@ -233,7 +235,7 @@ const std::map<std::string, std::map<std::string, std::shared_ptr<Device>>>
 std::shared_ptr<Drivers> DeviceManager::GetDrivers() { return drivers_; }
 
 void DeviceManager::SetDrivers(std::shared_ptr<Drivers> drivers) {
-  drivers_ = drivers;
+  drivers_ = std::move(drivers);
 }
 
 }  // namespace modelbox

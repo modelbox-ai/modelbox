@@ -26,7 +26,8 @@ namespace modelbox {
 class FlowUnitError {
  public:
   FlowUnitError(std::string desc);
-  FlowUnitError(std::string node, std::string error_pos, Status error_status);
+  FlowUnitError(const std::string& node, const std::string& error_pos,
+                const Status& error_status);
   virtual ~FlowUnitError();
   std::string GetDesc();
 

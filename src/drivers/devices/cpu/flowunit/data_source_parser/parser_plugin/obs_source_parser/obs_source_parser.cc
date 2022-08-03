@@ -41,7 +41,7 @@
 #define OBS_STREAM_READ_SIZE_NORMAL 5
 #define OBS_STREAM_READ_SIZE_HIGH 20
 
-void RemoveFileCallback(std::string uri);
+void RemoveFileCallback(const std::string &uri);
 
 ObsSourceParser::ObsSourceParser() = default;
 ObsSourceParser::~ObsSourceParser() = default;
@@ -62,7 +62,7 @@ modelbox::Status ObsSourceParser::Init(
   max_read_size_ = OBS_STREAM_READ_SIZE_LOW;
   if (stream_memory_mode_ == "normal") {
     max_read_size_ = OBS_STREAM_READ_SIZE_NORMAL;
-  } 
+  }
   if (stream_memory_mode_ == "high") {
     max_read_size_ = OBS_STREAM_READ_SIZE_HIGH;
   }
@@ -72,7 +72,7 @@ modelbox::Status ObsSourceParser::Init(
 modelbox::Status ObsSourceParser::Deinit() { return modelbox::STATUS_OK; }
 
 modelbox::Status ObsSourceParser::Parse(
-    std::shared_ptr<modelbox::SessionContext> session_context,
+    const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
     DestroyUriFunc &destroy_uri_func) {
   OBSDownloadInfo download_info;
@@ -114,7 +114,7 @@ modelbox::Status ObsSourceParser::Parse(
     modelbox::FileRequester::GetInstance()->RegisterUrlHandler(obs_uri,
                                                                obs_handler);
     modelbox::FileRequester::GetInstance()->SetMaxFileReadSize(max_read_size_);
-    destroy_uri_func = [obs_uri](std::string uri) {
+    destroy_uri_func = [obs_uri](const std::string &uri) {
       modelbox::FileRequester::GetInstance()->DeregisterUrl(obs_uri);
     };
     return modelbox::STATUS_OK;
@@ -224,7 +224,7 @@ std::string ObsSourceParser::GetTimeString(time_t *time) {
 }
 
 // TODO: 多路流使用同一个输入文件时，必须在最后一路退出后再删除文件
-void RemoveFileCallback(std::string uri) {
+void RemoveFileCallback(const std::string &uri) {
   if (uri.empty()) {
     MBLOG_WARN << "Empty uri to be removed." << uri;
     return;

@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <utility>
 
 #include "modelbox/base/log.h"
 #include "signer.h"
@@ -162,7 +163,7 @@ std::shared_ptr<void> IAMApi::CreateSignerRequest(
   return request_self;
 }
 
-modelbox::Status SendHttpRequest(const std::string request_host,
+modelbox::Status SendHttpRequest(const std::string &request_host,
                                  const std::string &request_uri,
                                  const web::http::http_request &token_request,
                                  web::http::http_response &response_data) {
@@ -311,15 +312,15 @@ modelbox::Status IAMApi::GetAgencyProjectTokenWithToken(
 }
 
 void IAMApi::SetRequestHost(std::string request_host) {
-  request_host_ = request_host;
+  request_host_ = std::move(request_host);
 }
 
 void IAMApi::SetRequestTokenUri(std::string request_token_uri) {
-  request_token_uri_ = request_token_uri;
+  request_token_uri_ = std::move(request_token_uri);
 }
 
 void IAMApi::SetRequestCredentialUri(std::string request_credential_uri) {
-  request_credential_uri_ = request_credential_uri;
+  request_credential_uri_ = std::move(request_credential_uri);
 }
 
 void IAMApi::SetValidateCertificates(bool validate_certificates) {
@@ -328,8 +329,8 @@ void IAMApi::SetValidateCertificates(bool validate_certificates) {
 
 void IAMApi::SetCertFilePath(std::string cert_file,
                              std::string cert_file_path) {
-  IAMApi::cert_file_ = cert_file;
-  IAMApi::cert_file_path_ = cert_file_path;
+  IAMApi::cert_file_ = std::move(cert_file);
+  IAMApi::cert_file_path_ = std::move(cert_file_path);
 }
 
 }  // namespace modelbox

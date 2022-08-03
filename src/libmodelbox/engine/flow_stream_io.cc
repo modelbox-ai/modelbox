@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/flow_stream_io.h"
 
 namespace modelbox {
 FlowStreamIO::FlowStreamIO(std::shared_ptr<ExternalDataMap> data_map)
-    : data_map_(data_map) {}
+    : data_map_(std::move(data_map)) {}
 
 FlowStreamIO::~FlowStreamIO() { data_map_->Shutdown(); }
 
@@ -28,7 +30,7 @@ std::shared_ptr<Buffer> FlowStreamIO::CreateBuffer() {
 }
 
 Status FlowStreamIO::Send(const std::string &input_name,
-                          std::shared_ptr<Buffer> buffer) {
+                          const std::shared_ptr<Buffer> &buffer) {
   auto buffer_list = data_map_->CreateBufferList();
   buffer_list->PushBack(buffer);
   return data_map_->Send(input_name, buffer_list);

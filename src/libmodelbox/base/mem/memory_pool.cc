@@ -124,10 +124,12 @@ std::shared_ptr<SlabCache> MemoryPoolBase::MakeSlabCache(size_t obj_size,
   return std::make_shared<SlabCache>(obj_size, slab_size, this);
 }
 
-void MemoryPoolBase::AddSlabCache(std::shared_ptr<SlabCache> slab_cache) {
+void MemoryPoolBase::AddSlabCache(
+    const std::shared_ptr<SlabCache> &slab_cache) {
   slab_caches_.push_back(slab_cache);
   std::sort(slab_caches_.begin(), slab_caches_.end(),
-            [](std::shared_ptr<SlabCache> a, std::shared_ptr<SlabCache> b) {
+            [](const std::shared_ptr<SlabCache> &a,
+               const std::shared_ptr<SlabCache> &b) {
               return a->ObjectSize() < b->ObjectSize();
             });
 }

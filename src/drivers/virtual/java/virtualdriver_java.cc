@@ -18,10 +18,12 @@
 
 #include <libgen.h>
 
+#include <utility>
+
 constexpr const char *VIRTUAL_FLOWUNIT_TYPE = "java";
 
 void VirtualJavaFlowUnitDesc::SetJarEntry(std::string java_entry) {
-  java_entry_ = java_entry;
+  java_entry_ = std::move(java_entry);
 }
 
 std::shared_ptr<modelbox::DriverFactory> JavaVirtualDriver::CreateFactory() {
@@ -52,7 +54,7 @@ JavaVirtualDriver::GetBindDriver() {
 }
 
 void JavaVirtualDriver::SetBindDriver(
-    std::vector<std::shared_ptr<modelbox::Driver>> driver_list) {
+    const std::vector<std::shared_ptr<modelbox::Driver>> &driver_list) {
   java_flowunit_driver_ = driver_list;
 }
 
@@ -89,12 +91,17 @@ modelbox::Status JavaVirtualDriverManager::Scan(const std::string &path) {
 }
 
 modelbox::Status JavaVirtualDriverManager::Add(const std::string &file) {
-  std::string name, type, version, description, entry, flowunit_type;
+  std::string name;
+  std::string type;
+  std::string version;
+  std::string description;
+  std::string entry;
+  std::string flowunit_type;
   std::shared_ptr<modelbox::ConfigurationBuilder> builder =
       std::make_shared<modelbox::ConfigurationBuilder>();
   std::shared_ptr<modelbox::Configuration> config = builder->Build(file);
   if (config == nullptr) {
-    auto err_msg = modelbox::StatusError.Errormsg();
+    const auto &err_msg = modelbox::StatusError.Errormsg();
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_BADCONF, err_msg};
   }
@@ -160,7 +167,7 @@ modelbox::Status JavaVirtualDriverManager::Add(const std::string &file) {
 
 modelbox::Status JavaVirtualDriverManager::BindBaseDriver(
     modelbox::Drivers &driver) {
-  for (auto &bind_type : BIND_JAVA_FLOWUNIT_TYPE) {
+  for (const auto &bind_type : BIND_JAVA_FLOWUNIT_TYPE) {
     auto tmp_driver =
         driver.GetDriver(modelbox::DRIVER_CLASS_FLOWUNIT, bind_type,
                          BIND_JAVA_FLOWUNIT_NAME, BIND_JAVA_FLOWUNIT_VERSION);
@@ -188,7 +195,9 @@ modelbox::Status VirtualJavaFlowUnitFactory::FillInput(
   }
 
   for (unsigned int i = 1; i <= input.size(); ++i) {
-    std::string input_device, input_name, input_type;
+    std::string input_device;
+    std::string input_name;
+    std::string input_type;
     auto key = "input.input" + std::to_string(i);
     auto input_item_table = config->GetSubKeys(key);
     if (input_item_table.empty()) {
@@ -226,7 +235,9 @@ modelbox::Status VirtualJavaFlowUnitFactory::FillOutput(
   }
 
   for (unsigned int i = 1; i <= output.size(); ++i) {
-    std::string output_device, output_name, output_type;
+    std::string output_device;
+    std::string output_name;
+    std::string output_type;
     auto key = "output.output" + std::to_string(i);
     auto output_item_table = config->GetSubKeys(key);
     if (output_item_table.empty()) {
@@ -364,7 +375,7 @@ VirtualJavaFlowUnitFactory::FlowUnitProbe() {
 
   const auto &tom_file_path = driver_desc->GetFilePath();
   auto dir_name = modelbox::GetDirName(tom_file_path);
-  flowunit_desc->SetJarFilePath(std::move(std::string(dir_name)));
+  flowunit_desc->SetJarFilePath(std::string(dir_name));
 
   flowunit_desc->SetFlowUnitName(driver_desc->GetName());
   return_map.insert(std::make_pair(driver_desc->GetName(), flowunit_desc));
@@ -372,9 +383,9 @@ VirtualJavaFlowUnitFactory::FlowUnitProbe() {
 }
 
 void VirtualJavaFlowUnitFactory::SetFlowUnitFactory(
-    std::vector<std::shared_ptr<modelbox::DriverFactory>>
-        bind_flowunit_factory_list) {
-  for (auto &bind_flowunit_factory : bind_flowunit_factory_list) {
+    const std::vector<std::shared_ptr<modelbox::DriverFactory>>
+        &bind_flowunit_factory_list) {
+  for (const auto &bind_flowunit_factory : bind_flowunit_factory_list) {
     bind_flowunit_factory_list_.push_back(
         std::dynamic_pointer_cast<FlowUnitFactory>(bind_flowunit_factory));
   }
@@ -396,7 +407,7 @@ std::shared_ptr<modelbox::FlowUnit> VirtualJavaFlowUnitFactory::CreateFlowUnit(
 std::string VirtualJavaFlowUnitDesc::GetJarEntry() { return java_entry_; }
 
 void VirtualJavaFlowUnitDesc::SetConfiguration(
-    const std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration> &config) {
   config_ = config;
 }
 

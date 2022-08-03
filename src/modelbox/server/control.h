@@ -36,18 +36,21 @@ class Control {
  public:
   Control();
   virtual ~Control();
-  modelbox::Status Init(std::shared_ptr<modelbox::Configuration> config);
+  modelbox::Status Init(const std::shared_ptr<modelbox::Configuration>& config);
   modelbox::Status Start();
   modelbox::Status Stop();
 
  private:
   void ControlDaemon();
-  void ProcessMsg(std::shared_ptr<ControlMsg> msg, MsgSendFunc reply_func);
-  void ReplyMsgError(int err_code, const std::string &err_msg,
-                     MsgSendFunc reply_func);
-  modelbox::Status RecvMsg(std::shared_ptr<ControlMsg> recv_msg);
-  int ProcessCmd(std::shared_ptr<ControlMsgCmd> msg, MsgSendFunc reply_func);
-  int ProcessHelp(std::shared_ptr<ControlMsgHelp> msg, MsgSendFunc reply_func);
+  void ProcessMsg(const std::shared_ptr<ControlMsg>& msg,
+                  MsgSendFunc reply_func);
+  void ReplyMsgError(int err_code, const std::string& err_msg,
+                     const MsgSendFunc& reply_func);
+  modelbox::Status RecvMsg(const std::shared_ptr<ControlMsg>& recv_msg);
+  int ProcessCmd(const std::shared_ptr<ControlMsgCmd>& msg,
+                 const MsgSendFunc& reply_func);
+  int ProcessHelp(const std::shared_ptr<ControlMsgHelp>& msg,
+                  MsgSendFunc reply_func);
 
   std::shared_ptr<modelbox::Configuration> config_;
   std::string listen_path_;

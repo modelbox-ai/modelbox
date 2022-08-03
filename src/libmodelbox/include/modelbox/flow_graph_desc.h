@@ -88,7 +88,7 @@ class FlowGraphDesc {
    * @param config for flow init
    * @return Status
    **/
-  Status Init(std::shared_ptr<FlowConfig> config);
+  Status Init(const std::shared_ptr<FlowConfig> &config);
 
   /**
    * @brief add input port for flow
@@ -103,7 +103,7 @@ class FlowGraphDesc {
    * @param source_node_port node output port connect to this output port
    **/
   void AddOutput(const std::string &output_name,
-                 std::shared_ptr<FlowPortDesc> source_node_port);
+                 const std::shared_ptr<FlowPortDesc> &source_node_port);
 
   /**
    * @brief add output port for flow
@@ -111,7 +111,7 @@ class FlowGraphDesc {
    * @param source_node output port [0] of node will connect to this output port
    **/
   void AddOutput(const std::string &output_name,
-                 std::shared_ptr<FlowNodeDesc> source_node);
+                 const std::shared_ptr<FlowNodeDesc> &source_node);
 
   /**
    * @brief add node for flow
@@ -138,7 +138,7 @@ class FlowGraphDesc {
   std::shared_ptr<FlowNodeDesc> AddNode(
       const std::string &flowunit_name, const std::string &device,
       const std::vector<std::string> &config,
-      std::shared_ptr<FlowNodeDesc> source_node);
+      const std::shared_ptr<FlowNodeDesc> &source_node);
 
   /**
    * @brief add node for flow
@@ -161,7 +161,7 @@ class FlowGraphDesc {
    **/
   std::shared_ptr<FlowNodeDesc> AddNode(
       const std::string &flowunit_name, const std::string &device,
-      std::shared_ptr<FlowNodeDesc> source_node);
+      const std::shared_ptr<FlowNodeDesc> &source_node);
 
   /**
    * @brief add node for flow
@@ -201,7 +201,7 @@ class FlowGraphDesc {
       const std::function<Status(std::shared_ptr<DataContext>)> &func,
       const std::vector<std::string> &input_name_list,
       const std::vector<std::string> &output_name_list,
-      std::shared_ptr<FlowNodeDesc> source_node);
+      const std::shared_ptr<FlowNodeDesc> &source_node);
 
   /**
    * @brief get graph build status
@@ -233,19 +233,19 @@ class FlowGraphDesc {
   std::shared_ptr<FlowUnitManager> flowunit_mgr_;
 
   void AddOutput(const std::string &output_name, const std::string &device,
-                 std::shared_ptr<FlowPortDesc> source_node_port);
+                 const std::shared_ptr<FlowPortDesc> &source_node_port);
 
   bool FormatInputLinks(
       const std::string &flowunit_name,
-      std::shared_ptr<FlowUnitDesc> flowunit_desc,
+      const std::shared_ptr<FlowUnitDesc> &flowunit_desc,
       const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
           &origin_source_node_ports,
       std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
           &format_source_node_ports);
 
-  void GenGCNodes(std::shared_ptr<GCGraph> gcgraph);
+  void GenGCNodes(const std::shared_ptr<GCGraph> &gcgraph);
 
-  void GenGCEdges(std::shared_ptr<GCGraph> gcgraph);
+  void GenGCEdges(const std::shared_ptr<GCGraph> &gcgraph);
 
   bool CheckInputLinks(
       const std::vector<std::string> &defined_ports,

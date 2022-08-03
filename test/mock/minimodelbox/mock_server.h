@@ -42,7 +42,7 @@ class MockServer {
   httplib::Response DoRequest(HttpRequest &request);
 
  protected:
-  virtual void SetDefaultConfig(std::shared_ptr<Configuration> config);
+  virtual void SetDefaultConfig(const std::shared_ptr<Configuration> &config);
 
  private:
   std::shared_ptr<Server> server_;

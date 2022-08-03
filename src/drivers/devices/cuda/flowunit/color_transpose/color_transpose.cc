@@ -38,7 +38,7 @@ NppStatus BGRToGRAY(NppiSize &size, const uint8_t *input_data,
   const int nStepInput = COLOR_CHANNEL_COUNT * size.width;
   const int nStepOutput = GRAY_CHANNEL_COUNT * size.width;
 
-  const Npp32f aCoefs[COLOR_CHANNEL_COUNT] = {0.114f, 0.587f, 0.299f};
+  const Npp32f aCoefs[COLOR_CHANNEL_COUNT] = {0.114F, 0.587F, 0.299F};
   return nppiColorToGray_8u_C3C1R(input_data, nStepInput, output_data,
                                   nStepOutput, size, aCoefs);
 }
@@ -89,9 +89,10 @@ std::size_t NumberOfChannels(const std::string &type) {
   return IsColor(type) ? COLOR_CHANNEL_COUNT : GRAY_CHANNEL_COUNT;
 }
 
-modelbox::Status GetParm(std::shared_ptr<modelbox::Buffer> buffer,
-                       std::vector<size_t> &shape, std::string &input_layout,
-                       modelbox::ModelBoxDataType &type, std::string &in_pix_fmt) {
+modelbox::Status GetParm(const std::shared_ptr<modelbox::Buffer> &buffer,
+                         std::vector<size_t> &shape, std::string &input_layout,
+                         modelbox::ModelBoxDataType &type,
+                         std::string &in_pix_fmt) {
   if (!buffer->Get("shape", shape)) {
     MBLOG_ERROR << "can not get shape from buffer";
     return modelbox::STATUS_FAULT;
@@ -137,11 +138,10 @@ modelbox::Status GetParm(std::shared_ptr<modelbox::Buffer> buffer,
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status GetAndCheckParm(std::shared_ptr<modelbox::BufferList> input,
-                               std::vector<size_t> &shape,
-                               std::string &input_layout,
-                               modelbox::ModelBoxDataType &type,
-                               std::string &in_pix_fmt) {
+modelbox::Status GetAndCheckParm(
+    const std::shared_ptr<modelbox::BufferList> &input,
+    std::vector<size_t> &shape, std::string &input_layout,
+    modelbox::ModelBoxDataType &type, std::string &in_pix_fmt) {
   std::vector<size_t> tmp_shape;
   std::string tmp_input_layout;
   modelbox::ModelBoxDataType tmp_type;
@@ -208,7 +208,8 @@ modelbox::Status ColorTransposeFlowUnit::CudaProcess(
     return modelbox::STATUS_OK;
   }
 
-  size_t H = shape[0], W = shape[1];
+  size_t H = shape[0];
+  size_t W = shape[1];
   size_t output_C = NumberOfChannels(out_pix_fmt_);
   std::vector<size_t> shapes(input->Size(),
                              H * W * output_C * GetDataTypeSize(type));
@@ -255,7 +256,7 @@ MODELBOX_FLOWUNIT(ColorTransposeFlowUnit, desc) {
 
   std::map<std::string, std::string> pix_fmt_list;
 
-  for (auto &item : SupportPixFormat) {
+  for (const auto &item : SupportPixFormat) {
     pix_fmt_list[item] = item;
   }
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(

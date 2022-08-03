@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/context.h"
 #include "modelbox/data_handler.h"
 #include "modelbox/modelbox_engine.h"
@@ -71,8 +73,8 @@ Status InputContext::RunGraph(const std::shared_ptr<DataHandler> &handler) {
 void InputContext::SetExternPtr(
     std::shared_ptr<void> extern_data_map,
     std::shared_ptr<BufferList> extern_buffer_list) {
-  extern_data_map_ = extern_data_map;
-  extern_buffer_list_ = extern_buffer_list;
+  extern_data_map_ = std::move(extern_data_map);
+  extern_buffer_list_ = std::move(extern_buffer_list);
 }
 
 void InputContext::Close() {

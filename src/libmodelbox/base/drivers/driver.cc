@@ -29,6 +29,7 @@
 #include <nlohmann/json.hpp>
 #include <regex>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "modelbox/base/config.h"
@@ -256,7 +257,9 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
 
 std::shared_ptr<DriverDesc> Driver::GetDriverDesc() { return desc_; }
 
-void Driver::SetDriverDesc(std::shared_ptr<DriverDesc> desc) { desc_ = desc; }
+void Driver::SetDriverDesc(std::shared_ptr<DriverDesc> desc) {
+  desc_ = std::move(desc);
+}
 
 // DriverDesc
 std::string DriverDesc::GetClass() { return driver_class_; }
@@ -349,7 +352,7 @@ void DriverDesc::SetFilePath(const std::string &file_path) {
 std::shared_ptr<Drivers> Drivers::GetInstance() {
   static std::shared_ptr<Drivers> drivers = std::make_shared<Drivers>();
   return drivers;
-};
+}
 
 void Drivers::PrintScanResult(
     const std::list<std::string> &load_success_info,
@@ -430,7 +433,7 @@ Status Drivers::Scan(const std::string &path, const std::string &filter) {
   return STATUS_OK;
 }
 
-Status Drivers::Initialize(std::shared_ptr<Configuration> config) {
+Status Drivers::Initialize(const std::shared_ptr<Configuration> &config) {
   if (config == nullptr) {
     return {STATUS_INVALID, "config is empty."};
   }
@@ -640,7 +643,8 @@ bool Drivers::CheckPathAndMagicCode() {
 
     Status status = ListFiles(dir, filter, &drivers_list);
     if (status != STATUS_OK) {
-      auto err_msg = "list directory:  " + dir + "/" + filter + " failed, ";
+      auto err_msg = "list directory:  " + dir + "/";
+      err_msg += filter + " failed, ";
       if (status != STATUS_NOTFOUND) {
         MBLOG_ERROR << err_msg << status.WrapErrormsgs();
       }
@@ -800,7 +804,7 @@ Status Drivers::VirtualDriverScan() {
       MBLOG_WARN << "scan failed, " << result;
     }
 
-    for (auto virtualDriver : factory->GetAllDriverList()) {
+    for (const auto &virtualDriver : factory->GetAllDriverList()) {
       drivers_list_.push_back(virtualDriver);
     }
 
@@ -883,7 +887,7 @@ std::vector<std::shared_ptr<Driver>> Drivers::GetAllDriverList() {
 std::vector<std::shared_ptr<Driver>> Drivers::GetDriverListByClass(
     const std::string &driver_class) {
   std::vector<std::shared_ptr<Driver>> drivers_class_list;
-  for (auto driver : drivers_list_) {
+  for (const auto &driver : drivers_list_) {
     std::shared_ptr<DriverDesc> desc_temp = driver->GetDriverDesc();
     if (desc_temp->GetClass() == driver_class) {
       drivers_class_list.push_back(driver);
@@ -972,7 +976,7 @@ void Drivers::RemoveSameElements(std::vector<std::string> *driver_list) {
 
 bool Drivers::DriversContains(
     const std::vector<std::shared_ptr<Driver>> &drivers_list,
-    std::shared_ptr<Driver> driver) {
+    const std::shared_ptr<Driver> &driver) {
   std::shared_ptr<DriverDesc> target_desc = driver->GetDriverDesc();
   for (const auto &driver_item : drivers_list) {
     std::shared_ptr<DriverDesc> desc = driver_item->GetDriverDesc();

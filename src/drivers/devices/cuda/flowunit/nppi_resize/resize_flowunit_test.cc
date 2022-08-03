@@ -120,7 +120,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "p3_test_0_1_resize "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -128,7 +128,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "p3_test_0_1_resize "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -137,7 +137,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "p3_test_0_1_resize process";
               auto output_buf = data_ctx->Output("Out_1");
               auto external = data_ctx->External();
@@ -178,7 +178,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
                 output_buf->At(i)->Set("height", rows);
                 output_buf->At(i)->Set("channel", channels);
 
-                auto output_data =
+                auto* output_data =
                     static_cast<uchar*>(output_buf->MutableBufferData(i));
                 for (int32_t j = 0; j < channels; j++) {
                   cv::Mat tmpMat = vecChannels.at(j);
@@ -230,7 +230,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "p3_test_1_0_resize "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -238,7 +238,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "p3_test_1_0_resize "
                          << "DataPost";
               return modelbox::STATUS_STOP;
@@ -247,17 +247,19 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               MBLOG_INFO << "p3_test_1_0_resize process";
               auto input_buf = op_ctx->Input("In_1");
-              int32_t cols = 0, rows = 0, channels = 0;
+              int32_t cols = 0;
+              int32_t rows = 0;
+              int32_t channels = 0;
               for (size_t i = 0; i < input_buf->Size(); i++) {
                 input_buf->At(i)->Get("width", cols);
                 input_buf->At(i)->Get("height", rows);
                 input_buf->At(i)->Get("channel", channels);
                 MBLOG_INFO << "image col " << cols << "  row " << rows
                            << " channel:" << channels;
-                auto input_data =
+                const auto* input_data =
                     static_cast<const uchar*>(input_buf->ConstBufferData(i));
 
                 cv::Mat img_data(cv::Size(cols, rows), CV_8UC3);
@@ -341,7 +343,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -349,7 +351,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -358,7 +360,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& data_ctx) {
               auto output_bufs = data_ctx->Output("Out_1");
               auto external = data_ctx->External();
               std::string gimg_path =
@@ -383,7 +385,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
               output_bufs->Build(shape);
 
               for (size_t i = 0; i < 5; ++i) {
-                std::string img_path = gimg_path;
+                const std::string& img_path = gimg_path;
                 cv::Mat img_data = cv::imread(img_path);
                 MBLOG_INFO << "image col " << img_data.cols << "  row "
                            << img_data.rows
@@ -397,7 +399,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
                 output_bufs->At(i)->Set("height", rows);
                 output_bufs->At(i)->Set("channel", channels);
 
-                auto output_data = output_bufs->At(i)->MutableData();
+                auto* output_data = output_bufs->At(i)->MutableData();
                 memcpy_s(output_data, output_bufs->At(i)->GetBytes(),
                          img_data.data, img_data.total() * img_data.elemSize());
               }
@@ -442,7 +444,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -450,7 +452,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -459,7 +461,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               MBLOG_INFO << "c3r_test_1_0_resize process";
               auto input = op_ctx->Input("In_1");
 
@@ -470,7 +472,7 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
                 input->At(i)->Get("width", cols);
                 input->At(i)->Get("height", rows);
                 input->At(i)->Get("channel", channels);
-                auto input_data = input->At(i)->ConstData();
+                const auto* input_data = input->At(i)->ConstData();
 
                 cv::Mat img_data(cv::Size(cols, rows), CV_8UC3);
                 memcpy_s(img_data.data, img_data.total() * img_data.elemSize(),

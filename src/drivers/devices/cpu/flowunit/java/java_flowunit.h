@@ -29,10 +29,10 @@ constexpr const char *FLOWUNIT_TYPE = "cpu";
 class JavaFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
   JavaFlowUnitDesc() = default;
-  virtual ~JavaFlowUnitDesc() = default;
+  ~JavaFlowUnitDesc() override = default;
 
-  void SetJavaEntry(const std::string java_entry);
-  const std::string GetJavaEntry();
+  void SetJavaEntry(const std::string &java_entry);
+  std::string GetJavaEntry();
 
   std::string java_entry_;
 };
@@ -40,26 +40,30 @@ class JavaFlowUnitDesc : public modelbox::FlowUnitDesc {
 class JavaFlowUnit : public modelbox::FlowUnit {
  public:
   JavaFlowUnit();
-  virtual ~JavaFlowUnit();
+  ~JavaFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPre(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status DataPost(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
   modelbox::Status DataGroupPre(
-      std::shared_ptr<modelbox::DataContext> data_ctx);
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
   modelbox::Status DataGroupPost(
-      std::shared_ptr<modelbox::DataContext> data_ctx);
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
-  virtual void SetFlowUnitDesc(std::shared_ptr<modelbox::FlowUnitDesc> desc);
-  virtual std::shared_ptr<modelbox::FlowUnitDesc> GetFlowUnitDesc();
+  void SetFlowUnitDesc(std::shared_ptr<modelbox::FlowUnitDesc> desc) override;
+  std::shared_ptr<modelbox::FlowUnitDesc> GetFlowUnitDesc() override;
 
  private:
   std::shared_ptr<VirtualJavaFlowUnitDesc> java_desc_;
@@ -68,18 +72,18 @@ class JavaFlowUnit : public modelbox::FlowUnit {
 class JavaFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   JavaFlowUnitFactory() = default;
-  virtual ~JavaFlowUnitFactory() = default;
+  ~JavaFlowUnitFactory() override = default;
 
-  virtual std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
-      const std::string &unit_name, const std::string &unit_type) {
+  std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
+      const std::string &unit_name, const std::string &unit_type) override {
     auto java_flowunit = std::make_shared<JavaFlowUnit>();
     return java_flowunit;
   };
 
-  std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
+  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
-  FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override {
     return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
   };
 };

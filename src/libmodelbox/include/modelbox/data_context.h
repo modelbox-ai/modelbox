@@ -59,7 +59,7 @@ class InPort;
 class ExternalDataImpl : public ExternalData {
  public:
   ExternalDataImpl(std::shared_ptr<InPort> port, std::shared_ptr<Device> device,
-                   std::shared_ptr<Stream> init_stream);
+                   const std::shared_ptr<Stream> &init_stream);
   ~ExternalDataImpl() override;
 
   std::shared_ptr<BufferList> CreateBufferList() override;
@@ -117,8 +117,7 @@ class DataContext {
 
   virtual std::shared_ptr<void> GetPrivate(const std::string &key) = 0;
 
-  virtual std::shared_ptr<DataMeta> GetInputMeta(
-      const std::string &port) = 0;
+  virtual std::shared_ptr<DataMeta> GetInputMeta(const std::string &port) = 0;
 
   virtual std::shared_ptr<DataMeta> GetInputGroupMeta(
       const std::string &port) = 0;
@@ -138,7 +137,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   // Implement interface DataContext
  public:
   FlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
-                      std::shared_ptr<Session> session);
+                      const std::shared_ptr<Session> &session);
 
   ~FlowUnitDataContext() override;
 
@@ -152,7 +151,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
   std::shared_ptr<BufferList> External() override;
 
-  void SetEvent(std::shared_ptr<FlowUnitEvent> event);
+  void SetEvent(const std::shared_ptr<FlowUnitEvent> &event);
 
   std::shared_ptr<FlowUnitEvent> Event() override;
 
@@ -194,7 +193,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
       const std::unordered_map<std::string, std::shared_ptr<BufferList>>
           &data_list);
 
-  void SetStatus(Status status);
+  void SetStatus(const Status &status);
 
   Status GetStatus();
 
@@ -240,7 +239,8 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   virtual bool IsDataPre() { return false; }
   virtual bool IsDataPost() { return false; }
 
-  virtual void DealWithDataPreError(const std::string &error_code, const std::string &error_msg);
+  virtual void DealWithDataPreError(const std::string &error_code,
+                                    const std::string &error_msg);
 
   /**
    * @brief call after flowunit group run
@@ -250,8 +250,8 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
  protected:
   virtual void UpdateBufferIndexInfo(
-      std::shared_ptr<BufferIndexInfo> cur_buffer,
-      std::shared_ptr<BufferIndexInfo> parent_buffer){};
+      const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+      const std::shared_ptr<BufferIndexInfo> &parent_buffer){};
 
   virtual bool SkipInheritInputToMatchNode() { return false; }
 
@@ -344,7 +344,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   Status UpdateOutputIndexInfo();
 
   std::shared_ptr<BufferProcessInfo> GetCurNodeProcessInfo(
-      std::shared_ptr<BufferIndexInfo> index_info);
+      const std::shared_ptr<BufferIndexInfo> &index_info);
 
   std::unordered_map<std::string, std::shared_ptr<DataMeta>> input_port_meta_;
   std::unordered_map<std::string, std::shared_ptr<DataMeta>> output_port_meta_;
@@ -364,7 +364,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 class NormalFlowUnitDataContext : public FlowUnitDataContext {
  public:
   NormalFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
-                            std::shared_ptr<Session> session);
+                            const std::shared_ptr<Session> &session);
   ~NormalFlowUnitDataContext() override = default;
 
   void SendEvent(std::shared_ptr<FlowUnitEvent> event) override {
@@ -377,14 +377,14 @@ class NormalFlowUnitDataContext : public FlowUnitDataContext {
   bool NeedStreamEndFlag() override;
 
   void UpdateBufferIndexInfo(
-      std::shared_ptr<BufferIndexInfo> cur_buffer,
-      std::shared_ptr<BufferIndexInfo> parent_buffer) override;
+      const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+      const std::shared_ptr<BufferIndexInfo> &parent_buffer) override;
 };
 
 class LoopNormalFlowUnitDataContext : public NormalFlowUnitDataContext {
  public:
   LoopNormalFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
-                                std::shared_ptr<Session> session);
+                                const std::shared_ptr<Session> &session);
   ~LoopNormalFlowUnitDataContext() override = default;
 
  protected:
@@ -404,7 +404,7 @@ class LoopNormalFlowUnitDataContext : public NormalFlowUnitDataContext {
 class StreamFlowUnitDataContext : public FlowUnitDataContext {
  public:
   StreamFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
-                            std::shared_ptr<Session> session);
+                            const std::shared_ptr<Session> &session);
   ~StreamFlowUnitDataContext() override = default;
 
   bool IsDataPre() override;
@@ -416,8 +416,8 @@ class StreamFlowUnitDataContext : public FlowUnitDataContext {
   bool NeedStreamEndFlag() override;
 
   void UpdateBufferIndexInfo(
-      std::shared_ptr<BufferIndexInfo> cur_buffer,
-      std::shared_ptr<BufferIndexInfo> parent_buffer) override;
+      const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+      const std::shared_ptr<BufferIndexInfo> &parent_buffer) override;
 
   PortDataMap cached_input_end_flag_;  // process after output stream end
 };
@@ -425,7 +425,7 @@ class StreamFlowUnitDataContext : public FlowUnitDataContext {
 class NormalExpandFlowUnitDataContext : public FlowUnitDataContext {
  public:
   NormalExpandFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
-                                  std::shared_ptr<Session> session);
+                                  const std::shared_ptr<Session> &session);
 
   ~NormalExpandFlowUnitDataContext() override = default;
 
@@ -435,14 +435,14 @@ class NormalExpandFlowUnitDataContext : public FlowUnitDataContext {
   bool NeedStreamEndFlag() override;
 
   void UpdateBufferIndexInfo(
-      std::shared_ptr<BufferIndexInfo> cur_buffer,
-      std::shared_ptr<BufferIndexInfo> parent_buffer) override;
+      const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+      const std::shared_ptr<BufferIndexInfo> &parent_buffer) override;
 };
 
 class StreamExpandFlowUnitDataContext : public FlowUnitDataContext {
  public:
   StreamExpandFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
-                                  std::shared_ptr<Session> session);
+                                  const std::shared_ptr<Session> &session);
   ~StreamExpandFlowUnitDataContext() override = default;
 
   void WriteInputData(std::shared_ptr<PortDataMap> stream_data_map) override;
@@ -459,13 +459,13 @@ class StreamExpandFlowUnitDataContext : public FlowUnitDataContext {
  protected:
   std::shared_ptr<PortDataMap> ReadFirstInCache();
 
-  bool IsNextExpand(std::shared_ptr<PortDataMap> data);
+  bool IsNextExpand(const std::shared_ptr<PortDataMap> &data);
 
   bool NeedStreamEndFlag() override;
 
   void UpdateBufferIndexInfo(
-      std::shared_ptr<BufferIndexInfo> cur_buffer,
-      std::shared_ptr<BufferIndexInfo> parent_buffer) override;
+      const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+      const std::shared_ptr<BufferIndexInfo> &parent_buffer) override;
 
  private:
   // only read one buffer each process
@@ -479,7 +479,7 @@ class StreamExpandFlowUnitDataContext : public FlowUnitDataContext {
 class NormalCollapseFlowUnitDataContext : public FlowUnitDataContext {
  public:
   NormalCollapseFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
-                                    std::shared_ptr<Session> session);
+                                    const std::shared_ptr<Session> &session);
   ~NormalCollapseFlowUnitDataContext() override = default;
 
   void SendEvent(std::shared_ptr<FlowUnitEvent> event) override {
@@ -505,8 +505,8 @@ class NormalCollapseFlowUnitDataContext : public FlowUnitDataContext {
   Status GenerateOutput() override;
 
   void UpdateBufferIndexInfo(
-      std::shared_ptr<BufferIndexInfo> cur_buffer,
-      std::shared_ptr<BufferIndexInfo> parent_buffer) override;
+      const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+      const std::shared_ptr<BufferIndexInfo> &parent_buffer) override;
 
  private:
   size_t output_buffer_for_current_stream_{0};
@@ -515,7 +515,7 @@ class NormalCollapseFlowUnitDataContext : public FlowUnitDataContext {
 class StreamCollapseFlowUnitDataContext : public FlowUnitDataContext {
  public:
   StreamCollapseFlowUnitDataContext(Node *node, MatchKey *data_ctx_match_key,
-                                    std::shared_ptr<Session> session);
+                                    const std::shared_ptr<Session> &session);
   ~StreamCollapseFlowUnitDataContext() override = default;
 
   void SendEvent(std::shared_ptr<FlowUnitEvent> event) override {
@@ -549,10 +549,10 @@ class StreamCollapseFlowUnitDataContext : public FlowUnitDataContext {
   Status GenerateOutput() override;
 
   void UpdateBufferIndexInfo(
-      std::shared_ptr<BufferIndexInfo> cur_buffer,
-      std::shared_ptr<BufferIndexInfo> parent_buffer) override;
+      const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+      const std::shared_ptr<BufferIndexInfo> &parent_buffer) override;
 
-  void AppendToCache(std::shared_ptr<PortDataMap> stream_data_map);
+  void AppendToCache(const std::shared_ptr<PortDataMap> &stream_data_map);
 
  private:
   std::unordered_map<size_t, std::shared_ptr<PortDataMap>> stream_data_cache_;
@@ -599,7 +599,7 @@ class ExecutorDataContext : public DataContext {
 
   std::shared_ptr<SessionContext> GetSessionContext() override;
 
-  void SetStatus(Status status);
+  void SetStatus(const Status &status);
 
   std::shared_ptr<Configuration> GetSessionConfig() override;
 

@@ -43,8 +43,8 @@ static std::map<c10::ScalarType, modelbox::ModelBoxDataType> t2a_map = {
     {torch::kInt64, modelbox::MODELBOX_INT64},
     {torch::kFloat16, modelbox::MODELBOX_HALF}};
 
-TorchInferenceFlowUnit::TorchInferenceFlowUnit(){};
-TorchInferenceFlowUnit::~TorchInferenceFlowUnit(){};
+TorchInferenceFlowUnit::TorchInferenceFlowUnit() = default;
+TorchInferenceFlowUnit::~TorchInferenceFlowUnit() = default;
 
 void TorchInferenceFlowUnit::FillInput(
     const std::vector<modelbox::FlowUnitInput> &flowunit_input_list) {
@@ -216,11 +216,10 @@ modelbox::Status TorchInferenceFlowUnit::CreateTorchTensorList(
 
   std::vector<size_t> bytes{0};
   size_t acc_bytes = 0;
-  for (size_t i = 0; i < buffer_shape_vec.size(); i++) {
-    auto byte =
-        std::accumulate(buffer_shape_vec[i].begin(), buffer_shape_vec[i].end(),
-                        (size_t)0, std::multiplies<size_t>()) *
-        modelbox::GetDataTypeSize(buffer_type);
+  for (auto &buffer_shape : buffer_shape_vec) {
+    auto byte = std::accumulate(buffer_shape.begin(), buffer_shape.end(),
+                                (size_t)0, std::multiplies<size_t>()) *
+                modelbox::GetDataTypeSize(buffer_type);
     acc_bytes += byte;
     bytes.emplace_back(acc_bytes);
   }
@@ -251,7 +250,7 @@ modelbox::Status TorchInferenceFlowUnit::CreateTorchTensorList(
 }
 
 modelbox::Status TorchInferenceFlowUnit::PreProcess(
-    std::shared_ptr<modelbox::DataContext> data_ctx,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<torch::jit::IValue> &inputs) {
   int index = 0;
   modelbox::Status status;
@@ -283,7 +282,7 @@ modelbox::Status TorchInferenceFlowUnit::PreProcess(
         return {modelbox::STATUS_FAULT, err_msg};
       }
 
-      inputs.push_back(input_tensor);
+      inputs.emplace_back(input_tensor);
       continue;
     }
 
@@ -298,7 +297,7 @@ modelbox::Status TorchInferenceFlowUnit::PreProcess(
       }
 
       torch::TensorList input_tensorlist(tensor_vec);
-      inputs.push_back(input_tensorlist);
+      inputs.emplace_back(input_tensorlist);
       continue;
     }
   }
@@ -330,8 +329,7 @@ modelbox::Status TorchInferenceFlowUnit::ChunkTensors(
       }
 
       if (tensor_index == 0) {
-        chunk_buffers.push_back(
-            std::vector<std::shared_ptr<modelbox::Buffer>>());
+        chunk_buffers.emplace_back();
       }
 
       chunk_buffers[chunk_index].push_back(buffer);
@@ -423,8 +421,8 @@ modelbox::Status TorchInferenceFlowUnit::SetOutputBufferListMeta(
 
     auto sizes = item.sizes();
     std::vector<size_t> output_shape;
-    for (size_t i = 0; i < sizes.size(); ++i) {
-      output_shape.push_back((size_t)sizes[i]);
+    for (long size : sizes) {
+      output_shape.push_back((size_t)size);
     }
     output_shape_vec.emplace_back(output_shape);
   }
@@ -465,9 +463,9 @@ modelbox::Status TorchInferenceFlowUnit::GetOutputTensorVec(
     // one of the outputs is also tuple, only fall into next layer.
     auto tmp_output_value = tmp_output.toTuple()->elements();
     MBLOG_DEBUG << "size: " << tmp_output_value.size();
-    for (size_t i = 0; i < tmp_output_value.size(); i++) {
-      if (tmp_output_value[i].isTensorList()) {
-        output_vector = tmp_output_value[i].toTensorVector();
+    for (auto &output_value : tmp_output_value) {
+      if (output_value.isTensorList()) {
+        output_vector = output_value.toTensorVector();
       }
     }
   }
@@ -475,7 +473,7 @@ modelbox::Status TorchInferenceFlowUnit::GetOutputTensorVec(
 }
 
 modelbox::Status TorchInferenceFlowUnit::PostProcess(
-    std::shared_ptr<modelbox::DataContext> data_ctx,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     torch::jit::IValue &outputs) {
   int index = 0;
   for (const auto &output_name : params_.output_name_list_) {
@@ -567,7 +565,7 @@ modelbox::Status TorchInferenceFlowUnit::Process(
 
 modelbox::Status TorchInferenceFlowUnit::Close() { return modelbox::STATUS_OK; }
 
-void TorchInferenceFlowUnitDesc::SetModelEntry(const std::string model_entry) {
+void TorchInferenceFlowUnitDesc::SetModelEntry(const std::string &model_entry) {
   model_entry_ = model_entry;
 }
 

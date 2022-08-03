@@ -34,7 +34,7 @@ class Ascend : public Device {
   ~Ascend() override;
   std::string GetType() const override;
 
-  Status DeviceExecute(DevExecuteCallBack fun, int32_t priority,
+  Status DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
                        size_t count) override;
 
   bool NeedResourceNice() override;

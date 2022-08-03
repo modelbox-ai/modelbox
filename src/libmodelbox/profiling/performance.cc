@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-
-#include "modelbox/profiler.h"
-
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <utility>
+
+#include "modelbox/profiler.h"
 
 namespace modelbox {
 
@@ -41,12 +41,11 @@ class CpuUsageData {
   int32_t percentage_{0};  // 0 ~ 100
 };
 
-
 class DeviceMemUsageData {
  public:
-  DeviceMemUsageData(const std::string& device_tag, int64_t device_mem,
+  DeviceMemUsageData(std::string device_tag, int64_t device_mem,
                      int32_t device_mem_percentage)
-      : device_tag_(device_tag),
+      : device_tag_(std::move(device_tag)),
         device_mem_(device_mem),
         device_mem_percentage_(device_mem_percentage) {}
   virtual ~DeviceMemUsageData() = default;
@@ -82,7 +81,7 @@ class MemUsageCollector : public PerfCollector {
   MemUsageCollector(std::shared_ptr<
                     std::map<std::string, std::pair<std::string, std::string>>>
                         devices)
-      : devices_(devices){};
+      : devices_(std::move(devices)){};
 
   virtual ~MemUsageCollector() = default;
 
@@ -151,7 +150,7 @@ Performance::Performance(std::shared_ptr<DeviceManager> device_mgr,
       timer_(nullptr),
       sample_interval_(DEFAULT_TIMER_SAMPLE_INTERVAL),
       write_file_interval_(DEFAULT_WRITE_PROFILE_INTERVAL),
-      device_mgr_(device_mgr),
+      device_mgr_(std::move(device_mgr)),
       output_dir_path_(output_dir_path) {}
 Performance::~Performance() {
   if (IsRunning()) {
@@ -170,8 +169,8 @@ Status Performance::OnInit() {
   flow_unit_names_ = std::make_shared<std::vector<std::string>>();
 
   auto device_map = device_mgr_->GetDeviceList();
-  for (auto devices : device_map) {
-    for (auto device : devices.second) {
+  for (const auto& devices : device_map) {
+    for (const auto& device : devices.second) {
       std::string device_type = devices.first;
       std::string device_id = device.first;
       devices_->insert(std::make_pair(device_type + device_id,
@@ -239,8 +238,9 @@ Status Performance::WritePerformance() {
   }
 
   time_t current_time = time(nullptr);
+  struct tm result_tm;
   char buf[64] = {0};
-  auto* local_tm = localtime(&current_time);
+  auto* local_tm = localtime_r(&current_time, &result_tm);
   if (local_tm) {
     strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", local_tm);
   }
@@ -297,7 +297,7 @@ void Performance::PerformanceWorker() {
     expect_time += sleep;
     std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
 
-    for (auto profile_data : perf_collectors_) {
+    for (const auto& profile_data : perf_collectors_) {
       profile_data->Collect();
     }
 
@@ -465,10 +465,11 @@ void MemUsageCollector::Collect() {
   auto current_time = std::chrono::time_point_cast<std::chrono::microseconds>(
       std::chrono::system_clock::now());
   MemUsageData data(current_time, 0, 0);
-  for (auto device : *devices_) {
+  for (const auto& device : *devices_) {
     std::string device_type = device.second.first;
     std::string device_id = device.second.second;
-    std::string device_tag = device_type + ":" + device_id;
+    std::string device_tag = device_type + ":";
+    device_tag += device_id;
     int32_t memory = 0;
     int32_t memory_percentage = 0;
     data.AddDeviceMemUsageData(device_tag, memory, memory_percentage);
@@ -485,12 +486,13 @@ FlowUnitPerfCollector::FlowUnitPerfCollector(
     std::shared_ptr<std::map<std::string, std::pair<std::string, std::string>>>
         devices,
     std::shared_ptr<std::vector<std::string>> flow_unit_names)
-    : devices_(devices), flow_unit_names_(flow_unit_names) {}
+    : devices_(std::move(devices)),
+      flow_unit_names_(std::move(flow_unit_names)) {}
 
 void FlowUnitPerfCollector::Export(nlohmann::json& perf_data) {
   data_mutex_.lock();
   nlohmann::json flow_unit_perf_json_arr = nlohmann::json::array();
-  for (auto item : flow_unit_per_ctx_map_) {
+  for (const auto& item : flow_unit_per_ctx_map_) {
     nlohmann::json flow_unit_perf_json;
     flow_unit_perf_json["flow_unit_name"] = item.first;
     flow_unit_perf_json["process_latency"] = item.second->GetProcessLatency();
@@ -504,14 +506,7 @@ void FlowUnitPerfCollector::Export(nlohmann::json& perf_data) {
 
 FlowUnitPerfCollector::~FlowUnitPerfCollector() = default;
 
-void FlowUnitPerfCollector::Collect() {
-  for (auto device : *devices_) {
-    std::string device_type = device.second.first;
-    std::string device_id = device.second.second;
-    for (auto flow_unit_name : *flow_unit_names_) {
-    }
-  }
-}
+void FlowUnitPerfCollector::Collect() {}
 
 bool FlowUnitPerfCollector::Empty() { return flow_unit_per_ctx_map_.empty(); }
 

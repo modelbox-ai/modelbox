@@ -209,7 +209,7 @@ TEST_F(TaskManagerTest, TaskInQueue) {
 
   std::shared_ptr<OneShotTask> running_task;
 
-  for (auto task : task_list) {
+  for (const auto &task : task_list) {
     auto one_shot_task = std::dynamic_pointer_cast<OneShotTask>(task);
     one_shot_task->RegisterStatusCallback(TaskFinished);
     if (task->GetTaskStatus() == WORKING) {
@@ -239,7 +239,7 @@ TEST_F(TaskManagerTest, TaskInQueue) {
   waitting_tasks = 0;
   stopped_tasks = 0;
   finish_tasks = 0;
-  for (auto task : task_list) {
+  for (const auto &task : task_list) {
     if (task->GetTaskStatus() == WORKING) {
       running_tasks++;
     }

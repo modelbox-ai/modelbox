@@ -147,7 +147,7 @@ class ModelBoxInode {
 
  private:
   friend ModelBoxDEntry;
-  void SetDEntry(std::shared_ptr<ModelBoxDEntry> dentry);
+  void SetDEntry(const std::shared_ptr<ModelBoxDEntry> &dentry);
 
   std::weak_ptr<ModelBoxDEntry> dentry_;
   enum MODELBOX_FUSE_INODE_TYPE inode_type_;
@@ -244,14 +244,14 @@ class ModelBoxDEntry : public std::enable_shared_from_this<ModelBoxDEntry> {
    * @param dentry dentry object
    * @return result
    */
-  void SetParent(std::shared_ptr<ModelBoxDEntry> dentry);
+  void SetParent(const std::shared_ptr<ModelBoxDEntry> &dentry);
 
   /**
    * @brief Add child DEntry
    * @param dentry dentry object
    * @return result
    */
-  int AddChild(std::shared_ptr<ModelBoxDEntry> dentry);
+  int AddChild(const std::shared_ptr<ModelBoxDEntry> &dentry);
 
   /**
    * @brief remove child DEntry by name
@@ -300,7 +300,7 @@ class ModelBoxDEntry : public std::enable_shared_from_this<ModelBoxDEntry> {
    * @brief set inode to dentry
    * @param inode inode object
    */
-  void SetInode(std::shared_ptr<ModelBoxInode> inode);
+  void SetInode(const std::shared_ptr<ModelBoxInode> &inode);
 
   /**
    * @brief Get inode from dentry
@@ -335,7 +335,7 @@ class ModelBoxFuse {
    * @param fuse_file inode of fuse file
    * @return whether add success.
    */
-  Status AddFuseFile(std::shared_ptr<ModelBoxFileInode> fuse_file);
+  Status AddFuseFile(const std::shared_ptr<ModelBoxFileInode> &fuse_file);
 
   /**
    * @brief Remove fuse file form modelbox fuse filesystem

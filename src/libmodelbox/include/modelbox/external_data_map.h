@@ -51,8 +51,8 @@ class ExternalDataMapImpl
     : public ExternalDataMap,
       public std::enable_shared_from_this<ExternalDataMapImpl> {
  public:
-  ExternalDataMapImpl(std::shared_ptr<Node> input_node,
-                      std::shared_ptr<Stream> init_stream);
+  ExternalDataMapImpl(const std::shared_ptr<Node>& input_node,
+                      const std::shared_ptr<Stream>& init_stream);
 
   ~ExternalDataMapImpl() override = default;
 
@@ -78,7 +78,7 @@ class ExternalDataMapImpl
 
   std::shared_ptr<FlowUnitError> GetLastError() override;
 
-  void SetSelector(std::shared_ptr<ExternalDataSelect> selector);
+  void SetSelector(const std::shared_ptr<ExternalDataSelect>& selector);
 
   bool GetReadyFlag();
 
@@ -89,7 +89,7 @@ class ExternalDataMapImpl
 
  private:
   Status PushToInputCache(const std::string& port_name,
-                          std::shared_ptr<BufferList> buffer_list);
+                          const std::shared_ptr<BufferList>& buffer_list);
 
   void PopMachedInput(
       std::unordered_map<std::string, std::list<std::shared_ptr<Buffer>>>&
@@ -134,7 +134,8 @@ class ExternalDataSelect
  public:
   ExternalDataSelect();
   virtual ~ExternalDataSelect();
-  void RegisterExternalData(std::shared_ptr<ExternalDataMap> externl_data);
+  void RegisterExternalData(
+      const std::shared_ptr<ExternalDataMap>& externl_data);
   void RemoveExternalData(const std::shared_ptr<ExternalDataMap>& externl_data);
 
   Status SelectExternalData(

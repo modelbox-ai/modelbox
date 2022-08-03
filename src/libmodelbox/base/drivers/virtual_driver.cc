@@ -19,6 +19,7 @@
 #include <dlfcn.h>
 
 #include <memory>
+#include <utility>
 
 #include "modelbox/base/driver.h"
 #include "modelbox/base/log.h"
@@ -36,7 +37,7 @@ Status VirtualDriverManager::Add(const std::string &file) { return STATUS_OK; };
 
 Status VirtualDriverManager::Init(Drivers &driver) { return STATUS_OK; };
 
-Status VirtualDriverManager::Scan(std::vector<std::string> scan_dirs) {
+Status VirtualDriverManager::Scan(const std::vector<std::string> &scan_dirs) {
   auto ret = STATUS_OK;
   for (const auto &dir : scan_dirs) {
     ret = Scan(dir);
@@ -47,30 +48,30 @@ Status VirtualDriverManager::Scan(std::vector<std::string> scan_dirs) {
   }
 
   return ret;
-};
+}
 
 Status VirtualDriverManager::Scan(const std::string &path) {
   return STATUS_OK;
-};
+}
 
 std::vector<std::shared_ptr<VirtualDriver>>
 VirtualDriverManager::GetAllDriverList() {
   return drivers_list_;
-};
+}
 
 void VirtualDriverManager::Clear() { drivers_list_.clear(); };
 
 std::shared_ptr<VirtualDriverDesc> VirtualDriver::GetVirtualDriverDesc() {
   return virtual_driver_desc_;
-};
+}
 
 void VirtualDriver::SetVirtualDriverDesc(
     std::shared_ptr<VirtualDriverDesc> desc) {
-  virtual_driver_desc_ = desc;
+  virtual_driver_desc_ = std::move(desc);
 }
 
 std::shared_ptr<DriverFactory> VirtualDriver::CreateFactory() {
   return nullptr;
-};
+}
 
 }  // namespace modelbox

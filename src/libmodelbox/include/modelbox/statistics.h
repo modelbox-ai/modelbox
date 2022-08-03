@@ -24,6 +24,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <utility>
 
 #include "modelbox/base/any.h"
 #include "modelbox/base/status.h"
@@ -36,7 +37,7 @@ constexpr const char* STATISTICS_ITEM_FLOW = "flow";
 
 class StatisticsValue {
  public:
-  StatisticsValue(const std::shared_ptr<Any>& val);
+  StatisticsValue(std::shared_ptr<Any> val);
 
   virtual ~StatisticsValue();
 
@@ -122,7 +123,7 @@ class StatisticsNotifyMsg {
  public:
   StatisticsNotifyMsg(std::string path, std::shared_ptr<StatisticsValue> value,
                       StatisticsNotifyType type)
-      : path_{path}, value_{value}, type_{type} {}
+      : path_{std::move(path)}, value_{std::move(value)}, type_{type} {}
 
   virtual ~StatisticsNotifyMsg() = default;
   std::string path_;
@@ -143,19 +144,19 @@ class StatisticsNotifyCfg {
   friend class StatisticsNotifyConsumers;
 
  public:
-  StatisticsNotifyCfg(const std::string& path_pattern,
-                      const StatisticsNotifyFunc& func,
+  StatisticsNotifyCfg(std::string path_pattern, StatisticsNotifyFunc func,
                       const StatisticsNotifyType& type)
-      : path_pattern_(path_pattern), func_(func), id_((uintptr_t)this) {
+      : path_pattern_(std::move(path_pattern)),
+        func_(std::move(func)),
+        id_((uintptr_t)this) {
     type_set_.insert(type);
   }
 
-  StatisticsNotifyCfg(const std::string& path_pattern,
-                      const StatisticsNotifyFunc& func,
-                      const std::set<StatisticsNotifyType>& types = {})
-      : path_pattern_{path_pattern},
-        func_{func},
-        type_set_(types),
+  StatisticsNotifyCfg(std::string path_pattern, StatisticsNotifyFunc func,
+                      std::set<StatisticsNotifyType> types = {})
+      : path_pattern_{std::move(path_pattern)},
+        func_{std::move(func)},
+        type_set_(std::move(types)),
         id_((uintptr_t)this) {}
 
   StatisticsNotifyCfg(const StatisticsNotifyCfg& other)
@@ -471,7 +472,7 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
   Status Notify(const StatisticsNotifyType& type);
 
  private:
-  StatisticsItem(const std::string& parent_path, const std::string& name,
+  StatisticsItem(std::string parent_path, std::string name,
                  std::weak_ptr<StatisticsItem> parent);
 
   Status AddNotify(const std::shared_ptr<StatisticsNotifyCfg>& cfg);
@@ -487,8 +488,8 @@ class StatisticsItem : public std::enable_shared_from_this<StatisticsItem> {
   Status ForEachInner(const StatisticsForEachFunc& func, bool recursive,
                       const std::string& base_path);
 
-  std::shared_ptr<StatisticsItem> AddItemInner(const std::string& name,
-                                               std::shared_ptr<Any> value);
+  std::shared_ptr<StatisticsItem> AddItemInner(
+      const std::string& name, const std::shared_ptr<Any>& value);
 
   std::string parent_path_;
   std::string name_;

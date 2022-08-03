@@ -16,6 +16,9 @@
  */
 
 #include <modelbox/stream.h>
+
+#include <utility>
+
 namespace modelbox {
 
 DataMeta::DataMeta() = default;
@@ -25,7 +28,7 @@ DataMeta::DataMeta(const DataMeta &other) { private_map_ = other.private_map_; }
 DataMeta::~DataMeta() { private_map_.clear(); }
 
 void DataMeta::SetMeta(const std::string &key, std::shared_ptr<void> meta) {
-  private_map_[key] = meta;
+  private_map_[key] = std::move(meta);
 }
 
 std::shared_ptr<void> DataMeta::GetMeta(const std::string &key) {
@@ -82,7 +85,8 @@ void StreamOrder::Expand(size_t index_in_this_level) {
 
 void StreamOrder::Collapse() { index_at_each_expand_level_.pop_back(); }
 
-Stream::Stream(std::shared_ptr<Session> session) : session_(session) {}
+Stream::Stream(std::shared_ptr<Session> session)
+    : session_(std::move(session)) {}
 
 std::shared_ptr<Session> Stream::GetSession() { return session_; }
 
@@ -103,7 +107,7 @@ size_t Stream::GetBufferCount() { return cur_buffer_count_; }
 void Stream::IncreaseBufferCount() { ++cur_buffer_count_; }
 
 void Stream::SetStreamMeta(std::shared_ptr<DataMeta> data_meta) {
-  data_meta_ = data_meta;
+  data_meta_ = std::move(data_meta);
 }
 
 std::shared_ptr<DataMeta> Stream::GetStreamMeta() { return data_meta_; }
@@ -111,7 +115,7 @@ std::shared_ptr<DataMeta> Stream::GetStreamMeta() { return data_meta_; }
 std::shared_ptr<StreamOrder> Stream::GetStreamOrder() { return stream_order_; }
 
 void Stream::SetStreamOrder(std::shared_ptr<StreamOrder> stream_order) {
-  stream_order_ = stream_order;
+  stream_order_ = std::move(stream_order);
 }
 
 }  // namespace modelbox

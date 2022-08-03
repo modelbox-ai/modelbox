@@ -32,7 +32,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(16);
     auto open_func = [=](const std::shared_ptr<Configuration>& opts,
-                         std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                         const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
       auto ext_data = mock_flowunit->CreateExternalData();
       std::string gimg_path = std::string(TEST_ASSETS) + "/test.jpg";
 
@@ -58,8 +58,8 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
     };
 
     auto process_func =
-        [=](std::shared_ptr<DataContext> data_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& data_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       MBLOG_INFO << "test_0_1_rotate process";
 
       auto external = data_ctx->External();
@@ -71,7 +71,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
 
       auto output_bufs = data_ctx->Output("out_1");
 
-      for (size_t i = 0; i < test_rotate_angle_.size(); ++i) {
+      for (int &i : test_rotate_angle_) {
         auto output_buffer =
             std::make_shared<modelbox::Buffer>(mock_flowunit->GetBindDevice());
         output_buffer->Build(input_img.total() * input_img.elemSize());
@@ -88,7 +88,7 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
         output_buffer->Set("layout", std::string("hwc"));
         output_buffer->Set("type", ModelBoxDataType::MODELBOX_UINT8);
 
-        output_buffer->Set("rotate_angle", test_rotate_angle_[i]);
+        output_buffer->Set("rotate_angle", i);
         output_bufs->PushBack(output_buffer);
       }
 
@@ -108,8 +108,8 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetMaxBatchSize(16);
 
     auto process_func =
-        [=](std::shared_ptr<DataContext> data_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& data_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       MBLOG_INFO << "test_1_0_rotate process";
       auto origin_buf = data_ctx->Input("in_origin");
       auto rotate_buf = data_ctx->Input("in_rotate");

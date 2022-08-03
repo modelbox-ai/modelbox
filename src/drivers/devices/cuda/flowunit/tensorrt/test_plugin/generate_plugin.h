@@ -41,10 +41,10 @@ class OriginInferencePlugin : public TensorRTInferencePlugin {
   modelbox::Status DataPost(std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
-  modelbox::Status SetUpInputOutput(std::shared_ptr<modelbox::Configuration> config,
-                                  const std::string &type,
-                                  std::vector<std::string> &names,
-                                  std::vector<std::string> &types);
+  modelbox::Status SetUpInputOutput(
+      const std::shared_ptr<modelbox::Configuration> &config,
+      const std::string &type, std::vector<std::string> &names,
+      std::vector<std::string> &types);
   std::vector<std::string> input_name_list_, output_name_list_;
   std::vector<std::string> input_type_list_, output_type_list_;
 };

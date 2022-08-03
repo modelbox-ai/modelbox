@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/flow_node_desc.h"
 
 namespace modelbox {
 
-FlowNodeDesc::FlowNodeDesc(const std::string &node_name)
-    : node_name_(node_name) {}
+FlowNodeDesc::FlowNodeDesc(std::string node_name)
+    : node_name_(std::move(node_name)) {}
 
 FlowNodeDesc::~FlowNodeDesc() = default;
 

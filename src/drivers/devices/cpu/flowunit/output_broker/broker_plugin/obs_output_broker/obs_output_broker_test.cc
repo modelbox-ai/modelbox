@@ -97,6 +97,7 @@ modelbox::Status OutputBrokerObsPluginTest::SendOutputDataObs(
   auto buffer_list = ext_data->CreateBufferList();
 
   std::vector<size_t> tmp_sizes;
+  tmp_sizes.reserve(output_data_pack_vec.size());
   for (auto &pack : output_data_pack_vec) {
     tmp_sizes.push_back(pack->output_data.size());
   }

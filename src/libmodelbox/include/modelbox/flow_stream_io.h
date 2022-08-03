@@ -42,7 +42,8 @@ class FlowStreamIO {
    * @param buffer buffer of this stream
    * @return Status
    **/
-  Status Send(const std::string &input_name, std::shared_ptr<Buffer> buffer);
+  Status Send(const std::string &input_name,
+              const std::shared_ptr<Buffer> &buffer);
 
   /**
    * @brief recv buffer of this stream result from flow

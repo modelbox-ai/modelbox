@@ -31,12 +31,12 @@ class __attribute__((visibility("hidden"))) FlowUnitPythonLog {
   static void Finish();
   static FlowUnitPythonLog &Instance();
   static void SetLogLevel(LogLevel level);
-  static void Debug(py::args args, py::kwargs kwargs);
-  static void Info(py::args args, py::kwargs kwargs);
-  static void Notice(py::args args, py::kwargs kwargs);
-  static void Warn(py::args args, py::kwargs kwargs);
-  static void Error(py::args args, py::kwargs kwargs);
-  static void Fatal(py::args args, py::kwargs kwargs);
+  static void Debug(const py::args& args, const py::kwargs& kwargs);
+  static void Info(const py::args& args, const py::kwargs& kwargs);
+  static void Notice(const py::args& args, const py::kwargs& kwargs);
+  static void Warn(const py::args& args, const py::kwargs& kwargs);
+  static void Error(const py::args& args, const py::kwargs& kwargs);
+  static void Fatal(const py::args& args, const py::kwargs& kwargs);
 
  private:
   FlowUnitPythonLog();
@@ -44,7 +44,7 @@ class __attribute__((visibility("hidden"))) FlowUnitPythonLog {
   void operator=(FlowUnitPythonLog &) = delete;
   virtual ~FlowUnitPythonLog();
 
-  void Log(LogLevel level, py::args args, py::kwargs kwargs);
+  void Log(LogLevel level, const py::args &args, const py::kwargs &kwargs);
   py::module inspect_module_;
 };
 

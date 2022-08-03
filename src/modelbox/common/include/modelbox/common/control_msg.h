@@ -79,7 +79,8 @@ class ControlMsg {
 
  protected:
   void SetMsgType(SERVER_CONTROL_MSG_TYPE type);
-  modelbox::Status Unserialize(std::shared_ptr<std::vector<uint8_t>> data_buff);
+  modelbox::Status Unserialize(
+      const std::shared_ptr<std::vector<uint8_t>> &data_buff);
   virtual modelbox::Status UnSerializeMsg(uint8_t *buff, size_t buff_len);
   virtual size_t SerializeMsg(uint8_t *buff, size_t buff_max_len);
 
@@ -199,7 +200,7 @@ class ControlMsgError : public ControlMsg {
 class ControlMsgBuilder {
  public:
   static std::shared_ptr<ControlMsg> Build(
-      std::shared_ptr<ControlMsg> from_msg);
+      const std::shared_ptr<ControlMsg> &from_msg);
 };
 
 }  // namespace modelbox

@@ -56,7 +56,7 @@ class LoggerPythonWapper {
 
   std::shared_ptr<Logger> GetLogger();
 
-  void SetLogger(std::shared_ptr<Logger> logger);
+  void SetLogger(const std::shared_ptr<Logger> &logger);
 
   void PrintExt(LogLevel level, const char *file, int lineno, const char *func,
              const char *msg);

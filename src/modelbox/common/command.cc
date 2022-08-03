@@ -35,7 +35,7 @@ ToolCommandList *ToolCommandList::Instance() {
   return &list;
 }
 
-void ToolCommandList::AddCommand(ToolCommandCreate new_func) {
+void ToolCommandList::AddCommand(const ToolCommandCreate &new_func) {
   auto cmd = new_func();
   auto name = cmd->GetCommandName();
   auto itr = commands_.find(name);

@@ -70,7 +70,7 @@ class Job {
    * @param job_name job name
    * @param graph_path graph file
    */
-  Job(const std::string& job_name, const std::string& graph_path);
+  Job(std::string job_name, std::string graph_path);
 
   /**
    * @brief Create job
@@ -78,8 +78,7 @@ class Job {
    * @param graph_name graph name
    * @param graph graph in string
    */
-  Job(const std::string& job_name, const std::string& graph_name,
-      const std::string& graph);
+  Job(std::string job_name, std::string graph_name, std::string graph);
 
   virtual ~Job();
 

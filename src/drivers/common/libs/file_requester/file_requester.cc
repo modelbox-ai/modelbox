@@ -58,7 +58,7 @@ Status FileRequester::Init() {
   listener_ =
       std::make_shared<web::http::experimental::listener::http_listener>(addr);
   listener_->support(web::http::methods::GET,
-                     [this](web::http::http_request request) {
+                     [this](const web::http::http_request &request) {
                        this->HandleFileGet(request);
                      });
   try {
@@ -74,7 +74,8 @@ Status FileRequester::Init() {
 }
 
 Status FileRequester::RegisterUrlHandler(
-    const std::string &relative_url, std::shared_ptr<FileGetHandler> handler) {
+    const std::string &relative_url,
+    const std::shared_ptr<FileGetHandler> &handler) {
   std::lock_guard<std::mutex> lock(handler_lock_);
   auto iter = file_handlers_.find(relative_url);
   if (iter == file_handlers_.end()) {
@@ -109,7 +110,7 @@ Status FileRequester::DeregisterUrl(const std::string &relative_url) {
 }
 
 bool FileRequester::IsValidRequest(const web::http::http_request &request) {
-  auto headers = request.headers();
+  const auto &headers = request.headers();
   if (!headers.has("Range")) {
     MBLOG_ERROR << "Request has no header names 'Range'. Request:"
                 << request.to_string();
@@ -164,9 +165,10 @@ bool FileRequester::ReadRequestRange(const web::http::http_request &request,
   return true;
 }
 
-void FileRequester::ProcessRequest(web::http::http_request &request,
-                                   std::shared_ptr<FileGetHandler> handler,
-                                   uint64_t range_start, uint64_t range_end) {
+void FileRequester::ProcessRequest(
+    const web::http::http_request &request,
+    const std::shared_ptr<FileGetHandler> &handler, uint64_t range_start,
+    uint64_t range_end) {
   uint64_t file_size = handler->GetFileSize();
   concurrency::streams::producer_consumer_buffer<unsigned char> rwbuf;
   concurrency::streams::basic_istream<uint8_t> stream(rwbuf);
@@ -214,7 +216,7 @@ void FileRequester::ProcessRequest(web::http::http_request &request,
   rep.wait();
 }
 
-void FileRequester::HandleFileGet(web::http::http_request request) {
+void FileRequester::HandleFileGet(const web::http::http_request &request) {
   MBLOG_DEBUG << request.to_string();
   std::string path = web::http::uri::decode(request.relative_uri().path());
 

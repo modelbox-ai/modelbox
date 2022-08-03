@@ -54,14 +54,14 @@ class TaskManager : public std::enable_shared_from_this<TaskManager> {
    * @param taskid task id
    * @return delete result
    */
-  Status DeleteTaskById(std::string taskid);
+  Status DeleteTaskById(const std::string& taskid);
 
   /**
    * @brief Get task by id
    * @param taskid task id
    * @return task pointer
    */
-  std::shared_ptr<Task> GetTaskById(std::string taskid);
+  std::shared_ptr<Task> GetTaskById(const std::string& taskid);
 
   /**
    * @brief Get task number
@@ -85,12 +85,12 @@ class TaskManager : public std::enable_shared_from_this<TaskManager> {
    * @brief Register new task
    * @param task task pointer
    */
-  void RegisterTask(std::shared_ptr<Task> task);
+  void RegisterTask(const std::shared_ptr<Task>& task);
 
  private:
   friend class Task;
   void ReceiveWork();
-  Status Submit(std::shared_ptr<Task> task);
+  Status Submit(const std::shared_ptr<Task>& task);
   void StartWaittingTask();
   std::shared_ptr<Flow> GetFlow();
   std::shared_ptr<ExternalDataSelect> GetSelector();

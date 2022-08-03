@@ -32,7 +32,7 @@ class ModelboxPlugin : public modelbox::Plugin {
   bool Stop() override;
 
   void RegistHandlers();
-  bool ParseConfig(std::shared_ptr<modelbox::Configuration> config);
+  bool ParseConfig(const std::shared_ptr<modelbox::Configuration>& config);
   void RegistCallbacks();
   bool CheckMethodVaild(std::string method);
   bool CheckUrlVaild(std::string url);
@@ -49,11 +49,11 @@ class ModelboxPlugin : public modelbox::Plugin {
                                      const std::string& graph,
                                      const std::string& format);
 
-  modelbox::Status StartJob(std::shared_ptr<modelbox::Job> job);
+  modelbox::Status StartJob(const std::shared_ptr<modelbox::Job>& job);
 
   modelbox::Status SaveGraphFile(const std::string& job_id,
                                  const std::string& toml_graph);
-  bool CheckJobIdValid(std::string job_id);
+  bool CheckJobIdValid(const std::string& job_id);
 
   std::string ip_;
   std::string port_;

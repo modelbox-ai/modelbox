@@ -26,6 +26,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 
 #include "securec.h"
 
@@ -132,16 +133,16 @@ void LoggerCallback::SetLogLevel(LogLevel level) { level_ = level; }
 
 LogLevel LoggerCallback::GetLogLevel() { return level_; };
 
-void LoggerCallback::RegVprint(LoggerVprint func) { vprint_ = func; };
+void LoggerCallback::RegVprint(const LoggerVprint &func) { vprint_ = func; }
 
-void LoggerCallback::RegPrint(LoggerPrint func) { print_ = func; };
+void LoggerCallback::RegPrint(const LoggerPrint &func) { print_ = func; };
 
-void RegLogVprint(LoggerVprint func) {
+void RegLogVprint(const LoggerVprint &func) {
   ModelBoxLogger.SetLogger(kloggercallback);
   kloggercallback->RegVprint(func);
 }
 
-void RegLogPrint(LoggerPrint func) {
+void RegLogPrint(const LoggerPrint &func) {
   ModelBoxLogger.SetLogger(kloggercallback);
   kloggercallback->RegPrint(func);
 }

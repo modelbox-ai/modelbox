@@ -18,6 +18,8 @@
 
 #include <securec.h>
 
+#include <utility>
+
 #include "modelbox/base/log.h"
 #include "modelbox/base/utils.h"
 #include "modelbox/data_handler.h"
@@ -590,7 +592,7 @@ std::shared_ptr<DataHandler> ModelBoxEngine::Execute(
     return data_handler;
   }
 
-  return Execute(name, config_map, data_handler);
+  return Execute(name, std::move(config_map), data_handler);
 }
 
 bool CheckPortisLinked(std::shared_ptr<GCGraph> &gcgraph,
@@ -610,8 +612,8 @@ bool CheckNodeIsLinked(std::shared_ptr<GCGraph> &gcgraph,
                        std::shared_ptr<GCNode> &gcnode) {
   bool result = true;
   auto inports = gcnode->GetInputPorts();
-  for (auto iter = inports->begin(); iter != inports->end(); iter++) {
-    result &= CheckPortisLinked(gcgraph, gcnode, *iter);
+  for (const auto &iter : *inports) {
+    result &= CheckPortisLinked(gcgraph, gcnode, iter);
   }
   return result;
 }

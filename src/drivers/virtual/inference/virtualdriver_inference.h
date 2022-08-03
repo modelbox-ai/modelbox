@@ -41,7 +41,7 @@ class VirtualInferenceFlowUnitDesc : public modelbox::FlowUnitDesc {
   void SetModelEntry(std::string model_entry);
   std::string GetModelEntry();
 
-  void SetConfiguration(std::shared_ptr<modelbox::Configuration> config);
+  void SetConfiguration(const std::shared_ptr<modelbox::Configuration> &config);
   std::shared_ptr<modelbox::Configuration> GetConfiguration();
 
  protected:
@@ -59,7 +59,7 @@ class InferenceVirtualDriver
   std::shared_ptr<modelbox::DriverFactory> CreateFactory() override;
   std::vector<std::shared_ptr<modelbox::Driver>> GetBindDriver();
   void SetBindDriver(
-      std::vector<std::shared_ptr<modelbox::Driver>> driver_list);
+      const std::vector<std::shared_ptr<modelbox::Driver>> &driver_list);
 
  private:
   std::vector<std::shared_ptr<modelbox::Driver>>
@@ -78,15 +78,16 @@ class VirtualInferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
       override;
 
-  void SetFlowUnitFactory(std::vector<std::shared_ptr<modelbox::DriverFactory>>
-                              bind_flowunit_factory_list) override;
+  void SetFlowUnitFactory(
+      const std::vector<std::shared_ptr<modelbox::DriverFactory>>
+          &bind_flowunit_factory_list) override;
 
   std::string GetVirtualType() override;
   void SetVirtualType(const std::string &virtual_type) override;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override { return driver_; };
 
-  void SetDriver(std::shared_ptr<modelbox::Driver> driver) override {
+  void SetDriver(const std::shared_ptr<modelbox::Driver> &driver) override {
     driver_ = driver;
   }
 

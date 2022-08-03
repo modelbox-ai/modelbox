@@ -49,7 +49,7 @@ class NormalizeFlowUnit : public modelbox::CudaFlowUnit {
                                cudaStream_t stream) override;
 
  private:
-  bool CheckBufferValid(std::shared_ptr<modelbox::Buffer> buffer,
+  bool CheckBufferValid(const std::shared_ptr<modelbox::Buffer> &buffer,
                         int32_t &width, int32_t &height,
                         modelbox::ModelBoxDataType &type);
   bool NormalizeOperator(float *data, int32_t width, int32_t height);

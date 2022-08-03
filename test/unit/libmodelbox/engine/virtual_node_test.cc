@@ -72,15 +72,15 @@ class VirtualNodeTest : public testing::Test {
                 }));
 
         EXPECT_CALL(*mock_flowunit, DataPre(_))
-            .WillRepeatedly(
-                testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            .WillRepeatedly(testing::Invoke(
+                [&](const std::shared_ptr<DataContext> &data_ctx) {
                   MBLOG_INFO << "add DataPre";
                   return modelbox::STATUS_OK;
                 }));
 
         EXPECT_CALL(*mock_flowunit, DataPost(_))
-            .WillRepeatedly(
-                testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            .WillRepeatedly(testing::Invoke(
+                [&](const std::shared_ptr<DataContext> &data_ctx) {
                   MBLOG_INFO << "add DataPost";
                   return modelbox::STATUS_OK;
                 }));
@@ -89,7 +89,7 @@ class VirtualNodeTest : public testing::Test {
             *mock_flowunit,
             Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
             .WillRepeatedly(testing::Invoke(
-                [=](std::shared_ptr<DataContext> data_ctx) -> Status {
+                [=](const std::shared_ptr<DataContext> &data_ctx) -> Status {
                   MBLOG_INFO << "add Process";
                   const auto input_bufs_1 = data_ctx->Input("In_1");
                   auto output_bufs = data_ctx->Output("Out_1");
@@ -187,7 +187,7 @@ TEST_F(VirtualNodeTest, VirtualNode_ONE_INPUT) {
     OutputBufferList map_buffer_list;
     ext_data->Recv(map_buffer_list);
 
-    for (auto buffer_list_iter : map_buffer_list) {
+    for (const auto &buffer_list_iter : map_buffer_list) {
       auto name = buffer_list_iter.first;
       auto buffer_list = buffer_list_iter.second;
       auto buffer_size = buffer_list->Size();
@@ -232,7 +232,7 @@ TEST_F(VirtualNodeTest, VirtualNode_ONE_INPUT) {
     OutputBufferList map_buffer_list;
     ext_data->Recv(map_buffer_list);
 
-    for (auto buffer_list_iter : map_buffer_list) {
+    for (const auto &buffer_list_iter : map_buffer_list) {
       auto name = buffer_list_iter.first;
       auto buffer_list = buffer_list_iter.second;
       auto buffer_size = buffer_list->Size();
@@ -305,7 +305,7 @@ TEST_F(VirtualNodeTest, VirtualNode_MULTI_INPUT) {
     status = ext_data->Recv(map_buffer_list_1);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    for (auto buffer_list_iter : map_buffer_list_1) {
+    for (const auto &buffer_list_iter : map_buffer_list_1) {
       auto name = buffer_list_iter.first;
       auto buffer_list = buffer_list_iter.second;
       auto buffer_size = buffer_list->Size();
@@ -336,7 +336,7 @@ TEST_F(VirtualNodeTest, VirtualNode_MULTI_INPUT) {
     status = ext_data->Recv(map_buffer_list_2);
     EXPECT_EQ(status, STATUS_SUCCESS);
 
-    for (auto buffer_list_iter : map_buffer_list_2) {
+    for (const auto &buffer_list_iter : map_buffer_list_2) {
       auto name = buffer_list_iter.first;
       auto buffer_list = buffer_list_iter.second;
       auto buffer_size = buffer_list->Size();
@@ -606,7 +606,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Stop_3) {
         break;
       }
 
-      for (auto external : external_list) {
+      for (const auto &external : external_list) {
         OutputBufferList map_buffer_list;
         external->Recv(map_buffer_list);
 
@@ -697,7 +697,7 @@ TEST_F(VirtualNodeTest, VirtualNode_Select) {
         break;
       }
 
-      for (auto external : external_list) {
+      for (const auto &external : external_list) {
         OutputBufferList map_buffer_list;
         auto status = external->Recv(map_buffer_list);
         if (status == STATUS_SUCCESS && external == ext_data_1) {

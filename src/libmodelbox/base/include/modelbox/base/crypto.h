@@ -123,7 +123,8 @@ Status Decrypt(const std::string &ciphername, unsigned char *input,
  * @param output encoded base64 string
  * @return whether success
  */
-Status Base64Encode(std::vector<unsigned char> input, std::string *output);
+Status Base64Encode(const std::vector<unsigned char> &input,
+                    std::string *output);
 
 /**
  * @brief Base64 encode

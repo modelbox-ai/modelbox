@@ -79,8 +79,8 @@ modelbox::Status VideoEncoderFlowUnit::Process(
 }
 
 modelbox::Status VideoEncoderFlowUnit::ReadFrames(
-    std::shared_ptr<FfmpegColorConverter> color_cvt,
-    std::shared_ptr<modelbox::DataContext> data_ctx,
+    const std::shared_ptr<FfmpegColorConverter> &color_cvt,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<std::shared_ptr<AVFrame>> &av_frame_list) {
   auto frame_buffer_list = data_ctx->Input(FRAME_INFO_INPUT);
   if (frame_buffer_list == nullptr || frame_buffer_list->Size() == 0) {
@@ -147,8 +147,9 @@ modelbox::Status VideoEncoderFlowUnit::ReadFrameFromBuffer(
 }
 
 modelbox::Status VideoEncoderFlowUnit::CvtFrameToYUV420P(
-    std::shared_ptr<FfmpegColorConverter> color_cvt,
-    std::shared_ptr<AVFrame> origin, std::shared_ptr<AVFrame> &yuv420p_frame) {
+    const std::shared_ptr<FfmpegColorConverter> &color_cvt,
+    const std::shared_ptr<AVFrame> &origin,
+    std::shared_ptr<AVFrame> &yuv420p_frame) {
   auto *frame = av_frame_alloc();
   if (frame == nullptr) {
     MBLOG_ERROR << "Alloc frame failed";
@@ -187,7 +188,7 @@ modelbox::Status VideoEncoderFlowUnit::EncodeFrame(
     const std::shared_ptr<FfmpegVideoEncoder> &encoder,
     const std::vector<std::shared_ptr<AVFrame>> &av_frame_list,
     std::vector<std::shared_ptr<AVPacket>> &av_packet_list) {
-  for (auto frame : av_frame_list) {
+  for (const auto &frame : av_frame_list) {
     auto ret = encoder->Encode(frame, av_packet_list);
     if (ret != modelbox::STATUS_SUCCESS) {
       MBLOG_ERROR << "Encoder encode frame failed";
@@ -201,7 +202,7 @@ modelbox::Status VideoEncoderFlowUnit::EncodeFrame(
 modelbox::Status VideoEncoderFlowUnit::MuxPacket(
     const std::shared_ptr<FfmpegVideoMuxer> &muxer, const AVRational &time_base,
     std::vector<std::shared_ptr<AVPacket>> &av_packet_list) {
-  for (auto packet : av_packet_list) {
+  for (const auto &packet : av_packet_list) {
     auto ret = muxer->Mux(time_base, packet);
     if (ret != modelbox::STATUS_SUCCESS) {
       MBLOG_ERROR << "Muxer mux packet failed";

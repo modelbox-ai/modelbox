@@ -32,8 +32,6 @@
 #include "gtest/gtest.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
-using ::testing::_;
-
 namespace modelbox {
 class TorchInferenceFlowUnitTest : public testing::Test {
  public:
@@ -41,7 +39,7 @@ class TorchInferenceFlowUnitTest : public testing::Test {
       : driver_flow_(std::make_shared<MockFlow>()) {}
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {
@@ -53,7 +51,7 @@ class TorchInferenceFlowUnitTest : public testing::Test {
     SetUpTomlFiles();
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     int count = 0;
     cudaGetDeviceCount(&count);
     if (count <= 0) {

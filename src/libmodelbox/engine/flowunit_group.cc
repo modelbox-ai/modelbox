@@ -94,7 +94,7 @@ void FlowUnitGroup::PreProcess(FUExecContextList &exec_ctx_list) {
       if (status != STATUS_SUCCESS) {
         MBLOG_INFO << "flowunit " << unit_name_
                    << " data pre return: " << status;
-        auto error_msg = status.Errormsg();
+        const auto &error_msg = status.Errormsg();
         data_ctx->DealWithDataPreError(unit_name_ + ".DataPreError", error_msg);
       }
     }
@@ -230,7 +230,7 @@ Status FlowUnitGroup::Run(
   return ret_status;
 }
 
-void FlowUnitGroup::SetNode(std::shared_ptr<Node> node) { node_ = node; }
+void FlowUnitGroup::SetNode(const std::shared_ptr<Node> &node) { node_ = node; }
 
 std::shared_ptr<FlowUnit> FlowUnitGroup::GetExecutorUnit() {
   return flowunit_group_[0];
@@ -312,7 +312,7 @@ Status FlowUnitGroup::CheckInputAndOutput(
 
 Status FlowUnitGroup::Init(const std::set<std::string> &input_ports_name,
                            const std::set<std::string> &output_ports_name,
-                           std::shared_ptr<FlowUnitManager> flowunit_mgr,
+                           const std::shared_ptr<FlowUnitManager> &flowunit_mgr,
                            bool checkport) {
   if (flowunit_mgr == nullptr) {
     return {STATUS_FAULT, "flowunit manager is null"};

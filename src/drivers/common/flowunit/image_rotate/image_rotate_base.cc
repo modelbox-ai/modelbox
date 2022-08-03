@@ -105,7 +105,7 @@ modelbox::Status ImageRotateFlowUnitBase::Process(
 }
 
 modelbox::Status ImageRotateFlowUnitBase::CheckImageType(
-    std::shared_ptr<modelbox::Buffer> input_buffer) {
+    const std::shared_ptr<modelbox::Buffer> &input_buffer) {
   auto input_type = modelbox::ModelBoxDataType::MODELBOX_TYPE_INVALID;
   if (!input_buffer->Get("type", input_type) ||
       input_type != modelbox::ModelBoxDataType::MODELBOX_UINT8) {

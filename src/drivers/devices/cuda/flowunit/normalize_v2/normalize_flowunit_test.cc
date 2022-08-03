@@ -95,20 +95,20 @@ Status NormalizeV2FlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               return modelbox::STATUS_OK;
             }));
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               return modelbox::STATUS_OK;
             }));
 
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               auto input = op_ctx->Input("input");
               auto output = op_ctx->Output("output");
 
@@ -167,7 +167,8 @@ TEST_F(NormalizeV2FlowUnitTest, NormalizeV2Test) {
     std::string gimg_path = std::string(TEST_ASSETS) + "/test.jpg";
     cv::Mat bgr_img = cv::imread(gimg_path);
 
-    cv::Mat bgr_img_float, bgr_img_float_chw;
+    cv::Mat bgr_img_float;
+    cv::Mat bgr_img_float_chw;
     bgr_img.convertTo(bgr_img_float, CV_32FC3);
     bgr_img.convertTo(bgr_img_float_chw, CV_32FC3);
 

@@ -75,7 +75,6 @@ class PaddingFlowUnit : public modelbox::CudaFlowUnit {
 
   modelbox::Status FillPaddingData(std::shared_ptr<modelbox::Buffer> &out_image);
 
- private:
   int32_t width_{0};
   int32_t height_{0};
   size_t output_buffer_size_{0};

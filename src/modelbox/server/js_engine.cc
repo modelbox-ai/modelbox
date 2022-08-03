@@ -18,6 +18,7 @@
 #ifdef ENABLE_JS_PLUGIN
 #include <fstream>
 #include <iostream>
+#include <utility>
 
 #include "modelbox/base/log.h"
 #include "securec.h"
@@ -30,7 +31,7 @@ void fatal_function(void *udata, const char *msg) {
 }
 
 JSFunctionParam::JSFunctionParam(std::shared_ptr<duk_context> ctx)
-    : ctx_(ctx) {}
+    : ctx_(std::move(ctx)) {}
 
 void JSFunctionParam::AddBoolean(bool val) {
   ++argc_;
@@ -80,7 +81,7 @@ void JSFunctionParam::AddHeapPtr(void *ptr) {
 size_t JSFunctionParam::GetParamSize() { return argc_; }
 
 JSFunctionReturn::JSFunctionReturn(std::shared_ptr<duk_context> ctx)
-    : ctx_(ctx) {}
+    : ctx_(std::move(ctx)) {}
 
 bool JSFunctionReturn::GetBool() { return duk_get_boolean(ctx_.get(), -1); }
 
@@ -91,7 +92,7 @@ uint32_t JSFunctionReturn::GetUint32() { return duk_get_uint(ctx_.get(), -1); }
 double JSFunctionReturn::GetNum() { return duk_get_number(ctx_.get(), -1); }
 
 std::string JSFunctionReturn::GetString() {
-  auto duk_str = duk_get_string(ctx_.get(), -1);
+  const auto *duk_str = duk_get_string(ctx_.get(), -1);
   if (duk_str == nullptr) {
     return "";
   }
@@ -104,7 +105,7 @@ void *JSFunctionReturn::GetPointer() { return duk_get_pointer(ctx_.get(), -1); }
 JSCtx::JSCtx() = default;
 
 modelbox::Status JSCtx::Init() {
-  auto ctx_ptr =
+  auto *ctx_ptr =
       duk_create_heap(nullptr, nullptr, nullptr, nullptr, fatal_function);
   if (ctx_ptr == nullptr) {
     std::string err = "Init js ctx failed";
@@ -120,7 +121,7 @@ modelbox::Status JSCtx::Init() {
 modelbox::Status JSCtx::LoadCode(const std::string &code,
                                  const std::string &code_name) {
   auto handle = WaitCtx();
-  auto buf = (char *)duk_push_fixed_buffer(ctx_.get(), code.size());
+  auto *buf = (char *)duk_push_fixed_buffer(ctx_.get(), code.size());
   if (buf == nullptr) {
     std::string err =
         "Create buffer in js ctx failed, size " + std::to_string(code.size());
@@ -128,7 +129,7 @@ modelbox::Status JSCtx::LoadCode(const std::string &code,
     return {STATUS_FAULT, err};
   }
 
-  auto e_ret = memcpy_s(buf, code.size(), code.data(), code.size());
+  auto e_ret = memcpy_s(buf, code.size(), code.data(), code.size()); // NOLINT
   if (e_ret != EOK) {
     std::string err = "memcpy failed, size " + std::to_string(code.size()) +
                       ", ret " + std::to_string(e_ret);
@@ -165,7 +166,7 @@ modelbox::Status JSCtx::LoadSource(const std::string &source_path) {
   }
 
   auto handle = WaitCtx();
-  auto buf = (char *)duk_push_fixed_buffer(ctx_.get(), file_len);
+  auto *buf = (char *)duk_push_fixed_buffer(ctx_.get(), file_len);
   if (buf == nullptr) {
     std::string err =
         "Create buffer in js ctx failed, size " + std::to_string(file_len);
@@ -192,7 +193,7 @@ modelbox::Status JSCtx::CompileCode() {
   auto ret = duk_pcompile(ctx_.get(), DUK_COMPILE_EVAL);
   if (ret != 0) {
     std::string err = "Load source failed";
-    auto duk_errmsg = duk_safe_to_string(ctx_.get(), -1);
+    const auto *duk_errmsg = duk_safe_to_string(ctx_.get(), -1);
     if (duk_errmsg) {
       err += ", err:";
       err += duk_errmsg;
@@ -206,7 +207,7 @@ modelbox::Status JSCtx::CompileCode() {
   ret = duk_pcall_method(ctx_.get(), 0);
   if (ret != 0) {
     std::string err = "Load source failed, err:";
-    auto duk_errmsg = duk_safe_to_string(ctx_.get(), -1);
+    const auto *duk_errmsg = duk_safe_to_string(ctx_.get(), -1);
     if (duk_errmsg) {
       err += duk_errmsg;
     }
@@ -245,7 +246,7 @@ modelbox::Status JSCtx::CallFunc(const std::string &func_name,
 
   auto ret = duk_pcall(ctx_.get(), func_param.GetParamSize());
   if (ret != 0) {
-    auto err = duk_safe_to_string(ctx_.get(), -1);
+    const auto *err = duk_safe_to_string(ctx_.get(), -1);
     std::string err_msg = "call " + func_name + " failed";
     if (err) {
       err_msg += ", err:";

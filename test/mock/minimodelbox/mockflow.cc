@@ -17,6 +17,7 @@
 #include "mockflow.h"
 
 #include <sstream>
+#include <utility>
 
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
@@ -28,14 +29,14 @@ using ::testing::_;
 namespace modelbox {
 
 std::shared_ptr<FlowUnitDesc> GenerateFlowunitDesc(
-    std::string name, std::set<std::string> inputs,
-    std::set<std::string> outputs) {
+    const std::string &name, const std::set<std::string> &inputs,
+    const std::set<std::string> &outputs) {
   auto mock_flowunit_desc = std::make_shared<FlowUnitDesc>();
   mock_flowunit_desc->SetFlowUnitName(name);
-  for (auto input : inputs) {
+  for (const auto &input : inputs) {
     mock_flowunit_desc->AddFlowUnitInput(modelbox::FlowUnitInput(input));
   }
-  for (auto output : outputs) {
+  for (const auto &output : outputs) {
     mock_flowunit_desc->AddFlowUnitOutput(modelbox::FlowUnitOutput(output));
   }
   mock_flowunit_desc->SetFlowType(FlowType::NORMAL);
@@ -50,7 +51,7 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                             const std::string &unittype) {
     auto mock_flowunit = std::make_shared<MockFlowUnit>();
     std::weak_ptr<MockFlowUnit> mock_flowunit_wp = mock_flowunit;
-    auto hold = function_collections;
+    UNUSED_VAR(function_collections);
     EXPECT_CALL(*mock_flowunit, Open(_))
         .WillRepeatedly(testing::Invoke(
             [=](const std::shared_ptr<modelbox::Configuration> &flow_option) {
@@ -78,7 +79,8 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataGroupPre";
                 if (data_group_pre_func_ && mock_flowunit_lock != nullptr) {
-                  return data_group_pre_func_(data_ctx, mock_flowunit_lock);
+                  return data_group_pre_func_(std::move(data_ctx),
+                                              mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -90,7 +92,8 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataPre";
                 if (data_pre_func_ && mock_flowunit_lock != nullptr) {
-                  return data_pre_func_(data_ctx, mock_flowunit_lock);
+                  return data_pre_func_(std::move(data_ctx),
+                                        mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -102,7 +105,7 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " Process";
                 if (process_func_ && mock_flowunit_lock != nullptr) {
-                  return process_func_(data_ctx, mock_flowunit_lock);
+                  return process_func_(std::move(data_ctx), mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -114,7 +117,8 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataPost";
                 if (data_post_func_ && mock_flowunit_lock != nullptr) {
-                  return data_post_func_(data_ctx, mock_flowunit_lock);
+                  return data_post_func_(std::move(data_ctx),
+                                         mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -127,7 +131,8 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataGroupPost";
                 if (data_group_post_func_ && mock_flowunit_lock != nullptr) {
-                  return data_group_post_func_(data_ctx, mock_flowunit_lock);
+                  return data_group_post_func_(std::move(data_ctx),
+                                               mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -138,7 +143,8 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataGroupPre";
                 if (data_group_pre_func_ && mock_flowunit_lock != nullptr) {
-                  return data_group_pre_func_(data_ctx, mock_flowunit_lock);
+                  return data_group_pre_func_(std::move(data_ctx),
+                                              mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -149,7 +155,8 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataPre";
                 if (data_pre_func_ && mock_flowunit_lock != nullptr) {
-                  return data_pre_func_(data_ctx, mock_flowunit_lock);
+                  return data_pre_func_(std::move(data_ctx),
+                                        mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -160,7 +167,7 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " Process";
                 if (process_func_ && mock_flowunit_lock != nullptr) {
-                  return process_func_(data_ctx, mock_flowunit_lock);
+                  return process_func_(std::move(data_ctx), mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -171,7 +178,8 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataPost";
                 if (data_post_func_ && mock_flowunit_lock != nullptr) {
-                  return data_post_func_(data_ctx, mock_flowunit_lock);
+                  return data_post_func_(std::move(data_ctx),
+                                         mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -182,7 +190,8 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
                 auto mock_flowunit_lock = mock_flowunit_wp.lock();
                 MBLOG_DEBUG << unitname << " DataGroupPost";
                 if (data_group_post_func_ && mock_flowunit_lock != nullptr) {
-                  return data_group_post_func_(data_ctx, mock_flowunit_lock);
+                  return data_group_post_func_(std::move(data_ctx),
+                                               mock_flowunit_lock);
                 }
                 return STATUS_OK;
               }));
@@ -194,11 +203,11 @@ MockFunctionCollection::GenerateCreateFunc(bool need_sequence) {
 }
 
 void MockFlow::AddFlowUnitDesc(
-    std::shared_ptr<FlowUnitDesc> flow_desc,
+    const std::shared_ptr<FlowUnitDesc> &flow_desc,
     std::function<std::shared_ptr<modelbox::FlowUnit>(const std::string &name,
                                                       const std::string &type)>
         create_func,
-    std::string lib_path) {
+    const std::string &lib_path) {
   MockFlowUnitDriverDesc desc_flowunit;
   auto name = flow_desc->GetFlowUnitName();
   desc_flowunit.SetClass("DRIVER-FLOWUNIT");
@@ -209,7 +218,7 @@ void MockFlow::AddFlowUnitDesc(
   std::string file_path_flowunit =
       lib_path + "/libmodelbox-unit-cpu-" + name + "so";
   desc_flowunit.SetFilePath(file_path_flowunit);
-  desc_flowunit.SetMockFlowUnit(create_func, flow_desc);
+  desc_flowunit.SetMockFlowUnit(std::move(create_func), flow_desc);
   ctl_->AddMockDriverFlowUnit(name, "cpu", desc_flowunit, lib_path);
 }
 
@@ -219,7 +228,7 @@ void MockFlow::Register_Test_0_2_Flowunit() {
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
 
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
 
     if (!ext_data) {
@@ -255,8 +264,8 @@ void MockFlow::Register_Test_0_2_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
     auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
@@ -295,7 +304,7 @@ void MockFlow::Register_Test_0_1_Flowunit() {
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
 
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
 
     if (!ext_data) {
@@ -331,8 +340,8 @@ void MockFlow::Register_Test_0_1_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
     auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
@@ -362,8 +371,8 @@ void MockFlow::Register_Test_1_0_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     int ending;
     bool flag = input_bufs_1->At(0)->Get("ending", ending);
@@ -376,8 +385,8 @@ void MockFlow::Register_Test_1_0_Flowunit() {
   };
 
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_STOP;
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -392,7 +401,7 @@ void MockFlow::Register_Test_0_1_Batch_Flowunit() {
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
 
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
 
     if (!ext_data) {
@@ -429,8 +438,8 @@ void MockFlow::Register_Test_0_1_Batch_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
     auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
@@ -464,7 +473,7 @@ void MockFlow::Register_Test_0_1_Batch_Thread_Flowunit() {
   static int32_t interval_time = 5 * 1000;
 
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     interval_time = opts->GetInt32("interval_time", 5000);
     std::packaged_task<void()> task([=]() {
       while (!is_closed) {
@@ -511,8 +520,8 @@ void MockFlow::Register_Test_0_1_Batch_Thread_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
     auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
@@ -532,7 +541,8 @@ void MockFlow::Register_Test_0_1_Batch_Thread_Flowunit() {
     return modelbox::STATUS_OK;
   };
 
-  auto close_func = [=](std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+  auto close_func =
+      [=](const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (listener_thread && listener_thread->joinable()) {
       is_closed = true;
       listener_thread->join();
@@ -552,8 +562,8 @@ void MockFlow::Register_Test_1_0_Batch_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     int ending;
     bool flag = input_bufs_1->At(0)->Get("ending", ending);
@@ -566,8 +576,8 @@ void MockFlow::Register_Test_1_0_Batch_Flowunit() {
   };
 
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_STOP;
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -584,15 +594,15 @@ void MockFlow::Register_Test_1_0_Batch_Thread_Flowunit() {
   static int64_t MAX_COUNT = 0;
 
   auto open_func = [=](const std::shared_ptr<Configuration> &flow_option,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     MAX_COUNT = flow_option->GetInt64("max_count", 50);
     run_count = 0;
     return modelbox::STATUS_OK;
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     int ending;
     bool flag = input_bufs_1->At(0)->Get("ending", ending);
@@ -607,8 +617,8 @@ void MockFlow::Register_Test_1_0_Batch_Thread_Flowunit() {
   };
 
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (MAX_COUNT < run_count) {
       MBLOG_DEBUG << "check reach max running times, should stop.";
       return modelbox::STATUS_STOP;
@@ -627,8 +637,8 @@ void MockFlow::Register_Test_2_0_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("test_2_0", {"In_1", "In_2"}, {});
   mock_desc->SetFlowType(STREAM);
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_STOP;
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -640,8 +650,8 @@ void MockFlow::Register_Test_OK_2_0_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("test_ok_2_0", {"In_1", "In_2"}, {});
   mock_desc->SetFlowType(STREAM);
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_OK;
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -654,8 +664,8 @@ void MockFlow::Register_Test_Orgin_0_2_Flowunit() {
       GenerateFlowunitDesc("test_orgin_0_2", {}, {"Out_1", "Out_2"});
   mock_desc->SetFlowType(STREAM);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto external = data_ctx->External();
     auto *external_data_1 = (int *)(*external)[0]->ConstData();
     auto bytes = external->GetBytes();
@@ -681,7 +691,7 @@ void MockFlow::Register_Test_Orgin_0_2_Flowunit() {
   };
 
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
       MBLOG_ERROR << "can not get external data.";
@@ -718,8 +728,8 @@ void MockFlow::Register_Loop_End_Flowunit() {
   mock_desc->SetFlowType(NORMAL);
   mock_desc->SetDefaultBatchSize(1);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
 
@@ -758,7 +768,7 @@ void MockFlow::Register_Listen_Flowunit() {
   static int32_t interval_time = 5 * 1000;
 
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     interval_time = opts->GetInt32("interval_time", 5000);
     std::packaged_task<void()> task([=]() {
       while (!is_closed) {
@@ -810,8 +820,8 @@ void MockFlow::Register_Listen_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> op_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &op_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_buf_1 = op_ctx->Output("Out_1");
     auto output_buf_2 = op_ctx->Output("Out_2");
     auto ext_buf = op_ctx->External();
@@ -834,7 +844,8 @@ void MockFlow::Register_Listen_Flowunit() {
     return modelbox::STATUS_OK;
   };
 
-  auto close_func = [=](std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+  auto close_func =
+      [=](const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (listener_thread && listener_thread->joinable()) {
       is_closed = true;
       listener_thread->join();
@@ -857,7 +868,7 @@ void MockFlow::Register_ExternData_Flowunit() {
   static std::atomic<bool> is_closed(false);
   static std::shared_ptr<std::thread> listener_thread = nullptr;
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     std::packaged_task<void()> task([=]() {
       while (!is_closed) {
         usleep(5 * 1000);
@@ -902,8 +913,8 @@ void MockFlow::Register_ExternData_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> op_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &op_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_buf_1 = op_ctx->Output("Out_1");
     auto ext_buf = op_ctx->External();
 
@@ -916,7 +927,8 @@ void MockFlow::Register_ExternData_Flowunit() {
     return modelbox::STATUS_OK;
   };
 
-  auto close_func = [=](std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+  auto close_func =
+      [=](const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (listener_thread && listener_thread->joinable()) {
       is_closed = true;
       listener_thread->join();
@@ -947,8 +959,8 @@ void MockFlow::Register_Loop_Flowunit() {
   mock_desc->SetFlowType(NORMAL);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     int ending;
 
@@ -993,8 +1005,8 @@ void MockFlow::Register_Condition_Flowunit() {
   mock_desc->SetConditionType(IF_ELSE);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto output_bufs_2 = data_ctx->Output("Out_2");
@@ -1025,8 +1037,8 @@ void MockFlow::Register_Switch_Case_Flowunit() {
   mock_desc->SetConditionType(IF_ELSE);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto output_bufs_2 = data_ctx->Output("Out_2");
@@ -1060,8 +1072,8 @@ void MockFlow::Register_Half_Condition_Flowunit() {
   mock_desc->SetConditionType(IF_ELSE);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto output_bufs_2 = data_ctx->Output("Out_2");
@@ -1092,8 +1104,8 @@ void MockFlow::Register_Normal_Condition_Flowunit() {
   mock_desc->SetConditionType(IF_ELSE);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto output_bufs_2 = data_ctx->Output("Out_2");
@@ -1123,8 +1135,8 @@ void MockFlow::Register_Expand_Normal_Flowunit() {
   mock_desc->SetOutputType(EXPAND);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
     session_ctx->SetPrivate("session", std::make_shared<std::string>("111"));
     auto res = session_ctx->GetPrivate("session");
@@ -1154,8 +1166,8 @@ void MockFlow::Register_Collapse_Normal_Flowunit() {
 
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     std::vector<size_t> data_shape(1, 4);
@@ -1179,8 +1191,8 @@ void MockFlow::Register_Expand_Stream_Flowunit() {
   mock_desc->SetFlowType(STREAM);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
 
@@ -1206,8 +1218,8 @@ void MockFlow::Register_Collapse_Stream_Flowunit() {
 
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     std::vector<size_t> data_shape(1, 4);
@@ -1225,8 +1237,8 @@ void MockFlow::Register_Collapse_Stream_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
 }
 
-Status Add_Funciton(std::shared_ptr<DataContext> data_ctx,
-                    std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Add_Funciton(const std::shared_ptr<DataContext> &data_ctx,
+                    const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   auto input_bufs_1 = data_ctx->Input("In_1");
   auto input_bufs_2 = data_ctx->Input("In_2");
   auto output_bufs = data_ctx->Output("Out_1");
@@ -1268,8 +1280,8 @@ void MockFlow::Register_Add_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc());
 }
 
-Status Wrong_Add_Funciton(std::shared_ptr<DataContext> data_ctx,
-                          std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Wrong_Add_Funciton(const std::shared_ptr<DataContext> &data_ctx,
+                          const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   auto input_bufs_1 = data_ctx->Input("In_1");
   auto input_bufs_2 = data_ctx->Input("In_2");
   auto output_bufs = data_ctx->Output("Out_1");
@@ -1317,8 +1329,8 @@ void MockFlow::Register_Scatter_Flowunit() {
   mock_desc->SetOutputType(EXPAND);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs = data_ctx->Input("In_1");
     auto output_bufs = data_ctx->Output("Out_1");
 
@@ -1338,8 +1350,8 @@ void MockFlow::Register_Scatter_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
     auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
@@ -1355,8 +1367,8 @@ void MockFlow::Register_Scatter_Flowunit() {
 std::function<Status(std::shared_ptr<DataContext> data_ctx,
                      std::shared_ptr<MockFlowUnit>)>
 Generate_Garther_function(int32_t i) {
-  return [=](std::shared_ptr<DataContext> data_ctx,
-             std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+  return [=](const std::shared_ptr<DataContext> &data_ctx,
+             const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs = data_ctx->Input("In_1");
     auto output_bufs = data_ctx->Output("Out_1");
 
@@ -1410,15 +1422,15 @@ void MockFlow::Register_Print_Flowunit() {
   static int64_t MAX_COUNT = 0;
 
   auto open_func = [=](const std::shared_ptr<Configuration> &flow_option,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     MAX_COUNT = flow_option->GetInt64("max_count", 50);
     run_count = 0;
     return modelbox::STATUS_OK;
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     const auto input_bufs = data_ctx->Input("In_1");
 
     std::stringstream ostr;
@@ -1455,15 +1467,15 @@ void MockFlow::Register_Check_Print_Flowunit() {
   static std::atomic<bool> is_print(false);
 
   auto open_func = [=](const std::shared_ptr<Configuration> &flow_option,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     MAX_COUNT = flow_option->GetInt64("max_count", 50);
     run_count = 0;
     return modelbox::STATUS_OK;
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("IN1");
     auto input_bufs_2 = data_ctx->Input("IN2");
     auto input_bufs_3 = data_ctx->Input("IN3");
@@ -1517,7 +1529,7 @@ void MockFlow::Register_Dynamic_Config_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
       MBLOG_ERROR << "can not get external data.";
@@ -1551,8 +1563,8 @@ void MockFlow::Register_Dynamic_Config_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto external = data_ctx->External();
     auto *external_data_1 = (int *)(*external)[0]->ConstData();
@@ -1580,8 +1592,8 @@ void MockFlow::Register_Dynamic_Get_Config_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
 
@@ -1613,8 +1625,8 @@ void MockFlow::Register_Dynamic_Get_Config_Other_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
 
@@ -1645,7 +1657,7 @@ std::function<Status(const std::shared_ptr<Configuration> &,
                      std::shared_ptr<MockFlowUnit>)>
 Genrate_Stream_Open(uint32_t i) {
   return [=](const std::shared_ptr<Configuration> &opts,
-             std::shared_ptr<MockFlowUnit> mock_flowunit) {
+             const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
       MBLOG_ERROR << "can not get external data.";
@@ -1681,8 +1693,8 @@ Genrate_Stream_Open(uint32_t i) {
   };
 }
 
-Status Stream_Process(std::shared_ptr<DataContext> data_ctx,
-                      std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Stream_Process(const std::shared_ptr<DataContext> &data_ctx,
+                      const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   auto session_ctx = data_ctx->GetSessionContext();
   auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
   MBLOG_INFO << "session_content is " << session_content[0];
@@ -1701,8 +1713,8 @@ Status Stream_Process(std::shared_ptr<DataContext> data_ctx,
   return modelbox::STATUS_OK;
 }
 
-Status Stream_DataPre(std::shared_ptr<DataContext> data_ctx,
-                      std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Stream_DataPre(const std::shared_ptr<DataContext> &data_ctx,
+                      const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   auto output_meta = std::make_shared<DataMeta>();
   auto magic_num = std::make_shared<int>(3343);
   output_meta->SetMeta("magic_num", magic_num);
@@ -1710,8 +1722,8 @@ Status Stream_DataPre(std::shared_ptr<DataContext> data_ctx,
   return modelbox::STATUS_OK;
 }
 
-Status Stream_DataPost(std::shared_ptr<DataContext> data_ctx,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Stream_DataPost(const std::shared_ptr<DataContext> &data_ctx,
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   return modelbox::STATUS_OK;
 }
 
@@ -1741,7 +1753,7 @@ void MockFlow::Register_Stream_Normal_Info_2_Flowunit() {
   mock_desc->SetFlowType(STREAM);
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
       MBLOG_ERROR << "can not get external data.";
@@ -1771,8 +1783,8 @@ void MockFlow::Register_Stream_Normal_Info_2_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto external = data_ctx->External();
     auto *external_data_1 = (int *)(*external)[0]->ConstData();
@@ -1801,8 +1813,8 @@ void MockFlow::Register_Stream_Start_Flowunit() {
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     MBLOG_INFO << "stream_start process";
     auto output_bufs = data_ctx->Output("Out_1");
     auto now_index = *(
@@ -1828,8 +1840,8 @@ void MockFlow::Register_Stream_Start_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
     auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     MBLOG_INFO << "session_content is " << session_content[0];
@@ -1853,8 +1865,8 @@ void MockFlow::Register_Stream_Start_Flowunit() {
   };
 
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_OK;
   };
 
@@ -1869,8 +1881,8 @@ void MockFlow::Register_Normal_Expand_Start_Flowunit() {
       GenerateFlowunitDesc("normal_expand_start", {"In_1"}, {"Out_1"});
   mock_desc->SetOutputType(EXPAND);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto event = data_ctx->Event();
     if (event == nullptr) {
       auto input_bufs = data_ctx->Input("In_1");
@@ -1916,8 +1928,8 @@ void MockFlow::Register_Stream_Tail_Filter_Flowunit() {
   mock_desc->SetFlowType(STREAM);
   mock_desc->SetMaxBatchSize(16);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto input_bufs = data_ctx->Input("In_1");
 
@@ -1944,8 +1956,8 @@ void MockFlow::Register_Stream_Tail_Filter_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto meta = data_ctx->GetInputMeta("In_1");
     auto start_index =
         *(std::static_pointer_cast<int>(meta->GetMeta("start_index")).get());
@@ -1969,8 +1981,8 @@ void MockFlow::Register_Stream_Mid_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("stream_mid", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto input_bufs = data_ctx->Input("In_1");
 
@@ -1999,8 +2011,8 @@ void MockFlow::Register_Stream_Mid_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto session_ctx = data_ctx->GetSessionContext();
     auto *session_content = (int *)(session_ctx->GetPrivate("session").get());
     auto meta = data_ctx->GetInputMeta("In_1");
@@ -2029,8 +2041,8 @@ void MockFlow::Register_Stream_End_Flowunit() {
   mock_desc->SetCollapseAll(false);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs = data_ctx->Input("In_1");
     auto data_meta = data_ctx->GetInputGroupMeta("In_1");
     if (data_meta != nullptr) {
@@ -2068,8 +2080,8 @@ void MockFlow::Register_Stream_End_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     MBLOG_INFO << "stream_end "
                << "DataGroupPre";
     auto session_ctx = data_ctx->GetSessionContext();
@@ -2097,8 +2109,8 @@ void MockFlow::Register_Add_1_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     const auto input_bufs = data_ctx->Input("In_1");
     auto output_bufs = data_ctx->Output("Out_1");
 
@@ -2126,8 +2138,8 @@ void MockFlow::Register_Iflow_Add_1_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs = data_ctx->Input("In_1");
     auto output_bufs = data_ctx->Output("Out_1");
 
@@ -2155,8 +2167,8 @@ void MockFlow::Register_Add_1_And_Error_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("add_1_and_error", {"In_1"}, {"Out_1"});
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     const auto input_bufs = data_ctx->Input("In_1");
     auto output_bufs = data_ctx->Output("Out_1");
 
@@ -2185,8 +2197,8 @@ void MockFlow::Register_Test_Condition_Flowunit() {
       GenerateFlowunitDesc("test_condition", {"In_1"}, {"Out_1", "Out_2"});
   mock_desc->SetConditionType(IF_ELSE);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto output_bufs_2 = data_ctx->Output("Out_2");
@@ -2229,7 +2241,7 @@ void MockFlow::Register_Error_Start_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("error_start", {}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
       MBLOG_ERROR << "can not get external data.";
@@ -2251,8 +2263,8 @@ void MockFlow::Register_Error_Start_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_INVALID;
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -2264,7 +2276,7 @@ void MockFlow::Register_Error_Start_Flowunit() {
 void MockFlow::Register_Error_Start_Normal_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("error_start_normal", {}, {"Out_1"});
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
       MBLOG_ERROR << "can not get external data.";
@@ -2286,8 +2298,8 @@ void MockFlow::Register_Error_Start_Normal_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     MBLOG_INFO << "error start process.";
     return modelbox::STATUS_INVALID;
   };
@@ -2301,7 +2313,7 @@ void MockFlow::Register_Normal_Start_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("normal_start", {}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
   auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
       MBLOG_ERROR << "can not get external data.";
@@ -2328,8 +2340,8 @@ void MockFlow::Register_Normal_Start_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto external = data_ctx->External();
     auto *external_data_1 = (uint32_t *)(*external)[0]->ConstData();
@@ -2359,8 +2371,8 @@ void MockFlow::Register_Expand_Datapre_Error_Flowunit() {
   mock_desc->SetOutputType(EXPAND);
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_INVALID;
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -2368,8 +2380,9 @@ void MockFlow::Register_Expand_Datapre_Error_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc(true));
 }
 
-Status Expand_Process_Error(std::shared_ptr<DataContext> data_ctx,
-                            std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Expand_Process_Error(
+    const std::shared_ptr<DataContext> &data_ctx,
+    const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   auto input_bufs_1 = data_ctx->Input("In_1");
   auto output_bufs_1 = data_ctx->Output("Out_1");
   auto device = mock_flowunit->GetBindDevice();
@@ -2409,8 +2422,8 @@ void MockFlow::Register_Expand_Process_Error_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc(true));
 }
 
-Status Expand_Process(std::shared_ptr<DataContext> data_ctx,
-                      std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Expand_Process(const std::shared_ptr<DataContext> &data_ctx,
+                      const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   auto input_buffer = data_ctx->Input("In_1")->At(0);
   if (input_buffer->HasError()) {
     auto output_bufs_1 = data_ctx->Output("Out_1");
@@ -2454,8 +2467,8 @@ void MockFlow::Register_Expand_Process_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc(true));
 }
 
-Status Simple_Pass(std::shared_ptr<DataContext> data_ctx,
-                   std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Simple_Pass(const std::shared_ptr<DataContext> &data_ctx,
+                   const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   auto input_bufs_1 = data_ctx->Input("In_1");
   auto output_bufs_1 = data_ctx->Output("Out_1");
   auto device = mock_flowunit->GetBindDevice();
@@ -2504,8 +2517,8 @@ void MockFlow::Register_Simple_Error_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("simple_error", {"In_1"}, {"Out_1"});
   mock_desc->SetDefaultBatchSize(1);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("In_1");
     auto output_bufs_1 = data_ctx->Output("Out_1");
     auto device = mock_flowunit->GetBindDevice();
@@ -2534,8 +2547,8 @@ void MockFlow::Register_Stream_Datapre_Error_Flowunit() {
       GenerateFlowunitDesc("stream_datapre_error", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_INVALID;
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -2549,16 +2562,16 @@ void MockFlow::Register_Stream_In_Process_Error_Flowunit() {
   mock_desc->SetFlowType(STREAM);
   mock_desc->SetMaxBatchSize(16);
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto start_index_content = std::make_shared<int>(0);
     data_ctx->SetPrivate("error_index", start_index_content);
     return modelbox::STATUS_OK;
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto error_index =
         *(std::static_pointer_cast<int>(data_ctx->GetPrivate("error_index"))
               .get());
@@ -2592,8 +2605,8 @@ void MockFlow::Register_Stream_Process_Error_Flowunit() {
   mock_desc->SetMaxBatchSize(16);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_INVALID;
   };
   auto mock_funcitons = std::make_shared<MockFunctionCollection>();
@@ -2607,8 +2620,8 @@ void MockFlow::Register_Error_End_Normal_Flowunit() {
   mock_desc->SetExceptionVisible(true);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     MBLOG_INFO << "error_end_normal process";
     if (data_ctx->HasError()) {
       MBLOG_INFO << "error_end process has error.";
@@ -2626,8 +2639,8 @@ void MockFlow::Register_Error_End_Flowunit() {
   mock_desc->SetExceptionVisible(true);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "error_end process has error.";
     }
@@ -2644,8 +2657,8 @@ void MockFlow::Register_Stream_Process_Flowunit() {
   mock_desc->SetMaxBatchSize(16);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "stream_process process has error.";
     }
@@ -2661,8 +2674,8 @@ void MockFlow::Register_Stream_Process_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "stream_process DataPre has error.";
     }
@@ -2671,8 +2684,8 @@ void MockFlow::Register_Stream_Process_Flowunit() {
   };
 
   auto data_post_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "stream_process DataPost has error";
     }
@@ -2693,8 +2706,8 @@ void MockFlow::Register_Collapse_Recieve_Error_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto data_group_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "collapse_recieve_error DataGroupPre recive error.";
     }
@@ -2702,8 +2715,8 @@ void MockFlow::Register_Collapse_Recieve_Error_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "collapse_recieve_error DataPre recive error.";
     }
@@ -2711,8 +2724,8 @@ void MockFlow::Register_Collapse_Recieve_Error_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "collapse_recieve_error Process recive error";
     } else {
@@ -2736,8 +2749,8 @@ void MockFlow::Register_Normal_Collapse_Recieve_Error_Flowunit() {
   mock_desc->SetCollapseAll(true);
 
   auto data_group_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "collapse_recieve_error DataGroupPre recive error.";
     }
@@ -2745,8 +2758,8 @@ void MockFlow::Register_Normal_Collapse_Recieve_Error_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "collapse_recieve_error DataPre recive error.";
     }
@@ -2754,8 +2767,8 @@ void MockFlow::Register_Normal_Collapse_Recieve_Error_Flowunit() {
   };
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     if (data_ctx->HasError()) {
       MBLOG_INFO << "collapse_recieve_error Process recive error.";
     } else {
@@ -2780,8 +2793,8 @@ void MockFlow::Register_Collapse_Datagrouppre_Error_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto data_group_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_INVALID;
   };
 
@@ -2797,8 +2810,8 @@ void MockFlow::Register_Normal_Collapse_Datagrouppre_Error_Flowunit() {
   mock_desc->SetCollapseAll(true);
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_INVALID;
   };
 
@@ -2814,8 +2827,8 @@ void MockFlow::Register_Normal_Collapse_Process_Error_Flowunit() {
   mock_desc->SetCollapseAll(true);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_INVALID;
   };
 
@@ -2832,8 +2845,8 @@ void MockFlow::Register_Collapse_Datapre_Error_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     MBLOG_INFO << "collapse_datapre_error";
     return modelbox::STATUS_INVALID;
   };
@@ -2851,8 +2864,8 @@ void MockFlow::Register_Collapse_Process_Error_Flowunit() {
   mock_desc->SetFlowType(STREAM);
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     return modelbox::STATUS_INVALID;
   };
 
@@ -2861,8 +2874,8 @@ void MockFlow::Register_Collapse_Process_Error_Flowunit() {
   AddFlowUnitDesc(mock_desc, mock_funcitons->GenerateCreateFunc(true));
 }
 
-Status Collapse_Process(std::shared_ptr<DataContext> data_ctx,
-                        std::shared_ptr<MockFlowUnit> mock_flowunit) {
+Status Collapse_Process(const std::shared_ptr<DataContext> &data_ctx,
+                        const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
   auto device = mock_flowunit->GetBindDevice();
   if (data_ctx->HasError()) {
     MBLOG_INFO << "collapse_process recive error buffer, return valid buffer.";
@@ -2925,8 +2938,8 @@ void MockFlow::Register_Virtual_Stream_Start_Flowunit() {
   mock_desc->SetFlowType(STREAM);
   mock_desc->SetOutputType(EXPAND);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto input_bufs = data_ctx->Input("In_1");
     auto event = data_ctx->Event();
@@ -2979,8 +2992,8 @@ void MockFlow::Register_Virtual_Stream_Mid_Flowunit() {
       GenerateFlowunitDesc("virtual_stream_mid", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto input_bufs = data_ctx->Input("In_1");
 
@@ -3008,8 +3021,8 @@ void MockFlow::Register_Virtual_Stream_Mid_Flowunit() {
   };
 
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto meta = data_ctx->GetInputMeta("In_1");
     std::shared_ptr<Device> device;
     auto interval =
@@ -3037,8 +3050,8 @@ void MockFlow::Register_Virtual_Expand_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("virtual_expand", {"In_1"}, {"Out_1"});
   mock_desc->SetOutputType(EXPAND);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto input_bufs = data_ctx->Input("In_1");
     auto event = data_ctx->Event();
@@ -3061,8 +3074,8 @@ void MockFlow::Register_Virtual_Stream_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("virtual_stream", {"In_1"}, {"Out_1"});
   mock_desc->SetFlowType(STREAM);
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto output_bufs = data_ctx->Output("Out_1");
     auto input_bufs = data_ctx->Input("In_1");
     auto event = data_ctx->Event();
@@ -3114,8 +3127,8 @@ void MockFlow::Register_Virtual_Stream_Flowunit() {
 void MockFlow::Register_Tensorlist_Test_1_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("tensorlist_test_1", {"IN1"}, {"OUT1"});
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs = data_ctx->Input("IN1");
     auto output_bufs = data_ctx->Output("OUT1");
 
@@ -3146,8 +3159,8 @@ void MockFlow::Register_Tensorlist_Test_2_Flowunit() {
   auto mock_desc =
       GenerateFlowunitDesc("tensorlist_test_2", {"IN1", "IN2"}, {"OUT1"});
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto input_bufs_1 = data_ctx->Input("IN1");
     auto input_bufs_2 = data_ctx->Input("IN2");
     auto output_bufs_1 = data_ctx->Output("OUT1");
@@ -3184,8 +3197,8 @@ void MockFlow::Register_Check_Tensorlist_Test_1_Flowunit() {
   static std::atomic<int64_t> run_count(0);
   static int64_t MAX_COUNT = 0;
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     const auto input_tl_1 = data_ctx->Input("IN1");
     const auto input_tl_2 = data_ctx->Input("IN2");
 
@@ -3213,7 +3226,7 @@ void MockFlow::Register_Check_Tensorlist_Test_1_Flowunit() {
   };
 
   auto open_func = [=](const std::shared_ptr<Configuration> &flow_option,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     MAX_COUNT = flow_option->GetInt64("max_count", 50);
     run_count = 0;
     return modelbox::STATUS_OK;
@@ -3231,8 +3244,8 @@ void MockFlow::Register_Slow_Flowunit() {
   static std::atomic<int64_t> run_count(0);
   static int64_t MAX_COUNT = 0;
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     const auto input_tl_1 = data_ctx->Input("IN1");
     const auto input_tl_2 = data_ctx->Input("IN2");
 
@@ -3264,7 +3277,7 @@ void MockFlow::Register_Slow_Flowunit() {
   };
 
   auto open_func = [=](const std::shared_ptr<Configuration> &flow_option,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     MAX_COUNT = flow_option->GetInt64("max_count", 50);
     run_count = 0;
     return modelbox::STATUS_OK;
@@ -3283,8 +3296,8 @@ void MockFlow::Register_Check_Tensorlist_Test_2_Flowunit() {
   static std::atomic<int64_t> run_count(0);
   static int64_t MAX_COUNT = 0;
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     const auto input_tl_1 = data_ctx->Input("IN1");
     const auto input_tl_2 = data_ctx->Input("IN2");
     const auto input_tl_3 = data_ctx->Input("IN3");
@@ -3316,7 +3329,7 @@ void MockFlow::Register_Check_Tensorlist_Test_2_Flowunit() {
   };
 
   auto open_func = [=](const std::shared_ptr<Configuration> &flow_option,
-                       std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                       const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
     MAX_COUNT = flow_option->GetInt64("max_count", 50);
     run_count = 0;
     return modelbox::STATUS_OK;
@@ -3332,8 +3345,8 @@ void MockFlow::Register_Statistic_Test_Flowunit() {
   auto mock_desc = GenerateFlowunitDesc("statistic_test", {"IN1"}, {"OUT1"});
 
   auto process_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto stats = data_ctx->GetStatistics();
     EXPECT_NE(stats, nullptr);
     if (stats == nullptr) {
@@ -3495,7 +3508,7 @@ bool MockFlow::Init(bool with_default_flowunit) {
   result = flowunit_mgr->Initialize(drivers, device_mgr, config);
 
   return result;
-};
+}
 
 Status MockFlow::InitFlow(const std::string &name, const std::string &graph) {
   flow_ = std::make_shared<Flow>();
@@ -3545,6 +3558,6 @@ void MockFlow::Destroy() {
   drivers = nullptr;
   ctl_ = nullptr;
   flow_ = nullptr;
-};
+}
 
 }  // namespace modelbox

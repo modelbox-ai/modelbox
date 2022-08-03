@@ -18,10 +18,12 @@
 
 #include <libgen.h>
 
+#include <utility>
+
 constexpr const char *VIRTUAL_FLOWUNIT_TYPE = "python";
 
 void VirtualPythonFlowUnitDesc::SetPythonEntry(std::string python_entry) {
-  python_entry_ = python_entry;
+  python_entry_ = std::move(python_entry);
 }
 
 std::shared_ptr<modelbox::DriverFactory> PythonVirtualDriver::CreateFactory() {
@@ -52,7 +54,7 @@ PythonVirtualDriver::GetBindDriver() {
 }
 
 void PythonVirtualDriver::SetBindDriver(
-    std::vector<std::shared_ptr<modelbox::Driver>> driver_list) {
+    const std::vector<std::shared_ptr<modelbox::Driver>> &driver_list) {
   python_flowunit_driver_ = driver_list;
 }
 
@@ -99,7 +101,7 @@ modelbox::Status PythonVirtualDriverManager::Add(const std::string &file) {
       std::make_shared<modelbox::ConfigurationBuilder>();
   std::shared_ptr<modelbox::Configuration> config = builder->Build(file);
   if (config == nullptr) {
-    auto err_msg = modelbox::StatusError.Errormsg();
+    const auto &err_msg = modelbox::StatusError.Errormsg();
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_BADCONF, err_msg};
   }
@@ -381,7 +383,7 @@ VirtualPythonFlowUnitFactory::FlowUnitProbe() {
 
   const auto &tom_file_path = driver_desc->GetFilePath();
   auto dir_name = modelbox::GetDirName(tom_file_path);
-  flowunit_desc->SetPythonFilePath(std::move(std::string(dir_name)));
+  flowunit_desc->SetPythonFilePath(std::string(dir_name));
 
   flowunit_desc->SetFlowUnitName(driver_desc->GetName());
   return_map.insert(std::make_pair(driver_desc->GetName(), flowunit_desc));
@@ -389,9 +391,9 @@ VirtualPythonFlowUnitFactory::FlowUnitProbe() {
 }
 
 void VirtualPythonFlowUnitFactory::SetFlowUnitFactory(
-    std::vector<std::shared_ptr<modelbox::DriverFactory>>
-        bind_flowunit_factory_list) {
-  for (auto &bind_flowunit_factory : bind_flowunit_factory_list) {
+    const std::vector<std::shared_ptr<modelbox::DriverFactory>>
+        &bind_flowunit_factory_list) {
+  for (const auto &bind_flowunit_factory : bind_flowunit_factory_list) {
     bind_flowunit_factory_list_.push_back(
         std::dynamic_pointer_cast<FlowUnitFactory>(bind_flowunit_factory));
   }
@@ -416,7 +418,7 @@ std::string VirtualPythonFlowUnitDesc::GetPythonEntry() {
 }
 
 void VirtualPythonFlowUnitDesc::SetConfiguration(
-    const std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration> &config) {
   config_ = config;
 }
 

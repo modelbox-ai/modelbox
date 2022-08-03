@@ -19,6 +19,7 @@
 #define MODELBOX_DRIVER_MOCK_CTRL_H_
 
 #include <map>
+#include <utility>
 
 #include "modelbox/base/device.h"
 #include "modelbox/base/driver.h"
@@ -45,7 +46,7 @@ class MockDriver {
   };
   virtual ~MockDriver() = default;
   virtual void SetDriverDesc(std::shared_ptr<modelbox::DriverDesc> desc) {
-    desc_ = desc;
+    desc_ = std::move(desc);
   };
 
   std::shared_ptr<modelbox::DriverDesc> GetDriverDesc() { return desc_; };
@@ -62,7 +63,7 @@ class MockFlowUnitDriverDesc : public modelbox::DriverDesc {
   ~MockFlowUnitDriverDesc() override = default;
 
   void SetMockFlowUnit(std::shared_ptr<MockFlowUnit> mock_flowunit) {
-    mock_flowunit_ = mock_flowunit;
+    mock_flowunit_ = std::move(mock_flowunit);
   }
 
   void SetMockFlowUnit(
@@ -70,15 +71,16 @@ class MockFlowUnitDriverDesc : public modelbox::DriverDesc {
                                                       const std::string &type)>
           create_func,
       std::vector<std::shared_ptr<modelbox::FlowUnitDesc>> flowunit_descs) {
-    flowunit_create_func_ = create_func;
-    mock_flowunit_desc_ = flowunit_descs;
+    flowunit_create_func_ = std::move(create_func);
+    mock_flowunit_desc_ = std::move(flowunit_descs);
   }
 
-  void SetMockFlowUnit(std::function<std::shared_ptr<modelbox::FlowUnit>(
-                           const std::string &name, const std::string &type)>
-                           create_func,
-                       std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc) {
-    flowunit_create_func_ = create_func;
+  void SetMockFlowUnit(
+      std::function<std::shared_ptr<modelbox::FlowUnit>(
+          const std::string &name, const std::string &type)>
+          create_func,
+      const std::shared_ptr<modelbox::FlowUnitDesc> &flowunit_desc) {
+    flowunit_create_func_ = std::move(create_func);
     mock_flowunit_desc_.push_back(flowunit_desc);
   }
 
@@ -132,12 +134,13 @@ class MockDriverCtl {
   bool AddMockDriverFlowUnit(std::string drive_name, std::string device_name,
                              const modelbox::DriverDesc &desc);
 
-  bool AddMockDriverFlowUnit(std::string drive_name, std::string device_name,
+  bool AddMockDriverFlowUnit(const std::string &drive_name,
+                             const std::string &device_name,
                              const MockFlowUnitDriverDesc &desc,
                              const std::string &copy_path = TEST_LIB_DIR);
 
-  bool RemoveMockDriverFlowUnit(std::string drive_name,
-                                std::string device_name);
+  bool RemoveMockDriverFlowUnit(const std::string &drive_name,
+                                const std::string &device_name);
 
   std::string GetMockDriverFlowUnitFilePath(const std::string &drive_name,
                                             const std::string &device_name,
@@ -145,23 +148,24 @@ class MockDriverCtl {
 
   void RemoveAllMockDriverFlowUnit();
 
-  bool AddMockDriverDevice(std::string device_name,
+  bool AddMockDriverDevice(const std::string &device_name,
                            const modelbox::DriverDesc &desc,
                            const std::string &copy_path = TEST_LIB_DIR);
 
-  bool RemoveMockDriverDevice(std::string device_name);
+  bool RemoveMockDriverDevice(const std::string &device_name);
 
   std::string GetMockDriverDeviceFilePath(const std::string &device_name,
                                           const std::string &device_dir);
 
   void RemoveAllMockDriverDevice();
 
-  bool AddMockDriverGraphConf(std::string drive_name, std::string device_name,
+  bool AddMockDriverGraphConf(const std::string &drive_name,
+                              const std::string &device_name,
                               const modelbox::DriverDesc &desc,
                               const std::string &copy_path = TEST_LIB_DIR);
 
-  bool RemoveMockDriverGraphConf(std::string drive_name,
-                                 std::string device_name);
+  bool RemoveMockDriverGraphConf(const std::string &drive_name,
+                                 const std::string &device_name);
 
   std::string GetMockDriverGraphConfFilePath(const std::string &graph_conf_name,
                                              const std::string &graph_dir);

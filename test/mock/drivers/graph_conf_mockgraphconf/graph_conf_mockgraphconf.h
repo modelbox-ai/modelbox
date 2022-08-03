@@ -21,6 +21,8 @@
 #include <modelbox/base/graph_manager.h>
 #include <modelbox/flow.h>
 
+#include <utility>
+
 #include "gmock/gmock.h"
 #include "graphviz_conf.h"
 #include "gtest/gtest.h"
@@ -38,7 +40,7 @@ class MockGraphConfig : public modelbox::GraphConfig {
   MockGraphConfig(const std::string &graph_conf_path) {
     EXPECT_CALL(*this, Resolve)
         .WillRepeatedly([this](std::shared_ptr<modelbox::GCGraph> graph) {
-          return this->Resolve(graph);
+          return this->Resolve(std::move(graph));
         });
   };
   ~MockGraphConfig() override = default;

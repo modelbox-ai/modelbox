@@ -21,6 +21,7 @@
 #include <securec.h>
 
 #include <queue>
+#include <utility>
 
 #include "driver_util.h"
 #include "modelbox/base/config.h"
@@ -29,9 +30,8 @@
 
 #define DEFAULT_RETRY_COUNT 5
 
-BrokerDataQueue::BrokerDataQueue(const std::string &broker_name,
-                                 size_t queue_size)
-    : broker_name_(broker_name), queue_size_(queue_size) {}
+BrokerDataQueue::BrokerDataQueue(std::string broker_name, size_t queue_size)
+    : broker_name_(std::move(broker_name)), queue_size_(queue_size) {}
 
 void BrokerDataQueue::PushForce(
     const std::shared_ptr<modelbox::Buffer> &buffer) {

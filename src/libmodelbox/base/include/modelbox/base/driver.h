@@ -43,7 +43,7 @@ class DriverFactory {
     return std::make_shared<Driver>();
   };
 
-  virtual void SetDriver(std::shared_ptr<Driver> driver) {}
+  virtual void SetDriver(const std::shared_ptr<Driver> &driver) {}
 
  private:
   friend class Driver;
@@ -167,7 +167,7 @@ class VirtualDriverManager : public DriverFactory {
   ~VirtualDriverManager() override;
   virtual Status Add(const std::string &file);
   virtual Status Init(Drivers &driver);
-  virtual Status Scan(std::vector<std::string> scan_dirs);
+  virtual Status Scan(const std::vector<std::string> &scan_dirs);
   virtual Status Scan(const std::string &path);
   std::vector<std::shared_ptr<VirtualDriver>> GetAllDriverList();
   void Clear();
@@ -200,20 +200,19 @@ class Drivers {
 
   /**
    * @brief Set default scan path
-   * 
-   * @param path 
+   *
+   * @param path
    */
   static void SetDefaultScanPath(const std::string &path);
 
   /**
    * @brief Set default driver info ;ath
-   * 
-   * @param path 
+   *
+   * @param path
    */
   static void SetDefaultInfoPath(const std::string &path);
 
-
-  Status Initialize(std::shared_ptr<Configuration> config);
+  Status Initialize(const std::shared_ptr<Configuration> &config);
   Status Scan();
   void Clear();
   Status Scan(const std::string &path, const std::string &filter);
@@ -239,8 +238,8 @@ class Drivers {
                        const std::string &check_code);
   Status GatherScanInfo(const std::string &scan_path);
   Status FillCheckInfo(std::string &file_check_node,
-                     std::unordered_map<std::string, bool> &file_map,
-                     int64_t &ld_cache_time);
+                       std::unordered_map<std::string, bool> &file_map,
+                       int64_t &ld_cache_time);
   bool CheckPathAndMagicCode();
   void PrintScanResults(const std::string &scan_path);
   void PrintScanResult(
@@ -248,7 +247,7 @@ class Drivers {
       const std::map<std::string, std::string> &load_failed_info);
   void RemoveSameElements(std::vector<std::string> *driver_list);
   bool DriversContains(const std::vector<std::shared_ptr<Driver>> &drivers_list,
-                       std::shared_ptr<Driver> driver);
+                       const std::shared_ptr<Driver> &driver);
   std::shared_ptr<Configuration> config_;
   std::vector<std::shared_ptr<Driver>> drivers_list_;
   std::vector<std::shared_ptr<VirtualDriverManager>>

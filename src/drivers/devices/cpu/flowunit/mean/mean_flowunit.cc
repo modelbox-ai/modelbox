@@ -63,8 +63,8 @@ modelbox::Status MeanFlowUnit::Process(
 
 template <typename T>
 void MeanFlowUnit::Process(const T *input_data,
-                           std::shared_ptr<modelbox::Buffer> input_buf,
-                           std::shared_ptr<modelbox::Buffer> out_buff) {
+                           const std::shared_ptr<modelbox::Buffer> &input_buf,
+                           const std::shared_ptr<modelbox::Buffer> &out_buff) {
   input_data = static_cast<T *>(const_cast<void *>(input_buf->ConstData()));
   if (input_data == nullptr) {
     MBLOG_ERROR << "mean flowunit data is nullptr";

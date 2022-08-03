@@ -143,7 +143,7 @@ modelbox::Status NvcodecVideoDecoder::Init(const std::string &device_id,
 }
 
 modelbox::Status NvcodecVideoDecoder::Decode(
-    std::shared_ptr<NvcodecPacket> pkt,
+    const std::shared_ptr<NvcodecPacket> &pkt,
     std::vector<std::shared_ptr<NvcodecFrame>> &frame_list, CUstream stream) {
   if (!video_parser_) {
     MBLOG_ERROR << "Nvcodec decode is not inited, parser is null";

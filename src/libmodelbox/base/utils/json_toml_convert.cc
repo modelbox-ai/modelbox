@@ -27,7 +27,7 @@ namespace modelbox {
 Status JsonToTomlProcess(
     std::list<std::tuple<std::shared_ptr<toml::value>, std::string,
                          nlohmann::json>> &json_obj_list,
-    std::shared_ptr<toml::value> toml_root) {
+    const std::shared_ptr<toml::value> &toml_root) {
   while (json_obj_list.size() > 0) {
     std::string key;
     nlohmann::json cur_value;
@@ -57,7 +57,7 @@ Status JsonToTomlProcess(
         for (nlohmann::json::iterator obj = cur_value.begin();
              obj != cur_value.end(); obj++) {
           auto *value = new toml::value;
-          std::string key = obj.key();
+          const std::string &key = obj.key();
           std::shared_ptr<toml::value> toml_new(value, [=](toml::value *value) {
             if (value->is_uninitialized()) {
               delete value;

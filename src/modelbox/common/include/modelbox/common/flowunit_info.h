@@ -27,7 +27,7 @@ class FlowUnitInfo {
   FlowUnitInfo();
   virtual ~FlowUnitInfo();
 
-  Status Init(std::shared_ptr<Configuration> config);
+  Status Init(const std::shared_ptr<Configuration>& config);
 
   Status GetInfoInJson(std::string *result);
 

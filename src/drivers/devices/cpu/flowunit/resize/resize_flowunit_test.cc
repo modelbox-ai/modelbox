@@ -116,7 +116,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -124,7 +124,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -133,7 +133,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& data_ctx) {
               auto output_bufs = data_ctx->Output("Out_1");
               auto external = data_ctx->External();
               std::string gimg_path =
@@ -156,7 +156,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
               output_bufs->Build(shape_vector);
 
               for (size_t i = 0; i < 5; ++i) {
-                std::string img_path = gimg_path;
+                const std::string& img_path = gimg_path;
                 cv::Mat img_data = cv::imread(img_path);
                 MBLOG_INFO << "image col " << img_data.cols << "  row "
                            << img_data.rows
@@ -214,7 +214,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -222,7 +222,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPost";
               return modelbox::STATUS_STOP;
@@ -231,7 +231,7 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               MBLOG_INFO << "test_1_0_resize process";
               auto input_buf = op_ctx->Input("In_1");
               int32_t cols;

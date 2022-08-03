@@ -40,7 +40,8 @@ class GCNode {
   GCNode();
   virtual ~GCNode();
 
-  Status Init(const std::string &name, std::shared_ptr<GCGraph> root_graph);
+  Status Init(const std::string &name,
+              const std::shared_ptr<GCGraph> &root_graph);
 
   std::string GetNodeName() const;
   std::shared_ptr<Configuration> GetConfiguration() const;
@@ -51,8 +52,8 @@ class GCNode {
 
   void SetNodeType(std::string type);
   void SetConfiguration(const std::string &key, const std::string &value);
-  Status SetInputPort(std::string port);
-  Status SetOutputPort(std::string port);
+  Status SetInputPort(const std::string &port);
+  Status SetOutputPort(const std::string &port);
   void SetOutDataHandler(std::shared_ptr<DataHandler> &data_handler);
   std::shared_ptr<DataHandler> GetBindDataHandler();
 
@@ -71,7 +72,7 @@ class GCEdge {
   GCEdge();
   virtual ~GCEdge();
 
-  Status Init(std::shared_ptr<GCGraph> root_graph);
+  Status Init(const std::shared_ptr<GCGraph> &root_graph);
 
   const std::string &GetHeadOutPort() const;
   const std::string &GetTailInPort() const;
@@ -100,25 +101,25 @@ class GCGraph {
   GCGraph();
   virtual ~GCGraph();
 
-  Status Init(std::shared_ptr<GCGraph> root_graph);
+  Status Init(const std::shared_ptr<GCGraph> &root_graph);
 
   inline void SetGraphName(const std::string &name) { name_ = name; };
   const std::string &GetGraphName() const;
   std::shared_ptr<GCGraph> GetRootGraph() const;
 
-  Status AddSubGraph(std::shared_ptr<GCGraph> subgraph);
+  Status AddSubGraph(const std::shared_ptr<GCGraph> &subgraph);
   std::shared_ptr<GCGraph> GetSubGraph(const std::string &name) const;
   std::map<std::string, const std::shared_ptr<GCGraph>> GetAllSubGraphs() const;
   void ShowAllSubGraph() const;
 
-  Status AddNode(std::shared_ptr<GCNode> node);
-  Status SetFirstNode(std::shared_ptr<GCNode> node);
+  Status AddNode(const std::shared_ptr<GCNode> &node);
+  Status SetFirstNode(const std::shared_ptr<GCNode> &node);
   std::vector<std::shared_ptr<GCNode>> GetFirstNodes();
   std::shared_ptr<GCNode> GetNode(const std::string &name) const;
   std::map<std::string, const std::shared_ptr<GCNode>> GetAllNodes() const;
   void ShowAllNode() const;
 
-  Status AddEdge(std::shared_ptr<GCEdge> edge);
+  Status AddEdge(const std::shared_ptr<GCEdge> &edge);
   std::shared_ptr<GCEdge> GetEdge(const std::string &name) const;
   std::map<std::string, const std::shared_ptr<GCEdge>> GetAllEdges() const;
   void ShowAllEdge() const;
@@ -163,20 +164,20 @@ class GraphConfigManager {
 
   static GraphConfigManager &GetInstance();
 
-  Status Register(std::shared_ptr<GraphConfigFactory> factory);
+  Status Register(const std::shared_ptr<GraphConfigFactory> &factory);
 
-  Status Initialize(std::shared_ptr<Drivers> driver,
-                    std::shared_ptr<Configuration> config);
+  Status Initialize(const std::shared_ptr<Drivers> &driver,
+                    const std::shared_ptr<Configuration> &config);
 
   std::shared_ptr<GraphConfig> LoadGraphConfig(
-      std::shared_ptr<Configuration> config);
+      const std::shared_ptr<Configuration> &config);
 
   std::vector<std::string> GetSupportTypes();
 
   void Clear();
 
  private:
-  Status InitGraphConfigFactory(std::shared_ptr<Drivers> driver);
+  Status InitGraphConfigFactory(const std::shared_ptr<Drivers> &driver);
 
   std::map<std::string, const std::shared_ptr<GraphConfigFactory>>
   GetGraphConfFactoryList();
@@ -186,9 +187,10 @@ class GraphConfigManager {
 
   std::shared_ptr<GraphConfig> CreateGraphConfig(std::string graph_conf_type,
                                                  std::string graph_conf_name);
-  std::shared_ptr<GraphConfig> GetGraphConfig(std::string graph_conf_name);
+  std::shared_ptr<GraphConfig> GetGraphConfig(
+      const std::string &graph_conf_name);
   std::map<std::string, const std::shared_ptr<GraphConfig>> GetGraphConfList();
-  Status DeleteGraphConfig(std::string graph_conf_name);
+  Status DeleteGraphConfig(const std::string &graph_conf_name);
 
   std::map<std::string, const std::shared_ptr<GraphConfigFactory>>
       graph_conf_factories_;

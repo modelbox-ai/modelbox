@@ -123,7 +123,7 @@ class CudaMemory : public DeviceMemory {
    */
   CudaMemory(const std::shared_ptr<Device> &device,
              const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-             std::shared_ptr<void> device_mem_ptr, size_t size);
+             const std::shared_ptr<void> &device_mem_ptr, size_t size);
 
   ~CudaMemory() override;
   /**
@@ -289,15 +289,16 @@ class CudaMemoryManager : public DeviceMemoryManager {
    * @param cuda_stream Cuda stream to use in cuda copy api
    * @return Status
    */
-  Status SetupCudaStream(std::shared_ptr<const DeviceMemory> src_memory,
-                         std::shared_ptr<DeviceMemory> dest_memory,
+  Status SetupCudaStream(const std::shared_ptr<const DeviceMemory> &src_memory,
+                         const std::shared_ptr<DeviceMemory> &dest_memory,
                          std::shared_ptr<CudaStream> &cuda_stream_ptr);
 
   void TryEnablePeerAccess(int32_t src_gpu_id, int32_t dest_gpu_id);
 
   Status CudaMemcpyAsync(uint8_t *dest_ptr, const uint8_t *src_ptr,
-                         size_t src_size, std::shared_ptr<Device> dest_device,
-                         std::shared_ptr<Device> src_device,
+                         size_t src_size,
+                         const std::shared_ptr<Device> &dest_device,
+                         const std::shared_ptr<Device> &src_device,
                          cudaMemcpyKind cuda_copy_kind,
                          cudaStream_t cuda_stream);
 

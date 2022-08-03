@@ -28,12 +28,13 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 class NVDECException : public std::exception {
  public:
-  NVDECException(const std::string &err_str, const CUresult err_code)
-      : err_str_(err_str), err_code_(err_code) {}
+  NVDECException(std::string err_str, const CUresult err_code)
+      : err_str_(std::move(err_str)), err_code_(err_code) {}
 
   ~NVDECException() noexcept override = default;
   const char *what() const noexcept override { return err_str_.c_str(); }
@@ -99,9 +100,10 @@ class NvcodecVideoDecoder {
   modelbox::Status Init(const std::string &device_id, AVCodecID codec_id,
                       std::string &file_url, bool skip_err_frame);
 
-  modelbox::Status Decode(std::shared_ptr<NvcodecPacket> pkt,
-                        std::vector<std::shared_ptr<NvcodecFrame>> &frame_list,
-                        CUstream stream = nullptr);
+  modelbox::Status Decode(
+      const std::shared_ptr<NvcodecPacket> &pkt,
+      std::vector<std::shared_ptr<NvcodecFrame>> &frame_list,
+      CUstream stream = nullptr);
 
   int32_t GetWidth() { return frame_width_; }
 

@@ -194,7 +194,7 @@ bool CheckRoiBoxVaild(const RoiBox *bbox, int32_t image_width,
 
 modelbox::Status InitDvppChannel(
     std::shared_ptr<acldvppChannelDesc> &chan_desc) {
-  auto chan_desc_ptr = acldvppCreateChannelDesc();
+  auto *chan_desc_ptr = acldvppCreateChannelDesc();
   if (chan_desc_ptr == nullptr) {
     return {modelbox::STATUS_FAULT, "acldvppCreateChannelDesc return null"};
   }
@@ -256,7 +256,7 @@ std::shared_ptr<acldvppPicDesc> CreateImgDesc(size_t img_size, void *img_buffer,
     return nullptr;
   }
 
-  auto img_desc_ptr = acldvppCreatePicDesc();
+  auto *img_desc_ptr = acldvppCreatePicDesc();
   if (img_desc_ptr == nullptr) {
     modelbox::StatusError = {modelbox::STATUS_FAULT,
                              "acldvppCreatePicDesc return null"};
@@ -287,7 +287,7 @@ std::shared_ptr<acldvppPicDesc> CreateImgDesc(size_t img_size, void *img_buffer,
           return;
         }
 
-        auto data = acldvppGetPicDescData(ptr);
+        auto *data = acldvppGetPicDescData(ptr);
         if (data != nullptr && flag != ImgDescDestroyFlag::DESC_ONLY) {
           acldvppFree(data);
         }
@@ -308,7 +308,7 @@ modelbox::Status FillImgDescData(
     return modelbox::STATUS_FAULT;
   }
 
-  auto input_buf = acldvppGetPicDescData(img_desc.get());
+  auto *input_buf = acldvppGetPicDescData(img_desc.get());
   if (input_buf == nullptr) {
     return {modelbox::STATUS_FAULT, "acldvppGetPicDescData failed"};
   }
@@ -333,7 +333,7 @@ modelbox::Status FillImgDescData(
 modelbox::Status SetOutImgMeta(std::shared_ptr<modelbox::Buffer> &out_image,
                                const std::string &out_pix_fmt,
                                std::shared_ptr<acldvppPicDesc> &out_img_desc) {
-  auto img_desc_ptr = out_img_desc.get();
+  auto *img_desc_ptr = out_img_desc.get();
   if (img_desc_ptr == nullptr) {
     return {modelbox::STATUS_FAULT, "out_img_desc is null"};
   }
@@ -375,14 +375,14 @@ class DvppChanMgr : public std::enable_shared_from_this<DvppChanMgr> {
       std::lock_guard<std::mutex> lock(chan_list_lock_);
       auto &chan_list = device_chan_list_[device_id];
       if (!chan_list.empty()) {
-        auto ch_ptr = chan_list.front();
+        auto *ch_ptr = chan_list.front();
         chan_list.pop_front();
         chan.reset(ch_ptr, free_func);
         return chan;
       }
     }
 
-    auto ch_ptr = acldvppCreateChannelDesc();
+    auto *ch_ptr = acldvppCreateChannelDesc();
     if (ch_ptr == nullptr) {
       MBLOG_ERROR << "acldvppCreateChannelDesc return null";
       return nullptr;
@@ -408,7 +408,7 @@ class DvppChanMgr : public std::enable_shared_from_this<DvppChanMgr> {
 
   virtual ~DvppChanMgr() {
     for (auto &chan_list_item : device_chan_list_) {
-      for (auto ptr : chan_list_item.second) {
+      for (auto *ptr : chan_list_item.second) {
         acldvppDestroyChannel(ptr);
         acldvppDestroyChannelDesc(ptr);
       }

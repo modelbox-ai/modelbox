@@ -244,7 +244,7 @@ class GraphCheckerTest : public testing::Test {
     drivers->Clear();
   }
 
-  void BuildGcGraph(std::shared_ptr<Configuration> config,
+  void BuildGcGraph(const std::shared_ptr<Configuration> &config,
                     std::shared_ptr<GCGraph> &gcgraph) {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
 
@@ -260,7 +260,8 @@ class GraphCheckerTest : public testing::Test {
     gcgraph = graphvizconf->Resolve();
   }
 
-  std::shared_ptr<Graph> InitGraph(std::shared_ptr<Configuration> config) {
+  std::shared_ptr<Graph> InitGraph(
+      const std::shared_ptr<Configuration> &config) {
     auto device_mgr = DeviceManager::GetInstance();
     auto flowunit_mgr = FlowUnitManager::GetInstance();
     auto graph = std::make_shared<Graph>();
@@ -268,7 +269,7 @@ class GraphCheckerTest : public testing::Test {
     return graph;
   }
 
-  Status BuildGraph(std::shared_ptr<Configuration> config,
+  Status BuildGraph(const std::shared_ptr<Configuration> &config,
                     std::shared_ptr<Graph> &graph) {
     std::shared_ptr<GCGraph> gcgraph;
     BuildGcGraph(config, gcgraph);
@@ -280,7 +281,7 @@ class GraphCheckerTest : public testing::Test {
     return graph->Build(gcgraph);
   }
 
-  std::shared_ptr<Node> CastNode(std::shared_ptr<NodeBase> node) {
+  std::shared_ptr<Node> CastNode(const std::shared_ptr<NodeBase> &node) {
     return std::dynamic_pointer_cast<Node>(node);
   }
 

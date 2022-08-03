@@ -28,7 +28,7 @@ void PluginMergeUniq(std::vector<std::string> *to,
     return;
   }
 
-  for (auto t : *to) {
+  for (const auto &t : *to) {
     for (auto itr = from->begin(); itr != from->end(); itr++) {
       if (t == *itr) {
         from->erase(itr);

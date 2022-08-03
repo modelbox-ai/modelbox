@@ -117,8 +117,10 @@ modelbox::Status ResizeFlowUnit::GetInputDesc(
     const std::shared_ptr<modelbox::Buffer> &in_image,
     std::shared_ptr<acldvppPicDesc> &in_img_desc) {
   std::string in_pix_fmt;
-  int32_t in_img_width = 0, in_img_height = 0, in_img_width_stride = 0,
-          in_img_height_stride = 0;
+  int32_t in_img_width = 0;
+  int32_t in_img_height = 0;
+  int32_t in_img_width_stride = 0;
+  int32_t in_img_height_stride = 0;
   auto ret = imageprocess::GetImgParam(in_image, in_pix_fmt, in_img_width,
                                        in_img_height, in_img_width_stride,
                                        in_img_height_stride);
@@ -177,7 +179,7 @@ modelbox::Status ResizeFlowUnit::Resize(
     std::shared_ptr<acldvppPicDesc> &in_img_desc,
     std::shared_ptr<acldvppPicDesc> &out_img_desc,
     std::shared_ptr<modelbox::Buffer> &out_image, aclrtStream stream) {
-  auto resize_cfg = acldvppCreateResizeConfig();
+  auto *resize_cfg = acldvppCreateResizeConfig();
   if (resize_cfg == nullptr) {
     return {modelbox::STATUS_FAULT, "acldvppCreateResizeConfig return null"};
   }

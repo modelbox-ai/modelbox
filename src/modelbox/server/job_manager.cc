@@ -78,7 +78,7 @@ std::string JobManager::GetJobErrorMsg(const std::string& job_name) {
   return "";
 }
 
-bool JobManager::DeleteJob(std::string job_name) {
+bool JobManager::DeleteJob(const std::string& job_name) {
   MBLOG_INFO << "delete job : " << job_name;
   std::lock_guard<std::mutex> lock(job_lock_);
   if (jobs_.find(job_name) != jobs_.end()) {
@@ -91,7 +91,7 @@ bool JobManager::DeleteJob(std::string job_name) {
   return true;
 }
 
-std::shared_ptr<modelbox::Job> JobManager::GetJob(std::string job_name) {
+std::shared_ptr<modelbox::Job> JobManager::GetJob(const std::string& job_name) {
   std::lock_guard<std::mutex> lock(job_lock_);
   if (jobs_.find(job_name) == jobs_.end()) {
     return nullptr;
@@ -103,7 +103,7 @@ std::shared_ptr<modelbox::Job> JobManager::GetJob(std::string job_name) {
 std::vector<std::shared_ptr<modelbox::Job>> JobManager::GetJobList() {
   std::lock_guard<std::mutex> lock(job_lock_);
   std::vector<std::shared_ptr<modelbox::Job>> jobs;
-  for (auto job : jobs_) {
+  for (const auto& job : jobs_) {
     jobs.push_back(job.second);
   }
   return jobs;

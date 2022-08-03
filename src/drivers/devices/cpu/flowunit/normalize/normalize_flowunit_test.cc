@@ -110,7 +110,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext> &data_ctx) {
               MBLOG_DEBUG << "test_normalize_0 "
                           << "DataPre";
               return modelbox::STATUS_OK;
@@ -118,7 +118,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext> &data_ctx) {
               MBLOG_DEBUG << "test_normalize_0 "
                           << "DataPost";
               return modelbox::STATUS_OK;
@@ -127,7 +127,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext> &op_ctx) {
               auto output_buf_1 = op_ctx->Output("Out_1");
               std::vector<size_t> data_1_shape = {5 * 4 * 3 * sizeof(float)};
               output_buf_1->Build(data_1_shape);
@@ -187,7 +187,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext> &data_ctx) {
               MBLOG_DEBUG << "test_normalize_1 "
                           << "DataPre";
               return modelbox::STATUS_OK;
@@ -195,7 +195,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext> &data_ctx) {
               MBLOG_DEBUG << "test_normalize_1 "
                           << "DataPost";
               return modelbox::STATUS_OK;
@@ -204,7 +204,7 @@ Status NormalizeCpuFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext> &op_ctx) {
               auto input_bufs = op_ctx->Input("In_1");
               EXPECT_EQ(input_bufs->Size(), 1);
               for (size_t i = 0; i < input_bufs->Size(); ++i) {

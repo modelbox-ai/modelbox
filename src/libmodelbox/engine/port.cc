@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/port.h"
 
 namespace modelbox {
 
-Port::Port(const std::string& name, std::shared_ptr<NodeBase> node)
-    : name_(name), node_(node) {}
+Port::Port(std::string name, const std::shared_ptr<NodeBase>& node)
+    : name_(std::move(name)), node_(node) {}
 
 Port::~Port() = default;
 
@@ -55,8 +57,8 @@ void InPort::Recv(std::vector<std::shared_ptr<Buffer>>& buffer_vector,
   }
 }
 
-bool InPort::SetOutputPort(std::shared_ptr<OutPort> output_port) {
-  for (auto output_exist_port : output_ports) {
+bool InPort::SetOutputPort(const std::shared_ptr<OutPort>& output_port) {
+  for (const auto& output_exist_port : output_ports) {
     if (output_port == output_exist_port.lock()) {
       return false;
     }
@@ -72,7 +74,7 @@ std::vector<std::weak_ptr<OutPort>> InPort::GetAllOutPort() {
   return output_ports;
 }
 
-OutPort::OutPort(const std::string& name, std::shared_ptr<NodeBase> node)
+OutPort::OutPort(const std::string& name, const std::shared_ptr<NodeBase>& node)
     : Port(name, node) {}
 
 OutPort::~OutPort() = default;
@@ -93,7 +95,7 @@ Status OutPort::Send(std::vector<std::shared_ptr<Buffer>>& buffers) {
     loop_type = real_node->GetLoopType();
   }
 
-  for (auto input_port : connected_input_ports_) {
+  for (const auto& input_port : connected_input_ports_) {
     loop = false;
     auto queue = input_port->GetQueue();
     auto priority = input_port->GetPriority();
@@ -145,19 +147,21 @@ Status OutPort::Send(std::vector<std::shared_ptr<Buffer>>& buffers) {
   return STATUS_SUCCESS;
 }
 
-bool OutPort::ConnectPort(std::shared_ptr<InPort> inport) {
+bool OutPort::ConnectPort(const std::shared_ptr<InPort>& inport) {
   if (inport == nullptr) {
     return false;
   }
+
   if (!inport->SetOutputPort(shared_from_this())) {
     return false;
   }
+  
   auto pair = connected_input_ports_.emplace(inport);
   return pair.second;
 }
 
 void OutPort::Shutdown() {
-  for (auto inport : connected_input_ports_) {
+  for (const auto& inport : connected_input_ports_) {
     inport->Shutdown();
   }
 }

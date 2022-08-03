@@ -22,7 +22,7 @@ httplib::Response MockServer::DoRequest(HttpRequest &request) {
   return request.GetResponse();
 }
 
-void MockServer::SetDefaultConfig(std::shared_ptr<Configuration> config) {
+void MockServer::SetDefaultConfig(const std::shared_ptr<Configuration> &config) {
   std::vector<std::string> plugin_path;
   plugin_path.emplace_back(MODELBOX_PLUGIN_SO_PATH);
   plugin_path.emplace_back(MODELBOX_PLUGIN_EDITOR_SO_PATH);

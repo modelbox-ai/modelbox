@@ -18,6 +18,7 @@
 #include "modelbox/node.h"
 
 #include <string>
+#include <utility>
 
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
@@ -31,19 +32,19 @@ namespace modelbox {
 using ::testing::Sequence;
 
 void BuildDataEventStart(
-    std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>&
-        input_map,
-    std::shared_ptr<Device> device) {}
+    std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
+        &input_map,
+    const std::shared_ptr<Device> &device) {}
 
 void BuildDataEventStop(
     std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>&
         input_map) {}
 
 void BuildDataQueue(
-    Node* match_at,
-    std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>&
-        input_map,
-    std::shared_ptr<Device> device) {
+    Node *match_at,
+    std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
+        &input_map,
+    const std::shared_ptr<Device> &device) {
   auto session = std::make_shared<Session>(nullptr);
   auto init_stream = std::make_shared<Stream>(session);
   auto init_buffer_index_info = std::make_shared<BufferIndexInfo>();
@@ -91,7 +92,7 @@ void BuildDataQueue(
   input_map.emplace("In_2", p2_bl);
 }
 
-void CheckQueueHasDataError(std::shared_ptr<BufferQueue> queue,
+void CheckQueueHasDataError(const std::shared_ptr<BufferQueue> &queue,
                             uint32_t queue_size) {
   std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
   queue->PopBatch(&error_buffer_vector);
@@ -106,7 +107,7 @@ void CheckQueueHasDataError(std::shared_ptr<BufferQueue> queue,
   queue->PushBatch(&error_buffer_vector);
 }
 
-void CheckQueueNotHasDataError(std::shared_ptr<BufferQueue> queue) {
+void CheckQueueNotHasDataError(const std::shared_ptr<BufferQueue> &queue) {
   std::vector<std::shared_ptr<Buffer>> error_buffer_vector;
   queue->PopBatch(&error_buffer_vector);
   bool has_error{false};
@@ -303,8 +304,8 @@ class NodeRecvTest : public testing::Test {
 class NodeRunTest : public testing::Test {
  public:
   NodeRunTest() = default;
-  void TestAdd(std::string add_flowunit_name);
-  void TestWrongAdd(std::string flowunit_name, Status run_status);
+  void TestAdd(const std::string &add_flowunit_name);
+  void TestWrongAdd(const std::string &flowunit_name, const Status &run_status);
 
  protected:
   std::shared_ptr<MockFlow> flow_;
@@ -318,8 +319,8 @@ class NodeRunTest : public testing::Test {
 static SessionManager node_test_session_manager;
 
 std::shared_ptr<Node> Add_Node(
-    std::string name, std::set<std::string> inputs,
-    std::set<std::string> outputs,
+    const std::string &name, const std::set<std::string> &inputs,
+    const std::set<std::string> &outputs,
     std::shared_ptr<Configuration> config = nullptr) {
   if (config == nullptr) {
     ConfigurationBuilder configbuilder;
@@ -337,107 +338,109 @@ std::shared_ptr<Node> Add_Node(
 
 std::shared_ptr<Node> Add_Test_2_0_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("test_2_0", {"In_1", "In_2"}, {}, config);
+  return Add_Node("test_2_0", {"In_1", "In_2"}, {}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Test_1_0_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("test_1_0", {"In_1"}, {}, config);
+  return Add_Node("test_1_0", {"In_1"}, {}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Test_1_0_Batch_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("test_1_0_batch", {"In_1"}, {}, config);
+  return Add_Node("test_1_0_batch", {"In_1"}, {}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Test_0_2_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("test_0_2", {}, {"Out_1", "Out_2"}, config);
+  return Add_Node("test_0_2", {}, {"Out_1", "Out_2"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Test_0_1_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("test_0_1", {}, {"Out_1"}, config);
+  return Add_Node("test_0_1", {}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Test_0_1_Batch_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("test_0_1_batch", {}, {"Out_1"}, config);
+  return Add_Node("test_0_1_batch", {}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Add_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("add", {"In_1", "In_2"}, {"Out_1"}, config);
+  return Add_Node("add", {"In_1", "In_2"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Stream_Add_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("stream_add", {"In_1", "In_2"}, {"Out_1"}, config);
+  return Add_Node("stream_add", {"In_1", "In_2"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Test_Orgin_0_2_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("test_orgin_0_2", {}, {"Out_1", "Out_2"}, config);
+  return Add_Node("test_orgin_0_2", {}, {"Out_1", "Out_2"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Half_Condition_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("half-condition", {"In_1"}, {"Out_1", "Out_2"}, config);
+  return Add_Node("half-condition", {"In_1"}, {"Out_1", "Out_2"},
+                  std::move(config));
 }
 
 std::shared_ptr<Node> Add_Conditionn_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("condition", {"In_1"}, {"Out_1", "Out_2"}, config);
+  return Add_Node("condition", {"In_1"}, {"Out_1", "Out_2"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Switch_Case_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("switch_case", {"In_1"}, {"Out_1", "Out_2", "Out_3"}, config);
+  return Add_Node("switch_case", {"In_1"}, {"Out_1", "Out_2", "Out_3"},
+                  std::move(config));
 }
 
 std::shared_ptr<Node> Add_Loop_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("loop", {"In_1"}, {"Out_1", "Out_2"}, config);
+  return Add_Node("loop", {"In_1"}, {"Out_1", "Out_2"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Loop_End_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("loop_end", {"In_1"}, {"Out_1"}, config);
+  return Add_Node("loop_end", {"In_1"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Expand_Normal_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("expand_normal", {"In_1"}, {"Out_1"}, config);
+  return Add_Node("expand_normal", {"In_1"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Collapse_Normal_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("collapse_normal", {"In_1"}, {"Out_1"}, config);
+  return Add_Node("collapse_normal", {"In_1"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Expand_Stream_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("expand_stream", {"In_1"}, {"Out_1"}, config);
+  return Add_Node("expand_stream", {"In_1"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Collapse_Stream_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("collapse_stream", {"In_1"}, {"Out_1"}, config);
+  return Add_Node("collapse_stream", {"In_1"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Garther_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("garther", {"In_1"}, {"Out_1"}, config);
+  return Add_Node("garther", {"In_1"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Scatter_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("scatter", {"In_1"}, {"Out_1"}, config);
+  return Add_Node("scatter", {"In_1"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Simple_Pass_Node(
     int times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("simple_pass", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("simple_pass", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto pass_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -448,7 +451,8 @@ std::shared_ptr<Node> Add_Simple_Pass_Node(
 std::shared_ptr<Node> Add_Stream_Process_Node(
     std::vector<uint32_t> times,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_process", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("stream_process", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto process_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -461,7 +465,7 @@ std::shared_ptr<Node> Add_Stream_Process_Node(
 
 std::shared_ptr<Node> Add_Stream_Info_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_info", {}, {"Out_1"}, config);
+  auto node = Add_Node("stream_info", {}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto stream_info_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -474,7 +478,7 @@ std::shared_ptr<Node> Add_Stream_Info_Node(
 std::shared_ptr<Node> Add_Stream_Start_Node(
     std::vector<uint32_t> times,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_start", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("stream_start", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto stream_start_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -492,7 +496,7 @@ std::shared_ptr<Node> Add_Stream_Start_Node(
 
 std::shared_ptr<Node> Add_Stream_Mid_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_mid", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("stream_mid", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto stream_mid_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -504,7 +508,7 @@ std::shared_ptr<Node> Add_Stream_Mid_Node(
 
 std::shared_ptr<Node> Add_Stream_End_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_end", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("stream_end", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto stream_end_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -516,12 +520,12 @@ std::shared_ptr<Node> Add_Stream_End_Node(
 
 std::shared_ptr<Node> Add_Garther_Gen_More_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  return Add_Node("garther_gen_more", {"In_1"}, {"Out_1"}, config);
+  return Add_Node("garther_gen_more", {"In_1"}, {"Out_1"}, std::move(config));
 }
 
 std::shared_ptr<Node> Add_Stream_Normal_Info_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_normal_info", {}, {"Out_1"}, config);
+  auto node = Add_Node("stream_normal_info", {}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto stream_info_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -533,7 +537,7 @@ std::shared_ptr<Node> Add_Stream_Normal_Info_Node(
 
 std::shared_ptr<Node> Add_Simple_Error_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("simple_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("simple_error", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto simple_error_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -546,7 +550,8 @@ std::shared_ptr<Node> Add_Simple_Error_Node(
 std::shared_ptr<Node> Add_Stream_Datapre_Error_Node(
     std::vector<size_t> times,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_datapre_error", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("stream_datapre_error", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -559,7 +564,8 @@ std::shared_ptr<Node> Add_Stream_Datapre_Error_Node(
 std::shared_ptr<Node> Add_Collapse_Recieve_Error_Node(
     uint32_t times, bool catch_error = true,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("collapse_recieve_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("collapse_recieve_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -576,7 +582,8 @@ std::shared_ptr<Node> Add_Collapse_Recieve_Error_Node(
 std::shared_ptr<Node> Add_Stream_Process_Error_Node(
     std::vector<size_t> times,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_process_error", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("stream_process_error", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -588,7 +595,7 @@ std::shared_ptr<Node> Add_Stream_Process_Error_Node(
 
 std::shared_ptr<Node> Add_Error_Start_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("error_start", {}, {"Out_1"}, config);
+  auto node = Add_Node("error_start", {}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -600,13 +607,13 @@ std::shared_ptr<Node> Add_Error_Start_Node(
 
 std::shared_ptr<Node> Add_Error_Start_Normal_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("error_start_normal", {}, {"Out_1"}, config);
+  auto node = Add_Node("error_start_normal", {}, {"Out_1"}, std::move(config));
   return node;
 }
 
 std::shared_ptr<Node> Add_Error_End_Normal_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("error_end_normal", {"In_1"}, {}, config);
+  auto node = Add_Node("error_end_normal", {"In_1"}, {}, std::move(config));
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
   EXPECT_CALL(*node_fu, Process(testing::_)).Times(times);
@@ -615,7 +622,7 @@ std::shared_ptr<Node> Add_Error_End_Normal_Node(
 
 std::shared_ptr<Node> Add_Normal_Start_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("normal_start", {}, {"Out_1"}, config);
+  auto node = Add_Node("normal_start", {}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -627,8 +634,8 @@ std::shared_ptr<Node> Add_Normal_Start_Node(
 
 std::shared_ptr<Node> Add_Normal_Expand_Process_Error_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node =
-      Add_Node("normal_expand_process_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("normal_expand_process_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -639,8 +646,8 @@ std::shared_ptr<Node> Add_Normal_Expand_Process_Error_Node(
 std::shared_ptr<Node> Add_Normal_Collapse_Recieve_Error_Node(
     std::vector<uint32_t> times,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node =
-      Add_Node("normal_collapse_recieve_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("normal_collapse_recieve_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -652,7 +659,8 @@ std::shared_ptr<Node> Add_Normal_Collapse_Recieve_Error_Node(
 
 std::shared_ptr<Node> Add_Normal_Expand_Process_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("normal_expand_process", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("normal_expand_process", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -663,7 +671,8 @@ std::shared_ptr<Node> Add_Normal_Expand_Process_Node(
 std::shared_ptr<Node> Add_Stream_In_Process_Error_Node(
     std::vector<uint32_t> times,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_in_process_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("stream_in_process_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -675,7 +684,8 @@ std::shared_ptr<Node> Add_Stream_In_Process_Error_Node(
 
 std::shared_ptr<Node> Add_Normal_Expand_Start_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("normal_expand_start", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("normal_expand_start", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -685,7 +695,8 @@ std::shared_ptr<Node> Add_Normal_Expand_Start_Node(
 
 std::shared_ptr<Node> Add_Expand_Datapre_Error_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("expand_datapre_error", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("expand_datapre_error", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -697,7 +708,8 @@ std::shared_ptr<Node> Add_Expand_Datapre_Error_Node(
 
 std::shared_ptr<Node> Add_Expand_Process_Error_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("expand_process_error", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("expand_process_error", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -709,7 +721,8 @@ std::shared_ptr<Node> Add_Expand_Process_Error_Node(
 
 std::shared_ptr<Node> Add_Expand_Process_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("expand_process", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("expand_process", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -727,8 +740,8 @@ std::shared_ptr<Node> Add_Expand_Process_Node(
 
 std::shared_ptr<Node> Add_Collapse_Datagrouppre_Error_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node =
-      Add_Node("collapse_datagrouppre_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("collapse_datagrouppre_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -742,7 +755,8 @@ std::shared_ptr<Node> Add_Collapse_Datagrouppre_Error_Node(
 
 std::shared_ptr<Node> Add_Collapse_DataPre_Error_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("collapse_datapre_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("collapse_datapre_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -756,7 +770,8 @@ std::shared_ptr<Node> Add_Collapse_DataPre_Error_Node(
 
 std::shared_ptr<Node> Add_Collapse_Process_Error_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("collapse_process_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("collapse_process_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -770,7 +785,8 @@ std::shared_ptr<Node> Add_Collapse_Process_Error_Node(
 
 std::shared_ptr<Node> Add_Collapse_Process_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("collapse_process", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("collapse_process", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -784,8 +800,8 @@ std::shared_ptr<Node> Add_Collapse_Process_Node(
 
 std::shared_ptr<Node> Add_Normal_Collapse_Datapre_Error_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node =
-      Add_Node("normal_collapse_datapre_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("normal_collapse_datapre_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -797,8 +813,8 @@ std::shared_ptr<Node> Add_Normal_Collapse_Datapre_Error_Node(
 
 std::shared_ptr<Node> Add_Normal_Collapse_Process_Error_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node =
-      Add_Node("normal_collapse_process_error", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("normal_collapse_process_error", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -811,7 +827,8 @@ std::shared_ptr<Node> Add_Normal_Collapse_Process_Error_Node(
 std::shared_ptr<Node> Add_Normal_Collapse_Process_Node2(
     uint32_t stream_times, uint32_t process_times,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("normal_collapse_process", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("normal_collapse_process", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -828,7 +845,8 @@ std::shared_ptr<Node> Add_Normal_Collapse_Process_Node2(
 std::shared_ptr<Node> Add_Normal_Collapse_Process_Node(
     std::vector<uint32_t> times, bool repeat,
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("normal_collapse_process", {"In_1"}, {"Out_1"}, config);
+  auto node = Add_Node("normal_collapse_process", {"In_1"}, {"Out_1"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -848,7 +866,8 @@ std::shared_ptr<Node> Add_Normal_Collapse_Process_Node(
 
 std::shared_ptr<Node> Add_Stream_Normal_Info_2_Node(
     std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_normal_info_2", {}, {"Out_1"}, config);
+  auto node =
+      Add_Node("stream_normal_info_2", {}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -860,7 +879,8 @@ std::shared_ptr<Node> Add_Stream_Normal_Info_2_Node(
 
 std::shared_ptr<Node> Add_Stream_Tail_Filter_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node = Add_Node("stream_tail_filter", {"In_1"}, {"Out_1"}, config);
+  auto node =
+      Add_Node("stream_tail_filter", {"In_1"}, {"Out_1"}, std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -872,8 +892,8 @@ std::shared_ptr<Node> Add_Stream_Tail_Filter_Node(
 
 std::shared_ptr<Node> Add_Normal_Condition_Node(
     uint32_t times, std::shared_ptr<Configuration> config = nullptr) {
-  auto node =
-      Add_Node("normal-condition", {"In_1"}, {"Out_1", "Out_2"}, config);
+  auto node = Add_Node("normal-condition", {"In_1"}, {"Out_1", "Out_2"},
+                       std::move(config));
   Sequence s1;
   auto node_fu = std::dynamic_pointer_cast<MockFlowUnit>(
       node->GetFlowUnitGroup()->GetExecutorUnit());
@@ -881,7 +901,7 @@ std::shared_ptr<Node> Add_Normal_Condition_Node(
   return node;
 }
 
-void NodeRunTest::TestAdd(std::string add_flowunit_name) {
+void NodeRunTest::TestAdd(const std::string &add_flowunit_name) {
   auto match_at_node = std::make_shared<Node>();
   ConfigurationBuilder configbuilder;
   configbuilder.AddProperty("batch_size", "3");
@@ -1766,7 +1786,8 @@ TEST_F(NodeRunTest, StreamInfo) {
   EXPECT_EQ(final_result[0], 30);
 }
 
-void NodeRunTest::TestWrongAdd(std::string flowunit_name, Status run_status) {
+void NodeRunTest::TestWrongAdd(const std::string &flowunit_name,
+                               const Status &run_status) {
   ConfigurationBuilder configbuilderflowunit;
   auto config_flowunit = configbuilderflowunit.Build();
   config_flowunit->SetProperty("need_check_output", true);

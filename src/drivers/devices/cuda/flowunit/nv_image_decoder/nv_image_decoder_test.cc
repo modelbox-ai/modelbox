@@ -94,7 +94,7 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
               auto spt = mock_flowunit_wp.lock();
               auto ext_data = spt->CreateExternalData();
               if (!ext_data) {
-                auto err_msg = "can not get external data.";
+                const auto* err_msg = "can not get external data.";
                 modelbox::Status ret = {modelbox::STATUS_NODATA, err_msg};
                 MBLOG_ERROR << err_msg;
                 return ret;
@@ -126,21 +126,21 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info DataPre";
               return modelbox::STATUS_OK;
             }));
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info DataPost";
               return modelbox::STATUS_OK;
             }));
 
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
-        .WillRepeatedly(testing::Invoke([=](std::shared_ptr<DataContext>
+        .WillRepeatedly(testing::Invoke([=](const std::shared_ptr<DataContext>&
                                                 data_ctx) {
           MBLOG_INFO << "test_0_1_decode process";
 
@@ -158,7 +158,7 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
           std::vector<std::vector<u_char>> img_data_list;
           std::vector<size_t> output_bufs_shape;
           for (size_t i = 0; i < batch_size; ++i) {
-            std::string img_path = gimg_path;
+            const std::string& img_path = gimg_path;
             cv::Mat ori_img = cv::imread(img_path);
             MBLOG_INFO << "input image col " << ori_img.cols << "  row "
                        << ori_img.rows << " channel:" << ori_img.channels()
@@ -181,7 +181,7 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
           auto output_bufs = data_ctx->Output("Out_1");
           output_bufs->Build(output_bufs_shape);
           for (size_t i = 0; i < batch_size; ++i) {
-            auto output_data =
+            auto* output_data =
                 static_cast<u_char*>(output_bufs->MutableBufferData(i));
             memcpy_s(output_data, output_bufs->At(i)->GetBytes(),
                      img_data_list[i].data(), img_data_list[i].size());
@@ -226,14 +226,14 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info DataPre";
               return modelbox::STATUS_OK;
             }));
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info DataPost";
               return modelbox::STATUS_STOP;
             }));
@@ -241,7 +241,7 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               MBLOG_INFO << "test_1_0_decode process";
               auto input_bufs = op_ctx->Input("In_1");
               int32_t cols;
@@ -256,7 +256,7 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
                 input_bufs->At(i)->Get("width", cols);
                 input_bufs->At(i)->Get("height", rows);
                 input_bufs->At(i)->Get("channel", channels);
-                auto input_data =
+                const auto* input_data =
                     static_cast<const uchar*>(input_bufs->ConstBufferData(i));
 
                 cv::Mat img_data(cv::Size(cols, rows), CV_8UC3);

@@ -47,9 +47,10 @@ class ImageRotateGpuFlowUnit : public ImageRotateFlowUnitBase {
       int32_t width, int32_t height) override;
 
  private:
-  modelbox::Status GetStream(std::shared_ptr<modelbox::Buffer> input_buffer,
-                             std::shared_ptr<modelbox::Buffer> output_buffer,
-                             std::shared_ptr<modelbox::CudaStream> &stream);
+  modelbox::Status GetStream(
+      const std::shared_ptr<modelbox::Buffer> &input_buffer,
+      const std::shared_ptr<modelbox::Buffer> &output_buffer,
+      std::shared_ptr<modelbox::CudaStream> &stream);
 };
 
 #endif  // MODELBOX_FLOWUNIT_IMAGE_ROTATE_CUDA_H_

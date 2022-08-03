@@ -23,7 +23,7 @@
 #include <memory>
 
 inline int Volume(nvinfer1::Dims dims) {
-  auto begin_dim_d = (dims.d[0] == -1 ? (dims.d + 1) : dims.d);
+  auto* begin_dim_d = (dims.d[0] == -1 ? (dims.d + 1) : dims.d);
   return std::accumulate(begin_dim_d, dims.d + dims.nbDims, 1,
                          std::multiplies<int>());
 }

@@ -210,7 +210,7 @@ int ToolCommandSlab::DisplaySlabsInfo(const std::string &type) {
     types.emplace_back(type);
   }
 
-  for (auto item : types) {
+  for (const auto &item : types) {
     mem_pool_flag |= DisplayMemPools(item);
   }
 

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_MOCK_TOOL_
 #define MODELBOX_MOCK_TOOL_
 
@@ -37,7 +36,7 @@ class MockTool {
   int Run(const std::string &cmd);
 
  protected:
-  virtual void SetDefaultConfig(std::shared_ptr<Configuration> config);
+  virtual void SetDefaultConfig(const std::shared_ptr<Configuration> &config);
 };
 
 }  // namespace modelbox

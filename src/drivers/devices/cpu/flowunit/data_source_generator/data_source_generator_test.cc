@@ -82,8 +82,8 @@ Status DataSourceGeneratorFlowUnitTest::AddMockFlowUnit() {
       GenerateFlowunitDesc("data_source_parser_checker", {"stream_meta"}, {});
   mock_desc->SetFlowType(STREAM);
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext>& data_ctx,
+          const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
     auto stream_meta = data_ctx->GetInputMeta("stream_meta");
     EXPECT_NE(stream_meta, nullptr);
     if (!stream_meta) {

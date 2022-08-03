@@ -17,12 +17,13 @@
 #include "modelbox/flow.h"
 
 #include <fstream>
+#include <utility>
 
 #include "modelbox/base/timer.h"
 
 namespace modelbox {
 
-Status FlowSetupLog(std::shared_ptr<Configuration> config) {
+Status FlowSetupLog(const std::shared_ptr<Configuration>& config) {
   if (!config) {
     return {STATUS_INVALID, "config is nullptr."};
   }
@@ -174,7 +175,7 @@ Status Flow::StartRun() {
 }
 
 Status Flow::Init(std::shared_ptr<Configuration> config) {
-  config_ = config;
+  config_ = std::move(config);
   drivers_ = std::make_shared<Drivers>();
   device_mgr_ = std::make_shared<DeviceManager>();
   flowunit_mgr_ = std::make_shared<FlowUnitManager>();
@@ -258,7 +259,7 @@ Status Flow::Init(std::shared_ptr<Configuration> config) {
 Status Flow::GuessConfFormat(const std::string& configfile,
                              const std::string& data, enum Format* format) {
   *format = FORMAT_UNKNOWN;
-  std::string extension = configfile.substr(configfile.find_last_of(".") + 1);
+  std::string extension = configfile.substr(configfile.find_last_of('.') + 1);
   if (extension == "json") {
     *format = FORMAT_JSON;
     return STATUS_OK;
@@ -399,7 +400,7 @@ Status Flow::GetGraphFilePathByName(const std::string& flow_name,
     return {STATUS_NOTFOUND, err_msg};
   }
 
-  for (auto iter : toml_list) {
+  for (const auto& iter : toml_list) {
     std::shared_ptr<Configuration> config;
     auto status = GetConfigByGraphFile(iter, config, Flow::FORMAT_AUTO);
     if (status != STATUS_OK) {

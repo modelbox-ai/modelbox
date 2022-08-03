@@ -58,16 +58,16 @@ class RetryContext {
 class SourceContext {
  public:
   SourceContext(std::weak_ptr<SourceParser> /*plugin*/,
-                const std::string &plugin_name);
+                std::string plugin_name);
 
   virtual ~SourceContext();
 
   void SetStreamType(std::string type);
   std::shared_ptr<std::string> GetSourceURL();
-  void SetLastProcessStatus(modelbox::Status status);
+  void SetLastProcessStatus(const modelbox::Status& status);
   void SetDataSourceCfg(std::string data_source_cfg);
   void SetSessionContext(
-      std::shared_ptr<modelbox::SessionContext> session_context);
+      const std::shared_ptr<modelbox::SessionContext>& session_context);
 
   RetryStatus NeedRetry();
   int32_t GetRetryInterval();

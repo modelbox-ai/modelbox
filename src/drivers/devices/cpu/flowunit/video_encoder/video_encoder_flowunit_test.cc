@@ -63,7 +63,7 @@ Status VideoEncoderFlowUnitTest::AddMockFlowUnit() {
         GenerateFlowunitDesc("encoder_start_unit", {}, {"stream_meta"});
     auto open_func =
         [=](const std::shared_ptr<modelbox::Configuration>& flow_option,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) {
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
           auto ext_data = mock_flowunit->CreateExternalData();
           EXPECT_NE(ext_data, nullptr);
           auto buffer_list = ext_data->CreateBufferList();
@@ -74,24 +74,26 @@ Status VideoEncoderFlowUnitTest::AddMockFlowUnit() {
           EXPECT_EQ(status, STATUS_SUCCESS);
           return modelbox::STATUS_OK;
         };
-    auto data_pre_func = [&](std::shared_ptr<DataContext> data_ctx,
-                             std::shared_ptr<MockFlowUnit> mock_flowunit) {
-      MBLOG_INFO << "stream_meta  "
-                 << "DataPre";
-      auto test_meta = std::make_shared<std::string>("test");
-      auto data_meta = std::make_shared<DataMeta>();
-      data_meta->SetMeta("test", test_meta);
-      data_ctx->SetOutputMeta("stream_meta", data_meta);
-      return modelbox::STATUS_OK;
-    };
-    auto process_func = [=](std::shared_ptr<DataContext> data_ctx,
-                            std::shared_ptr<MockFlowUnit> mock_flowunit) {
-      auto output_buf = data_ctx->Output("stream_meta");
-      std::vector<size_t> shape(1, 1);
-      output_buf->Build(shape);
+    auto data_pre_func =
+        [&](const std::shared_ptr<DataContext>& data_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
+          MBLOG_INFO << "stream_meta  "
+                     << "DataPre";
+          auto test_meta = std::make_shared<std::string>("test");
+          auto data_meta = std::make_shared<DataMeta>();
+          data_meta->SetMeta("test", test_meta);
+          data_ctx->SetOutputMeta("stream_meta", data_meta);
+          return modelbox::STATUS_OK;
+        };
+    auto process_func =
+        [=](const std::shared_ptr<DataContext>& data_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
+          auto output_buf = data_ctx->Output("stream_meta");
+          std::vector<size_t> shape(1, 1);
+          output_buf->Build(shape);
 
-      return modelbox::STATUS_OK;
-    };
+          return modelbox::STATUS_OK;
+        };
     auto mock_functions = std::make_shared<MockFunctionCollection>();
     mock_functions->RegisterOpenFunc(open_func);
     mock_functions->RegisterDataPreFunc(data_pre_func);
@@ -103,47 +105,48 @@ Status VideoEncoderFlowUnitTest::AddMockFlowUnit() {
     auto mock_desc = GenerateFlowunitDesc("encoder_image_produce",
                                           {"stream_meta"}, {"frame_info"});
     mock_desc->SetOutputType(EXPAND);
-    auto process_func = [=](std::shared_ptr<DataContext> data_ctx,
-                            std::shared_ptr<MockFlowUnit> mock_flowunit) {
-      std::string img_path;
-      static int64_t frame_index = 0;
-      if ((frame_index / 24) % 2 == 0) {
-        img_path =
-            std::string(TEST_ASSETS) + "/video/rgb_460800_480x320_a.data";
-      } else {
-        img_path =
-            std::string(TEST_ASSETS) + "/video/rgb_460800_480x320_b.data";
-      }
+    auto process_func =
+        [=](const std::shared_ptr<DataContext>& data_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
+          std::string img_path;
+          static int64_t frame_index = 0;
+          if ((frame_index / 24) % 2 == 0) {
+            img_path =
+                std::string(TEST_ASSETS) + "/video/rgb_460800_480x320_a.data";
+          } else {
+            img_path =
+                std::string(TEST_ASSETS) + "/video/rgb_460800_480x320_b.data";
+          }
 
-      std::ifstream img_file(img_path);
-      if (!img_file.is_open()) {
-        MBLOG_ERROR << "Open failed, path " << img_path;
-        return STATUS_FAULT;
-      }
+          std::ifstream img_file(img_path);
+          if (!img_file.is_open()) {
+            MBLOG_ERROR << "Open failed, path " << img_path;
+            return STATUS_FAULT;
+          }
 
-      size_t file_size = 460800;
-      auto output_buff_list = data_ctx->Output("frame_info");
-      std::vector<size_t> shape(1, file_size);
-      output_buff_list->Build(shape);
-      auto output_buff = output_buff_list->At(0);
-      auto* ptr = (char*)output_buff->MutableData();
-      img_file.read(ptr, file_size);
-      output_buff->Set("width", 480);
-      output_buff->Set("height", 320);
-      output_buff->Set("rate_num", 24);
-      output_buff->Set("rate_den", 1);
-      output_buff->Set("pix_fmt", std::string("rgb"));
-      output_buff->Set("index", frame_index);
+          size_t file_size = 460800;
+          auto output_buff_list = data_ctx->Output("frame_info");
+          std::vector<size_t> shape(1, file_size);
+          output_buff_list->Build(shape);
+          auto output_buff = output_buff_list->At(0);
+          auto* ptr = (char*)output_buff->MutableData();
+          img_file.read(ptr, file_size);
+          output_buff->Set("width", 480);
+          output_buff->Set("height", 320);
+          output_buff->Set("rate_num", 24);
+          output_buff->Set("rate_den", 1);
+          output_buff->Set("pix_fmt", std::string("rgb"));
+          output_buff->Set("index", frame_index);
 
-      if (frame_index == 1339) {  // 60S
-        return modelbox::STATUS_STOP;
-      }
+          if (frame_index == 1339) {  // 60S
+            return modelbox::STATUS_STOP;
+          }
 
-      ++frame_index;
-      auto event = std::make_shared<FlowUnitEvent>();
-      data_ctx->SendEvent(event);
-      return modelbox::STATUS_CONTINUE;
-    };
+          ++frame_index;
+          auto event = std::make_shared<FlowUnitEvent>();
+          data_ctx->SendEvent(event);
+          return modelbox::STATUS_CONTINUE;
+        };
     auto mock_functions = std::make_shared<MockFunctionCollection>();
     mock_functions->RegisterProcessFunc(process_func);
     flow_->AddFlowUnitDesc(mock_desc, mock_functions->GenerateCreateFunc(),

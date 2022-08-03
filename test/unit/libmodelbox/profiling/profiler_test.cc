@@ -94,7 +94,7 @@ TEST_F(ProfilerTest, ProfilerSetTraceSlice) {
   trace->FlowUnit("test")->GetTraceSlices(all_slices);
   int process_slices = 0;
   std::shared_ptr<modelbox::TraceSlice> last_slice;
-  for (auto slice : all_slices) {
+  for (const auto& slice : all_slices) {
     if (slice->GetTraceSliceType() == modelbox::TraceSliceType::PROCESS) {
       process_slices++;
       last_slice = slice;
@@ -125,7 +125,7 @@ TEST_F(ProfilerTest, ProfilerTraceSliceEndNotCalled) {
 
   int process_slices = 0;
   std::shared_ptr<modelbox::TraceEvent> last_event;
-  for (auto slice : all_slices) {
+  for (const auto& slice : all_slices) {
     if (slice->GetTraceSliceType() == modelbox::TraceSliceType::PROCESS) {
       process_slices++;
       last_event = slice->GetEndEvent();

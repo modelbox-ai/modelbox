@@ -16,6 +16,8 @@
 
 #include "source_context.h"
 
+#include <utility>
+
 #include "source_parser.h"
 
 namespace modelbox {
@@ -23,8 +25,8 @@ namespace modelbox {
 using DestroyUriFunc = std::function<void(const std::string &uri)>;
 
 SourceContext::SourceContext(std::weak_ptr<SourceParser> plugin,
-                             const std::string &plugin_name)
-    : plugin_(plugin), plugin_name_(plugin_name) {}
+                             std::string plugin_name)
+    : plugin_(std::move(plugin)), plugin_name_(std::move(plugin_name)) {}
 
 SourceContext::~SourceContext() = default;
 
@@ -67,7 +69,7 @@ RetryStatus SourceContext::NeedRetry() {
                            retry_context_.GetRetryTimes());
 }
 
-void SourceContext::SetLastProcessStatus(modelbox::Status status) {
+void SourceContext::SetLastProcessStatus(const modelbox::Status &status) {
   last_status_ = status;
   if (status == modelbox::STATUS_SUCCESS) {
     retry_context_.ResetRetryTimes();
@@ -75,7 +77,7 @@ void SourceContext::SetLastProcessStatus(modelbox::Status status) {
 }
 
 void SourceContext::SetStreamType(std::string type) {
-  stream_type_ = type;
+  stream_type_ = std::move(type);
   MBLOG_DEBUG << "plugin_name: " << plugin_name_
               << "  stream_type: " << stream_type_;
 }
@@ -92,11 +94,11 @@ void SourceContext::SetRetryParam(int32_t retry_enable, int32_t retry_interval,
 }
 
 void SourceContext::SetDataSourceCfg(std::string data_source_cfg) {
-  data_source_cfg_ = data_source_cfg;
+  data_source_cfg_ = std::move(data_source_cfg);
 }
 
 void SourceContext::SetSessionContext(
-    std::shared_ptr<modelbox::SessionContext> session_context) {
+    const std::shared_ptr<modelbox::SessionContext> &session_context) {
   session_context_ = session_context;
 }
 

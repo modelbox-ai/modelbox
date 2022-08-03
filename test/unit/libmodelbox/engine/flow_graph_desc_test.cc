@@ -53,13 +53,17 @@ TEST_F(FlowGraphDescTest, AddFunction) {
   auto flow_graph_desc = std::make_shared<FlowGraphDesc>();
   flow_graph_desc->Init();
   auto func_node = flow_graph_desc->AddFunction(
-      [](std::shared_ptr<DataContext> data_ctx) -> Status { return STATUS_OK; },
+      [](const std::shared_ptr<DataContext>& data_ctx) -> Status {
+        return STATUS_OK;
+      },
       {"in1", "in2"}, {"out"}, nullptr);
   EXPECT_EQ(func_node, nullptr);
   EXPECT_EQ(flow_graph_desc->GetStatus(), STATUS_FAULT);
 
   func_node = flow_graph_desc->AddFunction(
-      [](std::shared_ptr<DataContext> data_ctx) -> Status { return STATUS_OK; },
+      [](const std::shared_ptr<DataContext>& data_ctx) -> Status {
+        return STATUS_OK;
+      },
       {"in1", "in2"}, {"out"}, {{"in2", nullptr}});
   func_node->SetNodeName("my_function");
   EXPECT_NE(func_node, nullptr);
@@ -76,7 +80,9 @@ TEST_F(FlowGraphDescTest, AddFunction) {
   EXPECT_EQ(flow_graph_desc->GetStatus(), STATUS_FAULT);
 
   func_node = flow_graph_desc->AddFunction(
-      [](std::shared_ptr<DataContext> data_ctx) -> Status { return STATUS_OK; },
+      [](const std::shared_ptr<DataContext>& data_ctx) -> Status {
+        return STATUS_OK;
+      },
       {"in1"}, {"out"}, {{"in2", nullptr}});
   EXPECT_EQ(func_node, nullptr);
   EXPECT_EQ(flow_graph_desc->GetStatus(), STATUS_FAULT);

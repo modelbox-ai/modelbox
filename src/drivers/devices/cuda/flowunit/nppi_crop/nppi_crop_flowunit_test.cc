@@ -73,7 +73,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(16);
     auto open_func = [=](const std::shared_ptr<Configuration>& opts,
-                         std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                         const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
       std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
       mock_flowunit_wp = mock_flowunit;
       auto spt = mock_flowunit_wp.lock();
@@ -84,7 +84,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
 
       auto buffer_list = ext_data->CreateBufferList();
       buffer_list->Build({10 * sizeof(int)});
-      auto data = (int*)buffer_list->MutableData();
+      auto* data = (int*)buffer_list->MutableData();
       for (size_t i = 0; i < 10; i++) {
         data[i] = i;
       }
@@ -105,8 +105,8 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
     };
 
     auto process_func =
-        [=](std::shared_ptr<DataContext> data_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& data_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       MBLOG_INFO << "test_0_1_nppi_crop process";
 
       auto output_img_bufs = data_ctx->Output("Out_img");
@@ -131,7 +131,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
         output_img_bufs->At(i)->Set("width", cols);
         output_img_bufs->At(i)->Set("height", rows);
         output_img_bufs->At(i)->Set("channel", channels);
-        auto output_img_data =
+        auto* output_img_data =
             static_cast<uchar*>(output_img_bufs->MutableBufferData(i));
         memcpy_s(output_img_data, output_img_bufs->At(i)->GetBytes(),
                  img_data.data, img_data.total() * img_data.elemSize());
@@ -144,7 +144,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
       output_box_bufs->Build(box_shape_vector);
 
       for (size_t i = 0; i < 5; ++i) {
-        auto output_box1_data = output_box_bufs->MutableBufferData(2 * i);
+        auto* output_box1_data = output_box_bufs->MutableBufferData(2 * i);
         std::shared_ptr<RoiBox> bbox1 = std::make_shared<RoiBox>();
         bbox1->width = 100;
         bbox1->height = 110;
@@ -152,7 +152,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
         bbox1->y = 100;
         memcpy_s(output_box1_data, sizeof(RoiBox), bbox1.get(), sizeof(RoiBox));
 
-        auto output_box2_data = output_box_bufs->MutableBufferData(2 * i + 1);
+        auto* output_box2_data = output_box_bufs->MutableBufferData(2 * i + 1);
         std::shared_ptr<RoiBox> bbox2 = std::make_shared<RoiBox>();
         bbox2->width = 50;
         bbox2->height = 90;
@@ -177,8 +177,8 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(16);
     auto process_func =
-        [=](std::shared_ptr<DataContext> op_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& op_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       MBLOG_INFO << "c3r_test_1_0_nppi_crop process";
 
       auto input_buf = op_ctx->Input("In_img");
@@ -208,7 +208,7 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
           MBLOG_ERROR << "meta don't have key channel";
         }
 
-        auto input_data =
+        const auto* input_data =
             static_cast<const uchar*>(input_buf->ConstBufferData(i));
 
         cv::Mat img_data(cv::Size(width, height), CV_8UC3);

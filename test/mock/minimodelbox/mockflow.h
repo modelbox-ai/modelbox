@@ -19,14 +19,15 @@
 
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "mock_driver_ctl.h"
 
 namespace modelbox {
 
 std::shared_ptr<FlowUnitDesc> GenerateFlowunitDesc(
-    std::string name, std::set<std::string> inputs,
-    std::set<std::string> outputs);
+    const std::string &name, const std::set<std::string> &inputs,
+    const std::set<std::string> &outputs);
 class MockFlow {
  public:
   MockFlow() { ctl_ = std::make_shared<MockDriverCtl>(); };
@@ -48,11 +49,11 @@ class MockFlow {
   }
   std::shared_ptr<MockDriverCtl> GetMockFlowCtl();
 
-  void AddFlowUnitDesc(std::shared_ptr<FlowUnitDesc> flow_desc,
+  void AddFlowUnitDesc(const std::shared_ptr<FlowUnitDesc> &flow_desc,
                        std::function<std::shared_ptr<modelbox::FlowUnit>(
                            const std::string &, const std::string &)>
                            create_func,
-                       std::string lib_path = TEST_LIB_DIR);
+                       const std::string &lib_path = TEST_LIB_DIR);
 
   void Register_Test_0_1_Flowunit();
   void Register_Test_1_0_Flowunit();
@@ -157,41 +158,41 @@ class MockFunctionCollection
       std::function<Status(const std::shared_ptr<Configuration> &,
                            std::shared_ptr<MockFlowUnit>)>
           open_func) {
-    open_func_ = open_func;
+    open_func_ = std::move(open_func);
   };
   void RegisterCloseFunc(
       std::function<Status(std::shared_ptr<MockFlowUnit>)> close_func) {
-    close_func_ = close_func;
+    close_func_ = std::move(close_func);
   };
   void RegisterDataGroupPreFunc(
       std::function<Status(std::shared_ptr<DataContext> data_ctx,
                            std::shared_ptr<MockFlowUnit>)>
           data_group_pre_func) {
-    data_group_pre_func_ = data_group_pre_func;
+    data_group_pre_func_ = std::move(data_group_pre_func);
   };
   void RegisterDataPreFunc(
       std::function<Status(std::shared_ptr<DataContext> data_ctx,
                            std::shared_ptr<MockFlowUnit>)>
           data_pre_func) {
-    data_pre_func_ = data_pre_func;
+    data_pre_func_ = std::move(data_pre_func);
   };
   void RegisterProcessFunc(
       std::function<Status(std::shared_ptr<DataContext> data_ctx,
                            std::shared_ptr<MockFlowUnit>)>
           process_func) {
-    process_func_ = process_func;
+    process_func_ = std::move(process_func);
   };
   void RegisterDataPostFunc(
       std::function<Status(std::shared_ptr<DataContext> data_ctx,
                            std::shared_ptr<MockFlowUnit>)>
           data_post_func) {
-    data_post_func_ = data_post_func;
+    data_post_func_ = std::move(data_post_func);
   };
   void RegisterDataGroupPostFunc(
       std::function<Status(std::shared_ptr<DataContext> data_ctx,
                            std::shared_ptr<MockFlowUnit>)>
           data_group_post_func) {
-    data_group_post_func_ = data_group_post_func;
+    data_group_post_func_ = std::move(data_group_post_func);
   };
 
   std::function<std::shared_ptr<modelbox::FlowUnit>(const std::string &,

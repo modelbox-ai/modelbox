@@ -16,6 +16,8 @@
 
 #ifndef FLOW_NODE_DESC_H_
 #define FLOW_NODE_DESC_H_
+#include <utility>
+
 #include "buffer.h"
 #include "buffer_list.h"
 #include "graph.h"
@@ -36,8 +38,8 @@ class FlowPortDesc {
   friend class FlowGraphDesc;
 
  public:
-  FlowPortDesc(const std::string &node_name, const std::string &port_name)
-      : node_name_(node_name), port_name_(port_name) {}
+  FlowPortDesc(std::string node_name, std::string port_name)
+      : node_name_(std::move(node_name)), port_name_(std::move(port_name)) {}
 
   /**
    * @brief get node name
@@ -60,7 +62,7 @@ class FlowNodeDesc : public std::enable_shared_from_this<FlowNodeDesc> {
   friend class FlowGraphDesc;
 
  public:
-  FlowNodeDesc(const std::string &node_name);
+  FlowNodeDesc(std::string node_name);
 
   virtual ~FlowNodeDesc();
 

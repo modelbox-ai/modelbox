@@ -47,7 +47,7 @@ class DataSourceParserFlowUnitTest : public testing::Test {
  public:
   DataSourceParserFlowUnitTest() : driver_flow_(std::make_shared<MockFlow>()) {}
   void PreparationToGetCert();
-  modelbox::Status HandleFunc(web::http::http_request request);
+  modelbox::Status HandleFunc(const web::http::http_request &request);
   void MockRestfulServer(std::shared_ptr<MockFlow> &driver_flow);
 
  protected:
@@ -66,7 +66,8 @@ class DataSourceParserFlowUnitTest : public testing::Test {
     remove(cert_.c_str());
   };
   std::shared_ptr<MockFlow> GetDriverFlow();
-  std::shared_ptr<MockFlow> RunDriverFlow(std::string mock_flowunit_name);
+  std::shared_ptr<MockFlow> RunDriverFlow(
+      const std::string &mock_flowunit_name);
   modelbox::Status SendDataSourceCfg(std::shared_ptr<MockFlow> &driver_flow,
                                    const std::string &data_source_cfg,
                                    const std::string &source_type);
@@ -91,7 +92,7 @@ std::shared_ptr<MockFlow> DataSourceParserFlowUnitTest::GetDriverFlow() {
 }
 
 std::shared_ptr<MockFlow> DataSourceParserFlowUnitTest::RunDriverFlow(
-    const std::string mock_flowunit_name) {
+    const std::string &mock_flowunit_name) {
   const std::string test_lib_dir = TEST_DRIVER_DIR;
   std::string toml_content = R"(
     [driver]
@@ -146,8 +147,8 @@ Status DataSourceParserFlowUnitTest::AddMockUrl() {
       GenerateFlowunitDesc(CHECK_SOURCE_OUTPUT_URL, {"stream_meta"}, {});
   mock_desc->SetFlowType(STREAM);
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto stream_meta = data_ctx->GetInputMeta("stream_meta");
     EXPECT_NE(stream_meta, nullptr);
     if (!stream_meta) {
@@ -179,8 +180,8 @@ Status DataSourceParserFlowUnitTest::AddMockVis() {
       GenerateFlowunitDesc(CHECK_SOURCE_OUTPUT_VIS, {"stream_meta"}, {});
   mock_desc->SetFlowType(STREAM);
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto stream_meta = data_ctx->GetInputMeta("stream_meta");
     EXPECT_NE(stream_meta, nullptr);
     if (!stream_meta) {
@@ -206,8 +207,8 @@ Status DataSourceParserFlowUnitTest::AddMockRestful() {
       GenerateFlowunitDesc(CHECK_SOURCE_OUTPUT_RESTFUL, {"stream_meta"}, {});
   mock_desc->SetFlowType(STREAM);
   auto data_pre_func =
-      [=](std::shared_ptr<DataContext> data_ctx,
-          std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+      [=](const std::shared_ptr<DataContext> &data_ctx,
+          const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
     auto stream_meta = data_ctx->GetInputMeta("stream_meta");
     EXPECT_NE(stream_meta, nullptr);
     if (!stream_meta) {
@@ -353,7 +354,7 @@ TEST_F(DataSourceParserFlowUnitTest, TokenTest) {
 }
 
 modelbox::Status DataSourceParserFlowUnitTest::HandleFunc(
-    web::http::http_request request) {
+    const web::http::http_request &request) {
   utility::string_t uri = request.request_uri().to_string();
   utility::string_t decode_uri = web::uri::decode(uri);
   std::vector<std::string> uri_vec;
@@ -368,8 +369,8 @@ modelbox::Status DataSourceParserFlowUnitTest::HandleFunc(
   params_vec = modelbox::StringSplit(params, '&');
   std::vector<std::string> param_vec;
   std::vector<std::string> param_value;
-  for (size_t i = 0; i < params_vec.size(); ++i) {
-    param_vec = modelbox::StringSplit(params_vec[i], '=');
+  for (const auto &i : params_vec) {
+    param_vec = modelbox::StringSplit(i, '=');
     param_value.push_back(web::uri::decode(param_vec[1]));
   }
 
@@ -411,9 +412,10 @@ void DataSourceParserFlowUnitTest::MockRestfulServer(
 
   listener = std::make_shared<web::http::experimental::listener::http_listener>(
       request_url, server_config);
-  listener->support(
-      web::http::methods::GET,
-      [this](web::http::http_request request) { this->HandleFunc(request); });
+  listener->support(web::http::methods::GET,
+                    [this](const web::http::http_request &request) {
+                      this->HandleFunc(request);
+                    });
 
   try {
     listener->open().wait();

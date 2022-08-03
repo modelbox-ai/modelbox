@@ -28,7 +28,7 @@ std::map<uint32_t, std::string> g_ascend_flags_name{
  * @brief Call be ascend stream.
  **/
 void AscendReleaseMemoryTask(void *mem_list_ptr) {
-  auto list =
+  auto *list =
       (std::vector<std::shared_ptr<const DeviceMemory>> *)(mem_list_ptr);
   list->clear();
   delete list;
@@ -36,7 +36,7 @@ void AscendReleaseMemoryTask(void *mem_list_ptr) {
 
 void AscendReleaseMemoryAsync(void *mem_list_ptr) {
   // Should not operate the mem and stream in this callback
-  auto timer = GetTimer();
+  auto *timer = GetTimer();
   auto task = std::make_shared<TimerTask>();
   task->Callback(AscendReleaseMemoryTask, mem_list_ptr);
   task->SetName("AscendMemReleaseTask");
@@ -75,7 +75,7 @@ Status AscendStream::Bind(
     return STATUS_FAULT;
   }
 
-  auto mem_list_ptr =
+  auto *mem_list_ptr =
       new (std::nothrow) std::vector<std::shared_ptr<const DeviceMemory>>();
   if (mem_list_ptr == nullptr) {
     MBLOG_ERROR << "New std::vector<>() failed";
@@ -195,7 +195,7 @@ void AscendStreamPool::Shrink() {
                << allocate_count_ << ", idel stream:" << stream_list_.size();
   }
 
-  for (auto stream : stream_to_del) {
+  for (auto *stream : stream_to_del) {
     stream->Sync();
     delete stream;
   }
@@ -210,7 +210,7 @@ AscendStreamPool::~AscendStreamPool() {
   }
 
   stream_shrink_timer_.Stop();
-  for (auto stream : stream_list_) {
+  for (auto *stream : stream_list_) {
     delete stream;
   }
 }
@@ -231,14 +231,14 @@ std::shared_ptr<AscendStream> AscendStreamPool::Alloc() {
   {
     std::lock_guard<std::mutex> lock(stream_list_lock_);
     if (!stream_list_.empty()) {
-      auto stream_ptr = stream_list_.front();
+      auto *stream_ptr = stream_list_.front();
       stream_list_.pop_front();
       stream.reset(stream_ptr, free_func);
       return stream;
     }
   }
 
-  auto stream_ptr = new AscendStream(device_id_, callback_thread_id_);
+  auto *stream_ptr = new AscendStream(device_id_, callback_thread_id_);
   auto ret = stream_ptr->Init();
   if (ret != STATUS_SUCCESS) {
     delete stream_ptr;
@@ -301,7 +301,8 @@ void AscendMemoryPool::MemFree(void *ptr) {
 
 AscendMemory::AscendMemory(const std::shared_ptr<Device> &device,
                            const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-                           std::shared_ptr<void> device_mem_ptr, size_t size)
+                           const std::shared_ptr<void> &device_mem_ptr,
+                           size_t size)
     : DeviceMemory(device, mem_mgr, device_mem_ptr, size) {}
 
 AscendMemory::~AscendMemory() = default;
@@ -358,7 +359,7 @@ Status AscendMemory::CopyExtraMetaTo(
 
 Status AscendMemory::CombineExtraMeta(
     const std::vector<std::shared_ptr<DeviceMemory>> &mem_list) {
-  for (auto mem : mem_list) {
+  for (const auto &mem : mem_list) {
     auto ascend_mem = std::dynamic_pointer_cast<AscendMemory>(mem);
     if (ascend_stream_ptr_ == nullptr) {
       // If this has no stream, use the first stream we found
@@ -545,8 +546,8 @@ Status AscendMemoryManager::DeviceMemoryCopy(
 
   aclrtStream ascend_stream =
       ascend_stream_ptr == nullptr ? nullptr : ascend_stream_ptr->Get();
-  auto dest_ptr = dest_memory->GetPtr<uint8_t>().get() + dest_offset;
-  auto src_ptr = src_memory->GetConstPtr<uint8_t>().get() + src_offset;
+  auto *dest_ptr = dest_memory->GetPtr<uint8_t>().get() + dest_offset;
+  const auto *src_ptr = src_memory->GetConstPtr<uint8_t>().get() + src_offset;
   if (!CheckCopyAsync(src_ptr, dest_ptr) && ascend_stream_ptr != nullptr) {
     ascend_stream_ptr->Sync();
     ascend_stream = nullptr;
@@ -598,8 +599,8 @@ bool AscendMemoryManager::CheckCopyAsync(const void *src_addr,
 }
 
 Status AscendMemoryManager::SetupAscendStream(
-    std::shared_ptr<const DeviceMemory> src_memory,
-    std::shared_ptr<DeviceMemory> dest_memory,
+    const std::shared_ptr<const DeviceMemory> &src_memory,
+    const std::shared_ptr<DeviceMemory> &dest_memory,
     std::shared_ptr<AscendStream> &ascend_stream_ptr) {
   if (src_memory->IsHost()) {
     ascend_stream_ptr = nullptr;

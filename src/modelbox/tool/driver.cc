@@ -22,6 +22,7 @@
 #include <stdio.h>
 
 #include <nlohmann/json.hpp>
+#include <utility>
 
 namespace modelbox {
 
@@ -163,7 +164,7 @@ int ToolCommandDriver::RunInfoCommand(int argc, char *argv[]) {
 }
 
 Status ToolCommandDriver::OutputDriverInfo(
-    std::shared_ptr<Configuration> config, enum DRIVER_OUTFORMAT format,
+    const std::shared_ptr<Configuration> &config, enum DRIVER_OUTFORMAT format,
     const std::string &filter_name) {
   if (format == DRIVER_OUTFORMAT_LIST) {
     return DisplayDriverInList(config);
@@ -181,7 +182,7 @@ Status ToolCommandDriver::OutputDriverInfo(
 }
 
 Status ToolCommandDriver::OutputFlowunitInfo(
-    std::shared_ptr<Configuration> config, enum DRIVER_OUTFORMAT format,
+    const std::shared_ptr<Configuration> &config, enum DRIVER_OUTFORMAT format,
     const std::string &filter_name) {
   if (format == DRIVER_OUTFORMAT_LIST) {
     return DisplayFlowunitInList(config);
@@ -198,10 +199,9 @@ Status ToolCommandDriver::OutputFlowunitInfo(
   return STATUS_NOTSUPPORT;
 }
 
-Status ToolCommandDriver::OutputInfo(std::shared_ptr<Configuration> config,
-                                     enum DRIVER_TYPE type,
-                                     enum DRIVER_OUTFORMAT format,
-                                     const std::string &filter_name) {
+Status ToolCommandDriver::OutputInfo(
+    const std::shared_ptr<Configuration> &config, enum DRIVER_TYPE type,
+    enum DRIVER_OUTFORMAT format, const std::string &filter_name) {
   if (type == DRIVER_TYPE_ALL) {
     return OutputDriverInfo(config, format, filter_name);
   }
@@ -213,7 +213,7 @@ Status ToolCommandDriver::OutputInfo(std::shared_ptr<Configuration> config,
 }
 
 Status ToolCommandDriver::DisplayDriverInList(
-    std::shared_ptr<Configuration> config) {
+    const std::shared_ptr<Configuration> &config) {
   auto drivers = std::make_shared<Drivers>();
   auto status = drivers->Initialize(config->GetSubConfig(DRIVER_CONF));
   if (!status) {
@@ -244,7 +244,7 @@ Status ToolCommandDriver::DisplayDriverInList(
 }
 
 void ToolCommandDriver::DisplayFlowunitByFilter(
-    std::shared_ptr<FlowUnitInfo> flowunit_info,
+    const std::shared_ptr<FlowUnitInfo> &flowunit_info,
     const std::string &filter_name) {
   if (flowunit_info == nullptr) {
     printf("DisplayFlowunitByFilter:  flowunit_info is nullptr.");
@@ -268,7 +268,8 @@ void ToolCommandDriver::DisplayFlowunitByFilter(
 }
 
 Status ToolCommandDriver::DisplayDriverInDetails(
-    std::shared_ptr<Configuration> config, const std::string &filter_name) {
+    const std::shared_ptr<Configuration> &config,
+    const std::string &filter_name) {
   auto flowunit_info = std::make_shared<FlowUnitInfo>();
   int index = 0;
   auto status = flowunit_info->Init(config);
@@ -324,7 +325,7 @@ Status ToolCommandDriver::DisplayDriverInDetails(
 }
 
 Status ToolCommandDriver::DisplayDriverInJson(
-    std::shared_ptr<Configuration> config) {
+    const std::shared_ptr<Configuration> &config) {
   FlowUnitInfo flowunit_info;
 
   auto status = flowunit_info.Init(config);
@@ -346,7 +347,7 @@ Status ToolCommandDriver::DisplayDriverInJson(
 }
 
 Status ToolCommandDriver::DisplayFlowunitInList(
-    std::shared_ptr<Configuration> config) {
+    const std::shared_ptr<Configuration> &config) {
   FlowUnitInfo flowunit_info;
 
   auto status = flowunit_info.Init(config);
@@ -452,7 +453,8 @@ void ToolCommandDriver::DisplayFlowunit(
 }
 
 Status ToolCommandDriver::DisplayFlowunitInDetails(
-    std::shared_ptr<Configuration> config, const std::string &filter_name) {
+    const std::shared_ptr<Configuration> &config,
+    const std::string &filter_name) {
   auto flowunit_info = std::make_shared<FlowUnitInfo>();
   auto status = flowunit_info->Init(config);
   if (!status) {
@@ -466,7 +468,7 @@ Status ToolCommandDriver::DisplayFlowunitInDetails(
 }
 
 Status ToolCommandDriver::DisplayFlowunitInJson(
-    std::shared_ptr<Configuration> config) {
+    const std::shared_ptr<Configuration> &config) {
   DisplayDriverInJson(config);
   return STATUS_OK;
 }

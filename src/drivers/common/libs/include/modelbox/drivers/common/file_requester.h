@@ -61,7 +61,7 @@ class FileRequester {
   static std::shared_ptr<FileRequester> GetInstance();
 
   Status RegisterUrlHandler(const std::string &relative_url,
-                            std::shared_ptr<FileGetHandler> handler);
+                            const std::shared_ptr<FileGetHandler> &handler);
 
   Status DeregisterUrl(const std::string &relative_url);
 
@@ -72,13 +72,13 @@ class FileRequester {
  private:
   FileRequester() = default;
   Status Init();
-  void HandleFileGet(web::http::http_request request);
+  void HandleFileGet(const web::http::http_request &request);
   bool IsValidRequest(const web::http::http_request &request);
   bool ReadRequestRange(const web::http::http_request &request,
                         uint64_t file_size, uint64_t &range_start,
                         uint64_t &range_end);
-  void ProcessRequest(web::http::http_request &request,
-                      std::shared_ptr<FileGetHandler> handler,
+  void ProcessRequest(const web::http::http_request &request,
+                      const std::shared_ptr<FileGetHandler> &handler,
                       uint64_t range_start, uint64_t range_end);
 
   static std::once_flag file_requester_init_flag_;

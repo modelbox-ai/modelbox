@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/session_context.h"
 
 #include "modelbox/base/uuid.h"
@@ -21,7 +23,8 @@
 #include "modelbox/virtual_node.h"
 namespace modelbox {
 
-SessionContext::SessionContext(std::shared_ptr<StatisticsItem> graph_stats) {
+SessionContext::SessionContext(
+    const std::shared_ptr<StatisticsItem> &graph_stats) {
   ConfigurationBuilder config_builder;
   config_ = config_builder.Build();
   auto ret = GetUUID(&session_id_);
@@ -35,22 +38,22 @@ SessionContext::SessionContext(std::shared_ptr<StatisticsItem> graph_stats) {
     graph_session_stats_ = graph_stats_->AddItem(session_id_);
   }
   MBLOG_INFO << "session context start se id:" << GetSessionId();
-};
+}
 
 SessionContext::~SessionContext() {
   MBLOG_INFO << "session context finish se id:" << GetSessionId();
   if (graph_stats_ != nullptr) {
     graph_stats_->DelItem(session_id_);
   }
-};
+}
 
 void SessionContext::SetPrivate(const std::string &key,
                                 std::shared_ptr<void> private_content,
                                 std::size_t type_id) {
   std::lock_guard<std::mutex> lock(private_map_lock_);
-  private_map_[key] = private_content;
+  private_map_[key] = std::move(private_content);
   private_map_type_[key] = type_id;
-};
+}
 
 void SessionContext::SetSessionId(const std::string &session_id) {
   session_id_ = session_id;
@@ -61,7 +64,7 @@ std::string SessionContext::GetSessionId() { return session_id_; }
 std::shared_ptr<Configuration> SessionContext::GetConfig() { return config_; }
 
 void SessionContext::SetError(std::shared_ptr<FlowUnitError> error) {
-  error_ = error;
+  error_ = std::move(error);
 }
 
 std::shared_ptr<FlowUnitError> SessionContext::GetError() { return error_; }
@@ -88,7 +91,7 @@ std::shared_ptr<void> SessionContext::GetPrivate(const std::string &key) {
   }
 
   return private_map_[key];
-};
+}
 
 std::size_t SessionContext::GetPrivateType(const std::string &key) {
   std::lock_guard<std::mutex> lock(private_map_lock_);
@@ -98,6 +101,6 @@ std::size_t SessionContext::GetPrivateType(const std::string &key) {
   }
 
   return private_map_type_[key];
-};
+}
 
 }  // namespace modelbox

@@ -132,7 +132,7 @@ modelbox::Status ControlMsg::AppendData(uint8_t *data, size_t data_len) {
 modelbox::Status ControlMsg::Unserialize() { return Unserialize(data_buff_); }
 
 modelbox::Status ControlMsg::Unserialize(
-    std::shared_ptr<std::vector<uint8_t>> data_buff) {
+    const std::shared_ptr<std::vector<uint8_t>> &data_buff) {
   auto *msg_head = (struct ControlMsgHead *)data_buff->data();
 
   if (data_ready_ == true) {
@@ -459,7 +459,7 @@ modelbox::Status ControlMsgError::UnSerializeMsg(uint8_t *buff,
 }
 
 std::shared_ptr<ControlMsg> ControlMsgBuilder::Build(
-    std::shared_ptr<ControlMsg> from_msg) {
+    const std::shared_ptr<ControlMsg> &from_msg) {
   std::shared_ptr<ControlMsg> msg;
   switch (from_msg->GetMsgType()) {
     case SERVER_CONTROL_MSG_TYPE_STRING:

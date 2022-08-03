@@ -64,7 +64,7 @@ constexpr const char* HTTP_RESP_ERR_CANNOT_READ = "Can not read file";
 constexpr int MAX_FILES = 1 << 16;
 
 std::string ModelboxGetMimeType(const std::string& file) {
-  std::string ext = file.substr(file.find_last_of(".") + 1);
+  std::string ext = file.substr(file.find_last_of('.') + 1);
 
   const static std::map<std::string, std::string> mime_map = {
       {"htm", "text/html"},         {"html", "text/html"},
@@ -85,9 +85,9 @@ std::string ModelboxGetMimeType(const std::string& file) {
   return "application/octet-stream";
 }
 
-bool ModelboxEditorPlugin::CheckBlackDir(std::string dir) {
-  if ((dir.find("\r") != std::string::npos) ||
-      (dir.find("\n") != std::string::npos)) {
+bool ModelboxEditorPlugin::CheckBlackDir(const std::string& dir) {
+  if ((dir.find('\r') != std::string::npos) ||
+      (dir.find('\n') != std::string::npos)) {
     return true;
   }
   const std::string filter_dir =
@@ -214,7 +214,7 @@ bool ModelboxEditorPlugin::GetHtmlFile(const std::string& in_file,
   }
 
   auto file_name = in_file_canon;
-  if (base_filename.find_first_of(".") == std::string::npos) {
+  if (base_filename.find_first_of('.') == std::string::npos) {
     if (base_filename != "/") {
       // if not a specify file, then must be a directory
       *redirect_file = in_file + "/";
@@ -430,7 +430,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
 
     std::string json_data;
     nlohmann::json graph;
-    for (auto g : graphs) {
+    for (const auto &g : graphs) {
       ret = GraphFileToJson(g, json_data);
       graph["name"] = modelbox::GetBaseName(g);
       graph = nlohmann::json::parse(json_data);
@@ -439,7 +439,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
 
     std::vector<std::string> flowunits;
     ret = modelbox::ListSubDirectoryFiles(flowunit_path, "*.toml", &flowunits);
-    for (auto f : flowunits) {
+    for (const auto &f : flowunits) {
       ret = GraphFileToJson(f, json_data);
       if (!ret) {
         modelbox::Status rspret = {ret, "toml"};
@@ -552,7 +552,7 @@ void ModelboxEditorPlugin::HandlerProjectCreate(const httplib::Request& request,
 
 void ModelboxEditorPlugin::HandlerFlowUnitInfo(
     const httplib::Request& request, httplib::Response& response,
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration>& config) {
   modelbox::FlowUnitInfo flowunit_info;
 
   modelbox::Status rspret;
@@ -829,7 +829,7 @@ modelbox::Status ModelboxEditorPlugin::GraphFileToJson(const std::string& file,
     return {modelbox::STATUS_BADCONF, "graph file is invalid."};
   }
 
-  std::string extension = file.substr(file.find_last_of(".") + 1);
+  std::string extension = file.substr(file.find_last_of('.') + 1);
   if (extension == "json" || data[0] == '{') {
     json_data = data;
   } else {
@@ -914,7 +914,7 @@ void ModelboxEditorPlugin::HandlerDemoGetList(const httplib::Request& request,
 
   nlohmann::json response_json;
   response_json["demo_list"] = nlohmann::json::array();
-  for (auto it : graphs) {
+  for (const auto& it : graphs) {
     std::string demoname = modelbox::GetBaseName(it.first);
     for (const auto& file : it.second) {
       nlohmann::json demo;
@@ -1199,7 +1199,7 @@ bool ModelboxEditorPlugin::Stop() {
 }
 
 bool ModelboxEditorPlugin::ParseConfig(
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration>& config) {
   enable_ = config->GetBool("editor.enable", false);
   web_root_ = config->GetString("editor.root", DEFAULT_WEB_ROOT);
   server_ip_ = config->GetString("editor.ip",

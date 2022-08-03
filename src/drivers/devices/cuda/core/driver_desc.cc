@@ -58,7 +58,7 @@ modelbox::Status DriverInit() {
   kDeviceTimer->SetName("Cuda-Timer");
   kDeviceTimer->Start();
 
-  auto env_flag = getenv(CUDA_DEVICE_SCHEDULE_FLAG);
+  auto *env_flag = getenv(CUDA_DEVICE_SCHEDULE_FLAG);
   std::string cudaDeviceScheduleFlag;
   if (env_flag != nullptr) {
     cudaDeviceScheduleFlag = std::string(env_flag);

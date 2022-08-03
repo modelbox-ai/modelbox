@@ -25,6 +25,7 @@
 #include <string>
 #include <type_traits>
 #include <typeinfo>
+#include <utility>
 
 static std::map<size_t, size_t> type_hash_code_map = {
     {typeid(int).hash_code(), typeid(int64_t).hash_code()},
@@ -48,8 +49,7 @@ class Any {
           std::is_copy_constructible<
               typename std::decay<ValueType>::type>::value>::type>
   explicit Any(ValueType&& value)
-      : value_ptr_(new AnyImpl<typename std::decay<ValueType>::type>(
-            std::forward<ValueType>(value))) {}
+      : value_ptr_(new AnyImpl<typename std::decay<ValueType>::type>(value)) {}
 
   Any(const Any& other)
       : value_ptr_(other.value_ptr_ ? other.value_ptr_->clone() : nullptr) {}
@@ -64,7 +64,7 @@ class Any {
   }
 
   template <typename ValueType>
-  Any& operator=(ValueType&& rhs) {
+  Any& operator=(Any&& rhs) {
     *this = Any{std::forward<ValueType>(rhs)};
     return *this;
   }
@@ -127,7 +127,7 @@ class Any {
 
   template <typename ValueType>
   struct AnyImpl : public AnyImplBase {
-    AnyImpl(const ValueType& value) : value_(value) {}
+    AnyImpl(ValueType value) : value_(std::move(value)) {}
 
     AnyImpl(ValueType&& value) : value_(std::move(value)) {}
 

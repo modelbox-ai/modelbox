@@ -19,6 +19,8 @@
 
 #include <modelbox/base/log.h>
 
+#include <cmath>
+
 constexpr int32_t CLASS_BACKGROUND = -1;
 
 void YoloHelper::GetBoundingBox(
@@ -69,12 +71,12 @@ void YoloHelper::GetCategoryAndScore(const float *input, int32_t step,
 
     float sum = 0;
     for (int c = 0; c < class_num; ++c) {
-      auto e = static_cast<float>(exp(input[c * step] - max_score));
+      auto e = static_cast<float>(std::exp(input[c * step] - max_score));
       sum += e;
     }
 
     score = static_cast<float>(
-        exp(input[max_score_category * step] - max_score) / sum);
+        std::exp(input[max_score_category * step] - max_score) / sum);
     category = max_score_category;
   }
 }
@@ -107,9 +109,9 @@ void YoloHelper::GetOneBoundingBox(
   y_bias =
       param_
           .anchor_biases_[GetAnchorBiasesOffset(layer_index, anchor_index) + 1];
-  box_w = (float)(exp(anchor_data[2 * step + offset]) * x_bias /
+  box_w = (float)(std::exp(anchor_data[2 * step + offset]) * x_bias /
                   param_.input_width_);
-  box_h = (float)(exp(anchor_data[3 * step + offset]) * y_bias /
+  box_h = (float)(std::exp(anchor_data[3 * step + offset]) * y_bias /
                   param_.input_height_);
 
   box_x = std::max((box_x - box_w / 2.0F), 0.0F);

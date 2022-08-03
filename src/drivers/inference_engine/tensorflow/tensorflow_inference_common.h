@@ -70,7 +70,7 @@ class InferenceTensorflowFlowUnitDesc : public modelbox::FlowUnitDesc {
   ~InferenceTensorflowFlowUnitDesc() override = default;
 
   void SetModelEntry(std::string model_entry);
-  const std::string GetModelEntry();
+  std::string GetModelEntry();
 
   std::string model_entry_;
 };
@@ -90,15 +90,17 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
       std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
-  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                              std::vector<TF_Tensor *> &input_tf_tensor_list);
+  modelbox::Status PreProcess(
+      const std::shared_ptr<modelbox::DataContext> &data_ctx,
+      std::vector<TF_Tensor *> &input_tf_tensor_list);
 
-  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                               std::vector<TF_Tensor *> &output_tf_tensor_list);
+  modelbox::Status PostProcess(
+      const std::shared_ptr<modelbox::DataContext> &data_ctx,
+      std::vector<TF_Tensor *> &output_tf_tensor_list);
   modelbox::Status SetUpInferencePlugin(
-      std::shared_ptr<modelbox::Configuration> config);
+      const std::shared_ptr<modelbox::Configuration> &config);
   modelbox::Status SetUpDynamicLibrary(
-      std::shared_ptr<modelbox::Configuration> config);
+      const std::shared_ptr<modelbox::Configuration> &config);
 
   modelbox::Status ReadBufferFromFile(const std::string &file, TF_Buffer *buf);
   modelbox::Status InitConfig(
@@ -128,6 +130,6 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
   std::shared_ptr<InferencePlugin> inference_plugin_{nullptr};
   TensorflowProcess pre_process_{nullptr};
   TensorflowProcess post_process_{nullptr};
-}; 
+};
 
 #endif  // MODELBOX_TENSORFLOW_INFERENCE_COMMON_H_

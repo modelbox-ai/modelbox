@@ -18,19 +18,21 @@
 
 #include <stdio.h>
 
+#include <utility>
+
 #include "modelbox/base/log.h"
 
 namespace modelbox {
-Device::Device(const std::shared_ptr<DeviceMemoryManager> &mem_mgr)
+Device::Device(std::shared_ptr<DeviceMemoryManager> mem_mgr)
     : memory_trace_(std::make_shared<DeviceMemoryTrace>()),
-      memory_manager_(mem_mgr) {
+      memory_manager_(std::move(mem_mgr)) {
   executor_ = std::make_shared<Executor>();
 }
 
 Device::Device(size_t thread_count,
-               const std::shared_ptr<DeviceMemoryManager> &mem_mgr)
+               std::shared_ptr<DeviceMemoryManager> mem_mgr)
     : memory_trace_(std::make_shared<DeviceMemoryTrace>()),
-      memory_manager_(mem_mgr) {
+      memory_manager_(std::move(mem_mgr)) {
   if (0 == thread_count) {
     executor_ = nullptr;
   } else {
@@ -158,9 +160,8 @@ std::shared_ptr<DeviceMemory> Device::MemAcquire(void *mem_ptr, size_t size,
   return dev_mem;
 }
 
-std::shared_ptr<DeviceMemory> Device::MemAcquire(std::shared_ptr<void> mem_ptr,
-                                                 size_t size,
-                                                 uint32_t mem_flags) {
+std::shared_ptr<DeviceMemory> Device::MemAcquire(
+    const std::shared_ptr<void> &mem_ptr, size_t size, uint32_t mem_flags) {
   auto dev_mem = MemAlloc(0, mem_flags);
   auto ret = dev_mem->MemAcquire(mem_ptr, size);
   if (ret != STATUS_SUCCESS) {
@@ -229,7 +230,7 @@ std::shared_ptr<DeviceMemory> Device::MemClone(
 }
 
 void Device::SetDeviceDesc(std::shared_ptr<DeviceDesc> device_desc) {
-  device_desc_ = device_desc;
+  device_desc_ = std::move(device_desc);
 }
 
 std::shared_ptr<DeviceDesc> Device::GetDeviceDesc() { return device_desc_; }
@@ -238,7 +239,8 @@ std::shared_ptr<DeviceManager> Device::GetDeviceManager() {
   return device_mgr_.lock();
 }
 
-void Device::SetDeviceManager(std::shared_ptr<DeviceManager> device_mgr) {
+void Device::SetDeviceManager(
+    const std::shared_ptr<DeviceManager> &device_mgr) {
   device_mgr_ = device_mgr;
 }
 

@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 class YoloParam {
@@ -42,7 +43,7 @@ class YoloParam {
 
 class YoloHelper {
  public:
-  YoloHelper(const YoloParam &param) : param_{param} {}
+  YoloHelper(YoloParam param) : param_{std::move(param)} {}
 
   virtual ~YoloHelper() = default;
 
@@ -63,7 +64,7 @@ class YoloHelper {
 
  private:
   inline float Sigmoid(float x) {
-    return static_cast<float>(1. / (1. + exp(-x)));
+    return static_cast<float>(1. / (1. + std::exp(-x)));
   }
 
   void GetCategoryAndScore(const float *input, int32_t step, int32_t class_num,

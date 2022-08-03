@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/error.h"
 
 namespace modelbox {
 
-FlowUnitError::FlowUnitError(std::string desc) { desc_ = desc; }
+FlowUnitError::FlowUnitError(std::string desc) { desc_ = std::move(desc); }
 
-FlowUnitError::FlowUnitError(std::string node, std::string error_pos,
-                             Status error_status) {
+FlowUnitError::FlowUnitError(const std::string& node,
+                             const std::string& error_pos,
+                             const Status& error_status) {
   desc_ = "node:" + node + " error pos:" + error_pos +
           " status:" + error_status.StrCode() +
           " error:" + error_status.Errormsg();
   error_status_ = error_status;
-};
+}
 
 FlowUnitError::~FlowUnitError() = default;
 

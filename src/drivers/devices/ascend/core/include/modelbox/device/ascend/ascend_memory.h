@@ -133,7 +133,7 @@ class AscendMemory : public DeviceMemory {
  public:
   AscendMemory(const std::shared_ptr<Device> &device,
                const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-               std::shared_ptr<void> device_mem_ptr, size_t size);
+               const std::shared_ptr<void> &device_mem_ptr, size_t size);
 
   ~AscendMemory() override;
 
@@ -262,9 +262,10 @@ class AscendMemoryManager : public DeviceMemoryManager {
   void GetAscendMemcpyKind(DeviceMemoryCopyKind copy_kind,
                            aclrtMemcpyKind &ascend_copy_kind);
 
-  Status SetupAscendStream(std::shared_ptr<const DeviceMemory> src_memory,
-                           std::shared_ptr<DeviceMemory> dest_memory,
-                           std::shared_ptr<AscendStream> &ascend_stream_ptr);
+  Status SetupAscendStream(
+      const std::shared_ptr<const DeviceMemory> &src_memory,
+      const std::shared_ptr<DeviceMemory> &dest_memory,
+      std::shared_ptr<AscendStream> &ascend_stream_ptr);
 
   bool CheckCopyAsync(const void *src_addr, const void *dest_addr);
 

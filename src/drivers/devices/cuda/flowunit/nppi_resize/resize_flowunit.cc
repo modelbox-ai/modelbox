@@ -43,7 +43,7 @@ modelbox::Status NppiResizeFlowUnit::Open(
     dest_height_ = opts->GetUint32("image_height", 0);
   }
   if (dest_width_ <= 0 || dest_height_ <= 0) {
-    auto errMsg = "resize width or height is not configured or invalid.";
+    const auto *errMsg = "resize width or height is not configured or invalid.";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_BADCONF, errMsg};
   }
@@ -145,9 +145,9 @@ modelbox::Status NppiResizeFlowUnit::ProcessOneImage(
   dstResize.width = dest_width_;
   dstResize.channel = srcResize.channel;
 
-  auto input_data =
+  const auto *input_data =
       static_cast<const u_char *>(input_buffer_list->ConstBufferData(index));
-  auto output_data =
+  auto *output_data =
       static_cast<u_char *>(output_buffer_list->MutableBufferData(index));
 
   // resize image

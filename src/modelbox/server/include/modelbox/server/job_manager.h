@@ -53,14 +53,14 @@ class JobManager {
    * @param job_name name of the job
    * @return delete result
    */
-  bool DeleteJob(std::string job_name);
+  bool DeleteJob(const std::string& job_name);
 
   /**
    * @brief Get job by job name
    * @param job_name name of the job
    * @return the job object
    */
-  std::shared_ptr<modelbox::Job> GetJob(std::string job_name);
+  std::shared_ptr<modelbox::Job> GetJob(const std::string& job_name);
 
   /**
    * @brief Get all jobs
