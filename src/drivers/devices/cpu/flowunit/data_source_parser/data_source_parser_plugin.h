@@ -43,7 +43,7 @@ class DataSourceParserPlugin
   virtual modelbox::Status Deinit() = 0;
 
   modelbox::Status Parse(
-      std::shared_ptr<modelbox::SessionContext> session_context,
+      const std::shared_ptr<modelbox::SessionContext> &session_context,
       const std::string &config, std::string &uri,
       DestroyUriFunc &destroy_uri_func) override = 0;
 
@@ -63,10 +63,10 @@ class DataSourceParserPlugin
     retry_max_times_ = opts->GetInt32("retry_count_limit", retry_max_times_);
   };
 
-  virtual bool GetRetryFlag(modelbox::Status status) { return true; };
+  virtual bool GetRetryFlag(const modelbox::Status &status) { return true; };
 
   virtual void SetStreamType(
-      std::shared_ptr<modelbox::SourceContext> source_context) {
+      const std::shared_ptr<modelbox::SourceContext> &source_context) {
     source_context->SetStreamType("stream");
   };
 

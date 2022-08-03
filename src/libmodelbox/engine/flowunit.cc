@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/flowunit.h"
 
 #include "modelbox/tensor_list.h"
@@ -28,27 +30,31 @@ IFlowUnit::~IFlowUnit() = default;
 /* class when unit is close */
 Status IFlowUnit::Close() { return STATUS_OK; }
 
+// NOLINTNEXTLINE
 Status IFlowUnit::DataPre(std::shared_ptr<DataContext> data_ctx) {
   return STATUS_OK;
 }
 
+// NOLINTNEXTLINE
 Status IFlowUnit::DataPost(std::shared_ptr<DataContext> data_ctx) {
   return STATUS_OK;
 }
 
+// NOLINTNEXTLINE
 Status IFlowUnit::DataGroupPre(std::shared_ptr<DataContext> data_ctx) {
   return STATUS_OK;
 }
 
+// NOLINTNEXTLINE
 Status IFlowUnit::DataGroupPost(std::shared_ptr<DataContext> data_ctx) {
   return STATUS_OK;
 }
 
 void FlowUnit::SetFlowUnitDesc(std::shared_ptr<FlowUnitDesc> desc) {
-  flowunit_desc_ = desc;
+  flowunit_desc_ = std::move(desc);
 }
 
-void FlowUnit::SetBindDevice(std::shared_ptr<Device> device) {
+void FlowUnit::SetBindDevice(const std::shared_ptr<Device> &device) {
   device_ = device;
   if (device == nullptr) {
     return;
@@ -112,11 +118,11 @@ Status FlowUnitDesc::CheckGroupType(const std::string &group_type) {
     return {STATUS_INVALID, err_msg};
   }
 
-  if (group_type.find("/") == std::string::npos) {
+  if (group_type.find('/') == std::string::npos) {
     return STATUS_SUCCESS;
   }
 
-  if (group_type.find_first_of("/") != group_type.find_last_of("/")) {
+  if (group_type.find_first_of('/') != group_type.find_last_of('/')) {
     auto err_msg = "there are more than one / in " + group_type;
     MBLOG_WARN << err_msg;
     return {STATUS_INVALID, err_msg};

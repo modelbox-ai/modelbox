@@ -48,14 +48,14 @@ class BalancerMockMemory : public DeviceMemory {
  public:
   BalancerMockMemory(const std::shared_ptr<Device> &device,
                      const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-                     std::shared_ptr<void> device_mem_ptr, size_t size)
+                     const std::shared_ptr<void> &device_mem_ptr, size_t size)
       : DeviceMemory(device, mem_mgr, device_mem_ptr, size) {}
 };
 
 class FlowUnitBalancerTest : public testing::Test {
  public:
   std::shared_ptr<FlowUnitDataContext> BuildFlowUnitDataContext(
-      Node *node, std::shared_ptr<DeviceMemory> mem) {
+      Node *node, const std::shared_ptr<DeviceMemory> &mem) {
     auto data_ctx =
         std::make_shared<NormalFlowUnitDataContext>(node, nullptr, nullptr);
     auto stream_data_map = std::make_shared<PortDataMap>();

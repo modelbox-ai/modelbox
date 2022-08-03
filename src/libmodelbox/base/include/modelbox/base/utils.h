@@ -50,13 +50,13 @@ class DeferGuard {
    * @param fn function
    */
   // NOLINTNEXTLINE
-  DeferGuard(Callable &&fn) : fn_(std::forward<Callable>(fn)) {}
+  DeferGuard(Callable &&fn) noexcept: fn_(std::forward<Callable>(fn)) {}
 
   /**
    * @brief Copy constructor
    * @param other another defer guard.
    */
-  DeferGuard(DeferGuard &&other);
+  DeferGuard(DeferGuard &&other) noexcept;
 
   virtual ~DeferGuard();
 
@@ -79,13 +79,14 @@ class DeferGuardChain {
    */
   template <class Callable>
   // NOLINTNEXTLINE
-  DeferGuardChain(Callable &&fn) : fn_cond_(std::forward<Callable>(fn)) {}
+  DeferGuardChain(Callable &&fn) noexcept
+      : fn_cond_(std::forward<Callable>(fn)) {}
 
   /**
    * @brief Defer guard with function call
    * @param other other guard
    */
-  DeferGuardChain(DeferGuardChain &&other);
+  DeferGuardChain(DeferGuardChain &&other) noexcept;
 
   /**
    * @brief Add function to list
@@ -195,7 +196,7 @@ bool IsDirectory(const std::string &path);
  * @param overwrite whether overwrite existing file
  * @return Copy result
  */
-Status CopyFile(std::string src, std::string dest, int mode = 0,
+Status CopyFile(const std::string &src, const std::string &dest, int mode = 0,
                 bool overwrite = false);
 
 /**

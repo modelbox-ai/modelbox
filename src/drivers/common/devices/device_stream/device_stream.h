@@ -26,8 +26,9 @@
 namespace modelbox {
 
 template <typename Memory>
-void TravelDevMem(std::shared_ptr<modelbox::BufferListMap> input_buffer_list_map,
-                  std::function<bool(std::shared_ptr<Memory>)> func) {
+void TravelDevMem(
+    const std::shared_ptr<modelbox::BufferListMap> &input_buffer_list_map,
+    std::function<bool(std::shared_ptr<Memory>)> func) {
   for (auto &port : *input_buffer_list_map) {
     auto &buffer_list = port.second;
     auto dev_mem_list = buffer_list->GetAllBufferDeviceMemory();
@@ -47,7 +48,7 @@ void TravelDevMem(std::shared_ptr<modelbox::BufferListMap> input_buffer_list_map
 
 template <typename Stream, typename Memory>
 std::shared_ptr<Stream> GetDevSyncStream(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
+    const std::shared_ptr<modelbox::DataContext> &data_ctx) {
   auto input_buffer_list_map = data_ctx->Input();
   std::shared_ptr<Stream> first_stream;
 
@@ -101,7 +102,7 @@ std::shared_ptr<Stream> GetDevSyncStream(
 };
 
 template <typename Stream, typename Memory>
-Status SetDevStream(std::shared_ptr<modelbox::DataContext> data_ctx,
+Status SetDevStream(const std::shared_ptr<modelbox::DataContext> &data_ctx,
                     const std::shared_ptr<Stream> &stream) {
   if (stream == nullptr) {
     return modelbox::STATUS_OK;
@@ -125,7 +126,7 @@ Status SetDevStream(std::shared_ptr<modelbox::DataContext> data_ctx,
 };
 
 template <typename Stream>
-Status HoldMemory(std::shared_ptr<modelbox::DataContext> data_ctx,
+Status HoldMemory(const std::shared_ptr<modelbox::DataContext> &data_ctx,
                   const std::shared_ptr<Stream> &stream) {
   // Release input of this unit after stream stage completed
   // No need to bind output, it will pass to next unit

@@ -127,7 +127,7 @@ class Task : public std::enable_shared_from_this<Task> {
 
  private:
   friend class TaskManager;
-  void SetTaskManager(std::shared_ptr<TaskManager> task_manager);
+  void SetTaskManager(const std::shared_ptr<TaskManager>& task_manager);
   void UpdateTaskStatus(TaskStatus task_status);
   Status SendData();
   std::shared_ptr<ExternalDataMap> GetExternalData();

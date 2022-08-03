@@ -16,6 +16,8 @@
 
 #include "virtualdriver_yolobox.h"
 
+#include <utility>
+
 constexpr const char *VIRTUAL_FLOWUNIT_TYPE = "yolo_postprocess";
 
 std::shared_ptr<modelbox::DriverFactory> YoloBoxVirtualDriver::CreateFactory() {
@@ -46,7 +48,7 @@ YoloBoxVirtualDriver::GetBindDriver() {
 }
 
 void YoloBoxVirtualDriver::SetBindDriver(
-    std::vector<std::shared_ptr<modelbox::Driver>> driver_list) {
+    const std::vector<std::shared_ptr<modelbox::Driver>> &driver_list) {
   flowunit_driver_list_ = driver_list;
 }
 
@@ -288,9 +290,9 @@ YoloBoxVirtualFlowUnitFactory::FlowUnitProbe() {
 }
 
 void YoloBoxVirtualFlowUnitFactory::SetFlowUnitFactory(
-    std::vector<std::shared_ptr<modelbox::DriverFactory>>
-        bind_flowunit_factory_list) {
-  for (auto &bind_flowunit_factory : bind_flowunit_factory_list) {
+    const std::vector<std::shared_ptr<modelbox::DriverFactory>>
+        &bind_flowunit_factory_list) {
+  for (const auto &bind_flowunit_factory : bind_flowunit_factory_list) {
     bind_flowunit_factory_list_.push_back(
         std::dynamic_pointer_cast<FlowUnitFactory>(bind_flowunit_factory));
   }
@@ -316,7 +318,7 @@ YoloBoxVirtualFlowUnitFactory::VirtualCreateFlowUnit(
   }
 
   return nullptr;
-};
+}
 
 void YoloBoxVirtualFlowUnitFactory::SetVirtualType(
     const std::string &virtual_type) {
@@ -328,7 +330,7 @@ std::string YoloBoxVirtualFlowUnitFactory::GetVirtualType() {
 }
 
 void YoloBoxVirtualFlowUnitDesc::SetConfiguration(
-    const std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration> &config) {
   config_ = config;
 }
 

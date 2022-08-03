@@ -41,7 +41,7 @@ class ImageRotateFlowUnitBase : public modelbox::FlowUnit {
 
  private:
   modelbox::Status CheckImageType(
-      std::shared_ptr<modelbox::Buffer> input_buffer);
+      const std::shared_ptr<modelbox::Buffer> &input_buffer);
   modelbox::Status CheckRotateAngle(const int32_t &rotate_angle);
 
   std::set<int32_t> rotate_value_{90, 180, 270};

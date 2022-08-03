@@ -29,7 +29,7 @@ class TestNode : public Node {
               const std::set<std::string>& output_port_names) {
     ConfigurationBuilder builder;
     auto config = builder.Build();
-    NodeBase::Init(input_port_names, output_port_names, config);
+    modelbox::Node::Init(input_port_names, output_port_names, config);
   }
 };
 

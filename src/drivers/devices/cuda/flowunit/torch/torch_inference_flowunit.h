@@ -39,9 +39,9 @@ class TorchInferenceFlowUnitDesc : public modelbox::FlowUnitDesc {
 
  public:
   TorchInferenceFlowUnitDesc() = default;
-  virtual ~TorchInferenceFlowUnitDesc() = default;
+  ~TorchInferenceFlowUnitDesc() override = default;
 
-  void SetModelEntry(const std::string model_entry);
+  void SetModelEntry(const std::string &model_entry);
   const std::string GetModelEntry();
 
   std::string model_entry_;
@@ -58,14 +58,16 @@ class TorchInferenceParam {
 class TorchInferenceFlowUnit : public modelbox::FlowUnit {
  public:
   TorchInferenceFlowUnit();
-  virtual ~TorchInferenceFlowUnit();
+  ~TorchInferenceFlowUnit() override;
 
-  modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts);
+  modelbox::Status Open(
+      const std::shared_ptr<modelbox::Configuration> &opts) override;
 
-  modelbox::Status Close();
+  modelbox::Status Close() override;
 
   /* run when processing data */
-  modelbox::Status Process(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Process(
+      std::shared_ptr<modelbox::DataContext> data_ctx) override;
 
  private:
   bool skip_first_dim_;
@@ -79,13 +81,15 @@ class TorchInferenceFlowUnit : public modelbox::FlowUnit {
   modelbox::Status CreateOutputBufferListFromVector(
       std::shared_ptr<modelbox::BufferList> &output_buffer_list,
       std::vector<torch::Tensor> &output_tensor, size_t input_size);
-  modelbox::Status PreProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                              std::vector<torch::jit::IValue> &inputs);
+  modelbox::Status PreProcess(
+      const std::shared_ptr<modelbox::DataContext> &data_ctx,
+      std::vector<torch::jit::IValue> &inputs);
   modelbox::Status SetOutputBufferListMeta(
       const std::vector<torch::Tensor> &output,
       std::shared_ptr<modelbox::BufferList> &output_buf);
-  modelbox::Status PostProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
-                               torch::jit::IValue &outputs);
+  modelbox::Status PostProcess(
+      const std::shared_ptr<modelbox::DataContext> &data_ctx,
+      torch::jit::IValue &outputs);
 
   modelbox::Status InitConfig(
       const std::shared_ptr<modelbox::Configuration> &config);
@@ -116,17 +120,17 @@ class TorchInferenceFlowUnit : public modelbox::FlowUnit {
 class TorchInferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
   TorchInferenceFlowUnitFactory() = default;
-  virtual ~TorchInferenceFlowUnitFactory() = default;
+  ~TorchInferenceFlowUnitFactory() override = default;
 
   std::shared_ptr<modelbox::FlowUnit> VirtualCreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type,
-      const std::string &virtual_type);
+      const std::string &virtual_type) override;
 
-  std::string GetFlowUnitFactoryType() { return FLOWUNIT_TYPE; };
-  std::string GetVirtualType() { return INFERENCE_TYPE; };
+  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
+  std::string GetVirtualType() override { return INFERENCE_TYPE; };
 
-  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
-  FlowUnitProbe() {
+  std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
+      override {
     return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
   };
 };

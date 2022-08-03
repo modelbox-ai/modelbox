@@ -110,7 +110,7 @@ Status DvppVideoDecoderFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetStreamSameCount(true);
     auto open_func = [=](const std::shared_ptr<Configuration>& opts,
-                         std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                         const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
       for (uint32_t i = 0; i < 16; i++) {
         auto ext_data = mock_flowunit->CreateExternalData();
         if (!ext_data) {
@@ -149,8 +149,8 @@ Status DvppVideoDecoderFlowUnitTest::AddMockFlowUnit() {
     };
 
     auto process_func =
-        [=](std::shared_ptr<DataContext> data_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& data_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       auto output_buf = data_ctx->Output("stream_meta");
       std::vector<size_t> shape(1, 1);
       output_buf->Build(shape);
@@ -167,16 +167,16 @@ Status DvppVideoDecoderFlowUnitTest::AddMockFlowUnit() {
     auto mock_desc = GenerateFlowunitDesc("read_frame_acl", {"frame_info"}, {});
     mock_desc->SetFlowType(STREAM);
     auto data_pre_func =
-        [=](std::shared_ptr<DataContext> data_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& data_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       auto index_counter = std::make_shared<int64_t>(0);
       data_ctx->SetPrivate("index", index_counter);
       return modelbox::STATUS_OK;
     };
 
     auto process_func =
-        [=](std::shared_ptr<DataContext> op_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& op_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       auto index_counter =
           std::static_pointer_cast<int64_t>(op_ctx->GetPrivate("index"));
 

@@ -45,8 +45,8 @@ class ToolCommandServer : public ToolCommand {
   modelbox::Status SendCommand(
       int argc, char *argv[],
       const std::string &connect_url = CONTROL_UNIX_PATH);
-  modelbox::Status SendMsg(std::shared_ptr<ControlMsg> msg,
-                         const std::string &connect_url = CONTROL_UNIX_PATH);
+  modelbox::Status SendMsg(const std::shared_ptr<ControlMsg> &msg,
+                           const std::string &connect_url = CONTROL_UNIX_PATH);
   int RecvCommand();
   modelbox::Status GetSockFile(const std::string &conf_file,
                              std::string &connect_url);

@@ -90,7 +90,7 @@ class BufferList {
    */
   virtual Status BuildFromHost(const std::vector<size_t>& data_size_list,
                                void* data, size_t data_size,
-                               DeleteFunction func = nullptr);
+                               const DeleteFunction &func = nullptr);
 
   /**
    * @brief Get bufferlist size
@@ -280,7 +280,7 @@ class BufferList {
    * @return result
    */
   Status EmplaceBack(void* device_data, size_t data_size,
-                     DeleteFunction func = nullptr);
+                     const DeleteFunction& func = nullptr);
 
   /**
    * @brief push current device data to buffer list.
@@ -289,7 +289,8 @@ class BufferList {
    * @param data_size size of data
    * @return result
    */
-  Status EmplaceBack(std::shared_ptr<void> device_data, size_t data_size);
+  Status EmplaceBack(const std::shared_ptr<void>& device_data,
+                     size_t data_size);
 
   /**
    * @brief push host data to device buffer list.
@@ -328,9 +329,9 @@ class BufferList {
   uint32_t dev_mem_flags_{0};
   std::vector<std::shared_ptr<Buffer>> buffer_list_;
 
-  Status BuildContiguous(std::shared_ptr<Device> device,
+  Status BuildContiguous(const std::shared_ptr<Device>& device,
                          const std::vector<size_t>& data_size_list);
-  Status BuildSeparate(std::shared_ptr<Device> device,
+  Status BuildSeparate(const std::shared_ptr<Device>& device,
                        const std::vector<size_t>& data_size_list);
 };
 

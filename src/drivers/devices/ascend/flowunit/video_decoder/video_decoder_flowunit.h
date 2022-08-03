@@ -117,23 +117,23 @@ class VideoDecodeFlowUnit : public modelbox::FlowUnit {
  private:
   int32_t GetDvppEncodeType(AVCodecID codec_id, int32_t profile_id);
   modelbox::Status GetDecoderParam(
-      std::shared_ptr<modelbox::DataContext> data_ctx, int32_t &rate_num,
+      const std::shared_ptr<modelbox::DataContext> &data_ctx, int32_t &rate_num,
       int32_t &rate_den, int32_t &encode_type);
   modelbox::Status ReadData(
-      std::shared_ptr<modelbox::DataContext> data_ctx,
+      const std::shared_ptr<modelbox::DataContext> &data_ctx,
       std::vector<std::shared_ptr<DvppPacket>> &dvpp_packet_list);
   modelbox::Status ReadDvppStreamDesc(
-      std::shared_ptr<modelbox::Buffer> packet_buffer,
+      const std::shared_ptr<modelbox::Buffer> &packet_buffer,
       std::shared_ptr<DvppPacket> &dvpp_packet);
   modelbox::Status SetUpTheLastPacket(std::shared_ptr<DvppPacket> &dvpp_packet);
-  modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> data_ctx,
-                             std::shared_ptr<AscendVideoDecoder> video_decoder,
-                             std::shared_ptr<DvppVideoDecodeContext> dvpp_ctx);
+  modelbox::Status WriteData(
+      const std::shared_ptr<modelbox::DataContext> &data_ctx,
+      const std::shared_ptr<AscendVideoDecoder> &video_decoder,
+      const std::shared_ptr<DvppVideoDecodeContext> &dvpp_ctx);
   void InitInstanceId();
   int32_t FindTheMinimumAvailableId();
   void RestoreInstanceId(int32_t instance_id);
 
- private:
   uint32_t dest_width_{224};
   uint32_t dest_height_{224};
   // 1: YUV420 semi-planner（nv12), 2: YVU420 semi-planner（nv21)

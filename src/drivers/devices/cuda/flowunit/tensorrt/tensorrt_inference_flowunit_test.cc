@@ -179,7 +179,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
 
               auto buffer_list = ext_data->CreateBufferList();
               buffer_list->Build({10 * sizeof(int)});
-              auto data = (int*)buffer_list->MutableData();
+              auto* data = (int*)buffer_list->MutableData();
               for (size_t i = 0; i < 10; i++) {
                 data[i] = i;
               }
@@ -200,7 +200,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "test_0_1 "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -208,7 +208,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "test_0_1 "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -217,7 +217,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               auto output_buf_1 = op_ctx->Output("Out_1");
               std::vector<size_t> shape_vector(1, 784 * sizeof(float));
               modelbox::ModelBoxDataType type = MODELBOX_FLOAT;
@@ -225,7 +225,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
               output_buf_1->Set("type", type);
               std::vector<size_t> shape{784};
               output_buf_1->Set("shape", shape);
-              auto dev_data = (float*)(output_buf_1->MutableData());
+              auto* dev_data = (float*)(output_buf_1->MutableData());
               for (size_t i = 0; i < output_buf_1->Size(); ++i) {
                 for (size_t j = 0; j < 784; ++j) {
                   dev_data[i * 784 + j] = 0.0;
@@ -273,7 +273,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "test_1_0 "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -281,7 +281,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "test_1_0 "
                          << "DataPost";
               return modelbox::STATUS_STOP;
@@ -290,7 +290,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               std::shared_ptr<BufferList> input_bufs = op_ctx->Input("In_1");
               EXPECT_EQ(input_bufs->Size(), 1);
               std::vector<size_t> shape_vector{10};
@@ -298,7 +298,7 @@ Status TensorRTFlowUnitTest::AddMockFlowUnit() {
               auto result = input_bufs->At(0)->Get("shape", input_shape);
               EXPECT_TRUE(result);
 
-              auto input_data =
+              const auto* input_data =
                   static_cast<const float*>(input_bufs->ConstBufferData(0));
               for (int i = 0; i < 10; ++i) {
                 MBLOG_DEBUG << input_data[i];

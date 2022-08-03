@@ -19,16 +19,19 @@
 #include <modelbox/server/job.h>
 #include <modelbox/server/timer.h>
 
+#include <utility>
+
 constexpr uint64_t HEART_BEAT_PERIOD_MS = 60 * 1000;
 
 namespace modelbox {
 
-Job::Job(const std::string& job_name, const std::string& graph_path)
-    : job_name_(job_name), graph_path_(graph_path) {}
+Job::Job(std::string job_name, std::string graph_path)
+    : job_name_(std::move(job_name)), graph_path_(std::move(graph_path)) {}
 
-Job::Job(const std::string& job_name, const std::string& graph_name,
-         const std::string& graph)
-    : job_name_(job_name), graph_name_(graph_name), graph_(graph) {}
+Job::Job(std::string job_name, std::string graph_name, std::string graph)
+    : job_name_(std::move(job_name)),
+      graph_name_(std::move(graph_name)),
+      graph_(std::move(graph)) {}
 
 Job::~Job() {
   if (flow_ != nullptr) {

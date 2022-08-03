@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <list>
 #include <set>
+#include <utility>
 
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_data_executor.h"
@@ -36,22 +37,22 @@ class FlowUnitBalancer;
 class Node;
 class FlowUnitGroup {
  public:
-  FlowUnitGroup(const std::string &unit_name, const std::string &unit_type,
-                const std::string &unit_device_id,
+  FlowUnitGroup(std::string unit_name, std::string unit_type,
+                std::string unit_device_id,
                 std::shared_ptr<Configuration> config,
                 std::shared_ptr<Profiler> profiler)
       : batch_size_(1),
-        unit_name_(unit_name),
-        unit_type_(unit_type),
-        unit_device_id_(unit_device_id),
-        config_(config),
-        profiler_(profiler){};
+        unit_name_(std::move(unit_name)),
+        unit_type_(std::move(unit_type)),
+        unit_device_id_(std::move(unit_device_id)),
+        config_(std::move(config)),
+        profiler_(std::move(profiler)){};
 
   virtual ~FlowUnitGroup() = default;
 
   Status Init(const std::set<std::string> &input_ports_name,
               const std::set<std::string> &output_ports_name,
-              std::shared_ptr<FlowUnitManager>flowunit_mgr,
+              const std::shared_ptr<FlowUnitManager> &flowunit_mgr,
               bool checkport = true);
 
   Status CheckInputAndOutput(const std::set<std::string> &input_ports_name,
@@ -63,7 +64,7 @@ class FlowUnitGroup {
 
   std::shared_ptr<FlowUnit> GetExecutorUnit();
 
-  void SetNode(std::shared_ptr<Node> node);
+  void SetNode(const std::shared_ptr<Node> &node);
 
   Status Open(const CreateExternalDataFunc &create_func);
 

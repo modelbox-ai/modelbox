@@ -23,6 +23,7 @@
 
 #include <atomic>
 #include <thread>
+#include <utility>
 
 #include "../common/data_hub.h"
 #include "modelbox/scheduler.h"
@@ -40,8 +41,8 @@ constexpr const int SCHED_MAX_CHECK_TIMEOUT_COUNT = 60;
 class SchedulerCommand {
  public:
   SchedulerCommand(SchedulerCommandType type,
-                   const std::shared_ptr<PriorityPort>& port)
-      : type_(type), port_(port) {}
+                   std::shared_ptr<PriorityPort> port)
+      : type_(type), port_(std::move(port)) {}
   virtual ~SchedulerCommand() = default;
 
   SchedulerCommandType GetType() { return type_; }
@@ -140,11 +141,11 @@ class FlowScheduler : public Scheduler {
   std::atomic<int64_t> check_count_{0};
 
   Status RunImpl();
-  void RunWapper(std::shared_ptr<NodeBase> node, RunType type,
-                 std::shared_ptr<PriorityPort> active_port);
+  void RunWapper(const std::shared_ptr<NodeBase>& node, RunType type,
+                 const std::shared_ptr<PriorityPort>& active_port);
 
-  Status RunNode(std::shared_ptr<PriorityPort> active_port);
-  Status RunCommand(std::shared_ptr<PriorityPort> active_port);
+  Status RunNode(const std::shared_ptr<PriorityPort>& active_port);
+  Status RunCommand(const std::shared_ptr<PriorityPort>& active_port);
   void SendSchedulerCommand(SchedulerCommandType type,
                             const std::shared_ptr<PriorityPort>& port);
   bool IsSchedulerCommand(const std::shared_ptr<PriorityPort>& active_port);

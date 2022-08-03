@@ -19,6 +19,7 @@
 #include <modelbox/base/log.h>
 
 #include <regex>
+#include <utility>
 
 namespace modelbox {
 
@@ -276,7 +277,7 @@ Status HttpPathMatchTree::Match(const std::string &path,
     node_path_buffer << "/" << path_name;
   }
 
-  node_path = std::move(node_path_buffer.str());
+  node_path = node_path_buffer.str();
   return STATUS_OK;
 }
 
@@ -574,8 +575,8 @@ void AddSafeHeader(httplib::Response &response) {
       std::pair<std::string, std::string>("X-Frame-Options", "DENY"));
 }
 
-HttpRequest::HttpRequest(const std::string &method, const std::string &url)
-    : method_(method), url_(url) {}
+HttpRequest::HttpRequest(std::string method, std::string url)
+    : method_(std::move(method)), url_(std::move(url)) {}
 
 void HttpRequest::SetHeaders(const httplib::Headers &headers) {
   headers_ = headers;

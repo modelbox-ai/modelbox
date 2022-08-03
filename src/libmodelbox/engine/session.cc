@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/session.h"
 
 namespace modelbox {
 
-Session::Session(std::shared_ptr<StatisticsItem> graph_stats)
+Session::Session(const std::shared_ptr<StatisticsItem> &graph_stats)
     : ctx_(std::make_shared<SessionContext>(graph_stats)) {}
 
 Session::~Session() {
@@ -30,12 +32,13 @@ Session::~Session() {
   io->SessionEnd(error_);
 }
 
-void Session::AddStateListener(std::shared_ptr<SessionStateListener> listener) {
+void Session::AddStateListener(
+    const std::shared_ptr<SessionStateListener> &listener) {
   std::lock_guard<std::mutex> lock(state_listener_list_lock_);
   state_listener_list_.push_back(listener);
 }
 
-void Session::SetSessionIO(std::shared_ptr<SessionIO> io_handle) {
+void Session::SetSessionIO(const std::shared_ptr<SessionIO> &io_handle) {
   io_handle_ = io_handle;
 }
 
@@ -75,12 +78,14 @@ void Session::Abort() { abort_ = true; }
 
 bool Session::IsAbort() { return abort_; }
 
-void Session::SetError(std::shared_ptr<FlowUnitError> error) { error_ = error; }
+void Session::SetError(std::shared_ptr<FlowUnitError> error) {
+  error_ = std::move(error);
+}
 
 std::shared_ptr<FlowUnitError> Session::GetError() { return error_; }
 
 std::shared_ptr<Session> SessionManager::CreateSession(
-    std::shared_ptr<StatisticsItem> graph_stats) {
+    const std::shared_ptr<StatisticsItem> &graph_stats) {
   auto *session = new Session(graph_stats);
   auto session_id = session->GetSessionCtx()->GetSessionId();
   auto session_ptr =

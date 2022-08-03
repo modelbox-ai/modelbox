@@ -95,7 +95,7 @@ modelbox::Status VideoDecoderFlowUnit::Process(
 }
 
 modelbox::Status VideoDecoderFlowUnit::ReadData(
-    std::shared_ptr<modelbox::DataContext> data_ctx,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<std::shared_ptr<NvcodecPacket>> &pkt_list) {
   auto video_packet_input = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (video_packet_input == nullptr) {
@@ -123,7 +123,7 @@ modelbox::Status VideoDecoderFlowUnit::ReadData(
 }
 
 modelbox::Status VideoDecoderFlowUnit::ReadNvcodecPacket(
-    std::shared_ptr<modelbox::Buffer> packet_buffer,
+    const std::shared_ptr<modelbox::Buffer> &packet_buffer,
     std::shared_ptr<NvcodecPacket> &pkt) {
   auto size = packet_buffer->GetBytes();
   if (size == 1) {
@@ -131,7 +131,7 @@ modelbox::Status VideoDecoderFlowUnit::ReadNvcodecPacket(
     return modelbox::STATUS_SUCCESS;
   }
 
-  auto data = (const uint8_t *)packet_buffer->ConstData();
+  const auto *data = (const uint8_t *)packet_buffer->ConstData();
   if (data == nullptr) {
     MBLOG_ERROR << "video_packet data is nullptr";
     return modelbox::STATUS_FAULT;
@@ -302,7 +302,7 @@ MODELBOX_FLOWUNIT(VideoDecoderFlowUnit, desc) {
   desc.SetDescription(FLOWUNIT_DESC);
   std::map<std::string, std::string> pix_fmt_list;
 
-  for (auto &item : videodecode::g_supported_pix_fmt) {
+  for (const auto &item : videodecode::g_supported_pix_fmt) {
     pix_fmt_list[item] = item;
   }
 

@@ -21,6 +21,7 @@
 #include <modelbox/base/status.h>
 
 #include <string>
+#include <utility>
 
 namespace modelbox {
 
@@ -102,8 +103,9 @@ modelbox::Status GetVcnInfo(modelbox::VcnInfo &vcn_info,
 
 class VcnStreamBase {
  public:
-  VcnStreamBase(const std::string &url, const std::string &camera_code)
-      : url_(url), camera_code_(camera_code){};
+  VcnStreamBase(std::string url, std::string camera_code)
+      : url_(std::move(url)),
+        camera_code_(std::move(camera_code)){};
 
   virtual ~VcnStreamBase() = default;
 

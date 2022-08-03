@@ -24,7 +24,7 @@
 namespace modelbox {
 CpuMemory::CpuMemory(const std::shared_ptr<Device> &device,
                      const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-                     std::shared_ptr<void> device_mem_ptr, size_t size)
+                     const std::shared_ptr<void> &device_mem_ptr, size_t size)
     : DeviceMemory(device, mem_mgr, device_mem_ptr, size, true) {}
 
 Status CpuMemory::ReadFrom(

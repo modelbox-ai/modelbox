@@ -24,6 +24,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "modelbox/common/utils.h"
@@ -130,8 +131,8 @@ class ToolCommand {
   virtual ~ToolCommand() = default;
 
   void SetUp(std::shared_ptr<OutStream> cout, std::shared_ptr<OutStream> cerr) {
-    out_cout_ = cout;
-    out_cerr_ = cerr;
+    out_cout_ = std::move(cout);
+    out_cerr_ = std::move(cerr);
   }
 
   virtual int Run(int argc, char *argv[]) = 0;
@@ -150,7 +151,7 @@ class ToolCommandList {
 
  public:
   static ToolCommandList *Instance();
-  void AddCommand(ToolCommandCreate new_func);
+  void AddCommand(const ToolCommandCreate &new_func);
 
   void RmvCommand(const std::string &name);
 

@@ -29,9 +29,9 @@ class AtcInference {
  public:
   modelbox::Status Init(const std::string &model_file,
                         const std::shared_ptr<modelbox::Configuration> &config,
-                        std::vector<std::string> unit_input_list,
-                        std::vector<std::string> unit_output_list,
-                        std::shared_ptr<modelbox::Drivers> drivers_ptr);
+                        const std::vector<std::string> &unit_input_list,
+                        const std::vector<std::string> &unit_output_list,
+                        const std::shared_ptr<modelbox::Drivers> &drivers_ptr);
 
   modelbox::Status Infer(std::shared_ptr<modelbox::DataContext> &data_ctx,
                          aclrtStream stream);
@@ -48,8 +48,9 @@ class AtcInference {
 
   modelbox::Status GetModelDesc();
 
-  modelbox::Status CheckModelIO(std::vector<std::string> unit_input_list,
-                                std::vector<std::string> unit_output_list);
+  modelbox::Status CheckModelIO(
+      const std::vector<std::string> &unit_input_list,
+      const std::vector<std::string> &unit_output_list);
 
   void ReadModelInfo();
 
@@ -71,7 +72,7 @@ class AtcInference {
       std::shared_ptr<modelbox::DataContext> &data_ctx);
 
   std::shared_ptr<aclmdlDataset> CreateDataSet(
-      std::shared_ptr<modelbox::BufferListMap> buffer_list_map,
+      const std::shared_ptr<modelbox::BufferListMap> &buffer_list_map,
       std::vector<std::string> &name_list);
 
   int32_t device_id_{0};

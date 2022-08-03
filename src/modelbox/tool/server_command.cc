@@ -144,8 +144,8 @@ void ToolCommandServer::CloseClient() {
   }
 }
 
-modelbox::Status ToolCommandServer::SendMsg(std::shared_ptr<ControlMsg> msg,
-                                            const std::string &connect_url) {
+modelbox::Status ToolCommandServer::SendMsg(
+    const std::shared_ptr<ControlMsg> &msg, const std::string &connect_url) {
   modelbox::Status status = modelbox::STATUS_OK;
   std::string errmsg;
   struct sockaddr_un remote;

@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
+#include <utility>
 
 #include "modelbox/buffer_type.h"
 
 #include "modelbox/base/log.h"
 namespace modelbox {
 BufferType::BufferType() = default;
-BufferType::BufferType(const std::string &type) : type_(type) {}
+BufferType::BufferType(std::string type) : type_(std::move(type)) {}
 BufferType::~BufferType() = default;
 
 std::shared_ptr<BufferTypeTree> BufferTypeTree::instance_(nullptr);
 
-void BufferType::SetType(std::string type) { type_ = type; }
+void BufferType::SetType(std::string type) { type_ = std::move(type); }
 
 const std::string &BufferType::GetType() const { return type_; }
 
-bool BufferType::AddParentType(std::shared_ptr<BufferType> parent) {
+bool BufferType::AddParentType(const std::shared_ptr<BufferType>& parent) {
   if (parent == nullptr) {
     return false;
   }
@@ -42,7 +43,7 @@ bool BufferType::AddParentType(std::shared_ptr<BufferType> parent) {
   return true;
 }
 
-bool BufferType::AddChildType(std::shared_ptr<BufferType> child) {
+bool BufferType::AddChildType(const std::shared_ptr<BufferType>& child) {
   bool reuslt = false;
   if (child == nullptr) {
     return false;
@@ -50,7 +51,7 @@ bool BufferType::AddChildType(std::shared_ptr<BufferType> child) {
 
   bool add_flag = true;
   auto type = child->GetType();
-  for (auto own_child : children_) {
+  for (const auto& own_child : children_) {
     if (own_child->GetType() == type) {
       add_flag = false;
       break;
@@ -73,14 +74,14 @@ void BufferType::RemoveType() {
   if (parent_ != nullptr) {
     auto children = parent_->GetChildrenType();
     std::vector<std::shared_ptr<BufferType>> keep_children;
-    for (auto child : children) {
+    for (const auto& child : children) {
       if (child->GetType() != this->GetType()) {
         keep_children.push_back(child);
       }
     }
 
     parent_->ClearChildType();
-    for (auto keep_child : keep_children) {
+    for (const auto& keep_child : keep_children) {
       parent_->AddChildType(keep_child);
     }
     parent_ = nullptr;
@@ -89,9 +90,9 @@ void BufferType::RemoveType() {
 }
 
 bool BufferType::IsAncestor(const BufferType &other) {
-  auto type = other.GetType();
+  const auto& type = other.GetType();
 
-  for (auto child : children_) {
+  for (const auto& child : children_) {
     if (child->GetType() == type) {
       return true;
     }
@@ -105,7 +106,7 @@ bool BufferType::IsAncestor(const BufferType &other) {
 }
 
 bool BufferType::IsOffspring(const BufferType &other) {
-  auto type = other.GetType();
+  const auto& type = other.GetType();
 
   if (parent_ == nullptr) {
     return false;
@@ -128,7 +129,7 @@ BufferTypeTree::BufferTypeTree() = default;
 
 BufferTypeTree::~BufferTypeTree() = default;
 
-bool BufferTypeTree::AddRootType(std::string root_type) {
+bool BufferTypeTree::AddRootType(const std::string& root_type) {
   std::shared_ptr<BufferType> root_buffer_type_ptr = GetType(root_);
 
   if (root_buffer_type_ptr == nullptr) {
@@ -147,7 +148,8 @@ bool BufferTypeTree::AddRootType(std::string root_type) {
   return false;
 }
 
-bool BufferTypeTree::AddType(std::string type, std::string parent_type) {
+bool BufferTypeTree::AddType(const std::string& type,
+                             const std::string& parent_type) {
   std::shared_ptr<BufferType> child_buffer_type_ptr = GetType(type);
   std::shared_ptr<BufferType> parent_buffer_type_ptr = GetType(parent_type);
 
@@ -174,9 +176,9 @@ bool BufferTypeTree::AddType(std::string type, std::string parent_type) {
   return true;
 }
 
-std::shared_ptr<BufferType> BufferTypeTree::GetType(std::string type) {
+std::shared_ptr<BufferType> BufferTypeTree::GetType(const std::string& type) {
   std::shared_ptr<BufferType> buffer_type = nullptr;
-  for (auto node : nodes_) {
+  for (const auto& node : nodes_) {
     if (node.first == type) {
       buffer_type = node.second;
       break;
@@ -186,14 +188,14 @@ std::shared_ptr<BufferType> BufferTypeTree::GetType(std::string type) {
   return buffer_type;
 }
 
-bool BufferTypeTree::RemoveType(std::string type) {
+bool BufferTypeTree::RemoveType(const std::string& type) {
   std::shared_ptr<BufferType> buffer_type_ptr = GetType(type);
 
   if (buffer_type_ptr == nullptr) {
     return false;
   }
 
-  for (auto child_type : buffer_type_ptr->GetChildrenType()) {
+  for (const auto& child_type : buffer_type_ptr->GetChildrenType()) {
     RemoveType(child_type->GetType());
   }
   buffer_type_ptr->RemoveType();
@@ -202,7 +204,8 @@ bool BufferTypeTree::RemoveType(std::string type) {
   return true;
 }
 
-bool BufferTypeTree::IsCompatible(std::string type, std::string ancestor_type) {
+bool BufferTypeTree::IsCompatible(const std::string& type,
+                                  const std::string& ancestor_type) {
   std::shared_ptr<BufferType> buffer_type_ptr = GetType(type);
   std::shared_ptr<BufferType> ancestor_buffer_type_ptr = GetType(ancestor_type);
 

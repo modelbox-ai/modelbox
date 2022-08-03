@@ -19,6 +19,8 @@
 #include <modelbox/server/task.h>
 #include <modelbox/server/task_manager.h>
 
+#include <utility>
+
 namespace modelbox {
 
 Task::Task() {
@@ -51,7 +53,7 @@ Status Task::SetDataMeta(const std::string& port_name,
     return {STATUS_INVALID, "the task already start"};
   }
 
-  return external_data->SetOutputMeta(port_name, meta);
+  return external_data->SetOutputMeta(port_name, std::move(meta));
 }
 
 Status Task::SetSessionContent(const std::string& key,
@@ -71,7 +73,7 @@ Status Task::SetSessionContent(const std::string& key,
     return {STATUS_NOTFOUND, "session_ctx not found"};
   }
 
-  session_ctx->SetPrivate(key, content);
+  session_ctx->SetPrivate(key, std::move(content));
   return STATUS_SUCCESS;
 }
 
@@ -153,7 +155,7 @@ Status Task::Start() {
   return STATUS_SUCCESS;
 }
 
-void Task::SetTaskManager(std::shared_ptr<TaskManager> task_manager) {
+void Task::SetTaskManager(const std::shared_ptr<TaskManager>& task_manager) {
   task_manager_ = task_manager;
   flow_ = task_manager->GetFlow();
   std::shared_ptr<ExternalDataMap> external_data;

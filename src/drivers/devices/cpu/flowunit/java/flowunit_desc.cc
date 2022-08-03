@@ -42,7 +42,6 @@ void DriverDescription(modelbox::DriverDesc *desc) {
   desc->SetDescription(FLOWUNIT_DESC);
   desc->SetNodelete(true);
   desc->SetGlobal(true);
-  return;
 }
 
 modelbox::Status DriverInit() {

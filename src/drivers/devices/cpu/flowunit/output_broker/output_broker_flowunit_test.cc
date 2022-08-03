@@ -240,9 +240,10 @@ TEST_F(OutputBrokerFlowUnitTest, WebhookOutputTest) {
   listener = std::make_shared<web::http::experimental::listener::http_listener>(
       request_url, server_config);
 
-  listener->support(
-      web::http::methods::POST,
-      [this](web::http::http_request request) { this->HandleFunc(request); });
+  listener->support(web::http::methods::POST,
+                    [this](const web::http::http_request &request) {
+                      this->HandleFunc(request);
+                    });
 
   try {
     listener->open().wait();

@@ -100,7 +100,7 @@ Status InferenceAscendFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetFlowType(STREAM);
     auto open_func =
         [=](const std::shared_ptr<modelbox::Configuration>& flow_option,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) {
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
           auto ext_data = mock_flowunit->CreateExternalData();
           if (!ext_data) {
             MBLOG_ERROR << "can not get external data.";
@@ -122,26 +122,27 @@ Status InferenceAscendFlowUnitTest::AddMockFlowUnit() {
           return modelbox::STATUS_OK;
         };
 
-    auto process_func = [=](std::shared_ptr<DataContext> op_ctx,
-                            std::shared_ptr<MockFlowUnit> mock_flowunit) {
-      MBLOG_INFO << "prepare_infer_data Process";
-      auto output_buf_1 = op_ctx->Output("out");
-      const size_t len = 2048;
-      std::vector<size_t> shape_vector(1, len * sizeof(float));
-      modelbox::ModelBoxDataType type = MODELBOX_FLOAT;
-      output_buf_1->Build(shape_vector);
-      output_buf_1->Set("type", type);
-      std::vector<size_t> shape{len};
-      output_buf_1->Set("shape", shape);
-      auto dev_data = (float*)(output_buf_1->MutableData());
-      for (size_t i = 0; i < output_buf_1->Size(); ++i) {
-        for (size_t j = 0; j < len; ++j) {
-          dev_data[i * len + j] = 0.0;
-        }
-      }
+    auto process_func =
+        [=](const std::shared_ptr<DataContext>& op_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
+          MBLOG_INFO << "prepare_infer_data Process";
+          auto output_buf_1 = op_ctx->Output("out");
+          const size_t len = 2048;
+          std::vector<size_t> shape_vector(1, len * sizeof(float));
+          modelbox::ModelBoxDataType type = MODELBOX_FLOAT;
+          output_buf_1->Build(shape_vector);
+          output_buf_1->Set("type", type);
+          std::vector<size_t> shape{len};
+          output_buf_1->Set("shape", shape);
+          auto* dev_data = (float*)(output_buf_1->MutableData());
+          for (size_t i = 0; i < output_buf_1->Size(); ++i) {
+            for (size_t j = 0; j < len; ++j) {
+              dev_data[i * len + j] = 0.0;
+            }
+          }
 
-      return modelbox::STATUS_OK;
-    };
+          return modelbox::STATUS_OK;
+        };
 
     auto mock_functions = std::make_shared<MockFunctionCollection>();
     mock_functions->RegisterOpenFunc(open_func);
@@ -152,26 +153,27 @@ Status InferenceAscendFlowUnitTest::AddMockFlowUnit() {
   {
     auto mock_desc = GenerateFlowunitDesc("check_infer_result", {"in"}, {});
     mock_desc->SetFlowType(STREAM);
-    auto process_func = [=](std::shared_ptr<DataContext> op_ctx,
-                            std::shared_ptr<MockFlowUnit> mock_flowunit) {
-      std::shared_ptr<BufferList> input_bufs = op_ctx->Input("in");
-      EXPECT_EQ(input_bufs->Size(), 1);
-      std::vector<size_t> input_shape;
-      auto result = input_bufs->At(0)->Get("shape", input_shape);
-      EXPECT_TRUE(result);
-      EXPECT_EQ(input_shape.size(), 4);
-      EXPECT_EQ(input_shape[0], 1);
-      EXPECT_EQ(input_shape[1], 256);
-      EXPECT_EQ(input_shape[2], 1);
-      EXPECT_EQ(input_shape[3], 2048);
+    auto process_func =
+        [=](const std::shared_ptr<DataContext>& op_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) {
+          std::shared_ptr<BufferList> input_bufs = op_ctx->Input("in");
+          EXPECT_EQ(input_bufs->Size(), 1);
+          std::vector<size_t> input_shape;
+          auto result = input_bufs->At(0)->Get("shape", input_shape);
+          EXPECT_TRUE(result);
+          EXPECT_EQ(input_shape.size(), 4);
+          EXPECT_EQ(input_shape[0], 1);
+          EXPECT_EQ(input_shape[1], 256);
+          EXPECT_EQ(input_shape[2], 1);
+          EXPECT_EQ(input_shape[3], 2048);
 
-      auto ptr = (const float*)input_bufs->ConstData();
-      for (size_t i = 0; i < 200; ++i) {
-        EXPECT_TRUE(std::abs(ptr[i]) < 1e-7);
-      }
+          const auto* ptr = (const float*)input_bufs->ConstData();
+          for (size_t i = 0; i < 200; ++i) {
+            EXPECT_TRUE(std::abs(ptr[i]) < 1e-7);
+          }
 
-      return modelbox::STATUS_OK;
-    };
+          return modelbox::STATUS_OK;
+        };
 
     auto mock_functions = std::make_shared<MockFunctionCollection>();
     mock_functions->RegisterProcessFunc(process_func);

@@ -105,7 +105,7 @@ void VideoDemuxerFlowUnit::WriteEnd(
 modelbox::Status VideoDemuxerFlowUnit::WriteData(
     std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::shared_ptr<AVPacket> &pkt,
-    std::shared_ptr<FfmpegVideoDemuxer> video_demuxer) {
+    const std::shared_ptr<FfmpegVideoDemuxer> &video_demuxer) {
   auto video_packet_output = data_ctx->Output(VIDEO_PACKET_OUTPUT);
   std::vector<size_t> shape(1, (size_t)pkt->size);
   if (pkt->size == 0) {
@@ -181,7 +181,7 @@ modelbox::Status VideoDemuxerFlowUnit::CreateRetryTask(
 }
 
 std::shared_ptr<std::string> VideoDemuxerFlowUnit::GetSourceUrl(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
+    const std::shared_ptr<modelbox::DataContext> &data_ctx) {
   // Try get url in input meta
   auto stream_meta = data_ctx->GetInputMeta(STREAM_META_INPUT);
   if (stream_meta != nullptr) {

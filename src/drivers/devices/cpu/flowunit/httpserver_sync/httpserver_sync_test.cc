@@ -55,8 +55,8 @@ Status HttpServerSyncFlowUnitTest::AddMockFlowUnit() {
     auto mock_desc =
         GenerateFlowunitDesc("receive_post_unit", {"In_1"}, {"Out_1"});
     auto process_func =
-        [=](std::shared_ptr<DataContext> op_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& op_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       auto input_buf = op_ctx->Input("In_1");
       auto output_buf = op_ctx->Output("Out_1");
 
@@ -124,8 +124,8 @@ Status HttpServerSyncFlowUnitTest::AddMockFlowUnit() {
     auto mock_desc =
         GenerateFlowunitDesc("receive_health_post_unit", {"In_1"}, {"Out_1"});
     auto process_func =
-        [=](std::shared_ptr<DataContext> op_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& op_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       auto input_buf = op_ctx->Input("In_1");
       auto output_buf = op_ctx->Output("Out_1");
 
@@ -176,8 +176,8 @@ Status HttpServerSyncFlowUnitTest::AddMockFlowUnit() {
   return STATUS_OK;
 }
 
-void PutRequestSync(web::http::uri uri,
-                    web::http::client::http_client_config client_config,
+void PutRequestSync(const web::http::uri& uri,
+                    const web::http::client::http_client_config& client_config,
                     const std::string& request_uri) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
@@ -208,8 +208,8 @@ void PutRequestSync(web::http::uri uri,
   }
 }
 
-void PostRequestSync(web::http::uri uri,
-                     web::http::client::http_client_config client_config,
+void PostRequestSync(const web::http::uri& uri,
+                     const web::http::client::http_client_config& client_config,
                      const std::string& request_uri) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
@@ -242,8 +242,8 @@ void PostRequestSync(web::http::uri uri,
   }
 }
 
-void GetRequestSync(web::http::uri uri,
-                    web::http::client::http_client_config client_config,
+void GetRequestSync(const web::http::uri& uri,
+                    const web::http::client::http_client_config& client_config,
                     const std::string& request_uri) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
@@ -268,10 +268,10 @@ void GetRequestSync(web::http::uri uri,
   }
 }
 
-void HealthCheckRequesSync(web::http::uri uri,
-                           web::http::client::http_client_config client_config,
-                           const std::string& request_uri,
-                           const web::http::method& method) {
+void HealthCheckRequesSync(
+    const web::http::uri& uri,
+    const web::http::client::http_client_config& client_config,
+    const std::string& request_uri, const web::http::method& method) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_get;
@@ -296,8 +296,8 @@ void HealthCheckRequesSync(web::http::uri uri,
   }
 }
 
-void DelRequestSync(web::http::uri uri,
-                    web::http::client::http_client_config client_config,
+void DelRequestSync(const web::http::uri& uri,
+                    const web::http::client::http_client_config& client_config,
                     const std::string& request_uri) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);

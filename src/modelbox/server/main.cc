@@ -224,7 +224,7 @@ void modelbox_hung_check() {
   app_monitor_heartbeat();
 }
 
-int modelbox_run(std::shared_ptr<modelbox::Server> server) {
+int modelbox_run(const std::shared_ptr<modelbox::Server> &server) {
   auto ret = server->Init();
   if (!ret) {
     MBLOG_ERROR << "server init failed !";
@@ -259,7 +259,7 @@ int modelbox_run(std::shared_ptr<modelbox::Server> server) {
   return 0;
 }
 
-int GetConfig(const std::string key) {
+int GetConfig(const std::string &key) {
   if (modelbox::LoadConfig(modelbox::kConfigPath) == false) {
     fprintf(stderr, "can not load configuration : %s \n",
             modelbox::kConfigPath.c_str());
@@ -272,14 +272,14 @@ int GetConfig(const std::string key) {
     return 1;
   }
 
-  for (auto value : values) {
+  for (const auto &value : values) {
     std::cout << value << std::endl;
   }
 
   return 0;
 }
 
-int CheckPort(const std::string host) {
+int CheckPort(const std::string &host) {
   struct addrinfo hints;
   struct addrinfo *result = nullptr;
 

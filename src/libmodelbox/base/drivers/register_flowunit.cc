@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/base/register_flowunit.h"
 
 constexpr const char *VIRTUAL_TYPE = "register_flowunit";
@@ -31,7 +33,7 @@ Status RegisterFlowUnit::Close() { return STATUS_OK; }
 
 void RegisterFlowUnit::SetCallBack(
     std::function<Status(std::shared_ptr<DataContext>)> callback) {
-  callback_ = callback;
+  callback_ = std::move(callback);
 }
 
 std::function<Status(std::shared_ptr<DataContext>)>
@@ -48,13 +50,13 @@ Status RegisterFlowUnit::Process(std::shared_ptr<DataContext> data_context) {
 }
 
 RegisterFlowUnitFactory::RegisterFlowUnitFactory(
-    const std::string &unit_name, const std::vector<std::string> &inputs,
-    const std::vector<std::string> &outputs,
-    const std::function<Status(std::shared_ptr<DataContext>)> &callback)
-    : unit_name_(unit_name),
-      input_ports_(inputs),
-      output_ports_(outputs),
-      callback_(callback) {
+    std::string unit_name, std::vector<std::string> inputs,
+    std::vector<std::string> outputs,
+    std::function<Status(std::shared_ptr<DataContext>)> callback)
+    : unit_name_(std::move(unit_name)),
+      input_ports_(std::move(inputs)),
+      output_ports_(std::move(outputs)),
+      callback_(std::move(callback)) {
   if (STATUS_SUCCESS != Init()) {
     MBLOG_ERROR << "failed init RegisterFlowUnitFactory";
   }

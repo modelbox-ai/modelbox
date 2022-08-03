@@ -20,22 +20,24 @@
 #include <modelbox/session_context.h>
 #include <stdint.h>
 
+#include <utility>
+
 namespace modelbox {
 
 InputVirtualNode::InputVirtualNode(
-    const std::string& device_name, const std::string& device_id,
+    std::string device_name, std::string device_id,
     std::shared_ptr<DeviceManager> device_manager)
-    : device_name_(device_name), device_id_(device_id) {
+    : device_name_(std::move(device_name)), device_id_(std::move(device_id)) {
   queue_size_ = -1;
   priority_ = 0;
-  device_mgr_ = device_manager;
+  device_mgr_ = std::move(device_manager);
 }
 
 InputVirtualNode::~InputVirtualNode() = default;
 
 Status InputVirtualNode::Init(const std::set<std::string>& input_port_names,
                               const std::set<std::string>& output_port_names,
-                              std::shared_ptr<Configuration> config) {
+                              const std::shared_ptr<Configuration>& config) {
   // NOLINTNEXTLINE
   auto status = NodeBase::Init(input_port_names, output_port_names, config);
   if (status != STATUS_SUCCESS) {
@@ -105,7 +107,7 @@ OutputVirtualNode::OutputVirtualNode(
     : device_name_(device_name), device_id_(device_id) {
   queue_size_ = -1;
   priority_ = 0;
-  device_mgr_ = device_manager;
+  device_mgr_ = std::move(device_manager);
   target_device_ = device_mgr_->CreateDevice(device_name, device_id);
 }
 
@@ -113,7 +115,7 @@ OutputVirtualNode::~OutputVirtualNode() = default;
 
 Status OutputVirtualNode::Init(const std::set<std::string>& input_port_names,
                                const std::set<std::string>& output_port_names,
-                               std::shared_ptr<Configuration> config) {
+                               const std::shared_ptr<Configuration>& config) {
   // NOLINTNEXTLINE
   auto status = NodeBase::Init(input_port_names, output_port_names, config);
   if (status != STATUS_SUCCESS) {
@@ -161,7 +163,7 @@ Status OutputVirtualNode::Run(RunType type) {
   EraseInvalidData();
   std::list<std::shared_ptr<MatchStreamData>> match_stream_data_list;
   auto ret = input_match_stream_mgr_->LoadData(
-      input_ports_, [](std::shared_ptr<Buffer> buffer) {
+      input_ports_, [](const std::shared_ptr<Buffer>& buffer) {
         // no need to cache buffer that can not send to user
         auto index_info = BufferManageView::GetIndexInfo(buffer);
         return index_info->GetStream()->GetSession()->GetSessionIO() == nullptr;
@@ -271,11 +273,11 @@ SessionUnmatchCache::SessionUnmatchCache(
 
 void SessionUnmatchCache::SetTargetDevice(
     std::shared_ptr<Device> target_device) {
-  target_device_ = target_device;
+  target_device_ = std::move(target_device);
 }
 
 Status SessionUnmatchCache::CacheBuffer(const std::string& port_name,
-                                        std::shared_ptr<Buffer> buffer) {
+                                        const std::shared_ptr<Buffer>& buffer) {
   if (buffer->HasError()) {
     last_error_ = std::make_shared<FlowUnitError>(buffer->GetErrorMsg());
   }
@@ -343,7 +345,7 @@ OutputUnmatchVirtualNode::OutputUnmatchVirtualNode(
     : device_name_(device_name), device_id_(device_id) {
   queue_size_ = -1;
   priority_ = 0;
-  device_mgr_ = device_manager;
+  device_mgr_ = std::move(device_manager);
   target_device_ = device_mgr_->GetDevice(device_name, device_id);
 }
 
@@ -352,7 +354,7 @@ OutputUnmatchVirtualNode::~OutputUnmatchVirtualNode() = default;
 Status OutputUnmatchVirtualNode::Init(
     const std::set<std::string>& input_port_names,
     const std::set<std::string>& output_port_names,
-    std::shared_ptr<Configuration> config) {
+    const std::shared_ptr<Configuration>& config) {
   if (config->GetString("device") == device_name_) {
     need_move_to_device_ = true;
   }
@@ -410,7 +412,7 @@ Status OutputUnmatchVirtualNode::Run(RunType type) {
 
 std::shared_ptr<Device> OutputUnmatchVirtualNode::GetDevice() {
   if (device_mgr_ == nullptr) {
-    MBLOG_ERROR << "device_mgr is nullptr ";
+    MBLOG_ERROR << "device_mgr is nullptr";
     return nullptr;
   }
 

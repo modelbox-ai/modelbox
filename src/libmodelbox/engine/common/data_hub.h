@@ -123,9 +123,9 @@ class DefaultDataHub : public DataHub {
   Status AddToActivePort(const std::shared_ptr<PriorityPort>& port) override;
 
  private:
-  void PortEventCallback(std::shared_ptr<PriorityPort> port,
+  void PortEventCallback(const std::shared_ptr<PriorityPort>& port,
                          bool update_active_time);
-  void UpdateActivePort(std::shared_ptr<PriorityPort> port,
+  void UpdateActivePort(const std::shared_ptr<PriorityPort>& port,
                         bool update_active_time = true);
 
   std::vector<std::shared_ptr<PriorityPort>> priority_ports_;

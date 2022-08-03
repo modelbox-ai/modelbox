@@ -87,9 +87,8 @@ using DevExecuteCallBack = std::function<Status(size_t idx)>;
 class Device : public std::enable_shared_from_this<Device> {
  public:
   Device() = default;
-  Device(const std::shared_ptr<DeviceMemoryManager> &mem_mgr);
-  Device(size_t thread_count,
-         const std::shared_ptr<DeviceMemoryManager> &mem_mgr);
+  Device(std::shared_ptr<DeviceMemoryManager> mem_mgr);
+  Device(size_t thread_count, std::shared_ptr<DeviceMemoryManager> mem_mgr);
   virtual ~Device() = default;
 
   virtual std::string GetDeviceID() const {
@@ -108,7 +107,7 @@ class Device : public std::enable_shared_from_this<Device> {
 
   Status Init();
 
-  virtual Status DeviceExecute(DevExecuteCallBack fun, int32_t priority,
+  virtual Status DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
                                size_t count) {
     return STATUS_NOTSUPPORT;
   };
@@ -192,7 +191,7 @@ class Device : public std::enable_shared_from_this<Device> {
    * @param mem_flags Flags of device mem
    * @return Device memory
    **/
-  std::shared_ptr<DeviceMemory> MemAcquire(std::shared_ptr<void> mem_ptr,
+  std::shared_ptr<DeviceMemory> MemAcquire(const std::shared_ptr<void> &mem_ptr,
                                            size_t size, uint32_t mem_flags = 0);
 
   /**
@@ -244,7 +243,7 @@ class Device : public std::enable_shared_from_this<Device> {
 
  protected:
   std::shared_ptr<Executor> executor_;
-  void SetDeviceManager(std::shared_ptr<DeviceManager> device_mgr);
+  void SetDeviceManager(const std::shared_ptr<DeviceManager> &device_mgr);
 
   std::list<std::future<Status>> DeviceExecuteAsyncRude(
       const DevExecuteCallBack &fun, int32_t priority, size_t count);
@@ -289,8 +288,8 @@ class DeviceManager : public std::enable_shared_from_this<DeviceManager> {
   virtual ~DeviceManager();
 
   static std::shared_ptr<DeviceManager> GetInstance();
-  Status Initialize(std::shared_ptr<Drivers> driver,
-                    std::shared_ptr<Configuration> config);
+  Status Initialize(const std::shared_ptr<Drivers> &driver,
+                    const std::shared_ptr<Configuration> &config);
 
   virtual std::vector<std::string> GetDevicesTypes();
 
@@ -303,7 +302,7 @@ class DeviceManager : public std::enable_shared_from_this<DeviceManager> {
   std::shared_ptr<Device> GetDevice(const std::string &device_type,
                                     const std::string &device_id);
 
-  Status Register(std::shared_ptr<DeviceFactory> factory);
+  Status Register(const std::shared_ptr<DeviceFactory> &factory);
 
   /**
    * @brief Return host device
@@ -325,7 +324,7 @@ class DeviceManager : public std::enable_shared_from_this<DeviceManager> {
       &GetDeviceList();
 
   Status DeviceProbe();
-  Status InitDeviceFactory(std::shared_ptr<Drivers> driver);
+  Status InitDeviceFactory(const std::shared_ptr<Drivers> &driver);
   std::shared_ptr<Drivers> GetDrivers();
 
  private:

@@ -64,7 +64,7 @@ int32_t VideoDecodeFlowUnit::GetDvppEncodeType(AVCodecID codec_id,
 }
 
 modelbox::Status VideoDecodeFlowUnit::GetDecoderParam(
-    std::shared_ptr<modelbox::DataContext> data_ctx, int32_t &rate_num,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx, int32_t &rate_num,
     int32_t &rate_den, int32_t &encode_type) {
   auto input_packet = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (input_packet == nullptr) {
@@ -155,7 +155,7 @@ modelbox::Status VideoDecodeFlowUnit::DataPre(
   DeferCond { return !ret; };
 
   if (instance_id == -1) {
-    auto errMsg = "do not have available channelId to decode.";
+    const auto *errMsg = "do not have available channelId to decode.";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }
@@ -218,7 +218,7 @@ modelbox::Status VideoDecodeFlowUnit::Close() {
 }
 
 modelbox::Status VideoDecodeFlowUnit::ReadData(
-    std::shared_ptr<modelbox::DataContext> data_ctx,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<std::shared_ptr<DvppPacket>> &dvpp_packet_list) {
   auto video_packet_input = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (video_packet_input == nullptr) {
@@ -252,9 +252,9 @@ modelbox::Status VideoDecodeFlowUnit::SetUpTheLastPacket(
   dvpp_packet = std::make_shared<DvppPacket>();
   dvpp_packet->SetEnd(true);
 
-  auto dvpp_stream_desc_ptr = acldvppCreateStreamDesc();
+  auto *dvpp_stream_desc_ptr = acldvppCreateStreamDesc();
   if (dvpp_stream_desc_ptr == nullptr) {
-    auto errMsg = "fail to create input stream desc";
+    const auto *errMsg = "fail to create input stream desc";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }
@@ -278,7 +278,7 @@ modelbox::Status VideoDecodeFlowUnit::SetUpTheLastPacket(
 }
 
 modelbox::Status VideoDecodeFlowUnit::ReadDvppStreamDesc(
-    std::shared_ptr<modelbox::Buffer> packet_buffer,
+    const std::shared_ptr<modelbox::Buffer> &packet_buffer,
     std::shared_ptr<DvppPacket> &dvpp_packet) {
   auto size = packet_buffer->GetBytes();
   if (size == 1) {
@@ -292,27 +292,27 @@ modelbox::Status VideoDecodeFlowUnit::ReadDvppStreamDesc(
     return status;
   }
 
-  auto buffer = packet_buffer->ConstData();
+  const auto *buffer = packet_buffer->ConstData();
   int32_t width;
   int32_t height;
   int64_t pts;
   auto exists = packet_buffer->Get("width", width);
   if (!exists) {
-    auto errMsg = "get width in input buffer meta failed.";
+    const auto *errMsg = "get width in input buffer meta failed.";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
   exists = packet_buffer->Get("height", height);
   if (!exists) {
-    auto errMsg = "get width in input buffer meta failed.";
+    const auto *errMsg = "get width in input buffer meta failed.";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
   exists = packet_buffer->Get("pts", pts);
   if (!exists) {
-    auto errMsg = "get pts in input buffer meta failed.";
+    const auto *errMsg = "get pts in input buffer meta failed.";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }
@@ -345,9 +345,9 @@ modelbox::Status VideoDecodeFlowUnit::ReadDvppStreamDesc(
     return {modelbox::STATUS_FAULT, errMsg};
   }
 
-  auto dvpp_stream_desc_ptr = acldvppCreateStreamDesc();
+  auto *dvpp_stream_desc_ptr = acldvppCreateStreamDesc();
   if (dvpp_stream_desc_ptr == nullptr) {
-    auto errMsg = "fail to create input stream desc";
+    const auto *errMsg = "fail to create input stream desc";
     MBLOG_ERROR << errMsg;
     dvpp_alloc_result = true;
     return {modelbox::STATUS_FAULT, errMsg};
@@ -394,9 +394,9 @@ modelbox::Status VideoDecodeFlowUnit::ReadDvppStreamDesc(
 }
 
 modelbox::Status VideoDecodeFlowUnit::WriteData(
-    std::shared_ptr<modelbox::DataContext> data_ctx,
-    std::shared_ptr<AscendVideoDecoder> video_decoder,
-    std::shared_ptr<DvppVideoDecodeContext> dvpp_ctx) {
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
+    const std::shared_ptr<AscendVideoDecoder> &video_decoder,
+    const std::shared_ptr<DvppVideoDecodeContext> &dvpp_ctx) {
   auto queue = dvpp_ctx->GetCacheQueue();
   size_t size;
 
@@ -415,7 +415,7 @@ modelbox::Status VideoDecodeFlowUnit::WriteData(
 
   auto device = this->GetBindDevice();
   for (size_t i = 0; i < size; ++i) {
-    auto pic_desc = dvpp_frame[i]->GetPicDesc().get();
+    auto *pic_desc = dvpp_frame[i]->GetPicDesc().get();
     void *data = acldvppGetPicDescData(pic_desc);
     if (data == nullptr) {
       MBLOG_ERROR << "output pic data is nullptr.";

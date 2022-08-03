@@ -57,7 +57,7 @@ std::shared_ptr<const TensorBuffer> TensorList::operator[](size_t pos) const {
   }
 
   return std::dynamic_pointer_cast<TensorBuffer>(bl_->At(pos));
-};
+}
 
 std::shared_ptr<TensorBuffer> TensorList::At(size_t idx) {
   if (!bl_->At(idx)) {

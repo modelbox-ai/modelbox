@@ -127,7 +127,7 @@ class MemoryPoolBase : public MemoryAllocFree,
    * @brief Add a new slab cache
    * @param slab_cache new slab cache.
    */
-  void AddSlabCache(std::shared_ptr<SlabCache> slab_cache);
+  void AddSlabCache(const std::shared_ptr<SlabCache> &slab_cache);
 
  private:
   std::vector<std::shared_ptr<SlabCache>> slab_caches_;

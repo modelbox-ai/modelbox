@@ -211,8 +211,9 @@ class Popen {
     int iseof_{0};
   };
 
-  int WaitForFds(std::vector<struct stdfd *> fds, int timeout,
-                 std::function<int(struct stdfd *stdfd, int revents)> func);
+  int WaitForFds(
+      std::vector<struct stdfd *> fds, int timeout,
+      const std::function<int(struct stdfd *stdfd, int revents)> &func);
 
   int ReadLineData(struct stdfd *stdfd);
 

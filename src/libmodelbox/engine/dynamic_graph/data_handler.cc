@@ -15,12 +15,15 @@
  */
 
 #include "modelbox/data_handler.h"
+
+#include <utility>
+
 #include "modelbox/modelbox_engine.h"
 
 namespace modelbox {
 
 DataHandler::DataHandler(BindNodeType type,
-                         std::shared_ptr<ModelBoxEngine> env) {
+                         const std::shared_ptr<ModelBoxEngine> &env) {
   env_ = env;
   data_type_ = type;
   switch (data_type_) {
@@ -95,12 +98,12 @@ void DataHandler::SetExternData(std::shared_ptr<void> extern_map,
   }
   if (data_type_ == VIRTUAL_NODE) {
     auto context = std::static_pointer_cast<InputContext>(context_);
-    context->SetExternPtr(extern_map, bufferlist);
+    context->SetExternPtr(std::move(extern_map), bufferlist);
   }
 }
 
 Status DataHandler::PushData(std::shared_ptr<DataHandler> &data,
-                             const std::string key) {
+                             const std::string &key) {
   if (GetDataHandlerType() != INPUT) {
     MBLOG_ERROR << "only input data can receive other data";
     return STATUS_FAULT;
@@ -118,7 +121,7 @@ Status DataHandler::PushData(std::shared_ptr<DataHandler> &data,
 }
 
 Status DataHandler::PushData(std::shared_ptr<Buffer> &data,
-                             const std::string key) {
+                             const std::string &key) {
   if (context_ == nullptr) {
     MBLOG_ERROR << "context is nullptr, datahanler init failed";
     return STATUS_FAULT;
@@ -129,7 +132,7 @@ Status DataHandler::PushData(std::shared_ptr<Buffer> &data,
 }
 
 Status DataHandler::PushData(std::shared_ptr<BufferList> &data,
-                             const std::string key) {
+                             const std::string &key) {
   if (context_ == nullptr) {
     MBLOG_ERROR << "context is nullptr, datahanler init failed";
     return STATUS_FAULT;
@@ -296,10 +299,9 @@ std::shared_ptr<DataHandler> DataHandler::GetData() {
   }
 
   auto buffer = std::make_shared<DataHandler>(BUFFERLIST_NODE);
-  for (auto iter = map_buffer_list.begin(); iter != map_buffer_list.end();
-       iter++) {
-    auto temp_buffer = iter->second;
-    buffer->PushData(temp_buffer, iter->first);
+  for (auto &iter : map_buffer_list) {
+    auto temp_buffer = iter.second;
+    buffer->PushData(temp_buffer, iter.first);
   }
   return buffer;
 }

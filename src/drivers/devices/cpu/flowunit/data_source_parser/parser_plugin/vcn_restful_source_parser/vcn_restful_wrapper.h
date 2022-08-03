@@ -30,7 +30,7 @@
 namespace modelbox {
 
 typedef struct tag_VcnRestfulInfo : public VcnInfo {
-  tag_VcnRestfulInfo(const VcnInfo &info) : VcnInfo(info), jsession_id("") {}
+  tag_VcnRestfulInfo(const VcnInfo &info) : VcnInfo(info) {}
   tag_VcnRestfulInfo() = default;
   std::string jsession_id;
 } VcnRestfulInfo;

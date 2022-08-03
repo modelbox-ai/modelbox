@@ -16,6 +16,8 @@
 
 #include <modelbox/base/graph_manager.h>
 
+#include <utility>
+
 namespace modelbox {
 
 GCNode::GCNode() = default;
@@ -23,7 +25,7 @@ GCNode::GCNode() = default;
 GCNode::~GCNode() = default;
 
 Status GCNode::Init(const std::string &name,
-                    std::shared_ptr<GCGraph> root_graph) {
+                    const std::shared_ptr<GCGraph> &root_graph) {
   name_ = name;
   root_graph_ = root_graph;
   ConfigurationBuilder builder;
@@ -56,7 +58,7 @@ std::shared_ptr<GCGraph> GCNode::GetRootGraph() const {
 
 std::string GCNode::GetNodeType() const { return type_; }
 
-void GCNode::SetNodeType(std::string type) { type_ = type; }
+void GCNode::SetNodeType(std::string type) { type_ = std::move(type); }
 
 void GCNode::SetConfiguration(const std::string &key,
                               const std::string &value) {
@@ -68,12 +70,12 @@ void GCNode::SetConfiguration(const std::string &key,
   configuration_->SetProperty(key, sub_str_list);
 }
 
-Status GCNode::SetInputPort(std::string port) {
+Status GCNode::SetInputPort(const std::string &port) {
   input_ports_.insert(port);
   return STATUS_OK;
 }
 
-Status GCNode::SetOutputPort(std::string port) {
+Status GCNode::SetOutputPort(const std::string &port) {
   output_ports_.insert(port);
   return STATUS_OK;
 }
@@ -90,7 +92,7 @@ GCEdge::GCEdge() = default;
 
 GCEdge::~GCEdge() = default;
 
-Status GCEdge::Init(std::shared_ptr<GCGraph> root_graph) {
+Status GCEdge::Init(const std::shared_ptr<GCGraph> &root_graph) {
   root_graph_ = root_graph;
   ConfigurationBuilder builder;
   configuration_ = builder.Build();
@@ -114,22 +116,22 @@ std::shared_ptr<GCGraph> GCEdge::GetRootGraph() const {
 }
 
 Status GCEdge::SetHeadNode(std::shared_ptr<GCNode> node) {
-  head_ = node;
+  head_ = std::move(node);
   return STATUS_OK;
 }
 
 Status GCEdge::SetTailNode(std::shared_ptr<GCNode> node) {
-  tail_ = node;
+  tail_ = std::move(node);
   return STATUS_OK;
 }
 
 Status GCEdge::SetHeadPort(std::string port) {
-  head_out_port_ = port;
+  head_out_port_ = std::move(port);
   return STATUS_OK;
 }
 
 Status GCEdge::SetTailPort(std::string port) {
-  tail_in_port_ = port;
+  tail_in_port_ = std::move(port);
   return STATUS_OK;
 }
 
@@ -147,7 +149,7 @@ GCGraph::GCGraph() = default;
 
 GCGraph::~GCGraph() = default;
 
-Status GCGraph::Init(std::shared_ptr<GCGraph> root_graph) {
+Status GCGraph::Init(const std::shared_ptr<GCGraph> &root_graph) {
   root_graph_ = root_graph;
   ConfigurationBuilder builder;
   configuration_ = builder.Build();
@@ -160,7 +162,7 @@ std::shared_ptr<GCGraph> GCGraph::GetRootGraph() const {
   return root_graph_.lock();
 }
 
-Status GCGraph::AddSubGraph(std::shared_ptr<GCGraph> subgraph) {
+Status GCGraph::AddSubGraph(const std::shared_ptr<GCGraph> &subgraph) {
   std::string key = subgraph->GetGraphName();
   subgraphs_.insert(
       std::pair<std::string, const std::shared_ptr<GCGraph>>(key, subgraph));
@@ -182,14 +184,14 @@ std::map<std::string, const std::shared_ptr<GCGraph>> GCGraph::GetAllSubGraphs()
 
 void GCGraph::ShowAllSubGraph() const {}
 
-Status GCGraph::AddNode(const std::shared_ptr<GCNode> node) {
+Status GCGraph::AddNode(const std::shared_ptr<GCNode> &node) {
   std::string key = node->GetNodeName();
   nodes_.insert(
       std::pair<std::string, const std::shared_ptr<GCNode>>(key, node));
   return STATUS_OK;
 }
 
-Status GCGraph::SetFirstNode(std::shared_ptr<GCNode> node) {
+Status GCGraph::SetFirstNode(const std::shared_ptr<GCNode> &node) {
   first_nodes_.push_back(node);
   return STATUS_OK;
 }
@@ -217,7 +219,7 @@ void GCGraph::ShowAllNode() const {
 
     std::shared_ptr<const std::set<std::string>> input_ports;
     input_ports = elem.second->GetInputPorts();
-    for (auto input_port : *input_ports) {
+    for (const auto &input_port : *input_ports) {
       MBLOG_INFO << "input port : " << input_port;
     }
 
@@ -229,7 +231,7 @@ void GCGraph::ShowAllNode() const {
   }
 }
 
-Status GCGraph::AddEdge(std::shared_ptr<GCEdge> edge) {
+Status GCGraph::AddEdge(const std::shared_ptr<GCEdge> &edge) {
   std::string key =
       edge->GetHeadNode()->GetNodeName() + ":" + edge->GetHeadOutPort() + "-" +
       edge->GetTailNode()->GetNodeName() + ":" + edge->GetTailInPort();
@@ -278,8 +280,9 @@ GraphConfigManager::GraphConfigManager() = default;
 
 GraphConfigManager::~GraphConfigManager() = default;
 
-Status GraphConfigManager::Initialize(std::shared_ptr<Drivers> driver,
-                                      std::shared_ptr<Configuration> config) {
+Status GraphConfigManager::Initialize(
+    const std::shared_ptr<Drivers> &driver,
+    const std::shared_ptr<Configuration> &config) {
   auto ret = InitGraphConfigFactory(driver);
   if (STATUS_OK != ret) {
     MBLOG_ERROR << "Init Graph config factory failed";
@@ -289,7 +292,7 @@ Status GraphConfigManager::Initialize(std::shared_ptr<Drivers> driver,
 }
 
 std::shared_ptr<GraphConfig> GraphConfigManager::LoadGraphConfig(
-    std::shared_ptr<Configuration> config) {
+    const std::shared_ptr<Configuration> &config) {
   std::shared_ptr<GraphConfig> graph_config;
   auto graph_format = config->GetString("graph.format", "");
   if (graph_format == "") {
@@ -351,7 +354,7 @@ GraphConfigManager &GraphConfigManager::GetInstance() {
 }
 
 Status GraphConfigManager::Register(
-    std::shared_ptr<GraphConfigFactory> factory) {
+    const std::shared_ptr<GraphConfigFactory> &factory) {
   graph_conf_factories_.insert(
       std::pair<std::string, std::shared_ptr<GraphConfigFactory>>(
           factory->GetGraphConfFactoryType(), factory));
@@ -383,7 +386,7 @@ std::shared_ptr<GraphConfigFactory> GraphConfigManager::GetGraphConfFactory(
 }
 
 Status GraphConfigManager::InitGraphConfigFactory(
-    std::shared_ptr<Drivers> driver) {
+    const std::shared_ptr<Drivers> &driver) {
   std::vector<std::shared_ptr<Driver>> driver_list =
       driver->GetDriverListByClass(DRIVER_CLASS_GRAPHCONF);
   std::shared_ptr<DriverDesc> desc;
@@ -404,7 +407,7 @@ Status GraphConfigManager::InitGraphConfigFactory(
 }
 
 std::shared_ptr<GraphConfig> GraphConfigManager::GetGraphConfig(
-    std::string graph_conf_name) {
+    const std::string &graph_conf_name) {
   auto graph_conf = graph_conf_list_.find(graph_conf_name);
   return graph_conf->second;
 }
@@ -414,7 +417,8 @@ GraphConfigManager::GetGraphConfList() {
   return graph_conf_list_;
 }
 
-Status GraphConfigManager::DeleteGraphConfig(std::string graph_conf_name) {
+Status GraphConfigManager::DeleteGraphConfig(
+    const std::string &graph_conf_name) {
   auto graph_conf = graph_conf_list_.find(graph_conf_name);
   if (graph_conf == graph_conf_list_.end()) {
     return STATUS_OK;

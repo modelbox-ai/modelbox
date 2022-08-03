@@ -44,8 +44,9 @@ class NormalizeFlowUnit : public NormalizeFlowUnitBase {
 
  private:
   template <typename T>
-  void Process(const T *input_data, std::shared_ptr<modelbox::Buffer> input_buf,
-               std::shared_ptr<modelbox::Buffer> out_buff);
+  void Process(const T *input_data,
+               const std::shared_ptr<modelbox::Buffer> &input_buf,
+               const std::shared_ptr<modelbox::Buffer> &out_buff);
 };
 
 #endif  // MODELBOX_FLOWUNIT_NORMALIZE_H_

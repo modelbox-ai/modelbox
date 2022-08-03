@@ -373,8 +373,8 @@ TEST_F(DriverTest, GetDriverTypeList) {
   EXPECT_EQ(type_list.size(), 2);
 
   bool found = false;
-  for (auto it = type_list.begin(); it != type_list.end(); it++) {
-    if ((*it) == "cuda") {
+  for (auto &it : type_list) {
+    if (it == "cuda") {
       found = true;
       break;
     }
@@ -424,8 +424,8 @@ TEST_F(DriverTest, GetDriverClassList) {
   EXPECT_EQ(class_list.size(), 2);
 
   bool found = false;
-  for (auto it = class_list.begin(); it != class_list.end(); it++) {
-    if ((*it) == "test") {
+  for (auto &it : class_list) {
+    if (it == "test") {
       found = true;
       break;
     }
@@ -478,8 +478,8 @@ TEST_F(DriverTest, GetDriverNameList) {
   EXPECT_EQ(name_list.size(), 2);
 
   bool found = false;
-  for (auto it = name_list.begin(); it != name_list.end(); it++) {
-    if ((*it) == "test") {
+  for (auto &it : name_list) {
+    if (it == "test") {
       found = true;
       break;
     }

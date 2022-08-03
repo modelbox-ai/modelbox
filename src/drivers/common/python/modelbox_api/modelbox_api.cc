@@ -28,6 +28,7 @@
 #include <securec.h>
 
 #include <string>
+#include <utility>
 
 #include "modelbox/data_context.h"
 #include "modelbox/error.h"
@@ -116,9 +117,11 @@ modelbox::ModelBoxDataType TypeFromFormatStr(const std::string &format) {
 
 class NumpyInfo {
  public:
-  NumpyInfo(ssize_t itemsize, std::string format, void *ptr,
+  NumpyInfo(ssize_t itemsize, const std::string &format, void *ptr,
             std::vector<ssize_t> shape, std::vector<ssize_t> strides)
-      : shape_(shape), strides_(strides), itemsize_(itemsize) {
+      : shape_(std::move(shape)),
+        strides_(std::move(strides)),
+        itemsize_(itemsize) {
     ssize_t bytes = std::accumulate(shape_.begin(), shape_.end(), (ssize_t)1,
                                     std::multiplies<ssize_t>()) *
                     itemsize_;
@@ -182,12 +185,12 @@ bool DataGet(std::size_t hash_code, void *value, py::object &ret) {
 }
 
 template <typename DataType, typename FuncType>
-bool SetAttributes(DataType &context, const std::string &key, py::object obj,
-                   std::vector<FuncType> &BaseObjectFunc,
+bool SetAttributes(DataType &context, const std::string &key,
+                   const py::object &obj, std::vector<FuncType> &BaseObjectFunc,
                    std::vector<FuncType> &List1DObjectFunc,
                    std::vector<FuncType> &List2DObjectFunc) {
-  auto setup_data = [&](std::vector<FuncType> &func_list, py::object set_obj,
-                        py::object cast_obj) {
+  auto setup_data = [&](std::vector<FuncType> &func_list,
+                        const py::object &set_obj, const py::object &cast_obj) {
     for (auto &func : func_list) {
       if (func(context, key, set_obj, cast_obj)) {
         return true;
@@ -195,9 +198,11 @@ bool SetAttributes(DataType &context, const std::string &key, py::object obj,
     }
     return false;
   };
+
   if (setup_data(BaseObjectFunc, obj, obj)) {
     return true;
   }
+
   if (py::isinstance<py::list>(obj)) {
     py::list obj_list_all = obj.cast<py::list>();
     if (py::isinstance<py::list>(obj_list_all[0])) {
@@ -228,6 +233,7 @@ bool GetAttributes(void *value, std::size_t value_type,
     if (data == nullptr) {
       MBLOG_ERROR << "data is nullptr.";
     }
+
     auto buffer_info =
         py::buffer_info((void *)(data->Data()), data->ItemSize(),
                         FormatStrFromType(data->Type()), data->Shape().size(),
@@ -372,7 +378,7 @@ static std::vector<pConfigurationPyTypeToCTypeFunc>
 static std::vector<pConfigurationPyTypeToCTypeFunc>
     kConfigurationList2DObjectFunc = {};
 void ConfigurationSetAttributes(Configuration &config, const std::string &key,
-                                py::object obj) {
+                                const py::object &obj) {
   if (SetAttributes<Configuration, pConfigurationPyTypeToCTypeFunc>(
           config, key, obj, kConfigurationBaseObjectFunc,
           kConfigurationListObjectFunc, kConfigurationList2DObjectFunc)) {
@@ -386,7 +392,7 @@ void ConfigurationSetAttributes(Configuration &config, const std::string &key,
 
 /***************************DataContextSet Begin************************/
 void DataContextSetAttributes(DataContext &data_context, const std::string &key,
-                              py::object obj) {
+                              const py::object &obj) {
   obj.inc_ref();
   auto py_context = std::make_shared<py::object>(obj);
   data_context.SetPrivate(key, py_context);
@@ -429,7 +435,8 @@ static std::vector<pSessionContextPyTypeToCTypeFunc>
         DataSet<SessionContext, py::int_, std::vector<std::vector<long>>>};
 
 void SessionContextSetAttributes(SessionContext &session_context,
-                                 const std::string &key, py::object obj) {
+                                 const std::string &key,
+                                 const py::object &obj) {
   if (SetAttributes<SessionContext, pSessionContextPyTypeToCTypeFunc>(
           session_context, key, obj, kSessionContextBaseObjectFunc,
           kSessionContextList1DObjectFunc, kSessionContextList2DObjectFunc)) {
@@ -565,7 +572,7 @@ void ModelboxPyApiSetUpConfiguration(pybind11::module &m) {
       .def("get_float_list", &modelbox::Configuration::GetDoubles,
            py::arg("key"), py::arg("default") = py::make_tuple())
       .def("set", [](modelbox::Configuration &config, const std::string &key,
-                     py::object obj) {
+                     const py::object &obj) {
         ConfigurationSetAttributes(config, key, obj);
       });
 }
@@ -653,7 +660,8 @@ py::object BufferToPyObject(modelbox::Buffer &buffer) {
   throw std::runtime_error("invalid type");
 }
 
-void PyBufferToBuffer(std::shared_ptr<Buffer> buffer, const py::buffer &data) {
+void PyBufferToBuffer(const std::shared_ptr<Buffer> &buffer,
+                      const py::buffer &data) {
   py::buffer_info info = data.request();
   std::vector<size_t> i_shape;
   for (auto &dim : info.shape) {
@@ -671,14 +679,15 @@ void PyBufferToBuffer(std::shared_ptr<Buffer> buffer, const py::buffer &data) {
   buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
 }
 
-void StrToBuffer(std::shared_ptr<Buffer> buffer, const std::string &data) {
+void StrToBuffer(const std::shared_ptr<Buffer> &buffer,
+                 const std::string &data) {
   const char *s = data.c_str();
   Py_ssize_t len = data.length();
   buffer->BuildFromHost(const_cast<char *>(s), len);
   buffer->SetGetBufferType(modelbox::BufferEnumType::STR);
 }
 
-void ListToBuffer(std::shared_ptr<Buffer> buffer, py::list data) {
+void ListToBuffer(const std::shared_ptr<Buffer> &buffer, const py::list &data) {
   std::vector<std::vector<size_t>> vec_shapes;
   std::vector<size_t> sizes;
   std::vector<void *> source_vec;
@@ -772,7 +781,7 @@ py::buffer_info ModelboxPyApiSetUpBufferDefBuffer(Buffer &buffer) {
 }
 
 void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
-  using namespace pybind11::literals; // NOLINT
+  using namespace pybind11::literals;  // NOLINT
 
   ModelboxPyApiSetUpDevice(m);
 
@@ -780,26 +789,26 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
       py::class_<modelbox::Buffer, std::shared_ptr<modelbox::Buffer>>(
           m, "Buffer", py::module_local(), py::buffer_protocol())
           .def_buffer(ModelboxPyApiSetUpBufferDefBuffer)
-          .def(py::init(
-                   [](std::shared_ptr<modelbox::Device> device, py::buffer b) {
-                     auto buffer = std::make_shared<Buffer>(device);
-                     PyBufferToBuffer(buffer, b);
-                     return buffer;
-                   }),
+          .def(py::init([](const std::shared_ptr<modelbox::Device> &device,
+                           const py::buffer &b) {
+                 auto buffer = std::make_shared<Buffer>(device);
+                 PyBufferToBuffer(buffer, b);
+                 return buffer;
+               }),
                py::keep_alive<1, 2>())
-          .def(py::init([](std::shared_ptr<modelbox::Device> device,
+          .def(py::init([](const std::shared_ptr<modelbox::Device> &device,
                            const std::string &str) {
                  auto buffer = std::make_shared<Buffer>(device);
                  StrToBuffer(buffer, str);
                  return buffer;
                }),
                py::keep_alive<1, 2>())
-          .def(py::init(
-                   [](std::shared_ptr<modelbox::Device> device, py::list li) {
-                     auto buffer = std::make_shared<Buffer>(device);
-                     ListToBuffer(buffer, li);
-                     return buffer;
-                   }),
+          .def(py::init([](const std::shared_ptr<modelbox::Device> &device,
+                           const py::list &li) {
+                 auto buffer = std::make_shared<Buffer>(device);
+                 ListToBuffer(buffer, li);
+                 return buffer;
+               }),
                py::keep_alive<1, 2>())
           .def(py::init<const Buffer &>())
           .def("as_object",
@@ -832,7 +841,7 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
 }
 
 void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
-  using namespace pybind11::literals; // NOLINT
+  using namespace pybind11::literals;  // NOLINT
 
   py::class_<modelbox::BufferList, std::shared_ptr<modelbox::BufferList>>(
       m, "BufferList", py::module_local())
@@ -856,7 +865,7 @@ void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
           py::keep_alive<1, 2>())
       .def(
           "push_back",
-          [](BufferList &bl, py::buffer b) {
+          [](BufferList &bl, const py::buffer &b) {
             py::buffer_info info = b.request();
             std::vector<size_t> i_shape;
             for (auto &dim : info.shape) {
@@ -1271,12 +1280,12 @@ void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def("pushdata",
            static_cast<modelbox::Status (modelbox::DataHandler::*)(
-               std::shared_ptr<modelbox::Buffer> &, const std::string)>(
+               std::shared_ptr<modelbox::Buffer> &, const std::string &)>(
                &modelbox::DataHandler::PushData),
            py::call_guard<py::gil_scoped_release>())
       .def("pushdata",
            static_cast<modelbox::Status (modelbox::DataHandler::*)(
-               std::shared_ptr<DataHandler> &, const std::string)>(
+               std::shared_ptr<DataHandler> &, const std::string &)>(
                &modelbox::DataHandler::PushData),
            py::call_guard<py::gil_scoped_release>())
       .def("get_datahandler", &modelbox::DataHandler::GetDataHandler,
@@ -1314,14 +1323,14 @@ void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
       .def(
           "add_output",
           [](FlowGraphDesc &self, const std::string &output_name,
-             std::shared_ptr<FlowPortDesc> source_node_port) {
+             const std::shared_ptr<FlowPortDesc> &source_node_port) {
             return self.AddOutput(output_name, source_node_port);
           },
           py::call_guard<py::gil_scoped_release>())
       .def(
           "add_output",
           [](FlowGraphDesc &self, const std::string &output_name,
-             std::shared_ptr<FlowNodeDesc> source_node) {
+             const std::shared_ptr<FlowNodeDesc> &source_node) {
             return self.AddOutput(output_name, source_node);
           },
           py::call_guard<py::gil_scoped_release>())
@@ -1340,7 +1349,7 @@ void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
           "add_node",
           [](FlowGraphDesc &self, const std::string &flowunit_name,
              const std::string &device, const std::vector<std::string> &config,
-             std::shared_ptr<FlowNodeDesc> source_node) {
+             const std::shared_ptr<FlowNodeDesc> &source_node) {
             return self.AddNode(flowunit_name, device, config, source_node);
           },
           py::call_guard<py::gil_scoped_release>())
@@ -1358,7 +1367,7 @@ void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
           "add_node",
           [](FlowGraphDesc &self, const std::string &flowunit_name,
              const std::string &device,
-             std::shared_ptr<FlowNodeDesc> source_node) {
+             const std::shared_ptr<FlowNodeDesc> &source_node) {
             return self.AddNode(flowunit_name, device, source_node);
           },
           py::call_guard<py::gil_scoped_release>())
@@ -1391,7 +1400,7 @@ void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
                  &func,
              const std::vector<std::string> &input_name_list,
              const std::vector<std::string> &output_name_list,
-             std::shared_ptr<FlowNodeDesc> source_node) {
+             const std::shared_ptr<FlowNodeDesc> &source_node) {
             return self.AddFunction(func, input_name_list, output_name_list,
                                     source_node);
           },

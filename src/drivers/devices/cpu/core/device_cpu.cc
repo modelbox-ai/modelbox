@@ -29,7 +29,7 @@ CPU::~CPU() = default;
 
 std::string CPU::GetType() const { return DEVICE_TYPE; }
 
-Status CPU::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
+Status CPU::DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
                           size_t count) {
   if (0 == count) {
     return STATUS_OK;

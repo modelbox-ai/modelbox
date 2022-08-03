@@ -27,7 +27,7 @@ FlowUnitInfo::FlowUnitInfo() = default;
 
 FlowUnitInfo::~FlowUnitInfo() = default;
 
-Status FlowUnitInfo::Init(std::shared_ptr<Configuration> config) {
+Status FlowUnitInfo::Init(const std::shared_ptr<Configuration> &config) {
   ConfigurationBuilder config_builder;
   config_ = config_builder.Build();
   if (config) {

@@ -250,7 +250,7 @@ void AddSafeHeader(httplib::Response &response);
 
 class HttpRequest {
  public:
-  HttpRequest(const std::string &method, const std::string &url);
+  HttpRequest(std::string method, std::string url);
 
   void SetHeaders(const httplib::Headers &headers);
 

@@ -121,7 +121,7 @@ TEST_F(GraphManagerTest, ResolveStr) {
   EXPECT_EQ(graph_bgcolor, "beige");
   auto graph_error = graph_configuration->GetString("error");
   EXPECT_EQ(graph_error, "");
-};
+}
 
 TEST_F(GraphManagerTest, NodeStr) {
   config_->SetProperty("graph.format", "graphviz");
@@ -178,7 +178,7 @@ TEST_F(GraphManagerTest, NodeStr) {
 
   auto root_graph = gcgraph->GetNode("node0")->GetRootGraph();
   EXPECT_EQ(root_graph, gcgraph);
-};
+}
 
 TEST_F(GraphManagerTest, EdgeStr) {
   config_->SetProperty("graph.format", "graphviz");
@@ -221,11 +221,11 @@ TEST_F(GraphManagerTest, EdgeStr) {
 
   auto all_edges = gcgraph->GetAllEdges();
   EXPECT_EQ(all_edges.size(), 2);
-};
+}
 
 TEST_F(GraphManagerTest, SubgraphStr){
 
-};
+}
 
 TEST_F(GraphManagerTest, ResolveFile) {
   config_->SetProperty("graph.format", "graphviz");
@@ -240,7 +240,7 @@ TEST_F(GraphManagerTest, ResolveFile) {
   auto graphvizconf = graphconf_mgr.LoadGraphConfig(config_);
 
   auto gcgraph = graphvizconf->Resolve();
-};
+}
 
 TEST_F(GraphManagerTest, NodeFile) {
   config_->SetProperty("graph.format", "graphviz");
@@ -274,7 +274,7 @@ TEST_F(GraphManagerTest, NodeFile) {
 
   auto root_graph = gcgraph->GetNode("node0")->GetRootGraph();
   EXPECT_EQ(root_graph, gcgraph);
-};
+}
 
 TEST_F(GraphManagerTest, EdgeFile) {
   config_->SetProperty("graph.format", "graphviz");
@@ -309,10 +309,10 @@ TEST_F(GraphManagerTest, EdgeFile) {
 
   auto all_edges = gcgraph->GetAllEdges();
   EXPECT_EQ(all_edges.size(), 2);
-};
+}
 
 TEST_F(GraphManagerTest, SubgraphFile){
 
-};
+}
 
 }  // namespace modelbox

@@ -36,7 +36,7 @@ modelbox::Status ImageRotateGpuFlowUnit::RotateOneImage(
   }
 
   output_buffer->Build(input_buffer->GetBytes());
-  auto output_data = static_cast<u_char *>(output_buffer->MutableData());
+  auto *output_data = static_cast<u_char *>(output_buffer->MutableData());
 
   auto ret =
       ClockWiseRotateGPU((u_char *)input_buffer->ConstData(), output_data,
@@ -51,8 +51,8 @@ modelbox::Status ImageRotateGpuFlowUnit::RotateOneImage(
 }
 
 modelbox::Status ImageRotateGpuFlowUnit::GetStream(
-    std::shared_ptr<modelbox::Buffer> input_buffer,
-    std::shared_ptr<modelbox::Buffer> output_buffer,
+    const std::shared_ptr<modelbox::Buffer> &input_buffer,
+    const std::shared_ptr<modelbox::Buffer> &output_buffer,
     std::shared_ptr<modelbox::CudaStream> &stream) {
   auto input_cuda_mem = std::dynamic_pointer_cast<modelbox::CudaMemory>(
       input_buffer->GetDeviceMemory());

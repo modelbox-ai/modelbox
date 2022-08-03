@@ -96,7 +96,7 @@ modelbox::Status NvImageDecoderFlowUnit::Process(
   // image decode
   for (auto &buffer : *input_bufs) {
     auto output_buffer = std::make_shared<modelbox::Buffer>(GetBindDevice());
-    auto input_data = static_cast<const uint8_t *>(buffer->ConstData());
+    const auto *input_data = static_cast<const uint8_t *>(buffer->ConstData());
     bool decode_ret = false;
     if (buffer->GetBytes() != 0) {
       if (CheckImageType(input_data) == IMAGE_TYPE_JPEG) {
@@ -151,7 +151,8 @@ bool NvImageDecoderFlowUnit::DecodeJpeg(
   int widths[NVJPEG_MAX_COMPONENT];
   int heights[NVJPEG_MAX_COMPONENT];
 
-  auto input_data = static_cast<const uint8_t *>(input_buffer->ConstData());
+  const auto *input_data =
+      static_cast<const uint8_t *>(input_buffer->ConstData());
   auto ret = nvjpegGetImageInfo(handle_, input_data, input_buffer->GetBytes(),
                                 &n_component, &subsampling, widths, heights);
   if (ret != NVJPEG_STATUS_SUCCESS) {
@@ -165,13 +166,13 @@ bool NvImageDecoderFlowUnit::DecodeJpeg(
 
   // build planner buffer
   auto planner_buffer = std::make_shared<modelbox::Buffer>(GetBindDevice());
-  auto modelbox_ret =
-      planner_buffer->Build((size_t)(widths[0] * heights[0] * n_component));
+  auto modelbox_ret = planner_buffer->Build(
+      ((size_t)widths[0] * (size_t)heights[0] * (size_t)n_component));
   if (modelbox_ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "build planner buffer failed, ret " << modelbox_ret;
     return false;
   }
-  auto planner_data = static_cast<uint8_t *>(planner_buffer->MutableData());
+  auto *planner_data = static_cast<uint8_t *>(planner_buffer->MutableData());
   auto cuda_mem = std::dynamic_pointer_cast<modelbox::CudaMemory>(
       planner_buffer->GetDeviceMemory());
   cuda_mem->BindStream();
@@ -192,8 +193,8 @@ bool NvImageDecoderFlowUnit::DecodeJpeg(
   }
 
   // build output buffer
-  output_buffer->Build((size_t)(widths[0] * heights[0] * n_component));
-  auto output_data = static_cast<uint8_t *>(output_buffer->MutableData());
+  output_buffer->Build(((size_t)widths[0] * (size_t)heights[0] * (size_t)n_component));
+  auto *output_data = static_cast<uint8_t *>(output_buffer->MutableData());
 
   // planner to packed image copy
   Npp8u *dst_planer[3] = {(Npp8u *)(planner_data),
@@ -224,7 +225,8 @@ bool NvImageDecoderFlowUnit::DecodeJpeg(
 bool NvImageDecoderFlowUnit::DecodeOthers(
     const std::shared_ptr<modelbox::Buffer> &input_buffer,
     std::shared_ptr<modelbox::Buffer> &output_buffer) {
-  auto input_data = static_cast<const uint8_t *>(input_buffer->ConstData());
+  const auto *input_data =
+      static_cast<const uint8_t *>(input_buffer->ConstData());
   std::vector<uint8_t> input_data2(
       input_data, input_data + input_buffer->GetBytes() / sizeof(uint8_t));
 

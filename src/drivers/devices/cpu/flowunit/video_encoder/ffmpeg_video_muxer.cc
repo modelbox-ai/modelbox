@@ -19,9 +19,9 @@
 #include <modelbox/base/log.h>
 #include "video_decode_common.h"
 
-
-modelbox::Status FfmpegVideoMuxer::Init(const std::shared_ptr<AVCodecContext> &codec_ctx,
-                              std::shared_ptr<FfmpegWriter> writer) {
+modelbox::Status FfmpegVideoMuxer::Init(
+    const std::shared_ptr<AVCodecContext> &codec_ctx,
+    const std::shared_ptr<FfmpegWriter> &writer) {
   destination_url_ = writer->GetDestinationURL();
   format_ctx_ = writer->GetCtx();
   auto ret = SetupStreamParam(codec_ctx);

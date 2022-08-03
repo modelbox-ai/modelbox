@@ -162,8 +162,8 @@ std::shared_ptr<Agraph_t> GraphvizConfig::LoadGraphFromFile() {
   return ret;
 }
 
-Status GraphvizConfig::TraversalsGraph(std::shared_ptr<Agraph_t> g,
-                                       std::shared_ptr<GCGraph> graph) {
+Status GraphvizConfig::TraversalsGraph(const std::shared_ptr<Agraph_t> &g,
+                                       const std::shared_ptr<GCGraph> &graph) {
   std::vector<std::string> node_keys;
   Agsym_t *sym = nullptr;
 
@@ -194,8 +194,8 @@ Status GraphvizConfig::TraversalsGraph(std::shared_ptr<Agraph_t> g,
   return STATUS_OK;
 }
 
-Status GraphvizConfig::TraversalsNode(std::shared_ptr<Agraph_t> g,
-                                      std::shared_ptr<GCGraph> graph) {
+Status GraphvizConfig::TraversalsNode(const std::shared_ptr<Agraph_t> &g,
+                                      const std::shared_ptr<GCGraph> &graph) {
   std::vector<std::string> node_keys;
   Agnode_t *agnode = nullptr;
 
@@ -244,7 +244,7 @@ Status GraphvizConfig::TraversalsNode(std::shared_ptr<Agraph_t> g,
 }
 
 std::shared_ptr<modelbox::GCEdge> GraphvizConfig::NewGcEdgeFromAgedge(
-    std::shared_ptr<GCGraph> graph, Agedge_t *agedge) {
+    const std::shared_ptr<GCGraph> &graph, Agedge_t *agedge) {
   auto gcedge = std::make_shared<modelbox::GCEdge>();
   auto ret = gcedge->Init(graph);
   if (!ret) {
@@ -306,8 +306,8 @@ std::shared_ptr<modelbox::GCEdge> GraphvizConfig::NewGcEdgeFromAgedge(
   return gcedge;
 }
 
-Status GraphvizConfig::TraversalsEdge(std::shared_ptr<Agraph_t> g,
-                                      std::shared_ptr<GCGraph> graph) {
+Status GraphvizConfig::TraversalsEdge(const std::shared_ptr<Agraph_t> &g,
+                                      const std::shared_ptr<GCGraph> &graph) {
   Agnode_t *agnode = nullptr;
   Agedge_t *agedge = nullptr;
   std::vector<std::string> edge_keys;

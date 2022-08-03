@@ -16,12 +16,14 @@
 
 #include "virtualdriver_inference.h"
 
+#include <utility>
+
 #include "modelbox/base/driver.h"
 
 constexpr const char *VIRTUAL_FLOWUNIT_TYPE = "inference";
 
 void VirtualInferenceFlowUnitDesc::SetModelEntry(std::string model_entry) {
-  model_entry_ = model_entry;
+  model_entry_ = std::move(model_entry);
 }
 
 std::shared_ptr<modelbox::DriverFactory>
@@ -53,7 +55,7 @@ InferenceVirtualDriver::GetBindDriver() {
 }
 
 void InferenceVirtualDriver::SetBindDriver(
-    std::vector<std::shared_ptr<modelbox::Driver>> driver_list) {
+    const std::vector<std::shared_ptr<modelbox::Driver>> &driver_list) {
   inference_flowunit_driver_list_ = driver_list;
 }
 
@@ -101,7 +103,7 @@ modelbox::Status InferenceVirtualDriverManager::Add(const std::string &file) {
       std::make_shared<modelbox::ConfigurationBuilder>();
   std::shared_ptr<modelbox::Configuration> config = builder->Build(file);
   if (config == nullptr) {
-    auto err_msg = modelbox::StatusError.Errormsg();
+    const auto &err_msg = modelbox::StatusError.Errormsg();
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_BADCONF, err_msg};
   }
@@ -195,7 +197,9 @@ modelbox::Status VirtualInferenceFlowUnitFactory::FillItem(
     std::string item_device;
     std::string item_name;
     std::string item_type;
-    auto key = type + "." + type + std::to_string(i);
+    auto key = type;
+    key += "." + type;
+    key += std::to_string(i);
     auto item_table = config->GetSubKeys(key);
     if (item_table.empty()) {
       MBLOG_ERROR << "the key " << key << " is not found in config file.";
@@ -204,7 +208,8 @@ modelbox::Status VirtualInferenceFlowUnitFactory::FillItem(
 
     std::map<std::string, std::string> ext_map;
     for (const auto &inner_item : item_table) {
-      auto item_index = key + "." + inner_item;
+      auto item_index = key;
+      item_index += "." + inner_item;
       if (inner_item == "name") {
         item_name = config->GetString(item_index);
         if (item_name.empty()) {
@@ -344,9 +349,9 @@ VirtualInferenceFlowUnitFactory::FlowUnitProbe() {
 }
 
 void VirtualInferenceFlowUnitFactory::SetFlowUnitFactory(
-    std::vector<std::shared_ptr<modelbox::DriverFactory>>
-        bind_flowunit_factory_list) {
-  for (auto &bind_flowunit_factory : bind_flowunit_factory_list) {
+    const std::vector<std::shared_ptr<modelbox::DriverFactory>>
+        &bind_flowunit_factory_list) {
+  for (const auto &bind_flowunit_factory : bind_flowunit_factory_list) {
     bind_flowunit_factory_list_.push_back(
         std::dynamic_pointer_cast<FlowUnitFactory>(bind_flowunit_factory));
   }
@@ -381,7 +386,7 @@ std::string VirtualInferenceFlowUnitDesc::GetModelEntry() {
 }
 
 void VirtualInferenceFlowUnitDesc::SetConfiguration(
-    const std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration> &config) {
   config_ = config;
 }
 

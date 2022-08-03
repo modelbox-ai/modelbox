@@ -72,8 +72,8 @@ Status ColorTransposeFlowUnitTest::AddMockFlowUnit() {
   {
     auto mock_desc = GenerateFlowunitDesc("copy", {"input"}, {"output"});
     auto process_func =
-        [=](std::shared_ptr<DataContext> op_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& op_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       auto input = op_ctx->Input("input");
       auto output = op_ctx->Output("output");
       for (size_t i = 0; i < input->Size(); ++i) {
@@ -127,7 +127,9 @@ TEST_F(ColorTransposeFlowUnitTest, ColorTransposeTest) {
 
   {
     std::string gimg_path = std::string(TEST_ASSETS) + "/test.jpg";
-    cv::Mat bgr_img, gray_img, rgb_img;
+    cv::Mat bgr_img;
+    cv::Mat gray_img;
+    cv::Mat rgb_img;
     bgr_img = cv::imread(gimg_path);
 
     cv::cvtColor(bgr_img, rgb_img, CV_BGR2RGB);

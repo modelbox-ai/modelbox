@@ -55,7 +55,7 @@ class BufferInheritInfo {
 
   BufferProcessType GetType();
 
-  void SetInheritFrom(std::shared_ptr<BufferIndexInfo> buffer_index);
+  void SetInheritFrom(const std::shared_ptr<BufferIndexInfo> &buffer_index);
 
   std::shared_ptr<BufferIndexInfo> GetInheritFrom();
 

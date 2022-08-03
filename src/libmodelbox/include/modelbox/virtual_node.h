@@ -30,14 +30,14 @@ namespace modelbox {
 
 class InputVirtualNode : public Node {
  public:
-  InputVirtualNode(const std::string& device_name, const std::string& device_id,
+  InputVirtualNode(std::string device_name, std::string device_id,
                    std::shared_ptr<DeviceManager> device_manager);
 
   ~InputVirtualNode() override;
 
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,
-              std::shared_ptr<Configuration> config) override;
+              const std::shared_ptr<Configuration>& config) override;
 
   /**
    * @brief Open the Node object
@@ -71,7 +71,7 @@ class OutputVirtualNode : public Node {
 
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,
-              std::shared_ptr<Configuration> config) override;
+              const std::shared_ptr<Configuration>& config) override;
 
   /**
    * @brief Open the Node object
@@ -107,7 +107,7 @@ class SessionUnmatchCache {
   void SetTargetDevice(std::shared_ptr<Device> target_device);
 
   Status CacheBuffer(const std::string& port_name,
-                     std::shared_ptr<Buffer> buffer);
+                     const std::shared_ptr<Buffer>& buffer);
 
   std::shared_ptr<FlowUnitError> GetLastError();
 
@@ -134,7 +134,7 @@ class OutputUnmatchVirtualNode : public Node {
 
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,
-              std::shared_ptr<Configuration> config) override;
+              const std::shared_ptr<Configuration>& config) override;
 
   /**
    * @brief Open the Node object

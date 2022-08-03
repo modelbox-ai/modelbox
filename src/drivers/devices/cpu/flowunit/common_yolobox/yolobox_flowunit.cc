@@ -124,9 +124,7 @@ modelbox::Status YoloboxFlowUnit::ReadTensorData(
     std::shared_ptr<modelbox::DataContext> &data_ctx) {
   tensor_data.clear();
   size_t batch_size = 0;
-  for (size_t tensor_index = 0; tensor_index < input_name_list_.size();
-       ++tensor_index) {
-    auto tensor_name = input_name_list_[tensor_index];
+  for (const auto &tensor_name : input_name_list_) {
     auto input_buffers = data_ctx->Input(tensor_name);
     if (batch_size == 0) {
       batch_size = input_buffers->Size();
@@ -174,6 +172,7 @@ modelbox::Status YoloboxFlowUnit::SendBoxData(
     std::vector<std::vector<BoundingBox>> &box_data,
     std::shared_ptr<modelbox::DataContext> &data_ctx) {
   std::vector<size_t> shape;
+  shape.reserve(box_data.size());
   for (auto &boxes : box_data) {
     shape.push_back(boxes.size() * sizeof(BoundingBox));
   }
@@ -206,10 +205,8 @@ modelbox::Status YoloboxFlowUnit::Process(
   }
 
   std::vector<std::vector<BoundingBox>> detected_boxes_mul_batch;
-  for (size_t batch_index = 0; batch_index < tensor_data.size();
-       ++batch_index) {
+  for (auto &tensors_in_one_batch : tensor_data) {
     std::vector<BoundingBox> detected_boxes_single_batch;
-    auto &tensors_in_one_batch = tensor_data[batch_index];
     for (size_t tensor_index = 0; tensor_index < tensors_in_one_batch.size();
          ++tensor_index) {
       auto &tensor = tensors_in_one_batch[tensor_index];

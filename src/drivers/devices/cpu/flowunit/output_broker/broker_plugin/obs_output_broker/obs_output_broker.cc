@@ -32,7 +32,7 @@ modelbox::Status ObsOutputBroker::Init(
   obs_status ret_status = OBS_STATUS_BUTT;
   ret_status = obs_initialize(OBS_INIT_ALL);
   if (OBS_STATUS_OK != ret_status) {
-    auto obs_status_name = obs_get_status_name(ret_status);
+    const auto *obs_status_name = obs_get_status_name(ret_status);
     if (obs_status_name == nullptr) {
       obs_status_name = "null";
     }

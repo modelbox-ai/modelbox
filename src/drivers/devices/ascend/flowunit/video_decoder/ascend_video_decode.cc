@@ -23,8 +23,9 @@
 #define ACL_ENABLE
 #include "image_process.h"
 
-ThreadHandler::ThreadHandler(int device_id, int instance_id,
-                             std::shared_ptr<modelbox::DataContext> data_ctx)
+ThreadHandler::ThreadHandler(
+    int device_id, int instance_id,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx)
     : device_id_(device_id), instance_id_(instance_id), data_ctx_(data_ctx) {}
 
 ThreadHandler::~ThreadHandler() {
@@ -63,7 +64,7 @@ modelbox::Status ThreadHandler::CreateThread() {
   int createThreadErr = pthread_create(&threadId_, nullptr,
                                        ThreadHandler::ThreadFunc, (void *)this);
   if (createThreadErr != 0) {
-    auto errMsg = "create thread failed, err = " + createThreadErr;
+    const auto *errMsg = "create thread failed, err = " + createThreadErr;
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }
@@ -77,12 +78,12 @@ DvppVideoDecodeContext::~DvppVideoDecodeContext() {
   std::vector<std::shared_ptr<DvppFrame>> not_consumed_frame_list;
   queue_->PopBatch(&not_consumed_frame_list, -1);
   for (auto &frame : not_consumed_frame_list) {
-    auto pic_desc = frame->GetPicDesc().get();
+    auto *pic_desc = frame->GetPicDesc().get();
     if (pic_desc == nullptr) {
       continue;
     }
 
-    auto data = acldvppGetPicDescData(pic_desc);
+    auto *data = acldvppGetPicDescData(pic_desc);
     if (data == nullptr) {
       continue;
     }
@@ -180,7 +181,7 @@ void AscendVideoDecoder::Callback(acldvppStreamDesc *input,
 }
 
 modelbox::Status AscendVideoDecoder::Init(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
+    const std::shared_ptr<modelbox::DataContext> &data_ctx) {
   aclError ret = aclrtSetDevice(device_id_);
   if (ret != ACL_ERROR_NONE) {
     auto errMsg = "acl set device " + std::to_string(device_id_) +
@@ -205,7 +206,7 @@ modelbox::Status AscendVideoDecoder::Init(
 
   aclvdecChannelDesc *vdecChannelDescPtr = aclvdecCreateChannelDesc();
   if (vdecChannelDescPtr == nullptr) {
-    auto errMsg =
+    const auto *errMsg =
         "fail to create vdec channel desc, pls check npu log for more details.";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
@@ -295,7 +296,7 @@ modelbox::Status AscendVideoDecoder::Init(
 }
 
 std::shared_ptr<acldvppPicDesc> AscendVideoDecoder::SetUpFrame(
-    std::shared_ptr<DvppPacket> dvpp_packet) {
+    const std::shared_ptr<DvppPacket> &dvpp_packet) {
   auto width = dvpp_packet->GetWidth();
   auto height = dvpp_packet->GetHeight();
   auto align_width =
@@ -331,8 +332,8 @@ std::shared_ptr<acldvppPicDesc> AscendVideoDecoder::SetUpFrame(
 }
 
 modelbox::Status AscendVideoDecoder::ProcessLastPacket(
-    std::shared_ptr<DvppPacket> dvpp_packet,
-    std::shared_ptr<DvppVideoDecodeContext> dvpp_decoder_ctx) {
+    const std::shared_ptr<DvppPacket> &dvpp_packet,
+    const std::shared_ptr<DvppVideoDecodeContext> &dvpp_decoder_ctx) {
   MBLOG_INFO << "process the last packet.";
 
   aclError ret = ACL_ERROR_NONE;
@@ -347,8 +348,8 @@ modelbox::Status AscendVideoDecoder::ProcessLastPacket(
 }
 
 modelbox::Status AscendVideoDecoder::Decode(
-    std::shared_ptr<DvppPacket> dvpp_packet,
-    std::shared_ptr<DvppVideoDecodeContext> dvpp_decoder_ctx) {
+    const std::shared_ptr<DvppPacket> &dvpp_packet,
+    const std::shared_ptr<DvppVideoDecodeContext> &dvpp_decoder_ctx) {
   aclError ret = aclrtSetDevice(device_id_);
   if (ret != ACL_ERROR_NONE) {
     auto errMsg = "acl set device " + std::to_string(device_id_) + " failed";
@@ -366,7 +367,7 @@ modelbox::Status AscendVideoDecoder::Decode(
 
   auto pic_desc = SetUpFrame(dvpp_packet);
   if (pic_desc == nullptr) {
-    auto errMsg = "set up frame failed";
+    const auto *errMsg = "set up frame failed";
     MBLOG_ERROR << errMsg;
     return {modelbox::STATUS_FAULT, errMsg};
   }

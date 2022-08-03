@@ -26,7 +26,7 @@ class ExecutorMockMemory : public DeviceMemory {
  public:
   ExecutorMockMemory(const std::shared_ptr<Device> &device,
                      const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-                     std::shared_ptr<void> device_mem_ptr, size_t size)
+                     const std::shared_ptr<void> &device_mem_ptr, size_t size)
       : DeviceMemory(device, mem_mgr, device_mem_ptr, size) {}
 };
 
@@ -91,7 +91,7 @@ class ExecutorMockDataContext : public FlowUnitDataContext {
   ExecutorMockDataContext(Node *node)
       : FlowUnitDataContext(node, nullptr, nullptr) {}
 
-  void MockInput(std::shared_ptr<Device> device, size_t port_num,
+  void MockInput(const std::shared_ptr<Device> &device, size_t port_num,
                  size_t port_data_size) {
     cur_input_valid_data_.clear();
     for (size_t port_idx = 0; port_idx < port_num; ++port_idx) {
@@ -236,7 +236,7 @@ class FlowUnitExecutorTest : public testing::Test {
   void TestDataPreparePerf(
       const std::vector<std::shared_ptr<Device>> &devices,
       const std::vector<std::shared_ptr<FlowUnit>> &flowunits,
-      std::shared_ptr<Node> node, bool is_stream) {
+      const std::shared_ptr<Node> &node, bool is_stream) {
     auto ctx_list = CreateExecCtxs(320, node.get(), flowunits);
     MockInput(devices, ctx_list, 4, 32);
     FlowUnitExecDataView data_view(ctx_list);
@@ -255,7 +255,7 @@ class FlowUnitExecutorTest : public testing::Test {
   void TestWriteBackPerf(
       const std::vector<std::shared_ptr<Device>> &devices,
       const std::vector<std::shared_ptr<FlowUnit>> &flowunits,
-      std::shared_ptr<Node> node, bool is_stream) {
+      const std::shared_ptr<Node> &node, bool is_stream) {
     auto ctx_list = CreateExecCtxs(320, node.get(), flowunits);
     MockInput(devices, ctx_list, 4, 32);
     FlowUnitExecDataView data_view(ctx_list);
@@ -297,7 +297,7 @@ class FlowUnitExecutorTest : public testing::Test {
 TEST_F(FlowUnitExecutorTest, EventInputTest) {
   ExecutorTestConfig cfg;
   cfg.input_port_count = 0;
-  cfg.fu_process = [](std::shared_ptr<DataContext> data_ctx) -> Status {
+  cfg.fu_process = [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
     auto inputs = data_ctx->Input();
     EXPECT_EQ(inputs->size(), 0);
     auto outputs = data_ctx->Output();
@@ -354,7 +354,7 @@ TEST_F(FlowUnitExecutorTest, EventInputTest) {
 TEST_F(FlowUnitExecutorTest, ExpandTest) {
   ExecutorTestConfig cfg;
   cfg.output_port_count = 2;
-  cfg.fu_process = [](std::shared_ptr<DataContext> data_ctx) -> Status {
+  cfg.fu_process = [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
     auto inputs = data_ctx->Input();
     EXPECT_EQ(inputs->size(), 1);
     auto outputs = data_ctx->Output();
@@ -414,7 +414,7 @@ TEST_F(FlowUnitExecutorTest, ExpandTest) {
 TEST_F(FlowUnitExecutorTest, CollapseTest) {
   ExecutorTestConfig cfg;
   cfg.input_port_count = 2;
-  cfg.fu_process = [](std::shared_ptr<DataContext> data_ctx) -> Status {
+  cfg.fu_process = [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
     auto inputs = data_ctx->Input();
     EXPECT_EQ(inputs->size(), 2);
     auto outputs = data_ctx->Output();
@@ -462,7 +462,7 @@ TEST_F(FlowUnitExecutorTest, OriginErrorTest) {
   cfg.input_port_count = 2;
   cfg.output_port_count = 2;
   cfg.process_call_times = 1;
-  cfg.fu_process = [](std::shared_ptr<DataContext> data_ctx) -> Status {
+  cfg.fu_process = [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
     auto output = data_ctx->Output("0");
     EXPECT_NE(output, nullptr);
     output->Build({1});
@@ -492,7 +492,7 @@ TEST_F(FlowUnitExecutorTest, OriginError2Test) {
   cfg.input_port_count = 2;
   cfg.output_port_count = 2;
   cfg.process_call_times = 1;
-  cfg.fu_process = [](std::shared_ptr<DataContext> data_ctx) -> Status {
+  cfg.fu_process = [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
     auto output = data_ctx->Output("0");
     EXPECT_NE(output, nullptr);
     output->Build({1, 1, 1});
@@ -524,7 +524,7 @@ TEST_F(FlowUnitExecutorTest, OriginTest) {
   ExecutorTestConfig cfg;
   cfg.input_port_count = 2;
   cfg.output_port_count = 2;
-  cfg.fu_process = [](std::shared_ptr<DataContext> data_ctx) -> Status {
+  cfg.fu_process = [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
     for (size_t port_idx = 0; port_idx < 2; ++port_idx) {
       auto port_name = std::to_string(port_idx);
       auto input = data_ctx->Input(port_name);
@@ -551,7 +551,7 @@ TEST_F(FlowUnitExecutorTest, OriginTest) {
         for (size_t buffer_idx = 0; buffer_idx < input->Size(); ++buffer_idx) {
           auto buffer_id = std::to_string(buffer_idx);
           auto buffer = input->At(buffer_idx);
-          buffer->Set("input_id", ctx_id + port_name + buffer_id);
+          buffer->Set("input_id", ctx_id += port_name + buffer_id);
         }
       }
     }
@@ -570,7 +570,7 @@ TEST_F(FlowUnitExecutorTest, OriginTest) {
           auto buffer = output->At(buffer_idx);
           std::string input_id;
           buffer->Get("input_id", input_id);
-          EXPECT_EQ(input_id, ctx_id + port_name + buffer_id);
+          EXPECT_EQ(input_id, ctx_id += port_name + buffer_id);
         }
       }
     }
@@ -596,7 +596,7 @@ TEST_F(FlowUnitExecutorTest, IfElseTest) {
   cfg.process_call_times = 4;
   cfg.input_port_count = 2;
   cfg.output_port_count = 2;
-  cfg.fu_process = [](std::shared_ptr<DataContext> data_ctx) -> Status {
+  cfg.fu_process = [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
     auto output = data_ctx->Output("0");
     EXPECT_NE(output, nullptr);
     output->Build({10});
@@ -629,7 +629,7 @@ TEST_F(FlowUnitExecutorTest, IfElseErrorTest) {
   cfg.process_call_times = 4;
   cfg.input_port_count = 2;
   cfg.output_port_count = 2;
-  cfg.fu_process = [](std::shared_ptr<DataContext> data_ctx) -> Status {
+  cfg.fu_process = [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
     auto output = data_ctx->Output("0");
     EXPECT_NE(output, nullptr);
     output->Build({10, 10, 10});
@@ -663,7 +663,7 @@ TEST_F(FlowUnitExecutorTest, DataViewPerfTest) {
     desc->AddFlowUnitOutput({"1", "cpu"});
     EXPECT_CALL(*mock_fu, Process(testing::_))
         .WillRepeatedly(testing::Invoke(
-            [](std::shared_ptr<DataContext> data_ctx) -> Status {
+            [](const std::shared_ptr<DataContext> &data_ctx) -> Status {
               return STATUS_OK;
             }));
   }

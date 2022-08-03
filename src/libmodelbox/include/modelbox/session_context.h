@@ -36,7 +36,7 @@ class SessionContext {
    * @brief Session context
    * @param graph_stats Statistics for graph
    */
-  SessionContext(std::shared_ptr<StatisticsItem> graph_stats = nullptr);
+  SessionContext(const std::shared_ptr<StatisticsItem> &graph_stats = nullptr);
 
   virtual ~SessionContext();
 

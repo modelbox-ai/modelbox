@@ -20,6 +20,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <utility>
 
 #include "flowunit.h"
 #include "modelbox/base/status.h"
@@ -34,9 +35,9 @@ namespace modelbox {
 class FlowUnitExecContext {
  public:
   FlowUnitExecContext(std::shared_ptr<FlowUnitDataContext> data_ctx)
-      : data_ctx_(data_ctx) {}
+      : data_ctx_(std::move(data_ctx)) {}
 
-  void SetFlowUnit(std::shared_ptr<FlowUnit> fu) { bind_fu_ = fu; }
+  void SetFlowUnit(std::shared_ptr<FlowUnit> fu) { bind_fu_ = std::move(fu); }
 
   const std::shared_ptr<FlowUnit> &GetFlowUnit() { return bind_fu_; }
 
@@ -55,14 +56,14 @@ class FlowUnitExecData {
  public:
   enum DataType { IN_DATA, OUT_DATA };
 
-  FlowUnitExecData(std::shared_ptr<FlowUnit> fu);
+  FlowUnitExecData(const std::shared_ptr<FlowUnit> &fu);
 
   virtual ~FlowUnitExecData() = default;
 
   void ReserveCache(size_t buffer_count, DataType type = IN_DATA);
 
-  void AppendToCache(std::shared_ptr<FlowUnitExecData> src, size_t start_idx,
-                     size_t count, DataType type = IN_DATA);
+  void AppendToCache(const std::shared_ptr<FlowUnitExecData> &src,
+                     size_t start_idx, size_t count, DataType type = IN_DATA);
 
   void FlushCache(DataType type = IN_DATA);
 
@@ -116,10 +117,10 @@ class FlowUnitExecData {
 
   void FillErrorOutput(size_t out_count, bool data_in_one_port);
 
-  Status SaveProcessOneToOne(std::shared_ptr<BufferListMap> parent_data,
+  Status SaveProcessOneToOne(const std::shared_ptr<BufferListMap> &parent_data,
                              size_t data_count, bool data_in_one_port);
 
-  Status SaveProcessNToM(std::shared_ptr<BufferListMap> parent_data);
+  Status SaveProcessNToM(const std::shared_ptr<BufferListMap> &parent_data);
 
   std::shared_ptr<FlowUnit> fu_;
   std::shared_ptr<BufferListMap> in_data_;
@@ -147,7 +148,7 @@ using BatchedFUExecDataList = std::vector<BatchedFUExecData>;
  **/
 class FlowUnitExecDataMapper {
  public:
-  void AddExecCtx(std::shared_ptr<FlowUnitExecContext> exec_ctx);
+  void AddExecCtx(const std::shared_ptr<FlowUnitExecContext> &exec_ctx);
 
   void LoadDataFromExecCtx();
 
@@ -195,10 +196,10 @@ class FlowUnitExecDataMapper {
 
   Status FillExecCtxOutput();
 
-  Status CheckAllOutputNumEqual(std::shared_ptr<FlowUnitExecData> data,
+  Status CheckAllOutputNumEqual(const std::shared_ptr<FlowUnitExecData> &data,
                                 bool data_in_one_port);
 
-  Status CheckOutputNumEqualInput(std::shared_ptr<FlowUnitExecData> data,
+  Status CheckOutputNumEqualInput(const std::shared_ptr<FlowUnitExecData> &data,
                                   bool data_in_one_port);
 
   // data ctx list of same flowunit that come from node receive
@@ -224,7 +225,7 @@ using ExecViewVisitFunc =
  **/
 class FlowUnitExecDataView {
  public:
-  FlowUnitExecDataView(const FUExecContextList &exec_ctx_list);
+  FlowUnitExecDataView(FUExecContextList exec_ctx_list);
 
   virtual ~FlowUnitExecDataView() = default;
 
@@ -272,8 +273,9 @@ class FlowUnitExecDataView {
     bool need_contiguous_;
   };
 
-  Status DataLoadTask(const LoadConfig &cfg, FlowUnit *flowunit,
-                      std::shared_ptr<FlowUnitExecDataMapper> exec_data_mapper);
+  Status DataLoadTask(
+      const LoadConfig &cfg, FlowUnit *flowunit,
+      const std::shared_ptr<FlowUnitExecDataMapper> &exec_data_mapper);
 
   Status PackLoadTasks(const LoadConfig &cfg,
                        std::vector<std::shared_ptr<Executor>> &executors,
@@ -298,12 +300,12 @@ class FlowUnitDataExecutor {
   void SetNeedCheckOutput(bool need_check);
 
  private:
-  Status LoadExecuteInput(std::shared_ptr<Node> node,
+  Status LoadExecuteInput(const std::shared_ptr<Node> &node,
                           FlowUnitExecDataView &exec_view);
 
   Status Execute(FlowUnitExecDataView &exec_view);
 
-  Status SaveExecuteOutput(std::shared_ptr<Node> node,
+  Status SaveExecuteOutput(const std::shared_ptr<Node> &node,
                            FlowUnitExecDataView &exec_view);
 
   std::weak_ptr<Node> node_ref_;

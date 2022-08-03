@@ -34,12 +34,13 @@ class MindSporeInference {
   MindSporeInference() = default;
   virtual ~MindSporeInference();
 
-  modelbox::Status Init(std::shared_ptr<mindspore::Context> mindspore_context,
+  modelbox::Status Init(const std::shared_ptr<mindspore::Context> &mindspore_context,
                         const std::string &model_entry,
                         std::shared_ptr<modelbox::Configuration> &config,
                         struct MindSporeIOList &io_list,
                         const std::shared_ptr<modelbox::Drivers> &drivers_ptr);
-  modelbox::Status Infer(std::shared_ptr<modelbox::DataContext> data_ctx);
+  modelbox::Status Infer(
+      const std::shared_ptr<modelbox::DataContext> &data_ctx);
   int64_t GetBatchSize() { return batch_size_; };
 
  private:

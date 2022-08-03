@@ -43,21 +43,21 @@ class Graph {
    * @param config configuration
    * @return initialize result
    */
-  Status Initialize(std::shared_ptr<FlowUnitManager> flowunit_mgr,
-                    std::shared_ptr<DeviceManager> device_mgr,
+  Status Initialize(const std::shared_ptr<FlowUnitManager> &flowunit_mgr,
+                    const std::shared_ptr<DeviceManager> &device_mgr,
                     std::shared_ptr<Profiler> profiler,
-                    std::shared_ptr<Configuration> config);
+                    const std::shared_ptr<Configuration> &config);
   /**
    * @brief Build a graph
    * @param g graph data pointer
    * @return initialize result
    */
-  Status Build(std::shared_ptr<GCGraph> g);
+  Status Build(const std::shared_ptr<GCGraph> &g);
 
-  Status Topology(std::function<bool(std::shared_ptr<NodeBase> node, int order)>
-                      callback) const;
+  Status Topology(const std::function<bool(std::shared_ptr<NodeBase> node,
+                                           int order)> &callback) const;
 
-  Status AddNode(std::shared_ptr<NodeBase> node);
+  Status AddNode(const std::shared_ptr<NodeBase> &node);
 
   std::shared_ptr<NodeBase> GetNode(const std::string &nodeName) const;
 
@@ -75,13 +75,14 @@ class Graph {
                  const std::string &dstNodeName,
                  const std::string &dstPortName);
 
-  Status AddLink(std::shared_ptr<OutPort> src, std::shared_ptr<InPort> dst);
+  Status AddLink(const std::shared_ptr<OutPort> &src,
+                 const std::shared_ptr<InPort> &dst);
 
   std::set<std::shared_ptr<InPort>> GetDstPortsByPort(
-      std::shared_ptr<OutPort> port) const;
+      const std::shared_ptr<OutPort> &port) const;
 
   std::set<std::shared_ptr<OutPort>> GetSrcPortsByPort(
-      std::shared_ptr<InPort> port) const;
+      const std::shared_ptr<InPort> &port) const;
 
   std::set<std::shared_ptr<NodeBase>> GetStartNodes() const;
 
@@ -112,27 +113,27 @@ class Graph {
   std::set<std::shared_ptr<NodeBase>> GetEndPointNodes() const;
 
  private:
-  void ShowGraphInfo(std::shared_ptr<GCGraph> g);
+  void ShowGraphInfo(const std::shared_ptr<GCGraph> &g);
 
   Status CheckGraph();
 
-  Status BuildFlowunitNode(std::shared_ptr<GCGraph> g,
-                           std::shared_ptr<GCNode> gcnode, bool strict);
+  Status BuildFlowunitNode(const std::shared_ptr<GCGraph> &g,
+                           const std::shared_ptr<GCNode> &gcnode, bool strict);
 
-  Status BuildInputNode(std::shared_ptr<GCNode> gcnode);
+  Status BuildInputNode(const std::shared_ptr<GCNode> &gcnode);
 
-  Status BuildOutputNode(std::shared_ptr<GCNode> gcnode);
+  Status BuildOutputNode(const std::shared_ptr<GCNode> &gcnode);
 
-  Status BuildNode(std::shared_ptr<GCGraph> g, std::shared_ptr<GCNode> gcnode,
-                   bool strict);
+  Status BuildNode(const std::shared_ptr<GCGraph> &g,
+                   const std::shared_ptr<GCNode> &gcnode, bool strict);
 
-  Status BuildNodes(std::shared_ptr<GCGraph> g);
+  Status BuildNodes(const std::shared_ptr<GCGraph> &g);
 
-  Status BuildVirtualNodes(std::shared_ptr<GCGraph> g);
+  Status BuildVirtualNodes(const std::shared_ptr<GCGraph> &g);
 
-  Status BuildEdges(std::shared_ptr<GCGraph> g);
+  Status BuildEdges(const std::shared_ptr<GCGraph> &g);
 
-  Status BuildGraph(std::shared_ptr<GCGraph> g);
+  Status BuildGraph(const std::shared_ptr<GCGraph> &g);
 
   Status OpenNodes();
 
@@ -167,8 +168,8 @@ class Graph {
 
   virtual Status InitScheduler();
 
-  Status UpdateGraphConfigToNode(std::shared_ptr<GCGraph> g,
-                                 std::shared_ptr<GCNode> node);
+  Status UpdateGraphConfigToNode(const std::shared_ptr<GCGraph> &g,
+                                 const std::shared_ptr<GCNode> &node);
 
   virtual Status InitNode(std::shared_ptr<Node> &node,
                           const std::set<std::string> &input_port_names,

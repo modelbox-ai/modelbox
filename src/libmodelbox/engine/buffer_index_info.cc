@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/buffer_index_info.h"
 
 #include "modelbox/buffer.h"
@@ -27,7 +29,7 @@ void BufferInheritInfo::SetType(BufferProcessType type) { type_ = type; }
 BufferProcessType BufferInheritInfo::GetType() { return type_; }
 
 void BufferInheritInfo::SetInheritFrom(
-    std::shared_ptr<BufferIndexInfo> buffer_index) {
+    const std::shared_ptr<BufferIndexInfo> &buffer_index) {
   inherit_from_buffer_ = buffer_index;
   auto inherit_info = buffer_index->GetInheritInfo();
   if (inherit_info == nullptr) {
@@ -60,7 +62,7 @@ BufferProcessType BufferProcessInfo::GetType() { return type_; }
 
 void BufferIndexInfo::SetInheritInfo(
     std::shared_ptr<BufferInheritInfo> inherit_info) {
-  inherit_info_ = inherit_info;
+  inherit_info_ = std::move(inherit_info);
 }
 
 std::shared_ptr<BufferInheritInfo> BufferIndexInfo::GetInheritInfo() {
@@ -68,7 +70,7 @@ std::shared_ptr<BufferInheritInfo> BufferIndexInfo::GetInheritInfo() {
 }
 
 void BufferIndexInfo::SetStream(std::shared_ptr<Stream> stream_belong_to) {
-  stream_belong_to_ = stream_belong_to;
+  stream_belong_to_ = std::move(stream_belong_to);
 }
 
 std::shared_ptr<Stream> BufferIndexInfo::GetStream() {
@@ -95,7 +97,7 @@ bool BufferIndexInfo::IsPlaceholder() { return is_placeholder_; }
 
 void BufferIndexInfo::SetProcessInfo(
     std::shared_ptr<BufferProcessInfo> process_info) {
-  process_info_ = process_info;
+  process_info_ = std::move(process_info);
 }
 
 std::shared_ptr<BufferProcessInfo> BufferIndexInfo::GetProcessInfo() {
@@ -110,7 +112,7 @@ std::shared_ptr<BufferIndexInfo> BufferManageView::GetIndexInfo(
 void BufferManageView::SetIndexInfo(
     const std::shared_ptr<Buffer> &buffer,
     std::shared_ptr<BufferIndexInfo> buffer_index_info) {
-  buffer->index_info_ = buffer_index_info;
+  buffer->index_info_ = std::move(buffer_index_info);
 }
 
 std::shared_ptr<BufferIndexInfo> BufferManageView::GetFirstParentBuffer(

@@ -29,9 +29,9 @@ class TomlConfigParser : public ConfigParser {
       const std::function<void(const std::string key,
                                const std::string &basic_value)> &collector);
 
-  Status Parse(std::shared_ptr<Configuration> &config, std::istream &is,
+  Status Parse(const std::shared_ptr<Configuration> &config, std::istream &is,
                const std::string &fname = "unknown file") override;
-  Status Parse(std::shared_ptr<Configuration> &config,
+  Status Parse(const std::shared_ptr<Configuration> &config,
                const std::string &file) override;
 };
 
@@ -72,8 +72,8 @@ Status ConfigStore::ReadProperty(const std::string &key,
 
 std::set<std::string> ConfigStore::GetKeys() const {
   std::set<std::string> keys;
-  for (auto iter = properties_.begin(); iter != properties_.end(); ++iter) {
-    keys.insert(iter->first);
+  for (const auto &propertie : properties_) {
+    keys.insert(propertie.first);
   }
 
   return keys;
@@ -105,7 +105,8 @@ void ConfigStore::AddSubConfig(const std::string &prefix_key,
   }
 
   for (const auto &sub_key : sub_keys) {
-    auto new_prefix = prefix_key + "." + sub_key;
+    auto new_prefix = prefix_key + ".";
+    new_prefix += sub_key;
     auto item = properties_.find(new_prefix);
     if (item != properties_.end()) {
       store->WriteProperty(item->first.substr(key_offset), item->second);
@@ -283,7 +284,7 @@ Status Configuration::Convert<std::string>(const std::string &property,
                                            std::string &convert_prop) const {
   convert_prop = property;
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<bool>(const std::string &property,
@@ -297,7 +298,7 @@ Status Configuration::Convert<bool>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<int8_t>(const std::string &property,
@@ -322,7 +323,7 @@ Status Configuration::Convert<int8_t>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<uint8_t>(const std::string &property,
@@ -347,7 +348,7 @@ Status Configuration::Convert<uint8_t>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<int16_t>(const std::string &property,
@@ -372,7 +373,7 @@ Status Configuration::Convert<int16_t>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<uint16_t>(const std::string &property,
@@ -396,7 +397,7 @@ Status Configuration::Convert<uint16_t>(const std::string &property,
     return {STATUS_FAULT, "uint16 failed, out of range"};
   }
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<int32_t>(const std::string &property,
@@ -421,7 +422,7 @@ Status Configuration::Convert<int32_t>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<uint32_t>(const std::string &property,
@@ -446,7 +447,7 @@ Status Configuration::Convert<uint32_t>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<int64_t>(const std::string &property,
@@ -466,7 +467,7 @@ Status Configuration::Convert<int64_t>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<uint64_t>(const std::string &property,
@@ -490,7 +491,7 @@ Status Configuration::Convert<uint64_t>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<float>(const std::string &property,
@@ -509,7 +510,7 @@ Status Configuration::Convert<float>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 template <>
 Status Configuration::Convert<double>(const std::string &property,
@@ -528,10 +529,10 @@ Status Configuration::Convert<double>(const std::string &property,
   }
 
   return STATUS_SUCCESS;
-};
+}
 
 void Configuration::StringSplit(const std::string &str,
-                                const std::string delimiter,
+                                const std::string &delimiter,
                                 std::vector<std::string> &sub_str_list) {
   if (str.empty() || delimiter.empty()) {
     return;
@@ -595,7 +596,7 @@ Status TomlConfigParser::Visit(
   return STATUS_SUCCESS;
 }
 
-Status TomlConfigParser::Parse(std::shared_ptr<Configuration> &config,
+Status TomlConfigParser::Parse(const std::shared_ptr<Configuration> &config,
                                std::istream &is, const std::string &fname) {
   toml::value data;
   try {
@@ -606,12 +607,12 @@ Status TomlConfigParser::Parse(std::shared_ptr<Configuration> &config,
 
   return Visit(
       "", data,
-      [&config](const std::string key, const std::string &basic_value) {
+      [&config](const std::string &key, const std::string &basic_value) {
         config->SetProperty(key, basic_value);
       });
 }
 
-Status TomlConfigParser::Parse(std::shared_ptr<Configuration> &config,
+Status TomlConfigParser::Parse(const std::shared_ptr<Configuration> &config,
                                const std::string &file) {
   std::ifstream ifs(file.c_str(), std::ios_base::binary);
   return Parse(config, ifs, file);
@@ -625,7 +626,6 @@ void ConfigurationBuilder::AddProperty(const std::string &key,
     store_.reset(new ConfigStore());
   }
 
-  auto trim_prop = property;
   store_->WriteProperty(key, property);
 }
 

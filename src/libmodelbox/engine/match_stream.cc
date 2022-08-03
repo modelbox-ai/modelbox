@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/match_stream.h"
 
 #include "modelbox/buffer_index_info.h"
@@ -36,7 +38,7 @@ void MatchStreamData::SetStreamMatchKey(MatchKey* match_at) {
 MatchKey* MatchStreamData::GetStreamMatchKey() { return match_at_; }
 
 void MatchStreamData::SetSession(std::shared_ptr<Session> session) {
-  session_ = session;
+  session_ = std::move(session);
 }
 
 std::shared_ptr<Session> MatchStreamData::GetSession() { return session_; }
@@ -50,7 +52,7 @@ std::shared_ptr<FlowUnitInnerEvent> MatchStreamData::GetEvent() {
 }
 
 void MatchStreamData::SetBufferList(std::shared_ptr<PortDataMap> port_buffers) {
-  port_to_stream_data_ = port_buffers;
+  port_to_stream_data_ = std::move(port_buffers);
 }
 
 std::shared_ptr<PortDataMap> MatchStreamData::GetBufferList() const {
@@ -158,9 +160,9 @@ size_t InPortStreamInfo::GetReceivedStreamCount() { return 0; }
 bool InPortStreamInfo::ReachEnd() { return false; }
 
 MatchStreamCache::MatchStreamCache(
-    const std::string& node_name, size_t port_count,
+    std::string node_name, size_t port_count,
     std::unordered_map<std::string, size_t>* stream_count_each_port)
-    : node_name_(node_name),
+    : node_name_(std::move(node_name)),
       port_count_(port_count),
       stream_count_each_port_(stream_count_each_port) {}
 
@@ -259,7 +261,7 @@ std::shared_ptr<PortDataMap> MatchStreamCache::PopReadyMatchBuffers(
 }
 
 void MatchStreamCache::SetSession(std::shared_ptr<Session> session) {
-  session_ = session;
+  session_ = std::move(session);
 }
 
 std::shared_ptr<Session> MatchStreamCache::GetSession() { return session_; }
@@ -288,10 +290,12 @@ void MatchStreamCache::UpdateInputStreamInfo(const std::string& port_name,
   stream_info->ReceiveBuffer(buffer);
 }
 
-InputMatchStreamManager::InputMatchStreamManager(const std::string& node_name,
+InputMatchStreamManager::InputMatchStreamManager(std::string node_name,
                                                  size_t queue_size,
                                                  size_t port_count)
-    : node_name_(node_name), queue_size_(queue_size), port_count_(port_count) {}
+    : node_name_(std::move(node_name)),
+      queue_size_(queue_size),
+      port_count_(port_count) {}
 
 size_t InputMatchStreamManager::GetInputStreamCount() {
   return match_stream_cache_map_.size();
@@ -312,7 +316,7 @@ void InputMatchStreamManager::UpdateStreamCountEachPort(
 
 Status InputMatchStreamManager::LoadData(
     std::vector<std::shared_ptr<InPort>>& data_ports,
-    std::function<bool(std::shared_ptr<Buffer>)> drop_filter) {
+    const std::function<bool(std::shared_ptr<Buffer>)>& drop_filter) {
   if (port_inherit_backward_level_.empty() &&
       !InitInheritBackwardLevel(data_ports)) {
     // can not process data
@@ -431,7 +435,7 @@ Status InputMatchStreamManager::CacheBuffer(const std::string& port_name,
 }
 
 MatchKey* InputMatchStreamManager::GetInputStreamMatchKey(
-    std::shared_ptr<BufferIndexInfo> index_info, size_t backward_level) {
+    const std::shared_ptr<BufferIndexInfo>& index_info, size_t backward_level) {
   MatchKey* stream_match_key = nullptr;
   // go back to find same level inherit info
   auto cur_buffer_index = index_info;
@@ -585,7 +589,7 @@ void InputMatchStreamManager::Clean() {
 }
 
 void OutputMatchStream::SetSession(std::shared_ptr<Session> session) {
-  session_ = session;
+  session_ = std::move(session);
 }
 
 std::shared_ptr<Session> OutputMatchStream::GetSession() { return session_; }
@@ -612,8 +616,8 @@ std::shared_ptr<Stream> OutputMatchStream::CreateStream(
 }
 
 OutputMatchStreamManager::OutputMatchStreamManager(
-    const std::string& node_name, std::set<std::string>&& output_port_names)
-    : node_name_(node_name), output_port_names_(output_port_names) {}
+    std::string node_name, std::set<std::string>&& output_port_names)
+    : node_name_(std::move(node_name)), output_port_names_(output_port_names) {}
 
 size_t OutputMatchStreamManager::GetOutputStreamCount() {
   return output_stream_map_.size();
@@ -628,7 +632,7 @@ Status OutputMatchStreamManager::UpdateStreamInfo(
         stream_data_map,
     const std::unordered_map<std::string, std::shared_ptr<DataMeta>>&
         port_stream_meta,
-    std::shared_ptr<Session> session) {
+    const std::shared_ptr<Session>& session) {
   if (stream_data_map.empty() || stream_data_map.begin()->second.empty()) {
     // no data to process
     return STATUS_OK;
@@ -702,9 +706,8 @@ MatchKey* OutputMatchStreamManager::GetOutputStreamMatchKey(
     const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>&
         stream_data_map) {
   std::shared_ptr<Buffer> not_null_output_buffer;
-  for (auto port_iter = stream_data_map.begin();
-       port_iter != stream_data_map.end(); ++port_iter) {
-    const auto& port_data_list = port_iter->second;
+  for (const auto& port_iter : stream_data_map) {
+    const auto& port_data_list = port_iter.second;
     not_null_output_buffer = port_data_list.front();
     if (not_null_output_buffer != nullptr) {
       break;
@@ -735,12 +738,11 @@ void OutputMatchStreamManager::GenerateOutputStream(
         stream_data_map,
     const std::unordered_map<std::string, std::shared_ptr<DataMeta>>&
         port_stream_meta,
-    std::shared_ptr<Session> session) {
+    const std::shared_ptr<Session>& session) {
   // visit input stream, for collapse, will visit expand input
   std::shared_ptr<Buffer> not_null_output_buffer;
-  for (auto port_iter = stream_data_map.begin();
-       port_iter != stream_data_map.end(); ++port_iter) {
-    const auto& port_data_list = port_iter->second;
+  for (const auto& port_iter : stream_data_map) {
+    const auto& port_data_list = port_iter.second;
     not_null_output_buffer = port_data_list.front();
     if (not_null_output_buffer != nullptr) {
       break;
@@ -805,8 +807,8 @@ void OutputMatchStreamManager::GenerateOutputStream(
 }
 
 void OutputMatchStreamManager::SetIndexInStream(
-    std::shared_ptr<BufferIndexInfo> buffer_index,
-    std::shared_ptr<Stream> stream) {
+    const std::shared_ptr<BufferIndexInfo>& buffer_index,
+    const std::shared_ptr<Stream>& stream) {
   if (need_new_index_) {
     buffer_index->SetIndex(stream->GetBufferCount());
   }

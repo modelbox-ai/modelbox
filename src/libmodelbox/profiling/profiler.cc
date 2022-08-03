@@ -22,12 +22,14 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <utility>
 
 namespace modelbox {
 
 constexpr const char* PROFILE_DEFAULT_PATH = "/tmp/modelbox/perf";
 
-ProfilerLifeCycle::ProfilerLifeCycle(const std::string& name) : name_(name) {}
+ProfilerLifeCycle::ProfilerLifeCycle(std::string name)
+    : name_(std::move(name)) {}
 
 ProfilerLifeCycle::~ProfilerLifeCycle() = default;
 
@@ -107,9 +109,8 @@ Status ProfilerLifeCycle::Resume() {
 Profiler::Profiler(std::shared_ptr<DeviceManager> device_mgr,
                    std::shared_ptr<Configuration> config)
     : ProfilerLifeCycle("Profiler"),
-      device_mgr_(device_mgr),
-      config_(config),
-      output_dir_path_(""),
+      device_mgr_(std::move(device_mgr)),
+      config_(std::move(config)),
       perf_(nullptr),
       trace_(nullptr) {}
 

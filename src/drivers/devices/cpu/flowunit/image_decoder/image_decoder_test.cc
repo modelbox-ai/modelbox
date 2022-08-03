@@ -117,21 +117,21 @@ Status ImageDecoderFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info DataPre";
               return modelbox::STATUS_OK;
             }));
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info DataPost";
               return modelbox::STATUS_OK;
             }));
 
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
-        .WillRepeatedly(testing::Invoke([=](std::shared_ptr<DataContext>
+        .WillRepeatedly(testing::Invoke([=](const std::shared_ptr<DataContext>&
                                                 data_ctx) {
           MBLOG_INFO << "test_0_1_decode process";
 
@@ -150,7 +150,7 @@ Status ImageDecoderFlowUnitTest::AddMockFlowUnit() {
           std::vector<std::vector<u_char>> img_data_list;
           std::vector<size_t> output_bufs_shape;
           for (size_t i = 0; i < batch_size; ++i) {
-            std::string img_path = gimg_path;
+            const std::string& img_path = gimg_path;
             cv::Mat ori_img = cv::imread(img_path);
             MBLOG_INFO << "input image col " << ori_img.cols << "  row "
                        << ori_img.rows << " channel:" << ori_img.channels()
@@ -218,14 +218,14 @@ Status ImageDecoderFlowUnitTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info DataPre";
               return modelbox::STATUS_OK;
             }));
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_info DataPost";
               return modelbox::STATUS_STOP;
             }));
@@ -233,7 +233,7 @@ Status ImageDecoderFlowUnitTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               MBLOG_INFO << "test_1_0_decode process";
               auto input_buf = op_ctx->Input("In_1");
               int32_t cols;

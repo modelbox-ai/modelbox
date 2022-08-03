@@ -37,7 +37,7 @@ Ascend::~Ascend() { aclFinalize(); }
 
 std::string Ascend::GetType() const { return DEVICE_TYPE; }
 
-Status Ascend::DeviceExecute(DevExecuteCallBack fun, int32_t priority,
+Status Ascend::DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
                              size_t count) {
   if (0 == count) {
     return STATUS_OK;

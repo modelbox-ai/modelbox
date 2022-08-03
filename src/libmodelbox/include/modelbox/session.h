@@ -53,13 +53,13 @@ class SessionStateListener {
 
 class Session {
  public:
-  Session(std::shared_ptr<StatisticsItem> graph_stats);
+  Session(const std::shared_ptr<StatisticsItem>& graph_stats);
 
   virtual ~Session();
 
-  void AddStateListener(std::shared_ptr<SessionStateListener> listener);
+  void AddStateListener(const std::shared_ptr<SessionStateListener>& listener);
 
-  void SetSessionIO(std::shared_ptr<SessionIO> io_handle);
+  void SetSessionIO(const std::shared_ptr<SessionIO>& io_handle);
 
   std::shared_ptr<SessionIO> GetSessionIO();
 
@@ -103,7 +103,7 @@ class SessionManager {
   virtual ~SessionManager() = default;
 
   std::shared_ptr<Session> CreateSession(
-      std::shared_ptr<StatisticsItem> graph_stats);
+      const std::shared_ptr<StatisticsItem>& graph_stats);
 
   void DeleteSession(const SessionId& id);
 

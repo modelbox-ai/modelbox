@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/blocking_queue.h"
 
 #include <poll.h>
@@ -25,8 +24,8 @@
 #include <string>
 #include <thread>
 
-#include "modelbox/base/log.h"
 #include "gtest/gtest.h"
+#include "modelbox/base/log.h"
 namespace modelbox {
 class BlockingQueueTest : public testing::Test {
  public:
@@ -56,7 +55,10 @@ class TestNumber {
   TestNumber(int n) { num_ = n; };
   virtual ~TestNumber() = default;
   int Get() { return num_; }
-  void operator=(int n) { num_ = n; };
+  TestNumber& operator=(int n) {
+    num_ = n;
+    return *this;
+  };
   bool operator==(int n) const { return n == num_; }
   bool operator==(const TestNumber& t) const { return t.num_ == num_; }
   bool operator<(const TestNumber& t) const { return num_ < t.num_; }
@@ -923,8 +925,8 @@ TEST_F(PriorityBlockingQueueTest, ConsumerProducerBatch) {
         break;
       }
 
-      for (size_t i = 0; i < out_nums.size(); i++) {
-        total_sum2 += out_nums[i].Get();
+      for (auto& out_num : out_nums) {
+        total_sum2 += out_num.Get();
       }
     }
   });
@@ -950,7 +952,7 @@ TEST_F(PriorityBlockingQueueTest, Perf) {
   std::thread producer([&]() {
     std::vector<TestNumber> in_nums;
     int i = 0;
-    while (stop == false) {
+    while (stop == false) { // NOLINT
       TestNumber value = i++;
       in_nums.push_back(value);
       expect_count += 1;

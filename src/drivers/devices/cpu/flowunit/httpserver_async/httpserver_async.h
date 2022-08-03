@@ -59,7 +59,7 @@ class HTTPServerAsync : public modelbox::FlowUnit {
  private:
   modelbox::Status HandleFunc(web::http::http_request request);
 
-  modelbox::Status HandleTask(web::http::http_request request,
+  modelbox::Status HandleTask(const web::http::http_request &request,
                               const RequestInfo &request_info);
 
   std::shared_ptr<web::http::experimental::listener::http_listener> listener_;

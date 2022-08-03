@@ -30,6 +30,7 @@
 #include <atomic>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 namespace modelbox {
 
@@ -42,8 +43,8 @@ class TensorList {
    * @brief Create tensor list from buffer list.
    * @param buffer_list buffer list
    */
-  TensorList(const std::shared_ptr<BufferList>& buffer_list)
-      : bl_(buffer_list) {
+  TensorList(std::shared_ptr<BufferList> buffer_list)
+      : bl_(std::move(buffer_list)) {
     if (!bl_) {
       throw std::invalid_argument("buffer list must not be nullptr.");
     }
@@ -137,7 +138,7 @@ class TensorList {
   template <typename T>
   Status BuildFromHost(const std::vector<std::vector<size_t>>& shape_list,
                        void* data, size_t data_size,
-                       DeleteFunction func = nullptr) {
+                       const DeleteFunction& func = nullptr) {
     std::vector<size_t> data_size_list(shape_list.size(), 0);
     std::transform(shape_list.begin(), shape_list.end(), data_size_list.begin(),
                    [](const std::vector<size_t>& shape) {

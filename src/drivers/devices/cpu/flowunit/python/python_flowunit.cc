@@ -263,7 +263,7 @@ std::shared_ptr<modelbox::FlowUnitDesc> PythonFlowUnit::GetFlowUnitDesc() {
   return python_desc_;
 }
 
-void PythonFlowUnitDesc::SetPythonEntry(const std::string python_entry) {
+void PythonFlowUnitDesc::SetPythonEntry(const std::string& python_entry) {
   python_entry_ = python_entry;
 }
 

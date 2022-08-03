@@ -26,7 +26,7 @@
 class FfmpegVideoMuxer {
  public:
   modelbox::Status Init(const std::shared_ptr<AVCodecContext> &codec_ctx,
-                      std::shared_ptr<FfmpegWriter> writer);
+                        const std::shared_ptr<FfmpegWriter> &writer);
 
   modelbox::Status Mux(const AVRational &time_base,
                      const std::shared_ptr<AVPacket> &av_packet);

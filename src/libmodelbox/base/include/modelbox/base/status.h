@@ -184,7 +184,7 @@ class Status {
   std::string WrapOnlyErrormsgs(bool with_code) const;
   std::string ErrorCodeMsgs(bool with_code) const;
   StatusCode code_ = STATUS_SUCCESS;
-  std::string errmsg_ = "";
+  std::string errmsg_;
   std::shared_ptr<Status> wrap_status_;
 };
 

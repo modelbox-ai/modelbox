@@ -98,7 +98,7 @@ class Configuration {
 
   static void Trim(std::string *value);
 
-  static void StringSplit(const std::string &str, std::string delimiter,
+  static void StringSplit(const std::string &str, const std::string &delimiter,
                           std::vector<std::string> &sub_str_list);
 
   void Add(const Configuration &config) { store_->Add(*(config.store_)); }
@@ -343,9 +343,9 @@ Status Configuration::Convert<double>(const std::string &property,
 
 class ConfigParser {
  public:
-  virtual Status Parse(std::shared_ptr<Configuration> &config, std::istream &is,
+  virtual Status Parse(const std::shared_ptr<Configuration> &config, std::istream &is,
                        const std::string &fname) = 0;
-  virtual Status Parse(std::shared_ptr<Configuration> &config,
+  virtual Status Parse(const std::shared_ptr<Configuration> &config,
                        const std::string &file) = 0;
 };
 

@@ -108,7 +108,7 @@ void *Slab::Alloc() {
   ListDel(&sobj->list);
   active_obj_num_++;
   return (char *)mem_ + obj_size_ * sobj->index;
-};
+}
 
 void Slab::Free(void *ptr) {
   size_t offset = (char *)ptr - (char *)mem_;
@@ -199,7 +199,7 @@ SlabCache::SlabCache(size_t obj_size, size_t slab_size,
 
   mem_allocator_ = mem_allocator;
   SlabCacheReclaimer::Instance().AddSlabCache(this);
-};
+}
 
 SlabCache::~SlabCache() {
   SlabCacheReclaimer::Instance().RmvSlabCache(this);
@@ -208,7 +208,7 @@ SlabCache::~SlabCache() {
   RemoveSlabs(&empty_);
   slab_empty_num_ = 0;
   mem_allocator_ = nullptr;
-};
+}
 
 std::shared_ptr<void> SlabCache::AllocSharedPtr() {
   void *ptr = nullptr;
@@ -340,7 +340,7 @@ void SlabCache::Reclaim(time_t before) {
 uint32_t SlabCache::SlabNumber() {
   std::unique_lock<std::mutex> lock(lock_);
   return slab_num_;
-};
+}
 
 int SlabCache::GetEmptySlabNumber() { return slab_empty_num_; }
 

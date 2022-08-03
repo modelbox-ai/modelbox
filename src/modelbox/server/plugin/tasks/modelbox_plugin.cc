@@ -105,7 +105,7 @@ bool ModelboxPlugin::Stop() {
   return true;
 }
 
-bool ModelboxPlugin::CheckJobIdValid(std::string job_id) {
+bool ModelboxPlugin::CheckJobIdValid(const std::string& job_id) {
   constexpr int max_id_length = 64;
   const std::string valid_char =
       R"(^[0-9a-zA-Z\-\+\~\_][0-9a-zA-Z\-\+\~\_\.]+)";
@@ -119,7 +119,7 @@ bool ModelboxPlugin::CheckJobIdValid(std::string job_id) {
 }
 
 bool ModelboxPlugin::ParseConfig(
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration>& config) {
   ip_ = config->GetString("server.ip");
   if (ip_.length() <= 0) {
     MBLOG_ERROR << "can not find ip from config file";
@@ -183,7 +183,7 @@ modelbox::Status ModelboxPlugin::CreateLocalJobs() {
       continue;
     }
 
-    std::string job_id = jobname;
+    const std::string& job_id = jobname;
     if (job_id.find(GRAPH_DISABLED_FLAG) != std::string::npos) {
       MBLOG_INFO << "graph '" << file << "' is disabled.";
       continue;
@@ -252,7 +252,8 @@ modelbox::Status ModelboxPlugin::SaveGraphFile(const std::string& job_id,
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status ModelboxPlugin::StartJob(std::shared_ptr<modelbox::Job> job) {
+modelbox::Status ModelboxPlugin::StartJob(
+    const std::shared_ptr<modelbox::Job>& job) {
   auto ret = job->Init();
   if (!ret) {
     MBLOG_ERROR << "start job init failed:" << ret;

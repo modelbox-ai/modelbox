@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <memory>
+#include <utility>
 
 #include "control.h"
 #include "server_plugin.h"
@@ -30,7 +31,8 @@ namespace modelbox {
 
 class Server {
  public:
-  Server(std::shared_ptr<modelbox::Configuration> config) : config_(config){};
+  Server(std::shared_ptr<modelbox::Configuration> config)
+      : config_(std::move(config)){};
   virtual ~Server();
   modelbox::Status Init();
   modelbox::Status Start();

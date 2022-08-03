@@ -33,9 +33,9 @@ void HandleError(pplx::task<void> &t);
 
 utility::string_t GetSupportedMethods();
 
-void HandleUnSupportMethod(web::http::http_request request);
+void HandleUnSupportMethod(const web::http::http_request &request);
 
-void HandleHealthCheck(web::http::http_request request);
+void HandleHealthCheck(const web::http::http_request &request);
 
 class HttpRequestLimiter {
   public:

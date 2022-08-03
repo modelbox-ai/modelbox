@@ -90,7 +90,7 @@ modelbox::Status VideoDecoderFlowUnit::Process(
 }
 
 modelbox::Status VideoDecoderFlowUnit::ReadData(
-    std::shared_ptr<modelbox::DataContext> data_ctx,
+    const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<std::shared_ptr<AVPacket>> &pkt_list) {
   auto video_packet_input = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (video_packet_input == nullptr) {
@@ -118,7 +118,7 @@ modelbox::Status VideoDecoderFlowUnit::ReadData(
 }
 
 modelbox::Status VideoDecoderFlowUnit::ReadAVPacket(
-    std::shared_ptr<modelbox::Buffer> packet_buffer,
+    const std::shared_ptr<modelbox::Buffer> &packet_buffer,
     std::shared_ptr<AVPacket> &pkt) {
   auto size = packet_buffer->GetBytes();
   if (size == 1) {

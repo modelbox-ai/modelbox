@@ -56,13 +56,13 @@ utility::string_t GetSupportedMethods() {
       web::http::methods::POST, web::http::methods::GET,
       web::http::methods::DEL, web::http::methods::PUT};
   bool first = true;
-  for (auto iter = methods.begin(); iter != methods.end(); ++iter) {
+  for (auto &method : methods) {
     if (!first) {
       allowed += U(", ");
     } else {
       first = false;
     }
-    allowed += (*iter);
+    allowed += method;
   }
   return allowed;
 }
@@ -75,13 +75,13 @@ void HandleError(pplx::task<void> &t) {
   }
 }
 
-void HandleUnSupportMethod(web::http::http_request request) {
+void HandleUnSupportMethod(const web::http::http_request &request) {
   web::http::http_response response(web::http::status_codes::MethodNotAllowed);
   response.headers().add(U("Allow"), GetSupportedMethods());
   request.reply(response);
 }
 
-void HandleHealthCheck(web::http::http_request request) {
+void HandleHealthCheck(const web::http::http_request &request) {
   auto health_value = web::json::value::object();
   health_value["status"] = web::json::value(200);
   health_value["message"] = web::json::value::string("success");

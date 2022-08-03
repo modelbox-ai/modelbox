@@ -20,6 +20,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <utility>
 #include <vector>
 
 #include "modelbox/base/status.h"
@@ -171,7 +172,7 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
    */
   static std::shared_ptr<DeviceMemory> Combine(
       const std::vector<std::shared_ptr<DeviceMemory>> &mem_list,
-      std::shared_ptr<Device> target_device = nullptr,
+      const std::shared_ptr<Device> &target_device = nullptr,
       uint32_t target_mem_flags = 0);
 
   /**
@@ -311,7 +312,7 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
    */
   DeviceMemory(const std::shared_ptr<Device> &device,
                const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-               std::shared_ptr<void> device_mem_ptr, size_t size,
+               const std::shared_ptr<void> &device_mem_ptr, size_t size,
                bool is_host_mem = false);
 
   void SetMemFlags(uint32_t mem_flags) { mem_flags_ = mem_flags; }
@@ -372,11 +373,11 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
   Status AppendData(const std::vector<std::shared_ptr<DeviceMemory>> &mem_list,
                     std::shared_ptr<DeviceMemory> &target_device_mem);
 
-  Status MemAcquire(std::shared_ptr<void> mem_ptr, size_t size);
+  Status MemAcquire(const std::shared_ptr<void> &mem_ptr, size_t size);
 
   static std::shared_ptr<DeviceMemory> CombineContinuous(
       const std::vector<std::shared_ptr<DeviceMemory>> &mem_list,
-      size_t total_size, std::shared_ptr<Device> target_device);
+      size_t total_size, const std::shared_ptr<Device> &target_device);
 
   static std::shared_ptr<DeviceMemory> CombineFragment(
       const std::vector<std::shared_ptr<DeviceMemory>> &mem_list,
@@ -390,7 +391,8 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
 class DeviceMemoryManager
     : public std::enable_shared_from_this<DeviceMemoryManager> {
  public:
-  DeviceMemoryManager(const std::string &device_id) : device_id_(device_id) {}
+  DeviceMemoryManager(std::string device_id)
+      : device_id_(std::move(device_id)) {}
 
   virtual ~DeviceMemoryManager() = default;
 
@@ -519,8 +521,8 @@ class DeviceMemoryManager
 
 class DeviceMemoryLog {
  public:
-  DeviceMemoryLog(const std::string &memory_id, const std::string &user_id,
-                  const std::string &device_id, size_t size);
+  DeviceMemoryLog(std::string memory_id, std::string user_id,
+                  std::string device_id, size_t size);
 
   virtual ~DeviceMemoryLog();
 

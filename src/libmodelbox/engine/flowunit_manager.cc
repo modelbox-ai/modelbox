@@ -15,6 +15,7 @@
  */
 
 #include <algorithm>
+#include <utility>
 
 #include "modelbox/base/log.h"
 #include "modelbox/flowunit.h"
@@ -51,10 +52,11 @@ std::shared_ptr<FlowUnitDesc> FlowUnitManager::GetFlowUnitDesc(
   return flowunit_desc_list_[flowunit_type][flowunit_name];
 }
 
-Status FlowUnitManager::Initialize(std::shared_ptr<Drivers> driver,
-                                   std::shared_ptr<DeviceManager> device_mgr,
-                                   std::shared_ptr<Configuration> config) {
-  SetDeviceManager(device_mgr);
+Status FlowUnitManager::Initialize(
+    const std::shared_ptr<Drivers> &driver,
+    std::shared_ptr<DeviceManager> device_mgr,
+    const std::shared_ptr<Configuration> &config) {
+  SetDeviceManager(std::move(device_mgr));
   Status status;
   status = InitFlowUnitFactory(driver);
   if (status != STATUS_SUCCESS) {
@@ -74,7 +76,8 @@ Status FlowUnitManager::Initialize(std::shared_ptr<Drivers> driver,
   return status;
 }
 
-Status FlowUnitManager::InitFlowUnitFactory(std::shared_ptr<Drivers> driver) {
+Status FlowUnitManager::InitFlowUnitFactory(
+    const std::shared_ptr<Drivers> &driver) {
   std::vector<std::shared_ptr<Driver>> driver_list =
       driver->GetDriverListByClass("DRIVER-FLOWUNIT");
   std::vector<std::shared_ptr<Driver>> inference_driver_list =
@@ -137,7 +140,8 @@ Status FlowUnitManager::FlowUnitProbe() {
   return STATUS_OK;
 }
 
-Status FlowUnitManager::Register(std::shared_ptr<FlowUnitFactory> factory) {
+Status FlowUnitManager::Register(
+    const std::shared_ptr<FlowUnitFactory> &factory) {
   std::string factory_type = factory->GetFlowUnitFactoryType();
   std::string factory_unit_name = factory->GetFlowUnitFactoryName();
   if (flowunit_factory_.count(
@@ -253,8 +257,8 @@ Status FlowUnitManager::ParseUserDeviceConf(const std::string &unit_type,
 
     auto &ids = data[1];
     auto id_list = StringSplit(ids, ',');
-    for (size_t id_index = 0; id_index < id_list.size(); ++id_index) {
-      single_dev_cfg.push_back(id_list[id_index]);
+    for (const auto &id_index : id_list) {
+      single_dev_cfg.push_back(id_index);
     }
   }
 
@@ -286,7 +290,7 @@ Status FlowUnitManager::AutoFillDeviceConf(const std::string &unit_name,
   if (dev_cfg.empty()) {
     // will auto fill all device type if no device selected
     auto unit_types = GetFlowUnitTypes(unit_name);
-    for (auto type : unit_types) {
+    for (const auto &type : unit_types) {
       dev_cfg[type];  // create empty list
     }
   }
@@ -485,7 +489,7 @@ FlowUnitManager::GetAllFlowUnitDesc() {
 
 void FlowUnitManager::SetDeviceManager(
     std::shared_ptr<DeviceManager> device_mgr) {
-  device_mgr_ = device_mgr;
+  device_mgr_ = std::move(device_mgr);
 }
 
 std::shared_ptr<DeviceManager> FlowUnitManager::GetDeviceManager() {

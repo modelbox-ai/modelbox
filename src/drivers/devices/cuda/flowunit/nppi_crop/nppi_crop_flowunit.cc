@@ -61,12 +61,12 @@ modelbox::Status NppiCropFlowUnit::CudaProcess(
   std::vector<size_t> shape_vector;
   int32_t channel = RGB_CHANNLES;
   for (size_t i = 0; i < input_img_bufs->Size(); ++i) {
-    auto buff = input_box_bufs->ConstBufferData(i);
+    const auto *buff = input_box_bufs->ConstBufferData(i);
     if (buff == nullptr) {
       MBLOG_WARN << "input buffer " << i << " is invalid.";
       continue;
     }
-    auto bbox = static_cast<const imageprocess::RoiBox *>(buff);
+    const auto *bbox = static_cast<const imageprocess::RoiBox *>(buff);
     if (bbox == nullptr) {
       MBLOG_WARN << "buffer is not box, buffer index: " << i;
       continue;
@@ -137,7 +137,7 @@ modelbox::Status NppiCropFlowUnit::ProcessOneImage(
   MBLOG_DEBUG << "Input image width " << src_size.width << " height "
               << src_size.height << " channel " << src_size.channel;
 
-  auto bbox = static_cast<const imageprocess::RoiBox *>(
+  const auto *bbox = static_cast<const imageprocess::RoiBox *>(
       input_box_buffer_list->ConstBufferData(index));
   if (bbox == nullptr) {
     MBLOG_ERROR << "input data at " << index << " is invalid.";
@@ -154,10 +154,10 @@ modelbox::Status NppiCropFlowUnit::ProcessOneImage(
   dst_size.x = bbox->x;
   dst_size.y = bbox->y;
 
-  auto input_data = static_cast<const u_char *>(
+  const auto *input_data = static_cast<const u_char *>(
       input_img_buffer_list->ConstBufferData(index));
 
-  auto output_data =
+  auto *output_data =
       static_cast<u_char *>(output_buffer_list->MutableBufferData(index));
 
   modelbox::Status ret = modelbox::STATUS_OK;

@@ -48,9 +48,9 @@ class RegisterFlowUnitFactory : public FlowUnitFactory {
  public:
   RegisterFlowUnitFactory() = default;
   RegisterFlowUnitFactory(
-      const std::string &unit_name, const std::vector<std::string> &inputs,
-      const std::vector<std::string> &outputs,
-      const std::function<Status(std::shared_ptr<DataContext>)> &callback);
+      std::string unit_name, std::vector<std::string> inputs,
+      std::vector<std::string> outputs,
+      std::function<Status(std::shared_ptr<DataContext>)> callback);
   ~RegisterFlowUnitFactory() override = default;
 
   std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe()

@@ -48,7 +48,7 @@ const char Separator = '\\';
 const char Separator = '/';
 #endif
 
-DeferGuard::DeferGuard(DeferGuard &&other) : fn_(std::move(other.fn_)) {
+DeferGuard::DeferGuard(DeferGuard &&other) noexcept : fn_(std::move(other.fn_)) {
   other.fn_ = nullptr;
 }
 
@@ -58,7 +58,7 @@ DeferGuard::~DeferGuard() {
   }
 }
 
-DeferGuardChain::DeferGuardChain(DeferGuardChain &&other)
+DeferGuardChain::DeferGuardChain(DeferGuardChain &&other) noexcept
     : fn_cond_(std::move(other.fn_cond_)) {
   other.fn_cond_ = nullptr;
 }
@@ -235,7 +235,8 @@ void RemoveDirectory(const std::string &path) {
   nftw(path.c_str(), rmfiles, 10, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
 }
 
-Status CopyFile(std::string src, std::string dest, int mode, bool overwrite) {
+Status CopyFile(const std::string &src, const std::string &dest, int mode,
+                bool overwrite) {
   if (overwrite == false && access(dest.c_str(), F_OK) == 0) {
     return STATUS_FAULT;
   }
@@ -366,6 +367,7 @@ std::vector<std::tuple<void *, std::string>> GetStacks(int skip, int maxdepth) {
   std::vector<std::tuple<void *, std::string>> stacks;
 
   auto frames = GetStackFrames(skip + 1, maxdepth);
+  stacks.reserve(frames.size());
   for (auto &frame : frames) {
     stacks.push_back(GetSymbol(frame));
   }
@@ -543,7 +545,7 @@ Status HardeningSSL(SSL_CTX *ctx) {
       "ECDHE-RSA-AES128-GCM-SHA256:"
       "ECDHE-ECDSA-AES128-GCM-SHA256:"
       "@STRENGTH";
-  auto tls1_2_ciphers = tls1_2_safer_ciphers;
+  const auto &tls1_2_ciphers = tls1_2_safer_ciphers;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   std::string tls1_2_suppoert_ciphers =
       "ECDHE-RSA-AES128-SHA256:"

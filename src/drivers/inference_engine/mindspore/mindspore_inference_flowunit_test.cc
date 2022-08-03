@@ -50,7 +50,7 @@ Status InferenceMindSporeFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(2);
     auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                         std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                         const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
       auto ext_data = mock_flowunit->CreateExternalData();
       if (!ext_data) {
         MBLOG_ERROR << "can not get external data.";
@@ -72,44 +72,45 @@ Status InferenceMindSporeFlowUnitTest::AddMockFlowUnit() {
       return STATUS_OK;
     };
 
-    auto process_func = [=](std::shared_ptr<DataContext> op_ctx,
-                            std::shared_ptr<MockFlowUnit> mock_flowunit) {
-      MBLOG_INFO << "prepare_ms_infer_data "
-                 << "Process";
-      auto output_buf_1 = op_ctx->Output("out1");
-      auto output_buf_2 = op_ctx->Output("out2");
-      const size_t len = 2;
-      std::vector<size_t> shape_vector(2, len * sizeof(float));
-      ModelBoxDataType type = MODELBOX_FLOAT;
+    auto process_func =
+        [=](const std::shared_ptr<DataContext> &op_ctx,
+            const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
+          MBLOG_INFO << "prepare_ms_infer_data "
+                     << "Process";
+          auto output_buf_1 = op_ctx->Output("out1");
+          auto output_buf_2 = op_ctx->Output("out2");
+          const size_t len = 2;
+          std::vector<size_t> shape_vector(2, len * sizeof(float));
+          ModelBoxDataType type = MODELBOX_FLOAT;
 
-      output_buf_1->Build(shape_vector);
-      output_buf_1->Set("type", type);
-      std::vector<size_t> shape{len, 2};
-      output_buf_1->Set("shape", shape);
-      auto *dev_data1 = (float *)(output_buf_1->MutableData());
-      MBLOG_INFO << "output_buf_1.size: " << output_buf_1->Size();
-      float val = 1.0;
-      for (size_t i = 0; i < output_buf_1->Size(); ++i) {
-        for (size_t j = 0; j < len; ++j) {
-          dev_data1[i * len + j] = val;
-          val += 1.0;
-        }
-      }
+          output_buf_1->Build(shape_vector);
+          output_buf_1->Set("type", type);
+          std::vector<size_t> shape{len, 2};
+          output_buf_1->Set("shape", shape);
+          auto *dev_data1 = (float *)(output_buf_1->MutableData());
+          MBLOG_INFO << "output_buf_1.size: " << output_buf_1->Size();
+          float val = 1.0;
+          for (size_t i = 0; i < output_buf_1->Size(); ++i) {
+            for (size_t j = 0; j < len; ++j) {
+              dev_data1[i * len + j] = val;
+              val += 1.0;
+            }
+          }
 
-      output_buf_2->Build(shape_vector);
-      output_buf_2->Set("type", type);
-      output_buf_2->Set("shape", shape);
-      auto *dev_data2 = (float *)(output_buf_2->MutableData());
-      val = 2.0;
-      for (size_t i = 0; i < output_buf_2->Size(); ++i) {
-        for (size_t j = 0; j < len; ++j) {
-          dev_data2[i * len + j] = val;
-          val += 1.0;
-        }
-      }
+          output_buf_2->Build(shape_vector);
+          output_buf_2->Set("type", type);
+          output_buf_2->Set("shape", shape);
+          auto *dev_data2 = (float *)(output_buf_2->MutableData());
+          val = 2.0;
+          for (size_t i = 0; i < output_buf_2->Size(); ++i) {
+            for (size_t j = 0; j < len; ++j) {
+              dev_data2[i * len + j] = val;
+              val += 1.0;
+            }
+          }
 
-      return STATUS_OK;
-    };
+          return STATUS_OK;
+        };
 
     auto mock_functions = std::make_shared<MockFunctionCollection>();
     mock_functions->RegisterOpenFunc(open_func);
@@ -122,33 +123,35 @@ Status InferenceMindSporeFlowUnitTest::AddMockFlowUnit() {
     auto mock_desc = GenerateFlowunitDesc("check_ms_infer_result", {"in"}, {});
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(2);
-    auto data_post_func = [=](std::shared_ptr<DataContext> op_ctx,
-                              std::shared_ptr<MockFlowUnit> mock_flowunit) {
-      MBLOG_INFO << "check_ms_infer_result "
-                 << "DataPost";
-      return STATUS_STOP;
-    };
+    auto data_post_func =
+        [=](const std::shared_ptr<DataContext> &op_ctx,
+            const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
+          MBLOG_INFO << "check_ms_infer_result "
+                     << "DataPost";
+          return STATUS_STOP;
+        };
 
-    auto process_func = [=](std::shared_ptr<DataContext> op_ctx,
-                            std::shared_ptr<MockFlowUnit> mock_flowunit) {
-      std::shared_ptr<BufferList> input_bufs = op_ctx->Input("in");
-      EXPECT_EQ(input_bufs->Size(), 2);
-      std::vector<int64_t> input_shape;
-      auto result = input_bufs->At(0)->Get("shape", input_shape);
-      EXPECT_TRUE(result);
-      EXPECT_EQ(input_shape.size(), 2);
-      EXPECT_EQ(input_shape[0], 2);
-      EXPECT_EQ(input_shape[1], 2);
+    auto process_func =
+        [=](const std::shared_ptr<DataContext> &op_ctx,
+            const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
+          std::shared_ptr<BufferList> input_bufs = op_ctx->Input("in");
+          EXPECT_EQ(input_bufs->Size(), 2);
+          std::vector<int64_t> input_shape;
+          auto result = input_bufs->At(0)->Get("shape", input_shape);
+          EXPECT_TRUE(result);
+          EXPECT_EQ(input_shape.size(), 2);
+          EXPECT_EQ(input_shape[0], 2);
+          EXPECT_EQ(input_shape[1], 2);
 
-      const auto *ptr = (const float *)input_bufs->ConstData();
-      float val = 3.0;
-      for (size_t i = 0; i < 4; ++i) {
-        EXPECT_TRUE((std::abs(ptr[i]) - val) < 1e-7);
-        val += 2.0;
-      }
+          const auto *ptr = (const float *)input_bufs->ConstData();
+          float val = 3.0;
+          for (size_t i = 0; i < 4; ++i) {
+            EXPECT_TRUE((std::abs(ptr[i]) - val) < 1e-7);
+            val += 2.0;
+          }
 
-      return STATUS_OK;
-    };
+          return STATUS_OK;
+        };
 
     auto mock_functions = std::make_shared<MockFunctionCollection>();
     mock_functions->RegisterDataPostFunc(data_post_func);

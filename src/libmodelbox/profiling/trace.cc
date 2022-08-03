@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <utility>
 
 #include "modelbox/profiler.h"
 
@@ -28,11 +28,11 @@ const std::map<TraceSliceType, std::string> TRACE_SLICE_TYPE = {
     {TraceSliceType::STREAM_OPEN, "STREAM_OPEN"},
     {TraceSliceType::STREAM_CLOSE, "STREAM_CLOSE"}};
 
-Trace::Trace(std::string& output_dir_path, std::shared_ptr<Performance> perf,
+Trace::Trace(std::string output_dir_path, std::shared_ptr<Performance> perf,
              bool session_enable)
     : ProfilerLifeCycle("Trace"),
-      output_dir_path_(output_dir_path),
-      perf_(perf),
+      output_dir_path_(std::move(output_dir_path)),
+      perf_(std::move(perf)),
       write_file_interval_(DEFAULT_WRITE_TRACE_INTERVAL),
       session_enable_(session_enable) {}
 
@@ -137,11 +137,11 @@ Status Trace::WriteTrace() {
   }
 
   uint64_t valid_trace_count = 0;
-  for (auto trace : traces_) {
+  for (const auto& trace : traces_) {
     std::string flow_unit_name = trace.second->GetFlowUnitName();
     std::vector<std::shared_ptr<TraceSlice>> trace_slices;
     trace.second->GetTraceSlices(trace_slices);
-    for (auto slice : trace_slices) {
+    for (const auto& slice : trace_slices) {
       if (slice->GetDuration() < 0) {
         continue;
       }
@@ -177,7 +177,8 @@ Status Trace::WriteTrace() {
 
   time_t current_time = time(nullptr);
   char buf[64] = {0};
-  auto* local_tm = localtime(&current_time);
+  struct tm tm_result;
+  auto* local_tm = localtime_r(&current_time, &tm_result);
   if (local_tm) {
     strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", local_tm);
   }
@@ -203,19 +204,20 @@ Status Trace::WriteTrace() {
   return STATUS_SUCCESS;
 }
 
-FlowUnitTrace::FlowUnitTrace(const std::string& flow_unit_name)
-    : flow_unit_name_(flow_unit_name) {}
+FlowUnitTrace::FlowUnitTrace(std::string flow_unit_name)
+    : flow_unit_name_(std::move(flow_unit_name)) {}
 
 std::shared_ptr<TraceSlice> FlowUnitTrace::Slice(TraceSliceType slice_type,
                                                  std::string session) {
   std::unique_lock<std::mutex> lock(trace_slices_mutex_);
   auto slice_ptr = std::shared_ptr<TraceSlice>(new TraceSlice(
-      slice_type, session, shared_from_this(), flow_unit_perf_ctx_));
+      slice_type, std::move(session), shared_from_this(), flow_unit_perf_ctx_));
 
   return slice_ptr;
 }
 
-Status FlowUnitTrace::AddTraceSlice(std::shared_ptr<TraceSlice> trace_slice) {
+Status FlowUnitTrace::AddTraceSlice(
+    const std::shared_ptr<TraceSlice>& trace_slice) {
   if (trace_slice == nullptr) {
     return STATUS_FAULT;
   }
@@ -235,7 +237,7 @@ void FlowUnitTrace::GetTraceSlices(
 
 void FlowUnitTrace::SetFlowUnitPerfCtx(
     std::shared_ptr<FlowUnitPerfCtx> flow_unit_perf_ctx) {
-  flow_unit_perf_ctx_ = flow_unit_perf_ctx;
+  flow_unit_perf_ctx_ = std::move(flow_unit_perf_ctx);
 }
 
 TraceEvent::TraceEvent()
@@ -243,25 +245,26 @@ TraceEvent::TraceEvent()
           std::chrono::system_clock::now())),
       thread_id_(std::this_thread::get_id()) {}
 
-TraceSlice::TraceSlice(TraceSliceType& slice_type, std::string session,
-                       std::shared_ptr<FlowUnitTrace> flow_unit_trace_ptr,
-                       std::shared_ptr<TraceEvent> begin,
-                       std::shared_ptr<TraceEvent> end)
+TraceSlice::TraceSlice(
+    TraceSliceType& slice_type, std::string session,
+    const std::shared_ptr<FlowUnitTrace>& flow_unit_trace_ptr,
+    std::shared_ptr<TraceEvent> begin, std::shared_ptr<TraceEvent> end)
     : slice_type_(slice_type),
-      session_(session),
+      session_(std::move(session)),
       flow_unit_trace_ptr_(flow_unit_trace_ptr),
-      begin_event_ptr_(begin),
-      end_event_ptr_(end),
+      begin_event_ptr_(std::move(begin)),
+      end_event_ptr_(std::move(end)),
       is_end_called_(false),
       batch_size_(0) {}
 
-TraceSlice::TraceSlice(TraceSliceType& slice_type, std::string session,
-                       std::shared_ptr<FlowUnitTrace> flow_unit_trace_ptr,
-                       std::shared_ptr<FlowUnitPerfCtx> flow_unit_perf_ctx)
+TraceSlice::TraceSlice(
+    TraceSliceType& slice_type, std::string session,
+    const std::shared_ptr<FlowUnitTrace>& flow_unit_trace_ptr,
+    std::shared_ptr<FlowUnitPerfCtx> flow_unit_perf_ctx)
     : slice_type_(slice_type),
-      session_(session),
+      session_(std::move(session)),
       flow_unit_trace_ptr_(flow_unit_trace_ptr),
-      flow_unit_perf_ctx_(flow_unit_perf_ctx),
+      flow_unit_perf_ctx_(std::move(flow_unit_perf_ctx)),
       is_end_called_(false),
       batch_size_(0) {}
 
@@ -269,7 +272,7 @@ TraceSlice::~TraceSlice() {
   if (!is_end_called_) {
     End();
   }
-};
+}
 
 int32_t TraceSlice::GetDuration() {
   if (begin_event_ptr_ == nullptr || end_event_ptr_ == nullptr) {

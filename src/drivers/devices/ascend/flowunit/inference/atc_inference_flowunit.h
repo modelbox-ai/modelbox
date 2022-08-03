@@ -56,8 +56,8 @@ class AtcInferenceFlowUnitDesc : public modelbox::FlowUnitDesc {
   AtcInferenceFlowUnitDesc() = default;
   ~AtcInferenceFlowUnitDesc() override = default;
 
-  void SetModelEntry(std::string model_entry);
-  const std::string GetModelEntry();
+  void SetModelEntry(const std::string &model_entry);
+  std::string GetModelEntry();
 
  private:
   std::string model_entry_;

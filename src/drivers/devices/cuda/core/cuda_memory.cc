@@ -24,7 +24,7 @@ namespace modelbox {
  *   We need a new thread due to cuda api might be called.
  **/
 void CudaReleaseMemoryAsync(void *mem_list_ptr) {
-  auto list =
+  auto *list =
       (std::vector<std::shared_ptr<const DeviceMemory>> *)(mem_list_ptr);
   list->clear();
   delete list;
@@ -60,7 +60,7 @@ Status CudaStream::Bind(
     return STATUS_FAULT;
   }
 
-  auto mem_list_ptr = new std::vector<std::shared_ptr<const DeviceMemory>>();
+  auto *mem_list_ptr = new std::vector<std::shared_ptr<const DeviceMemory>>();
   mem_list_ptr->assign(mem_list.begin(), mem_list.end());
   cuda_ret =
       cudaLaunchHostFunc(stream_, CudaReleaseMemoryAsync, (void *)mem_list_ptr);
@@ -143,7 +143,7 @@ Status CudaStreamPool::Free(const CudaStream *stream) {
 
 CudaMemory::CudaMemory(const std::shared_ptr<Device> &device,
                        const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
-                       std::shared_ptr<void> device_mem_ptr, size_t size)
+                       const std::shared_ptr<void> &device_mem_ptr, size_t size)
     : DeviceMemory(device, mem_mgr, device_mem_ptr, size, false) {}
 
 CudaMemory::~CudaMemory() = default;
@@ -199,7 +199,7 @@ Status CudaMemory::CopyExtraMetaTo(std::shared_ptr<DeviceMemory> &device_mem) {
 
 Status CudaMemory::CombineExtraMeta(
     const std::vector<std::shared_ptr<DeviceMemory>> &mem_list) {
-  for (auto mem : mem_list) {
+  for (const auto &mem : mem_list) {
     auto cuda_mem = std::dynamic_pointer_cast<CudaMemory>(mem);
     if (cuda_stream_ptr_ == nullptr) {
       cuda_stream_ptr_ = cuda_mem->cuda_stream_ptr_;
@@ -295,7 +295,7 @@ void CudaMemoryPool::MemFree(void *ptr) {
     return cuda_ret;
   };
 
-  auto timer = GetTimer();
+  auto *timer = GetTimer();
   auto with_log = (timer == nullptr);
   auto ret = free_func(gpu_id_, ptr, with_log);
   if (ret == cudaSuccess || timer == nullptr) {
@@ -433,8 +433,8 @@ Status CudaMemoryManager::DeviceMemoryCopy(
       cuda_stream_ptr == nullptr ? nullptr : cuda_stream_ptr->Get();
   auto dest_device = dest_memory->GetDevice();
   auto src_device = src_memory->GetDevice();
-  auto dest_ptr = dest_memory->GetPtr<uint8_t>().get() + dest_offset;
-  auto src_ptr = src_memory->GetConstPtr<uint8_t>().get() + src_offset;
+  auto *dest_ptr = dest_memory->GetPtr<uint8_t>().get() + dest_offset;
+  const auto *src_ptr = src_memory->GetConstPtr<uint8_t>().get() + src_offset;
   ret = CudaMemcpyAsync(dest_ptr, src_ptr, src_size, dest_device, src_device,
                         cuda_copy_kind, cuda_stream);
   if (ret != STATUS_SUCCESS) {
@@ -456,8 +456,9 @@ Status CudaMemoryManager::DeviceMemoryCopy(
 
 Status CudaMemoryManager::CudaMemcpyAsync(
     uint8_t *dest_ptr, const uint8_t *src_ptr, size_t src_size,
-    std::shared_ptr<Device> dest_device, std::shared_ptr<Device> src_device,
-    cudaMemcpyKind cuda_copy_kind, cudaStream_t cuda_stream) {
+    const std::shared_ptr<Device> &dest_device,
+    const std::shared_ptr<Device> &src_device, cudaMemcpyKind cuda_copy_kind,
+    cudaStream_t cuda_stream) {
   cudaError_t cuda_ret;
   auto dest_dev_id = atoi(dest_device->GetDeviceID().c_str());
   auto src_dev_id = atoi(src_device->GetDeviceID().c_str());
@@ -511,8 +512,8 @@ void CudaMemoryManager::TryEnablePeerAccess(int32_t src_gpu_id,
 }
 
 Status CudaMemoryManager::SetupCudaStream(
-    std::shared_ptr<const DeviceMemory> src_memory,
-    std::shared_ptr<DeviceMemory> dest_memory,
+    const std::shared_ptr<const DeviceMemory> &src_memory,
+    const std::shared_ptr<DeviceMemory> &dest_memory,
     std::shared_ptr<CudaStream> &cuda_stream_ptr) {
   if (src_memory->IsHost()) {
     cuda_stream_ptr = nullptr;

@@ -38,7 +38,7 @@ void TimerTask::Stop() {
 
   is_running_ = false;
   weak_timer_.reset();
-};
+}
 
 void TimerTask::Run() { task_func_(); }
 
@@ -97,7 +97,7 @@ bool TimerTask::IsRunning() { return is_running_; }
 Timer::Timer() {
   // make sure tick may not overflow for a long long time.
   start_tick_ = GetTickCount();
-};
+}
 
 Timer::~Timer() { Stop(); };
 
@@ -156,7 +156,7 @@ void Timer::Run() {
   }
 
   thread_running_ = false;
-};
+}
 
 void Timer::StartAsync() {
   std::unique_lock<std::mutex> lock(lock_);
@@ -191,7 +191,7 @@ void Timer::Stop() {
     timer->Stop();
     timer_queue_.pop();
   }
-};
+}
 
 void Timer::StartTimerThread() {
   if (thread_running_ == true) {
@@ -202,7 +202,7 @@ void Timer::StartTimerThread() {
   thread_ = std::thread(&Timer::Run, this);
 }
 
-void Timer::Schedule(const std::shared_ptr<TimerTask> timer_task,
+void Timer::Schedule(const std::shared_ptr<TimerTask> &timer_task,
                      uint64_t delay, uint64_t period, bool take_owner_ship) {
   if (timer_running_ == false) {
     MBLOG_WARN << "Schedule timer failed, timer is not running.";
@@ -240,7 +240,7 @@ uint64_t Timer::GetCurrentTick() {
   return GetTickDiff(GetTickCount(), start_tick_);
 }
 
-void Timer::InsertTimerTask(std::shared_ptr<TimerTask> timer_task,
+void Timer::InsertTimerTask(const std::shared_ptr<TimerTask> &timer_task,
                             uint64_t now) {
   timer_task->SetHitTime(now + timer_task->GetPeriod() +
                          timer_task->GetDelay());
@@ -360,8 +360,8 @@ bool Timer::GetTimerTask(std::unique_lock<std::mutex> &lock,
   return true;
 }
 
-void Timer::RunTimerTask(std::shared_ptr<TimerTask> timer,
-                         std::shared_ptr<TimerTask> timer_call) {
+void Timer::RunTimerTask(const std::shared_ptr<TimerTask> &timer,
+                         const std::shared_ptr<TimerTask> &timer_call) {
   try {
     uint64_t start = GetCurrentTick();
     current_timer_task_ = timer_call;
@@ -460,7 +460,7 @@ void TimerGlobal::Start() {
   timer_.Start();
 }
 
-void TimerGlobal::Schedule(const std::shared_ptr<TimerTask> timer_task,
+void TimerGlobal::Schedule(const std::shared_ptr<TimerTask> &timer_task,
                            uint64_t delay, uint64_t period,
                            bool take_owner_ship) {
   timer_.Schedule(timer_task, delay, period, take_owner_ship);

@@ -17,6 +17,7 @@
 #include "modelbox/external_data_map.h"
 
 #include <functional>
+#include <utility>
 
 #include "modelbox/node.h"
 #include "modelbox/session.h"
@@ -25,8 +26,9 @@
 
 namespace modelbox {
 
-ExternalDataMapImpl::ExternalDataMapImpl(std::shared_ptr<Node> input_node,
-                                         std::shared_ptr<Stream> init_stream)
+ExternalDataMapImpl::ExternalDataMapImpl(
+    const std::shared_ptr<Node>& input_node,
+    const std::shared_ptr<Stream>& init_stream)
     : init_stream_(init_stream),
       session_(init_stream_->GetSession()),
       session_ctx_(init_stream->GetSession()->GetSessionCtx()) {
@@ -83,10 +85,11 @@ Status ExternalDataMapImpl::Send(const std::string& port_name,
   size_t matched_data_size = 0;
   PopMachedInput(matched_port_data, matched_data_size);
   return SendMatchData(matched_port_data, matched_data_size);
-};
+}
 
 Status ExternalDataMapImpl::PushToInputCache(
-    const std::string& port_name, std::shared_ptr<BufferList> buffer_list) {
+    const std::string& port_name,
+    const std::shared_ptr<BufferList>& buffer_list) {
   auto item = graph_input_ports_cache_.find(port_name);
   if (item == graph_input_ports_cache_.end()) {
     return {STATUS_INVALID, "Send Port " + port_name + " is not exist"};
@@ -270,11 +273,11 @@ Status ExternalDataMapImpl::Shutdown() {
   session->Close();
   Close();  // make sure data end has been sent
   return STATUS_OK;
-};
+}
 
 std::shared_ptr<SessionContext> ExternalDataMapImpl::GetSessionContext() {
   return session_ctx_.lock();
-};
+}
 
 std::shared_ptr<Configuration> ExternalDataMapImpl::GetSessionConfig() {
   auto ctx = session_ctx_.lock();
@@ -286,7 +289,7 @@ std::shared_ptr<Configuration> ExternalDataMapImpl::GetSessionConfig() {
 }
 
 void ExternalDataMapImpl::SetLastError(std::shared_ptr<FlowUnitError> error) {
-  last_error_ = error;
+  last_error_ = std::move(error);
 }
 
 std::shared_ptr<FlowUnitError> ExternalDataMapImpl::GetLastError() {
@@ -294,7 +297,7 @@ std::shared_ptr<FlowUnitError> ExternalDataMapImpl::GetLastError() {
 }
 
 void ExternalDataMapImpl::SetSelector(
-    std::shared_ptr<ExternalDataSelect> selector) {
+    const std::shared_ptr<ExternalDataSelect>& selector) {
   selector_ = selector;
 }
 
@@ -348,7 +351,7 @@ ExternalDataSelect::ExternalDataSelect() = default;
 ExternalDataSelect::~ExternalDataSelect() = default;
 
 void ExternalDataSelect::RegisterExternalData(
-    std::shared_ptr<ExternalDataMap> externl_data) {
+    const std::shared_ptr<ExternalDataMap>& externl_data) {
   std::lock_guard<std::mutex> lock(external_list_lock_);
   std::shared_ptr<ExternalDataMapImpl> externl_data_imp =
       std::dynamic_pointer_cast<ExternalDataMapImpl>(externl_data);
@@ -377,7 +380,7 @@ bool ExternalDataSelect::IsExternalDataReady() {
     return false;
   }
 
-  for (auto external_data : external_list_) {
+  for (const auto& external_data : external_list_) {
     if (external_data->GetReadyFlag()) {
       return true;
     }
@@ -405,7 +408,7 @@ Status ExternalDataSelect::SelectExternalData(
 
   // get ready external data
   std::lock_guard<std::mutex> lock(external_list_lock_);
-  for (auto external_data : external_list_) {
+  for (const auto& external_data : external_list_) {
     if (external_data->GetReadyFlag()) {
       external_list.push_back(external_data);
     }

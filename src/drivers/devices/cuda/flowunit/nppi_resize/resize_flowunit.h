@@ -104,7 +104,6 @@ class NppiResizeFlowUnit : public modelbox::CudaFlowUnit {
       std::shared_ptr<modelbox::BufferList> &input_buffer_list,
       std::shared_ptr<modelbox::BufferList> &output_buffer_list, int index);
 
- private:
   size_t dest_width_{0};
   size_t dest_height_{0};
   std::string interpolation_{"inter_linear"};

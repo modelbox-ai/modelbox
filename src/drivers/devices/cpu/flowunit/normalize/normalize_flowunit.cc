@@ -61,9 +61,9 @@ modelbox::Status NormalizeFlowUnit::Process(
 }
 
 template <typename T>
-void NormalizeFlowUnit::Process(const T *input_data,
-                                std::shared_ptr<modelbox::Buffer> input_buf,
-                                std::shared_ptr<modelbox::Buffer> out_buff) {
+void NormalizeFlowUnit::Process(
+    const T *input_data, const std::shared_ptr<modelbox::Buffer> &input_buf,
+    const std::shared_ptr<modelbox::Buffer> &out_buff) {
   input_data = static_cast<T *>(const_cast<void *>(input_buf->ConstData()));
   if (input_data == nullptr) {
     MBLOG_ERROR << "normalize FlowUnit flowunit data is nullptr";

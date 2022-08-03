@@ -19,6 +19,8 @@
 
 #include <dlfcn.h>
 
+#include <utility>
+
 #include "modelbox/base/log.h"
 #include "modelbox/base/utils.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
@@ -34,11 +36,11 @@ MockDriverDescSetup::MockDriverDescSetup() = default;
 MockDriverDescSetup::~MockDriverDescSetup() = default;
 
 void MockDriverDescSetup::SetDriverDesc(std::shared_ptr<DriverDesc> desc) {
-  desc_ = desc;
+  desc_ = std::move(desc);
 }
 
 void MockDriverDescSetup::SetDriverFilePath(std::string filepath) {
-  file_path_ = filepath;
+  file_path_ = std::move(filepath);
 }
 
 void MockDriverDescSetup::SetDriverHandler(void *handler) {
@@ -77,8 +79,8 @@ std::string MockDriverCtl::GetMockDriverFlowUnitFilePath(
   return otarget.str();
 }
 
-bool MockDriverCtl::AddMockDriverFlowUnit(std::string drive_name,
-                                          std::string device_name,
+bool MockDriverCtl::AddMockDriverFlowUnit(const std::string &drive_name,
+                                          const std::string &device_name,
                                           const MockFlowUnitDriverDesc &desc,
                                           const std::string &copy_path) {
   std::string drive_class_name;
@@ -135,8 +137,8 @@ errout:
   return false;
 }
 
-bool MockDriverCtl::RemoveMockDriverFlowUnit(std::string drive_name,
-                                             std::string device_name) {
+bool MockDriverCtl::RemoveMockDriverFlowUnit(const std::string &drive_name,
+                                             const std::string &device_name) {
   std::string key = device_name + drive_name;
   std::string driver_file;
 
@@ -166,7 +168,7 @@ std::string MockDriverCtl::GetMockDriverDeviceFilePath(
   return otarget.str();
 }
 
-bool MockDriverCtl::AddMockDriverDevice(std::string device_name,
+bool MockDriverCtl::AddMockDriverDevice(const std::string &device_name,
                                         const modelbox::DriverDesc &desc,
                                         const std::string &copy_path) {
   std::string drive_class_name;
@@ -220,8 +222,8 @@ errout:
   return false;
 }
 
-bool MockDriverCtl::RemoveMockDriverDevice(std::string device_name) {
-  std::string key = device_name;
+bool MockDriverCtl::RemoveMockDriverDevice(const std::string &device_name) {
+  const std::string &key = device_name;
 
   if (device_.find(key) == device_.end()) {
     return false;
@@ -255,8 +257,8 @@ void MockDriverCtl::UnloadAndRemove(MockDriverDescSetup &mock_desc) {
   remove(driver_file.c_str());
 }
 
-bool MockDriverCtl::AddMockDriverGraphConf(std::string drive_name,
-                                           std::string device_name,
+bool MockDriverCtl::AddMockDriverGraphConf(const std::string &drive_name,
+                                           const std::string &device_name,
                                            const modelbox::DriverDesc &desc,
                                            const std::string &copy_path) {
   std::string drive_class_name;
@@ -314,9 +316,9 @@ errout:
   return false;
 }
 
-bool MockDriverCtl::RemoveMockDriverGraphConf(std::string drive_name,
-                                              std::string device_name) {
-  std::string key = drive_name;
+bool MockDriverCtl::RemoveMockDriverGraphConf(const std::string &drive_name,
+                                              const std::string &device_name) {
+  const std::string &key = drive_name;
 
   if (graph_conf_.find(key) == graph_conf_.end()) {
     return false;

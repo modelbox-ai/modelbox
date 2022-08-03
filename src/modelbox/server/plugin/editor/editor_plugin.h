@@ -32,7 +32,7 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
   bool Stop() override;
 
   void RegistHandlers();
-  bool ParseConfig(std::shared_ptr<modelbox::Configuration> config);
+  bool ParseConfig(const std::shared_ptr<modelbox::Configuration> &config);
 
  private:
   void HandlerPassEncode(const httplib::Request &request,
@@ -50,9 +50,9 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
                               httplib::Response &response);
   void HandlerFlowUnitInfoGet(const httplib::Request &request,
                               httplib::Response &response);
-  void HandlerFlowUnitInfo(const httplib::Request &request,
-                           httplib::Response &response,
-                           std::shared_ptr<modelbox::Configuration> config);
+  void HandlerFlowUnitInfo(
+      const httplib::Request &request, httplib::Response &response,
+      const std::shared_ptr<modelbox::Configuration> &config);
   void HandlerFlowUnitCreate(const httplib::Request &request,
                              httplib::Response &response);
   void HandlerFlowUnitGet(const httplib::Request &request,
@@ -73,7 +73,7 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
                    std::string *redirect_file);
   modelbox::Status GraphFileToJson(const std::string &file,
                                    std::string &json_data);
-  bool CheckBlackDir(std::string dir);
+  bool CheckBlackDir(const std::string &dir);
 
   std::string ResultMsg(const std::string &code, const std::string &msg);
   std::string ResultMsg(modelbox::Status &status);

@@ -53,8 +53,8 @@ Status HttpServerAsyncFlowUnitTest::AddMockFlowUnit() {
     auto mock_desc =
         GenerateFlowunitDesc("httpserver_async_post_unit", {"In_1"}, {});
     auto process_func =
-        [=](std::shared_ptr<DataContext> op_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext>& op_ctx,
+            const std::shared_ptr<MockFlowUnit>& mock_flowunit) -> Status {
       auto input_buf = op_ctx->Input("In_1");
       std::string request_url;
       input_buf->At(0)->Get("endpoint", request_url);
@@ -109,8 +109,9 @@ Status HttpServerAsyncFlowUnitTest::AddMockFlowUnit() {
   return STATUS_OK;
 }
 
-void PutRequestAsync(web::http::uri uri,
-                     web::http::client::http_client_config client_config) {
+void PutRequestAsync(
+    const web::http::uri& uri,
+    const web::http::client::http_client_config& client_config) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_put;
@@ -137,8 +138,9 @@ void PutRequestAsync(web::http::uri uri,
   }
 }
 
-void PostRequestAsync(web::http::uri uri,
-                      web::http::client::http_client_config client_config) {
+void PostRequestAsync(
+    const web::http::uri& uri,
+    const web::http::client::http_client_config& client_config) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_post;
@@ -167,8 +169,9 @@ void PostRequestAsync(web::http::uri uri,
   }
 }
 
-void GetRequestAsync(web::http::uri uri,
-                     web::http::client::http_client_config client_config) {
+void GetRequestAsync(
+    const web::http::uri& uri,
+    const web::http::client::http_client_config& client_config) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_get;
@@ -190,8 +193,9 @@ void GetRequestAsync(web::http::uri uri,
   }
 }
 
-void DelRequestAsync(web::http::uri uri,
-                     web::http::client::http_client_config client_config) {
+void DelRequestAsync(
+    const web::http::uri& uri,
+    const web::http::client::http_client_config& client_config) {
   web::http::client::http_client client(web::http::uri_builder(uri).to_uri(),
                                         client_config);
   web::http::http_headers headers_del;

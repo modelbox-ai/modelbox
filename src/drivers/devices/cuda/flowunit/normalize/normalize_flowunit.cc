@@ -56,7 +56,8 @@ modelbox::Status NormalizeFlowUnit::CudaProcess(
 
   for (size_t i = 0; i < input_bufs->Size(); ++i) {
     auto input_buf = input_bufs->At(i);
-    int32_t width, height;
+    int32_t width = 0;
+    int32_t height = 0;
     modelbox::ModelBoxDataType type = modelbox::MODELBOX_TYPE_INVALID;
     if (!CheckBufferValid(input_buf, width, height, type)) {
       MBLOG_FATAL << "normalize flowunit input_buf invalied";
@@ -66,7 +67,7 @@ modelbox::Status NormalizeFlowUnit::CudaProcess(
     auto out_buff = output_bufs->At(i);
     out_buff->CopyMeta(input_buf);
     out_buff->Set("type", modelbox::ModelBoxDataType::MODELBOX_FLOAT);
-    auto out_data = static_cast<float *>(out_buff->MutableData());
+    auto *out_data = static_cast<float *>(out_buff->MutableData());
 
     if (type == modelbox::ModelBoxDataType::MODELBOX_FLOAT) {
       auto *in_data_f32 =
@@ -109,8 +110,8 @@ modelbox::Status NormalizeFlowUnit::CudaProcess(
 }
 
 bool NormalizeFlowUnit::CheckBufferValid(
-    std::shared_ptr<modelbox::Buffer> buffer, int32_t &width, int32_t &height,
-    modelbox::ModelBoxDataType &type) {
+    const std::shared_ptr<modelbox::Buffer> &buffer, int32_t &width,
+    int32_t &height, modelbox::ModelBoxDataType &type) {
   std::vector<size_t> shape;
   if (!buffer->Get("shape", shape)) {
     MBLOG_ERROR << "mean flowunit can not get shape from meta";

@@ -24,9 +24,9 @@
 
 std::shared_ptr<JavaJVM> kJavaJVM = nullptr;
 
-JavaJVM::JavaJVM() {}
+JavaJVM::JavaJVM() = default;
 
-JavaJVM::~JavaJVM() {}
+JavaJVM::~JavaJVM() = default;
 
 JNIEnv *JavaJVM::GetEnv() { return env_; }
 

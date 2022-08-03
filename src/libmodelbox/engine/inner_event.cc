@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/inner_event.h"
 
 namespace modelbox {
@@ -24,7 +26,7 @@ FlowUnitEvent::FlowUnitEvent() = default;
 FlowUnitEvent::~FlowUnitEvent() = default;
 
 void FlowUnitEvent::SetPrivate(const std::string &key,
-                               std::shared_ptr<void> private_content) {
+                               const std::shared_ptr<void> &private_content) {
   auto iter = private_map_.find(key);
   if (iter == private_map_.end()) {
     private_map_.emplace(key, private_content);
@@ -54,6 +56,6 @@ std::shared_ptr<FlowUnitEvent> FlowUnitInnerEvent::GetUserEvent() {
   return user_event_;
 }
 void FlowUnitInnerEvent::SetUserEvent(std::shared_ptr<FlowUnitEvent> event) {
-  user_event_ = event;
+  user_event_ = std::move(event);
 }
 }  // namespace modelbox

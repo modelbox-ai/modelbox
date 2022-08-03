@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <map>
+#include <utility>
 
 namespace modelbox {
 
@@ -35,8 +36,8 @@ std::map<std::string, std::function<std::shared_ptr<ServerPlugin>(
                                return std::make_shared<JsPlugin>(plugin_path);
                              }}};
 
-ServerPlugin::ServerPlugin(const std::string &plugin_path)
-    : plugin_path_(plugin_path) {}
+ServerPlugin::ServerPlugin(std::string plugin_path)
+    : plugin_path_(std::move(plugin_path)) {}
 
 std::shared_ptr<ServerPlugin> ServerPlugin::MakePlugin(
     const std::string &plugin_path) {

@@ -68,7 +68,8 @@ modelbox::Status OriginInferencePlugin::CreateOutputBufferList(
 modelbox::Status OriginInferencePlugin::PluginInit(
     std::shared_ptr<modelbox::Configuration> config) {
   modelbox::Status status = modelbox::STATUS_OK;
-  std::vector<std::string> names, types;
+  std::vector<std::string> names;
+  std::vector<std::string> types;
   status = SetUpInputOutput(config, "input", names, types);
   if (status != modelbox::STATUS_OK) {
     auto err_msg = "set up input failed, error: " + status.WrapErrormsgs();
@@ -91,12 +92,16 @@ modelbox::Status OriginInferencePlugin::PluginInit(
 }
 
 modelbox::Status OriginInferencePlugin::SetUpInputOutput(
-    std::shared_ptr<modelbox::Configuration> config, const std::string &type,
-    std::vector<std::string> &names, std::vector<std::string> &types) {
+    const std::shared_ptr<modelbox::Configuration> &config,
+    const std::string &type, std::vector<std::string> &names,
+    std::vector<std::string> &types) {
   auto keys = config->GetSubKeys(type);
   for (unsigned int i = 1; i <= keys.size(); ++i) {
-    std::string inner_name, inner_type;
-    auto key = type + "." + type + std::to_string(i);
+    std::string inner_name;
+    std::string inner_type;
+    auto key = type + ".";
+    key += type;
+    key += std::to_string(i);
     auto item_table = config->GetSubKeys(key);
     if (item_table.empty()) {
       auto err_msg = "the key " + key + " is not found in config file.";
@@ -117,8 +122,8 @@ modelbox::Status OriginInferencePlugin::SetUpInputOutput(
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    names.push_back(inner_name);
-    types.push_back(inner_type);
+    names.emplace_back(inner_name);
+    types.emplace_back(inner_type);
   }
 
   return modelbox::STATUS_OK;
@@ -183,7 +188,7 @@ modelbox::Status OriginInferencePlugin::PostProcess(
   int index = 0;
   for (const auto &output_name : output_name_list_) {
     auto tensor_byte = TF_TensorByteSize(output_tf_tensor_list[index]);
-    auto tensor_data = TF_TensorData(output_tf_tensor_list[index]);
+    auto *tensor_data = TF_TensorData(output_tf_tensor_list[index]);
     std::vector<size_t> output_shape;
 
     int64_t num_dims = TF_NumDims(output_tf_tensor_list[index]);

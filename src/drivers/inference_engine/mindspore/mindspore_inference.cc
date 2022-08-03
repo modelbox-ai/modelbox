@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <map>
+#include <utility>
 
 #include "include/api/context.h"
 #include "include/api/model.h"
@@ -138,12 +139,11 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
 }
 
 modelbox::Status MindSporeInference::Init(
-    std::shared_ptr<mindspore::Context> mindspore_context,
+    const std::shared_ptr<mindspore::Context> &mindspore_context,
     const std::string &model_entry,
     std::shared_ptr<modelbox::Configuration> &config,
     struct MindSporeIOList &io_list,
     const std::shared_ptr<modelbox::Drivers> &drivers_ptr) {
-
   context_ = mindspore_context;
 
   mindspore::ModelType mindspore_type = mindspore::ModelType::kAIR;
@@ -219,7 +219,7 @@ modelbox::Status MindSporeInference::Init(
 }
 
 modelbox::Status MindSporeInference::Infer(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
+    const std::shared_ptr<modelbox::DataContext> &data_ctx) {
   auto input_tensor = model_->GetInputs();
   std::vector<mindspore::MSTensor> ms_inputs;
   for (size_t i = 0; i < input_tensor.size(); ++i) {
@@ -257,8 +257,7 @@ modelbox::Status MindSporeInference::Infer(
                 << "output_tensor[i].ElementNum(): "
                 << output_tensor[i].ElementNum();
     if (output_tensor[i].Shape()[0] == 0) {
-      auto err_msg =
-          "output_tensor " + portname + " first dim is zero";
+      auto err_msg = "output_tensor " + portname + " first dim is zero";
       MBLOG_ERROR << err_msg;
       return {modelbox::STATUS_FAULT, err_msg};
     }

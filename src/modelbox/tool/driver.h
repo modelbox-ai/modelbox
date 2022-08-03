@@ -53,26 +53,27 @@ class ToolCommandDriver : public ToolCommand {
 
  protected:
   int RunInfoCommand(int argc, char *argv[]);
-  Status OutputInfo(std::shared_ptr<Configuration> config,
+  Status OutputInfo(const std::shared_ptr<Configuration>& config,
                     enum DRIVER_TYPE type, enum DRIVER_OUTFORMAT format,
-                    const std::string &filter_name);
-  Status OutputDriverInfo(std::shared_ptr<Configuration> config,
+                    const std::string& filter_name);
+  Status OutputDriverInfo(const std::shared_ptr<Configuration>& config,
                           enum DRIVER_OUTFORMAT format,
-                          const std::string &filter_name);
-  Status OutputFlowunitInfo(std::shared_ptr<Configuration> config,
+                          const std::string& filter_name);
+  Status OutputFlowunitInfo(const std::shared_ptr<Configuration>& config,
                             enum DRIVER_OUTFORMAT format,
-                            const std::string &filter_name);
-  Status DisplayDriverInList(std::shared_ptr<Configuration> config);
-  Status DisplayDriverInDetails(std::shared_ptr<Configuration> config,
-                                const std::string &filter_name);
-  Status DisplayDriverInJson(std::shared_ptr<Configuration> config);
-  Status DisplayFlowunitInList(std::shared_ptr<Configuration> config);
-  Status DisplayFlowunitInDetails(std::shared_ptr<Configuration> config,
-                                  const std::string &filter_name);
-  Status DisplayFlowunitInJson(std::shared_ptr<Configuration> config);
+                            const std::string& filter_name);
+  Status DisplayDriverInList(const std::shared_ptr<Configuration>& config);
+  Status DisplayDriverInDetails(const std::shared_ptr<Configuration>& config,
+                                const std::string& filter_name);
+  Status DisplayDriverInJson(const std::shared_ptr<Configuration>& config);
+  Status DisplayFlowunitInList(const std::shared_ptr<Configuration>& config);
+  Status DisplayFlowunitInDetails(const std::shared_ptr<Configuration>& config,
+                                  const std::string& filter_name);
+  Status DisplayFlowunitInJson(const std::shared_ptr<Configuration>& config);
   void DisplayFlowunit(std::shared_ptr<FlowUnitDesc> flowunit);
-  void DisplayFlowunitByFilter(std::shared_ptr<FlowUnitInfo> flowunit_info,
-                               const std::string &filter_name);
+  void DisplayFlowunitByFilter(
+      const std::shared_ptr<FlowUnitInfo>& flowunit_info,
+      const std::string& filter_name);
 };
 
 }  // namespace modelbox

@@ -52,8 +52,9 @@ class MeanFlowUnit : public modelbox::CudaFlowUnit {
                                cudaStream_t stream) override;
 
  private:
-  bool CheckBufferValid(std::shared_ptr<modelbox::Buffer> buffer, int32_t &width,
-                        int32_t &height, modelbox::ModelBoxDataType &type);
+  bool CheckBufferValid(const std::shared_ptr<modelbox::Buffer> &buffer,
+                        int32_t &width, int32_t &height,
+                        modelbox::ModelBoxDataType &type);
   bool MeanOperator(const float *data, int32_t width, int32_t height);
 
   MeanParams params_;

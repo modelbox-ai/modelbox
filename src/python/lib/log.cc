@@ -3,6 +3,8 @@
 
 #include <pybind11/embed.h>
 
+#include <utility>
+
 namespace modelbox {
 
 LoggerPython::LoggerPython() = default;
@@ -38,7 +40,7 @@ LogLevel LoggerPython::GetLogLevel() { return level_; }
 
 void LoggerPython::RegLogFunc(py::function pylog) {
   has_exception_ = false;
-  pylog_ = pylog;
+  pylog_ = std::move(pylog);
 }
 
 LoggerPythonWapper::LoggerPythonWapper() {
@@ -48,7 +50,7 @@ LoggerPythonWapper::LoggerPythonWapper() {
 LoggerPythonWapper::~LoggerPythonWapper() { ModelBoxLogger.SetLogger(nullptr); }
 
 void LoggerPythonWapper::RegLogFunc(py::function pylog) {
-  logger_python_->RegLogFunc(pylog);
+  logger_python_->RegLogFunc(std::move(pylog));
   ModelBoxLogger.SetLogger(logger_python_);
 }
 
@@ -56,7 +58,7 @@ std::shared_ptr<Logger> LoggerPythonWapper::GetLogger() {
   return ModelBoxLogger.GetLogger();
 }
 
-void LoggerPythonWapper::SetLogger(std::shared_ptr<Logger> logger) {
+void LoggerPythonWapper::SetLogger(const std::shared_ptr<Logger> &logger) {
   ModelBoxLogger.SetLogger(logger);
 }
 

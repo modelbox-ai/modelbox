@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <fstream>
 #include <random>
+#include <utility>
 
 #include "common_util.h"
 #include "modelbox/base/status.h"
@@ -52,9 +53,7 @@ TensorRTInferenceFlowUnit::~TensorRTInferenceFlowUnit() {
 RndInt8Calibrator::RndInt8Calibrator(
     int total_samples, std::string cache_file,
     std::map<std::string, nvinfer1::Dims3>& input_dims)
-    : total_samples_(total_samples),
-
-      cache_file_(cache_file) {
+    : total_samples_(total_samples), cache_file_(std::move(cache_file)) {
   std::default_random_engine generator;
   std::uniform_real_distribution<float> distribution(-1.0F, 1.0F);
   for (auto& elem : input_dims) {
@@ -122,12 +121,12 @@ void RndInt8Calibrator::writeCalibrationCache(const void* /*ptr*/,
                                               size_t /*length*/) noexcept {}
 
 modelbox::Status TensorRTInferenceFlowUnit::PreProcess(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
+    const std::shared_ptr<modelbox::DataContext>& data_ctx) {
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::PostProcess(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
+    const std::shared_ptr<modelbox::DataContext>& data_ctx) {
   return modelbox::STATUS_OK;
 }
 
@@ -150,7 +149,7 @@ modelbox::Status TensorRTInferenceFlowUnit::DataPost(
 }
 
 void TensorRTInferenceFlowUnit::SetUpOtherConfig(
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration>& config) {
   params_.calibration_cache =
       config->GetString("calibration_cache", "CalibrationTable");
 
@@ -169,7 +168,7 @@ void TensorRTInferenceFlowUnit::SetUpOtherConfig(
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::SetUpModelFile(
-    std::shared_ptr<modelbox::Configuration> config,
+    const std::shared_ptr<modelbox::Configuration>& config,
     const std::string& model_file) {
   std::string suffix_str = model_file.substr(model_file.find_last_of('.') + 1);
 
@@ -186,10 +185,10 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpModelFile(
               "like 'name, c, h ,w'."};
     }
 
-    for (size_t i = 0; i < uff_inputs_string.size(); ++i) {
+    for (const auto& i : uff_inputs_string) {
       // TODO wait for configure adjust for ',' in string
       std::vector<std::string> split_uff_inputs_string =
-          modelbox::StringSplit(uff_inputs_string[i], '.');
+          modelbox::StringSplit(i, '.');
       std::string name = split_uff_inputs_string[0];
       std::shared_ptr<nvinfer1::Dims> dims = nullptr;
 
@@ -251,7 +250,7 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpModelFile(
 }
 
 void TensorRTInferenceFlowUnit::configureBuilder(
-    std::shared_ptr<nvinfer1::IBuilder> builder,
+    const std::shared_ptr<nvinfer1::IBuilder>& builder,
     RndInt8Calibrator& calibrator) {
 #ifndef TENSORRT8
   builder->setMaxWorkspaceSize(static_cast<unsigned int>(params_.workspace_size)
@@ -275,7 +274,7 @@ void TensorRTInferenceFlowUnit::configureBuilder(
 
 void TensorRTInferenceFlowUnit::PrintModelBindInfo(
     const std::vector<std::string>& name_list) {
-  for (auto& bind_name : name_list) {
+  for (const auto& bind_name : name_list) {
     auto bind_index = engine_->getBindingIndex(bind_name.c_str());
     auto bind_dims = engine_->getBindingDimensions(bind_index);
     std::stringstream dim_info;
@@ -494,7 +493,7 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
   std::shared_ptr<nvonnxparser::IParser> parser =
       TensorRTInferObject(nvonnxparser::createParser(*network, gLogger));
   if (parser == nullptr) {
-    auto err_msg = "create parser from onnx model engine failed.";
+    const auto* err_msg = "create parser from onnx model engine failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -522,10 +521,10 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
   }
 
 #if defined(TENSORRT7) || defined(TENSORRT8)
-  auto builder_config = builder->createBuilderConfig();
-  auto profile = builder->createOptimizationProfile();
+  auto* builder_config = builder->createBuilderConfig();
+  auto* profile = builder->createOptimizationProfile();
   for (int i = 0, n = network->getNbInputs(); i < n; i++) {
-    auto input = network->getInput(i);
+    auto* input = network->getInput(i);
     nvinfer1::Dims dims = input->getDimensions();
     if (dims.d[0] == -1) {
       dims.d[0] = 1;
@@ -553,7 +552,7 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
   std::shared_ptr<nvinfer1::IRuntime> infer =
       TensorRTInferObject(nvinfer1::createInferRuntime(gLogger));
   if (infer == nullptr) {
-    auto err_msg = "create runtime from model_file engine failed.";
+    const auto* err_msg = "create runtime from model_file engine failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -582,7 +581,7 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
   engine_ = TensorRTInferObject(builder->buildCudaEngine(*network));
 #endif
   if (engine_ == nullptr) {
-    auto err_msg = "build engine from onnx model failed.";
+    const auto* err_msg = "build engine from onnx model failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -598,7 +597,7 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
 
   context_ = TensorRTInferObject(engine_->createExecutionContext());
   if (context_ == nullptr) {
-    auto err_msg = "build context from onnx model engine failed.";
+    const auto* err_msg = "build context from onnx model engine failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -612,7 +611,7 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
   std::shared_ptr<nvinfer1::IRuntime> infer =
       TensorRTInferObject(nvinfer1::createInferRuntime(gLogger));
   if (infer == nullptr) {
-    auto err_msg = "create runtime from model_file engine failed.";
+    const auto* err_msg = "create runtime from model_file engine failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -627,7 +626,7 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
   ModelDecryption engine_decrypt;
   auto ret = engine_decrypt.Init(params_.engine, drivers_ptr, config);
   if (ret != modelbox::STATUS_SUCCESS) {
-    auto err_msg = "open engine deploy failed.";
+    const auto* err_msg = "open engine deploy failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -675,13 +674,13 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
 #endif
 
   } else {
-    auto err_msg = "model state error.";
+    const auto* err_msg = "model state error.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
   if (engine_ == nullptr) {
-    auto err_msg = "build engine from model_file failed.";
+    const auto* err_msg = "build engine from model_file failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -697,7 +696,7 @@ modelbox::Status TensorRTInferenceFlowUnit::EngineToModel(
 
   context_ = TensorRTInferObject(engine_->createExecutionContext());
   if (context_ == nullptr) {
-    auto err_msg = "build context from model_file engine failed.";
+    const auto* err_msg = "build context from model_file engine failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -716,7 +715,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(
   std::shared_ptr<nvinfer1::IBuilder> builder =
       TensorRTInferObject(nvinfer1::createInferBuilder(gLogger));
   if (builder == nullptr) {
-    auto err_msg = "create builder failed.";
+    const auto* err_msg = "create builder failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -732,7 +731,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(
       TensorRTInferObject(builder->createNetwork());
 #endif
   if (network == nullptr) {
-    auto err_msg = "creat network failed.";
+    const auto* err_msg = "creat network failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -752,7 +751,8 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateEngine(
   return modelbox::STATUS_OK;
 }
 
-void TensorRTInferenceFlowUnit::SetPluginFactory(std::string pluginName) {
+void TensorRTInferenceFlowUnit::SetPluginFactory(
+    const std::string& pluginName) {
   if (pluginName.empty()) {
     return;
   }
@@ -804,12 +804,12 @@ modelbox::Status TensorRTInferenceFlowUnit::InitConfig(
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::SetUpDynamicLibrary(
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration>& config) {
   typedef std::shared_ptr<TensorRTInferencePlugin> (*PluginObject)();
   auto status = modelbox::STATUS_OK;
   void* driver_handler = dlopen(plugin_.c_str(), RTLD_NOW | RTLD_LOCAL);
   if (driver_handler == nullptr) {
-    auto dl_errmsg = dlerror();
+    auto* dl_errmsg = dlerror();
     auto err_msg = "dlopen " + plugin_ + " failed";
     if (dl_errmsg) {
       err_msg += ", error: " + std::string(dl_errmsg);
@@ -830,7 +830,7 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpDynamicLibrary(
   auto create_plugin =
       reinterpret_cast<PluginObject>(dlsym(driver_handler, "CreatePlugin"));
   if (create_plugin == nullptr) {
-    auto dlerr_msg = dlerror();
+    auto* dlerr_msg = dlerror();
     std::string err_msg = "dlsym CreatePlugin failed";
     if (dlerr_msg) {
       err_msg += " error: ";
@@ -844,7 +844,7 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpDynamicLibrary(
 
   std::shared_ptr<TensorRTInferencePlugin> inference_plugin = create_plugin();
   if (inference_plugin == nullptr) {
-    auto err_msg = "CreatePlugin failed";
+    const auto* err_msg = "CreatePlugin failed";
     MBLOG_ERROR << err_msg;
     status = {modelbox::STATUS_FAULT, err_msg};
     return status;
@@ -858,8 +858,8 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpDynamicLibrary(
     return status;
   }
 
-  driver_handler_ = std::move(driver_handler);
-  inference_plugin_ = std::move(inference_plugin);
+  driver_handler_ = driver_handler;
+  inference_plugin_ = inference_plugin;
 
   pre_process_ = std::bind(&TensorRTInferencePlugin::PreProcess,
                            inference_plugin_, std::placeholders::_1);
@@ -874,7 +874,7 @@ modelbox::Status TensorRTInferenceFlowUnit::SetUpDynamicLibrary(
 }
 
 modelbox::Status TensorRTInferenceFlowUnit::SetUpInferencePlugin(
-    std::shared_ptr<modelbox::Configuration> config) {
+    const std::shared_ptr<modelbox::Configuration>& config) {
   if (plugin_.empty()) {
     pre_process_ = std::bind(&TensorRTInferenceFlowUnit::PreProcess, this,
                              std::placeholders::_1);
@@ -1010,6 +1010,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateMemory(
 
   auto single_bytes = Volume(dims) * data_type_size;
   std::vector<size_t> output_shape;
+  output_shape.reserve(dims.nbDims);
   for (int i = 0; i < dims.nbDims; ++i) {
     output_shape.push_back(dims.d[i]);
   }
@@ -1039,7 +1040,7 @@ modelbox::Status TensorRTInferenceFlowUnit::PrePareInput(
     std::vector<void*>& memory) {
   for (const auto& input_name : params_.inputs_name_list) {
     auto input_buf = data_ctx->Input(input_name);
-    auto data = input_buf->ConstData();
+    const auto* data = input_buf->ConstData();
     auto status = BindMemory(memory, input_name, data, input_buf->GetBytes(),
                              input_buf->Size());
     if (status != modelbox::STATUS_OK) {
@@ -1127,7 +1128,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CudaProcess(
   }
 
   if (!enqueue_res) {
-    auto err_msg = "enqueue failed.";
+    const auto* err_msg = "enqueue failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }

@@ -16,6 +16,8 @@
 
 #include "flowunit_mockflowunit.h"
 
+#include <utility>
+
 namespace modelbox {
 
 MockDriverFlowUnit MockDriverFlowUnit::desc_;
@@ -53,18 +55,18 @@ std::shared_ptr<FlowUnit> MockFlowUnitFactory::CreateFlowUnit(
 
 void MockFlowUnitFactory::SetMockFunctionFlowUnit(
     std::shared_ptr<MockFlowUnit> mock_flowunit) {
-  bind_mock_flowunit_ = mock_flowunit;
+  bind_mock_flowunit_ = std::move(mock_flowunit);
 }
 
 void MockFlowUnitFactory::SetMockCreateFlowUnitFunc(
     std::function<std::shared_ptr<FlowUnit>(const std::string &name,
                                             const std::string &type)>
         create_func) {
-  flowunit_create_func_ = create_func;
+  flowunit_create_func_ = std::move(create_func);
 }
 
 void MockFlowUnitFactory::SetMockFlowUnitDesc(
     std::vector<std::shared_ptr<FlowUnitDesc>> descs) {
-  flowunit_desc_ = descs;
+  flowunit_desc_ = std::move(descs);
 }
 }  // namespace modelbox

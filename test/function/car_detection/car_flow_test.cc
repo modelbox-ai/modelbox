@@ -119,7 +119,7 @@ Status CarFlowTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_meta  "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -127,7 +127,7 @@ Status CarFlowTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_meta  "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -136,7 +136,7 @@ Status CarFlowTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& data_ctx) {
               auto output_buf = data_ctx->Output("stream_meta");
               std::vector<size_t> shape(1, 1);
               output_buf->Build(shape);
@@ -188,7 +188,7 @@ Status CarFlowTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "color_transpose "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -196,7 +196,7 @@ Status CarFlowTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "color_transpose "
                          << "DataPost";
               return modelbox::STATUS_STOP;
@@ -205,7 +205,7 @@ Status CarFlowTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> op_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               MBLOG_INFO << "test color_transpose process";
               auto input_buf = op_ctx->Input("in_image");
               auto output_buf = op_ctx->Output("out_image");
@@ -216,7 +216,9 @@ Status CarFlowTest::AddMockFlowUnit() {
               }
 
               output_buf->Build(shape_vector);
-              int32_t width, height, channel;
+              int32_t width;
+              int32_t height;
+              int32_t channel;
               std::string pix_fmt;
               modelbox::ModelBoxDataType type = MODELBOX_TYPE_INVALID;
               input_buf->At(0)->Get("width", width);
@@ -226,9 +228,9 @@ Status CarFlowTest::AddMockFlowUnit() {
               input_buf->At(0)->Get("type", type);
               size_t elem_size = width * height;
 
-              auto input_data =
+              const auto* input_data =
                   static_cast<const u_char*>(input_buf->ConstData());
-              auto output_data =
+              auto* output_data =
                   static_cast<u_char*>(output_buf->MutableData());
               for (size_t i = 0; i < (size_t)channel; ++i) {
                 for (size_t j = 0; j < elem_size; ++j) {
@@ -284,7 +286,7 @@ Status CarFlowTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_meta  "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -292,7 +294,7 @@ Status CarFlowTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_meta  "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -301,7 +303,7 @@ Status CarFlowTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& data_ctx) {
               auto input_buf = data_ctx->Input("in_data");
 
               static auto begin_time = GetTickCount();
@@ -362,7 +364,7 @@ Status CarFlowTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_meta  "
                          << "DataPre";
               return modelbox::STATUS_OK;
@@ -370,7 +372,7 @@ Status CarFlowTest::AddMockFlowUnit() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext>& data_ctx) {
               MBLOG_INFO << "stream_meta  "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -379,7 +381,7 @@ Status CarFlowTest::AddMockFlowUnit() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext>& data_ctx) {
               auto input_buf = data_ctx->Input("in_data");
 
               static auto begin_time = GetTickCount();

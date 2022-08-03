@@ -36,9 +36,9 @@ class JavaFlowUnitTest : public testing::Test {
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
 
  protected:
-  virtual void SetUp() {}
+  void SetUp() override {}
 
-  virtual void TearDown() { driver_flow_->Clear(); };
+  void TearDown() override { driver_flow_->Clear(); };
 
   const std::string test_lib_dir = TEST_DRIVER_DIR,
                     test_data_dir = TEST_DATA_DIR, test_assets = TEST_ASSETS;

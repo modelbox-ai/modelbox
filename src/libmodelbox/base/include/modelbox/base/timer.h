@@ -149,8 +149,8 @@ class TimerTask : public std::enable_shared_from_this<TimerTask> {
 
 class TimerCompare {
  public:
-  bool operator()(std::shared_ptr<TimerTask> lhs,
-                  std::shared_ptr<TimerTask> rhs) {
+  bool operator()(const std::shared_ptr<TimerTask> &lhs,
+                  const std::shared_ptr<TimerTask> &rhs) {
     auto hit_time_lhs = lhs->GetHitTime();
     auto hit_time_rhs = rhs->GetHitTime();
     if (hit_time_lhs == hit_time_rhs) {
@@ -209,7 +209,7 @@ class Timer {
    * @param period schedule period, in millisecond.
    * @param take_owner_ship take ownership of shared_ptr timer_task.
    */
-  void Schedule(std::shared_ptr<TimerTask> timer_task, uint64_t delay,
+  void Schedule(const std::shared_ptr<TimerTask> &timer_task, uint64_t delay,
                 uint64_t period, bool take_owner_ship = false);
 
   /**
@@ -241,12 +241,13 @@ class Timer {
 
  private:
   friend class TimerTask;
-  void RunTimerTask(std::shared_ptr<TimerTask> timer,
-                    std::shared_ptr<TimerTask> timer_call);
+  void RunTimerTask(const std::shared_ptr<TimerTask> &timer,
+                    const std::shared_ptr<TimerTask> &timer_call);
 
   void StartTimerThread();
 
-  void InsertTimerTask(std::shared_ptr<TimerTask> timer_task, uint64_t now);
+  void InsertTimerTask(const std::shared_ptr<TimerTask> &timer_task,
+                       uint64_t now);
 
   void RemoveTopTimerTask();
 
@@ -296,8 +297,9 @@ class TimerGlobal {
    * @param period schedule period, in millisecond.
    * @param take_owner_ship take ownership of shared_ptr timer_task.
    */
-  static void Schedule(std::shared_ptr<TimerTask> timer_task, uint64_t delay,
-                       uint64_t period, bool take_owner_ship = false);
+  static void Schedule(const std::shared_ptr<TimerTask> &timer_task,
+                       uint64_t delay, uint64_t period,
+                       bool take_owner_ship = false);
 
  private:
   TimerGlobal();

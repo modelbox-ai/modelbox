@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "mock_tool.h"
 
 #include "../config.h"
@@ -53,7 +52,7 @@ int MockTool::Run(int argc, char *argv[]) {
   return cmd->Run(argc, argv);
 }
 
-void MockTool::SetDefaultConfig(std::shared_ptr<Configuration> config) {
+void MockTool::SetDefaultConfig(const std::shared_ptr<Configuration> &config) {
   std::vector<std::string> plugin_path;
   config->SetProperty("control.enable", "true");
   config->SetProperty("control.listen",

@@ -57,7 +57,7 @@ class BufferMeta {
    * @param is_override override existing meta key
    * @return copy result
    */
-  Status CopyMeta(std::shared_ptr<BufferMeta> buf_meta,
+  Status CopyMeta(const std::shared_ptr<BufferMeta>& buf_meta,
                   bool is_override = false);
 
   /**
@@ -166,7 +166,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @return create result
    */
   virtual Status Build(void* data, size_t data_size,
-                       DeleteFunction func = nullptr);
+                       const DeleteFunction& func = nullptr);
 
   /**
    * @brief Create a buffer from existing host memory
@@ -176,7 +176,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @return create result
    */
   virtual Status BuildFromHost(void* data, size_t data_size,
-                               DeleteFunction func = nullptr);
+                               const DeleteFunction& func = nullptr);
 
   /**
    * @brief Get buffer mutable data pointer, if data is immutable, null pointer
@@ -203,7 +203,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @param error_msg buffer error message
    */
   virtual void SetError(const std::string& error_code,
-                           const std::string& error_msg);
+                        const std::string& error_msg);
 
   /**
    * @brief Get buffer error code
@@ -229,7 +229,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @param is_override may override existing meta.
    * @return copy result
    */
-  virtual Status CopyMeta(std::shared_ptr<Buffer> buf,
+  virtual Status CopyMeta(const std::shared_ptr<Buffer>& buf,
                           bool is_override = false);
 
   /**
@@ -354,7 +354,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @param dest_device destination device
    * @return delayed copy flag.
    */
-  bool GetDelayedCopyFlag(std::shared_ptr<Device> dest_device);
+  bool GetDelayedCopyFlag(const std::shared_ptr<Device>& dest_device);
 
   /**
    * @brief  copy buffer data to destination device

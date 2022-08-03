@@ -21,6 +21,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <utility>
 
 #include "modelbox/base/status.h"
 #include "modelbox/buffer.h"
@@ -51,7 +52,7 @@ class NodeBase : public std::enable_shared_from_this<NodeBase> {
 
   virtual Status Init(const std::set<std::string>& input_port_names,
                       const std::set<std::string>& output_port_names,
-                      std::shared_ptr<Configuration> config);
+                      const std::shared_ptr<Configuration> &config);
 
   virtual Status Run(RunType type) = 0;
 
@@ -113,7 +114,7 @@ class NodeBase : public std::enable_shared_from_this<NodeBase> {
  protected:
   Status InitPorts(const std::set<std::string>& input_port_names,
                    const std::set<std::string>& output_port_names,
-                   std::shared_ptr<Configuration> config);
+                   const std::shared_ptr<Configuration>& config);
 
   std::string name_;
 
@@ -152,7 +153,7 @@ class Node : public NodeBase {
    */
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,
-              std::shared_ptr<Configuration> config) override;
+              const std::shared_ptr<Configuration> &config) override;
 
   void SetFlowUnitInfo(const std::string& flowunit_name,
                        const std::string& flowunit_type,
@@ -215,7 +216,7 @@ class Node : public NodeBase {
   }
 
   void SetMatchNode(const std::string& name, std::shared_ptr<Node> match_node) {
-    match_node_[name] = match_node;
+    match_node_[name] = std::move(match_node);
   }
 
   std::shared_ptr<Node> GetMatchNode() { return match_node_["match_node"]; }
@@ -255,20 +256,20 @@ class Node : public NodeBase {
       std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list);
 
   Status AppendDataContextByEvent(
-      std::shared_ptr<MatchStreamData> match_stream_data,
+      const std::shared_ptr<MatchStreamData>& match_stream_data,
       std::set<std::shared_ptr<FlowUnitDataContext>>& data_ctx_set);
 
   Status AppendDataContextByData(
-      std::shared_ptr<MatchStreamData> match_stream_data,
+      const std::shared_ptr<MatchStreamData>& match_stream_data,
       std::set<std::shared_ptr<FlowUnitDataContext>>& data_ctx_set);
 
   std::shared_ptr<FlowUnitDataContext> GetDataContext(MatchKey* key);
 
   std::shared_ptr<FlowUnitDataContext> CreateDataContext(
-      MatchKey* key, std::shared_ptr<Session> session);
+      MatchKey* key, const std::shared_ptr<Session>& session);
 
   std::shared_ptr<FlowUnitDataContext> AppendDataToDataContext(
-      MatchKey* key, std::shared_ptr<MatchStreamData> match_stream_data,
+      MatchKey* key, const std::shared_ptr<MatchStreamData>& match_stream_data,
       bool append_single_buffer = false, size_t buffer_index = 0);
 
   Status Process(
@@ -282,10 +283,10 @@ class Node : public NodeBase {
 
   virtual Status InitNodeProperties();
 
-  void UpdatePropConstrain(std::shared_ptr<FlowUnitDesc> flowunit_desc);
+  void UpdatePropConstrain(const std::shared_ptr<FlowUnitDesc>& flowunit_desc);
 
   std::shared_ptr<ExternalData> CreateExternalData(
-      std::shared_ptr<Device> device);
+      const std::shared_ptr<Device>& device);
 
   bool NeedNewIndex();
 

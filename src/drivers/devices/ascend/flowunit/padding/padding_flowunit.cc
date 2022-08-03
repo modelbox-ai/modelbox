@@ -112,7 +112,7 @@ modelbox::Status PaddingFlowUnit::Open(
   }
 
   auto alloc_buffer = [&](uint32_t size,
-                          std::string device) -> std::shared_ptr<void> {
+                          const std::string &device) -> std::shared_ptr<void> {
     void *buffer = nullptr;
     if (device == "cpu") {
       if (0 == aclrtMallocHost(&buffer, size)) {
@@ -351,8 +351,8 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(
     dest_roi.height = in_image_size.height_;
   }
 
-  auto crop_area_local = acldvppCreateRoiConfig(0, in_image_size.width_ - 1, 0,
-                                                in_image_size.height_ - 1);
+  auto *crop_area_local = acldvppCreateRoiConfig(0, in_image_size.width_ - 1, 0,
+                                                 in_image_size.height_ - 1);
   if (crop_area_local == nullptr) {
     MBLOG_ERROR << "failed create roi config for crop area";
     return modelbox::STATUS_FAULT;
@@ -371,7 +371,7 @@ modelbox::Status PaddingFlowUnit::FillDestRoi(
   dest_roi.y = ALIGNMENT_DOWN(
       GetAlignOffset(vertical_align_, out_image_.height_, dest_roi.height));
   dest_roi.height = ALIGNMENT_DOWN(dest_roi.height);
-  auto paste_area_local =
+  auto *paste_area_local =
       acldvppCreateRoiConfig(dest_roi.x, dest_roi.x + dest_roi.width - 1,
                              dest_roi.y, dest_roi.y + dest_roi.height - 1);
   if (paste_area_local == nullptr) {
@@ -421,7 +421,7 @@ modelbox::Status PaddingFlowUnit::CropResizeAndPaste(ResizeCropParam &param,
     MBLOG_ERROR << "Get dvpp channel failed";
     return {modelbox::STATUS_FAULT, "Get dvpp channel failed"};
   }
-  auto resize_cfg = acldvppCreateResizeConfig();
+  auto *resize_cfg = acldvppCreateResizeConfig();
   if (resize_cfg == nullptr) {
     MBLOG_ERROR << "acldvppCreateResizeConfig return null";
     return {modelbox::STATUS_FAULT, "acldvppCreateResizeConfig return null"};

@@ -99,10 +99,10 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
 
  private:
   modelbox::Status ReadData(
-      std::shared_ptr<modelbox::DataContext> data_ctx,
+      const std::shared_ptr<modelbox::DataContext> &data_ctx,
       std::vector<std::shared_ptr<NvcodecPacket>> &pkt_list);
   modelbox::Status ReadNvcodecPacket(
-      std::shared_ptr<modelbox::Buffer> packet_buffer,
+      const std::shared_ptr<modelbox::Buffer> &packet_buffer,
       std::shared_ptr<NvcodecPacket> &pkt);
   modelbox::Status WriteData(
       std::shared_ptr<modelbox::DataContext> &data_ctx,
@@ -110,7 +110,6 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
       const std::string &file_url);
   modelbox::Status CreateCudaContext(CUcontext &cu_ctx, std::string &device_id);
 
- private:
   std::string out_pix_fmt_str_;
   bool skip_err_frame_{false};
   std::string device_id_;

@@ -53,10 +53,10 @@ std::set<modelbox::StatisticsNotifyType> NotifyTypesFromUint(
 }
 
 static duk_ret_t JSRegisterStatsNotify(duk_context *ctx) {
-  auto path_pattern = duk_require_string(ctx, 0);
+  const auto *path_pattern = duk_require_string(ctx, 0);
   auto type_mask = duk_require_uint(ctx, 1);
-  auto func_name = duk_require_string(ctx, 2);
-  auto priv_data = duk_get_heapptr(ctx, 3);
+  const auto *func_name = duk_require_string(ctx, 2);
+  auto *priv_data = duk_get_heapptr(ctx, 3);
 
   if (func_name == nullptr || path_pattern == nullptr) {
     MBLOG_ERROR << "param is invalid.";
@@ -67,7 +67,7 @@ static duk_ret_t JSRegisterStatsNotify(duk_context *ctx) {
              << ",type:" << type_mask << ",func:" << func_name
              << ",priv_data:" << priv_data << "]";
 
-  auto plugin_ctx = JsPlugin::GetPlugin(ctx);
+  auto *plugin_ctx = JsPlugin::GetPlugin(ctx);
   if (plugin_ctx == nullptr) {
     MBLOG_ERROR << "plugin_ctx is null";
     return -1;  // return error to js
@@ -88,11 +88,11 @@ static duk_ret_t JSRegisterStatsNotify(duk_context *ctx) {
  * @note Not recommended
  */
 static duk_ret_t JSRegisterStatsTimerNotify(duk_context *ctx) {
-  auto path_pattern = duk_require_string(ctx, 0);
+  const auto *path_pattern = duk_require_string(ctx, 0);
   auto timer_delay = duk_require_uint(ctx, 1);
   auto timer_interval = duk_require_uint(ctx, 2);
-  auto func_name = duk_require_string(ctx, 3);
-  auto priv_data = duk_get_heapptr(ctx, 4);
+  const auto *func_name = duk_require_string(ctx, 3);
+  auto *priv_data = duk_get_heapptr(ctx, 4);
   if (path_pattern == nullptr || func_name == nullptr) {
     MBLOG_ERROR << "register param is invalid";
     return -1;
@@ -101,7 +101,7 @@ static duk_ret_t JSRegisterStatsTimerNotify(duk_context *ctx) {
              << ",delay:" << timer_delay << ",interval:" << timer_interval
              << ",func:" << func_name << ",priv_data:" << priv_data << "]";
 
-  auto plugin_ctx = JsPlugin::GetPlugin(ctx);
+  auto *plugin_ctx = JsPlugin::GetPlugin(ctx);
   if (plugin_ctx == nullptr) {
     MBLOG_ERROR << "plugin_ctx is null";
     return -1;  // return error to js
@@ -115,7 +115,7 @@ static duk_ret_t JSRegisterStatsTimerNotify(duk_context *ctx) {
 }
 
 static duk_ret_t JSGetStatsValue(duk_context *ctx) {
-  auto path = duk_require_string(ctx, 0);
+  const auto *path = duk_require_string(ctx, 0);
   auto stats = modelbox::Statistics::GetGlobalItem();
   if (stats == nullptr || path == nullptr) {
     MBLOG_ERROR << "Global item is invalid.";
@@ -134,8 +134,8 @@ static duk_ret_t JSGetStatsValue(duk_context *ctx) {
 }
 
 static duk_ret_t JSRouteData(duk_context *ctx) {
-  auto topic = duk_require_string(ctx, 0);
-  auto msg_name = duk_require_string(ctx, 1);
+  const auto *topic = duk_require_string(ctx, 0);
+  const auto *msg_name = duk_require_string(ctx, 1);
   if (topic == nullptr || msg_name == nullptr) {
     MBLOG_ERROR << "get message name failed.";
     return -1;
@@ -175,7 +175,7 @@ static void GetCallerInfo(duk_context *ctx, std::string &file_name,
     duk_get_prop_string(ctx, -1, "function");
 
     duk_get_prop_string(ctx, -1, "fileName");
-    auto js_file_name = duk_to_string(ctx, -1);
+    const auto *js_file_name = duk_to_string(ctx, -1);
     if (js_file_name) {
       file_name = js_file_name;
     }
@@ -188,8 +188,8 @@ static void GetCallerInfo(duk_context *ctx, std::string &file_name,
 }
 
 static duk_ret_t JSModelboxLog(duk_context *ctx) {
-  auto level = duk_require_string(ctx, 0);
-  auto msg = duk_require_string(ctx, 1);
+  const auto *level = duk_require_string(ctx, 0);
+  const auto *msg = duk_require_string(ctx, 1);
 
   if (level == nullptr || msg == nullptr) {
     MBLOG_ERROR << "input param is invalid";
@@ -344,7 +344,7 @@ modelbox::Status JsPlugin::Stop() {
 }
 
 void JsPlugin::RegisterStatsNotify(
-    const std::string path_pattern,
+    const std::string &path_pattern,
     const std::set<modelbox::StatisticsNotifyType> &type_list,
     const std::string &func_name, void *priv_data, size_t delay,
     size_t interval) {
@@ -394,7 +394,7 @@ modelbox::Status JsPlugin::Start() { return modelbox::STATUS_NOTSUPPORT; }
 modelbox::Status JsPlugin::Stop() { return modelbox::STATUS_NOTSUPPORT; }
 
 void JsPlugin::RegisterStatsNotify(
-    const std::string path_pattern,
+    const std::string &path_pattern,
     const std::set<modelbox::StatisticsNotifyType> &type_list,
     const std::string &func_name, void *priv_data, size_t delay,
     size_t interval) {}

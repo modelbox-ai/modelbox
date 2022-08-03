@@ -34,6 +34,7 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace modelbox {
@@ -74,26 +75,26 @@ enum LoopType {
 
 class FlowUnitPort {
  public:
-  FlowUnitPort(const std::string &name) : port_name_(name){};
-  FlowUnitPort(const std::string &name, const std::string &device_type)
-      : port_name_(name), device_type_(device_type){};
-  FlowUnitPort(const std::string &name, uint32_t device_mem_flags)
-      : port_name_(name), device_mem_flags_(device_mem_flags){};
-  FlowUnitPort(const std::string &name, const std::string &device_type,
+  FlowUnitPort(std::string name) : port_name_(std::move(name)){};
+  FlowUnitPort(std::string name, std::string device_type)
+      : port_name_(std::move(name)), device_type_(std::move(device_type)){};
+  FlowUnitPort(std::string name, uint32_t device_mem_flags)
+      : port_name_(std::move(name)), device_mem_flags_(device_mem_flags){};
+  FlowUnitPort(std::string name, std::string device_type,
                uint32_t device_mem_flags)
-      : port_name_(name),
-        device_type_(device_type),
+      : port_name_(std::move(name)),
+        device_type_(std::move(device_type)),
         device_mem_flags_(device_mem_flags){};
-  FlowUnitPort(const std::string &name, const std::string &device_type,
-               const std::string &type)
-      : port_name_(name), device_type_(device_type), port_type_(type){};
-  FlowUnitPort(const std::string &name, const std::string &device_type,
-               const std::string &type,
-               const std::map<std::string, std::string> &ext)
-      : port_name_(name),
-        device_type_(device_type),
-        port_type_(type),
-        ext_(ext){};
+  FlowUnitPort(std::string name, std::string device_type, std::string type)
+      : port_name_(std::move(name)),
+        device_type_(std::move(device_type)),
+        port_type_(std::move(type)){};
+  FlowUnitPort(std::string name, std::string device_type, std::string type,
+               std::map<std::string, std::string> ext)
+      : port_name_(std::move(name)),
+        device_type_(std::move(device_type)),
+        port_type_(std::move(type)),
+        ext_(std::move(ext)){};
 
   virtual ~FlowUnitPort() = default;
 
@@ -105,7 +106,9 @@ class FlowUnitPort {
 
   void SetPortType(const std::string &port_type) { port_type_ = port_type; };
 
-  void SetDevice(std::shared_ptr<Device> device) { device_ = device; }
+  void SetDevice(std::shared_ptr<Device> device) {
+    device_ = std::move(device);
+  }
 
   void SetProperity(const std::string &key, const std::string &value) {
     ext_[key] = value;
@@ -187,26 +190,28 @@ class FlowUnitOutput : public FlowUnitPort {
 
 class FlowUnitOption {
  public:
-  FlowUnitOption(const std::string &name, const std::string &type)
-      : option_name_(name), option_type_(type){};
-  FlowUnitOption(const std::string &name, const std::string &type, bool require)
-      : option_name_(name), option_type_(type), option_require_{require} {};
-  FlowUnitOption(const std::string &name, const std::string &type, bool require,
-                 const std::string &default_value, const std::string &desc,
-                 const std::map<std::string, std::string> &values)
-      : option_name_(name),
-        option_type_(type),
+  FlowUnitOption(std::string name, std::string type)
+      : option_name_(std::move(name)), option_type_(std::move(type)){};
+  FlowUnitOption(std::string name, std::string type, bool require)
+      : option_name_(std::move(name)),
+        option_type_(std::move(type)),
+        option_require_{require} {};
+  FlowUnitOption(std::string name, std::string type, bool require,
+                 std::string default_value, std::string desc,
+                 std::map<std::string, std::string> values)
+      : option_name_(std::move(name)),
+        option_type_(std::move(type)),
         option_require_(require),
-        option_default_(default_value),
-        option_desc_(desc),
-        option_values_(values){};
-  FlowUnitOption(const std::string &name, const std::string &type, bool require,
-                 const std::string &default_value, const std::string &desc)
-      : option_name_(name),
-        option_type_(type),
+        option_default_(std::move(default_value)),
+        option_desc_(std::move(desc)),
+        option_values_(std::move(values)){};
+  FlowUnitOption(std::string name, std::string type, bool require,
+                 std::string default_value, std::string desc)
+      : option_name_(std::move(name)),
+        option_type_(std::move(type)),
         option_require_(require),
-        option_default_(default_value),
-        option_desc_(desc){};
+        option_default_(std::move(default_value)),
+        option_desc_(std::move(desc)){};
 
   virtual ~FlowUnitOption() { option_values_.clear(); }
 
@@ -361,7 +366,7 @@ class FlowUnitDesc {
   };
 
   void SetDriverDesc(std::shared_ptr<DriverDesc> driver_desc) {
-    driver_desc_ = driver_desc;
+    driver_desc_ = std::move(driver_desc);
   }
 
   void SetFlowUnitAliasName(const std::string &alias_name) {
@@ -640,6 +645,7 @@ class IFlowUnit {
    * @param data_ctx data context.
    * @return open result
    */
+  // NOLINTNEXTLINE
   virtual Status Process(std::shared_ptr<DataContext> data_ctx) = 0;
 
   /**
@@ -647,6 +653,7 @@ class IFlowUnit {
    * @param data_ctx data context.
    * @return data pre result
    */
+  // NOLINTNEXTLINE
   virtual Status DataPre(std::shared_ptr<DataContext> data_ctx);
 
   /**
@@ -654,6 +661,7 @@ class IFlowUnit {
    * @param data_ctx data context.
    * @return data post result
    */
+  // NOLINTNEXTLINE
   virtual Status DataPost(std::shared_ptr<DataContext> data_ctx);
 
   /**
@@ -662,6 +670,7 @@ class IFlowUnit {
    * @param data_ctx data context.
    * @return data group result
    */
+  // NOLINTNEXTLINE
   virtual Status DataGroupPre(std::shared_ptr<DataContext> data_ctx);
 
   /**
@@ -670,6 +679,7 @@ class IFlowUnit {
    * @param data_ctx data context.
    * @return data group post result
    */
+  // NOLINTNEXTLINE
   virtual Status DataGroupPost(std::shared_ptr<DataContext> data_ctx);
 };
 
@@ -687,7 +697,7 @@ class FlowUnit : public IFlowUnit {
   virtual void SetFlowUnitDesc(std::shared_ptr<FlowUnitDesc> desc);
   virtual std::shared_ptr<FlowUnitDesc> GetFlowUnitDesc();
 
-  void SetBindDevice(std::shared_ptr<Device> device);
+  void SetBindDevice(const std::shared_ptr<Device> &device);
   std::shared_ptr<Device> GetBindDevice();
 
   void SetExternalData(const CreateExternalDataFunc &create_external_data) {
@@ -726,7 +736,9 @@ class FlowUnitFactory : public DriverFactory {
     return std::map<std::string, std::shared_ptr<FlowUnitDesc>>();
   };
 
-  void SetDriver(std::shared_ptr<Driver> driver) override { driver_ = driver; }
+  void SetDriver(const std::shared_ptr<Driver> &driver) override {
+    driver_ = driver;
+  }
 
   std::shared_ptr<Driver> GetDriver() override { return driver_; }
 
@@ -758,7 +770,8 @@ class FlowUnitFactory : public DriverFactory {
   }
 
   virtual void SetFlowUnitFactory(
-      std::vector<std::shared_ptr<DriverFactory>> bind_flowunit_factory_list){};
+      const std::vector<std::shared_ptr<DriverFactory>>
+          &bind_flowunit_factory_list){};
 
  private:
   std::shared_ptr<Driver> driver_;
@@ -774,11 +787,11 @@ class FlowUnitManager {
 
   static std::shared_ptr<FlowUnitManager> GetInstance();
 
-  Status Register(std::shared_ptr<FlowUnitFactory> factory);
+  Status Register(const std::shared_ptr<FlowUnitFactory> &factory);
 
-  Status Initialize(std::shared_ptr<Drivers> driver,
+  Status Initialize(const std::shared_ptr<Drivers> &driver,
                     std::shared_ptr<DeviceManager> device_mgr,
-                    std::shared_ptr<Configuration> config);
+                    const std::shared_ptr<Configuration> &config);
 
   virtual std::vector<std::string> GetFlowUnitTypes();
 
@@ -793,7 +806,7 @@ class FlowUnitManager {
       const std::string &unit_device_id = "");
 
   Status FlowUnitProbe();
-  Status InitFlowUnitFactory(std::shared_ptr<Drivers> driver);
+  Status InitFlowUnitFactory(const std::shared_ptr<Drivers> &driver);
   Status SetUpFlowUnitDesc();
   void Clear();
   /**

@@ -19,9 +19,9 @@
 #include <modelbox/base/configuration.h>
 #include <modelbox/base/status.h>
 #include <modelbox/base/utils.h>
+#include <unistd.h>
 
 #include <fstream>
-#include <unistd.h>
 
 const std::string copyright_content = R"(
 # Copyright 2022 The Modelbox Project Authors. All Rights Reserved.
@@ -71,7 +71,6 @@ modelbox::Status ModelServing::GenerateTemplate(const std::string &model_name,
     fprintf(stderr, "%s\n", err_msg.c_str());
     return {modelbox::STATUS_FAULT, err_msg};
   }
-
 
   status = ParseModelToml();
   if (status != modelbox::STATUS_OK) {
@@ -155,7 +154,7 @@ modelbox::Status ModelServing::GenerateTemplate(const std::string &model_name,
   }
 
   return modelbox::STATUS_OK;
-};
+}
 
 modelbox::Status ModelServing::CheckConfigFiles(const std::string &model_path) {
   std::vector<std::string> files;
@@ -196,7 +195,10 @@ modelbox::Status ModelServing::FillModelItem(const std::string &type) {
   for (unsigned int i = 1; i <= item.size(); ++i) {
     std::string item_name;
     std::string item_type;
-    auto key = type + "." + type + std::to_string(i);
+    auto key = type;
+    key += ".";
+    key += type;
+    key += std::to_string(i);
     auto item_table = config_->GetSubKeys(key);
     if (item_table.empty()) {
       fprintf(stderr, "the key %s is not found in the config file.\n",
@@ -205,7 +207,9 @@ modelbox::Status ModelServing::FillModelItem(const std::string &type) {
     }
 
     for (const auto &inner_item : item_table) {
-      auto item_index = key + "." + inner_item;
+      auto item_index = key;
+      item_index += ".";
+      item_index += inner_item;
       if (inner_item == "name") {
         item_name = config_->GetString(item_index);
         if (item_name.empty()) {
@@ -412,8 +416,7 @@ type = ")" + input_types[i] +
                                  R"(]
 name = ")" + output_names[i] +
                                  R"("
-type = ")" + output_types[i] +
-                                 R"(")";
+type = ")" + output_types[i] + R"(")";
     ss << output_content;
   }
 
@@ -509,19 +512,19 @@ dir="/tmp/)" + model_name +
 format = "graphviz"
 graphconf = '''digraph demo {
       httpserver_sync_receive[type=flowunit, flowunit=httpserver_sync_receive, device=cpu, time_out_ms=5000, endpoint="http://0.0.0.0:)" +
-                    std::to_string(port) + R"(", max_requests=100]
+                        std::to_string(port) + R"(", max_requests=100]
       preprocess[type=flowunit, flowunit=preprocess, device=cpu]
-)" +
-"     " + model_name + R"([type=flowunit, flowunit=)" +
-                    model_name + R"(, device=infer_device, deviceid=0]
+)" + "     " + model_name +
+                        R"([type=flowunit, flowunit=)" + model_name +
+                        R"(, device=infer_device, deviceid=0]
       postprocess[type=flowunit, flowunit=postprocess, device=cpu]
       httpserver_sync_reply[type=flowunit, flowunit=httpserver_sync_reply, device=cpu]
       
       httpserver_sync_receive:out_request_info -> preprocess:in_data
       preprocess:out_data -> )" +
-                    model_name + R"(:input
+                        model_name + R"(:input
       )" + model_name +
-                    R"(:output -> postprocess:in_data
+                        R"(:output -> postprocess:in_data
       postprocess:out_data -> httpserver_sync_reply:in_reply_info
 }''')";
   ss << content;
@@ -537,10 +540,13 @@ graphconf = '''digraph demo {
 
 modelbox::Status ModelServing::GeneratePrePostFlowUnit(
     const std::string &default_file_path, const std::string &type) {
-  std::string copy_custom_python = default_file_path + "/" + type + "/custom_service.py";
-  auto status = modelbox::CopyFile(model_custom_service_file_, copy_custom_python, 0, true);
+  std::string copy_custom_python =
+      default_file_path + "/" + type + "/custom_service.py";
+  auto status = modelbox::CopyFile(model_custom_service_file_,
+                                   copy_custom_python, 0, true);
   if (status != modelbox::STATUS_OK) {
-    auto err_msg = "copy custom service file failed, err: " + status.WrapErrormsgs();
+    auto err_msg =
+        "copy custom service file failed, err: " + status.WrapErrormsgs();
     fprintf(stderr, "%s\n", err_msg.c_str());
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -599,14 +605,14 @@ modelbox::Status ModelServing::GeneratePrePostFlowUnit(
       ss << "                        data_" << input_names[i]
          << " = np.asarray(result[\"" << input_names[i] << "\"])";
       if (input_types[i] == "float") {
-         ss << ".astype(np.float32)\n";
+        ss << ".astype(np.float32)\n";
       } else if (input_types[i] == "double") {
-         ss << ".astype(np.float64)\n";
+        ss << ".astype(np.float64)\n";
       }
       ss << "                        add_buffer_" << input_names[i]
          << " = self.create_buffer(data_" << input_names[i] << ")\n";
-      ss << "                        " << input_names[i] << ".push_back(add_buffer_"
-         << input_names[i] << ")\n";
+      ss << "                        " << input_names[i]
+         << ".push_back(add_buffer_" << input_names[i] << ")\n";
     }
     ss << "                    except Exception as e:\n";
     ss << "                        print(\"custom preprocess failed, \", "
@@ -703,12 +709,12 @@ modelbox::Status ModelServing::GenerateDefaultPrePostFlowUnit(
     ss << "\n";
     for (size_t i = 0; i < input_names.size(); ++i) {
       ss << "            if request_body.get(\"" << input_names[i] << "\"):\n";
-      ss << "                data = np.asarray(request_body[\"" << input_names[i]
-         << "\"])";
+      ss << "                data = np.asarray(request_body[\""
+         << input_names[i] << "\"])";
       if (input_types[i] == "float") {
-         ss << ".astype(np.float32)\n";
+        ss << ".astype(np.float32)\n";
       } else if (input_types[i] == "double") {
-         ss << ".astypd(np.float64)\n";
+        ss << ".astypd(np.float64)\n";
       }
       ss << "                add_buffer = self.create_buffer(data)\n";
       ss << "                " << input_names[i] << ".push_back(add_buffer)\n";
@@ -846,7 +852,7 @@ modelbox::Status ModelServing::UpdateGraphToml(const std::string &model_name) {
     if (pos != std::string::npos) {
       auto config_device = config_->GetString("base.device");
       bool single_device = true;
-      if (config_device.find(":") != std::string::npos) {
+      if (config_device.find(':') != std::string::npos) {
         modelbox::StringReplaceAll(config_device, "~", ";");
         single_device = false;
       }

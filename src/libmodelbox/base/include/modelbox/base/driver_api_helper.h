@@ -18,6 +18,7 @@
 #define MODELBOX_DRIVER_API_HELPER_H_
 
 #include <functional>
+#include <utility>
 
 #include "modelbox/base/driver.h"
 #include "modelbox/base/utils.h"
@@ -29,14 +30,14 @@ class DriverPlugin {
   virtual ~DriverPlugin() = default;
 
   DriverPlugin &Init(std::function<modelbox::Status()> func) {
-    init_func_ = func;
+    init_func_ = std::move(func);
     return *this;
   }
 
   std::function<modelbox::Status()> GetInit() { return init_func_; }
 
   DriverPlugin &Exit(std::function<void()> func) {
-    fini_func_ = func;
+    fini_func_ = std::move(func);
     return *this;
   }
 
@@ -44,7 +45,7 @@ class DriverPlugin {
 
   DriverPlugin &SetCreateFacotryFunc(
       std::function<std::shared_ptr<modelbox::DriverFactory>()> create_func) {
-    create_factory_func_ = create_func;
+    create_factory_func_ = std::move(create_func);
     return *this;
   }
 
@@ -58,7 +59,7 @@ class DriverPlugin {
   }
   modelbox::DriverDesc Desc;
 
-  void AddPluginInitFunc(std::function<void()> func) {
+  void AddPluginInitFunc(const std::function<void()> &func) {
     plugin_init_func_.push_back(func);
   }
 

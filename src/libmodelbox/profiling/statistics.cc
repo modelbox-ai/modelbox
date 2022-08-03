@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/statistics.h"
 
 namespace modelbox {
@@ -21,7 +23,8 @@ namespace modelbox {
 /**
  * StatisticsValue
  */
-StatisticsValue::StatisticsValue(const std::shared_ptr<Any>& val) : val_(val) {}
+StatisticsValue::StatisticsValue(std::shared_ptr<Any> val)
+    : val_(std::move(val)) {}
 
 StatisticsValue::~StatisticsValue() = default;
 
@@ -193,10 +196,11 @@ StatisticsItem::StatisticsItem() {
   last_change_notify_time_ = std::chrono::steady_clock::now();
 }
 
-StatisticsItem::StatisticsItem(const std::string& parent_path,
-                               const std::string& name,
+StatisticsItem::StatisticsItem(std::string parent_path, std::string name,
                                std::weak_ptr<StatisticsItem> parent)
-    : parent_path_(parent_path), name_(name), parent_(parent) {
+    : parent_path_(std::move(parent_path)),
+      name_(std::move(name)),
+      parent_(std::move(parent)) {
   if (!parent_path_.empty()) {
     path_ = parent_path_ + "." + name_;
   } else {
@@ -223,7 +227,7 @@ std::shared_ptr<StatisticsItem> StatisticsItem::AddItem(
 }
 
 std::shared_ptr<StatisticsItem> StatisticsItem::AddItemInner(
-    const std::string& name, std::shared_ptr<Any> value) {
+    const std::string& name, const std::shared_ptr<Any>& value) {
   if (IsLeaf()) {
     StatusError = {STATUS_NOTSUPPORT, "This is a leaf node, can not add item."};
     return nullptr;

@@ -123,14 +123,14 @@ modelbox::Status VcnRestfulClient::RemoveVcnStream(VcnStreamRestful *stream) {
 
 modelbox::Status VcnRestfulClient::GetVcnAccount(
     const VcnInfo &info, std::shared_ptr<VcnAccountRestful> &account) {
-  auto iter =
-      std::find_if(vcn_accounts_.begin(), vcn_accounts_.end(),
-                   [&info](std::shared_ptr<const VcnAccountRestful> account_) {
-                     return (account_->GetUserName() == info.user_name &&
-                             account_->GetIp() == info.ip &&
-                             account_->GetPort() == info.port &&
-                             account_->GetPassword() == info.password);
-                   });
+  auto iter = std::find_if(
+      vcn_accounts_.begin(), vcn_accounts_.end(),
+      [&info](const std::shared_ptr<const VcnAccountRestful> &account_) {
+        return (account_->GetUserName() == info.user_name &&
+                account_->GetIp() == info.ip &&
+                account_->GetPort() == info.port &&
+                account_->GetPassword() == info.password);
+      });
   if (iter != vcn_accounts_.end()) {
     account = *iter;
     return modelbox::STATUS_OK;
@@ -203,7 +203,7 @@ modelbox::Status VcnRestfulClient::RemoveVcnAccount(
 
   auto iter = std::find_if(
       vcn_accounts_.begin(), vcn_accounts_.end(),
-      [&account](std::shared_ptr<const VcnAccountRestful> account_) {
+      [&account](const std::shared_ptr<const VcnAccountRestful> &account_) {
         return (account_->GetUserName() == account->GetUserName() &&
                 account_->GetIp() == account->GetIp() &&
                 account_->GetPort() == account->GetPort() &&
@@ -267,7 +267,7 @@ void VcnRestfulClient::GetRestfulInfoFromAccount(
 }
 
 modelbox::Status VcnRestfulClient::SetRestfulWrapper(
-    std::shared_ptr<VcnRestfulWrapper> _restful_wrapper) {
+    const std::shared_ptr<VcnRestfulWrapper> &_restful_wrapper) {
   if (nullptr == _restful_wrapper) {
     return {modelbox::STATUS_INVALID, "wrapper pointer is nullptr."};
   }

@@ -160,8 +160,8 @@ class GraphTest : public testing::Test {
     drivers->Clear();
   }
 
-  Status BuildGraph(std::shared_ptr<Configuration> config,
-                    std::shared_ptr<GCGraph>* gcgraph_out = nullptr) {
+  Status BuildGraph(const std::shared_ptr<Configuration> &config,
+                    std::shared_ptr<GCGraph> *gcgraph_out = nullptr) {
     std::shared_ptr<Drivers> drivers = Drivers::GetInstance();
 
     auto device_mgr = DeviceManager::GetInstance();
@@ -811,8 +811,8 @@ TEST_F(GraphTest, BuildGraphFromArray) {
       "    b[flowunit=test_1_0]", "    a:Out_1 -> b:In_1", "}"};
 
   std::vector<std::string> graph_config;
-  for (size_t i = 0; i < sizeof(conf_file_value) / sizeof(char*); i++) {
-    graph_config.emplace_back(conf_file_value[i]);
+  for (auto &i : conf_file_value) {
+    graph_config.emplace_back(i);
   }
 
   ConfigurationBuilder configbuilder;

@@ -16,6 +16,8 @@
 
 #include "modelbox/buffer_list.h"
 
+#include <utility>
+
 namespace modelbox {
 
 BufferList::BufferList() : dev_mem_(nullptr) {}
@@ -316,9 +318,7 @@ std::shared_ptr<Device> BufferList::GetDevice() {
   return dev_mem_ ? dev_mem_->GetDevice() : nullptr;
 }
 
-std::shared_ptr<DeviceMemory> BufferList::GetDeviceMemory() {
-  return dev_mem_;
-};
+std::shared_ptr<DeviceMemory> BufferList::GetDeviceMemory() { return dev_mem_; }
 
 Status BufferList::CopyMeta(const std::shared_ptr<BufferList>& bufferlist,
                             bool is_override) {
@@ -338,7 +338,7 @@ Status BufferList::CopyMeta(const std::shared_ptr<BufferList>& bufferlist,
   return STATUS_OK;
 }
 
-Status BufferList::BuildContiguous(std::shared_ptr<Device> device,
+Status BufferList::BuildContiguous(const std::shared_ptr<Device>& device,
                                    const std::vector<size_t>& data_size_list) {
   size_t size = std::accumulate(data_size_list.begin(), data_size_list.end(),
                                 (size_t)0, std::plus<size_t>());
@@ -362,7 +362,7 @@ Status BufferList::BuildContiguous(std::shared_ptr<Device> device,
   return STATUS_OK;
 }
 
-Status BufferList::BuildSeparate(std::shared_ptr<Device> device,
+Status BufferList::BuildSeparate(const std::shared_ptr<Device>& device,
                                  const std::vector<size_t>& data_size_list) {
   if (dev_mem_->GetSize() != 0) {
     dev_mem_ = device->MemAlloc(0, dev_mem_flags_);
@@ -397,7 +397,7 @@ Status BufferList::Build(const std::vector<size_t>& data_size_list,
 
 Status BufferList::BuildFromHost(const std::vector<size_t>& data_size_list,
                                  void* data, size_t data_size,
-                                 DeleteFunction func) {
+                                 const DeleteFunction& func) {
   if (!dev_mem_) {
     return {STATUS_INVALID, "device memory must not be nullptr."};
   }
@@ -525,7 +525,7 @@ void BufferList::SetError(const std::string& error_code,
 }
 
 Status BufferList::EmplaceBack(void* device_data, size_t data_size,
-                               DeleteFunction func) {
+                               const DeleteFunction& func) {
   if (!dev_mem_) {
     return {STATUS_INVALID, "device memory must not be nullptr."};
   }
@@ -541,7 +541,7 @@ Status BufferList::EmplaceBack(void* device_data, size_t data_size,
   return STATUS_OK;
 }
 
-Status BufferList::EmplaceBack(std::shared_ptr<void> device_data,
+Status BufferList::EmplaceBack(const std::shared_ptr<void>& device_data,
                                size_t data_size) {
   auto delete_func = [device_data](void* /*unused*/) { /* hold device data */ };
   return EmplaceBack(device_data.get(), data_size, delete_func);

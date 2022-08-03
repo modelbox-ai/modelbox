@@ -30,7 +30,7 @@ class FlowUnitEvent {
   FlowUnitEvent();
   virtual ~FlowUnitEvent();
   void SetPrivate(const std::string &key,
-                  std::shared_ptr<void> private_content);
+                  const std::shared_ptr<void> &private_content);
   std::shared_ptr<void> GetPrivate(const std::string &key);
 
  private:

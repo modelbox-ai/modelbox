@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
+#include <utility>
+
 #include "modelbox/flowunit_data_executor.h"
 
 #include "modelbox/node.h"
 
 namespace modelbox {
 
-FlowUnitExecData::FlowUnitExecData(std::shared_ptr<FlowUnit> fu) : fu_(fu) {
+FlowUnitExecData::FlowUnitExecData(const std::shared_ptr<FlowUnit> &fu)
+    : fu_(fu) {
   // Prepare data container
   const auto &fu_desc = fu->GetFlowUnitDesc();
   const auto &in_list = fu_desc->GetFlowUnitInput();
@@ -64,9 +67,9 @@ void FlowUnitExecData::ReserveCache(size_t buffer_count, DataType type) {
   }
 }
 
-void FlowUnitExecData::AppendToCache(std::shared_ptr<FlowUnitExecData> src,
-                                     size_t start_idx, size_t count,
-                                     DataType type) {
+void FlowUnitExecData::AppendToCache(
+    const std::shared_ptr<FlowUnitExecData> &src, size_t start_idx,
+    size_t count, DataType type) {
   auto src_data = src->in_data_;
   auto *cache = &in_data_cache_;
   if (type == OUT_DATA) {
@@ -328,7 +331,7 @@ void FlowUnitExecData::MakeCopyForUserOutput() {
 }
 
 Status FlowUnitExecData::SaveProcessOneToOne(
-    std::shared_ptr<BufferListMap> parent_data, size_t data_count,
+    const std::shared_ptr<BufferListMap> &parent_data, size_t data_count,
     bool data_in_one_port) {
   // input n, output n, and inherit one to one
   std::vector<std::shared_ptr<BufferProcessInfo>> process_info_list;
@@ -370,7 +373,7 @@ Status FlowUnitExecData::SaveProcessOneToOne(
 }
 
 Status FlowUnitExecData::SaveProcessNToM(
-    std::shared_ptr<BufferListMap> parent_data) {
+    const std::shared_ptr<BufferListMap> &parent_data) {
   // input n, output m
   auto process_info = std::make_shared<BufferProcessInfo>();
   for (auto &in_item : *parent_data) {
@@ -398,7 +401,7 @@ Status FlowUnitExecData::SaveProcessNToM(
 }
 
 void FlowUnitExecDataMapper::AddExecCtx(
-    std::shared_ptr<FlowUnitExecContext> exec_ctx) {
+    const std::shared_ptr<FlowUnitExecContext> &exec_ctx) {
   origin_exec_ctx_list_.push_back(exec_ctx);
 }
 
@@ -533,7 +536,7 @@ Status FlowUnitExecDataMapper::CheckOutputDataNumber(bool data_in_one_port) {
 }
 
 Status FlowUnitExecDataMapper::CheckAllOutputNumEqual(
-    std::shared_ptr<FlowUnitExecData> data, bool data_in_one_port) {
+    const std::shared_ptr<FlowUnitExecData> &data, bool data_in_one_port) {
   auto outputs = data->GetOutData();
   if (outputs->size() == 1) {
     return STATUS_OK;
@@ -573,7 +576,7 @@ Status FlowUnitExecDataMapper::CheckAllOutputNumEqual(
 }
 
 Status FlowUnitExecDataMapper::CheckOutputNumEqualInput(
-    std::shared_ptr<FlowUnitExecData> data, bool data_in_one_port) {
+    const std::shared_ptr<FlowUnitExecData> &data, bool data_in_one_port) {
   if (map_type_ != RESHAPE_NORMAL) {
     // Only reshape normal needs input == output
     return STATUS_OK;
@@ -915,9 +918,8 @@ void FlowUnitExecDataMapper::FillMappedDataStream(size_t batch_size) {
   }
 }
 
-FlowUnitExecDataView::FlowUnitExecDataView(
-    const FUExecContextList &exec_ctx_list)
-    : exec_ctx_list_(exec_ctx_list) {}
+FlowUnitExecDataView::FlowUnitExecDataView(FUExecContextList exec_ctx_list)
+    : exec_ctx_list_(std::move(exec_ctx_list)) {}
 
 Status FlowUnitExecDataView::LoadInputFromExecCtx(bool need_reshape,
                                                   bool is_stream,
@@ -965,7 +967,7 @@ Status FlowUnitExecDataView::LoadInputFromExecCtx(bool need_reshape,
 
 Status FlowUnitExecDataView::DataLoadTask(
     const LoadConfig &cfg, FlowUnit *flowunit,
-    std::shared_ptr<FlowUnitExecDataMapper> exec_data_mapper) {
+    const std::shared_ptr<FlowUnitExecDataMapper> &exec_data_mapper) {
   exec_data_mapper->LoadDataFromExecCtx();
   auto ret = exec_data_mapper->MapData(cfg.need_reshape_, cfg.batch_size_,
                                        cfg.is_stream_);
@@ -1139,7 +1141,7 @@ Status FlowUnitExecDataView::DevideExecCtxByFlowunit() {
 
 FlowUnitDataExecutor::FlowUnitDataExecutor(std::weak_ptr<Node> node_ref,
                                            size_t batch_size)
-    : node_ref_(node_ref), batch_size_(batch_size) {}
+    : node_ref_(std::move(node_ref)), batch_size_(batch_size) {}
 
 Status FlowUnitDataExecutor::DataCtxExecuteFunc(
     FlowUnit *flowunit, const BatchedFUExecDataCtxList &process_data,
@@ -1209,7 +1211,7 @@ Status FlowUnitDataExecutor::Process(const FUExecContextList &exec_ctx_list) {
   return STATUS_OK;
 }
 
-Status FlowUnitDataExecutor::LoadExecuteInput(std::shared_ptr<Node> node,
+Status FlowUnitDataExecutor::LoadExecuteInput(const std::shared_ptr<Node> &node,
                                               FlowUnitExecDataView &exec_view) {
   bool need_reshape = false;
 
@@ -1275,7 +1277,7 @@ Status FlowUnitDataExecutor::Execute(FlowUnitExecDataView &exec_view) {
 }
 
 Status FlowUnitDataExecutor::SaveExecuteOutput(
-    std::shared_ptr<Node> node, FlowUnitExecDataView &exec_view) {
+    const std::shared_ptr<Node> &node, FlowUnitExecDataView &exec_view) {
   /**
    * input num must equals output num in normal flowunit
    * condition flowunit only one port has data

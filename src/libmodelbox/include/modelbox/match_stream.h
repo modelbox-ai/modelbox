@@ -114,7 +114,7 @@ class InPortStreamInfo {
 class MatchStreamCache {
  public:
   MatchStreamCache(
-      const std::string& node_name, size_t port_count,
+      std::string node_name, size_t port_count,
       std::unordered_map<std::string, size_t>* stream_count_each_port);
 
   virtual ~MatchStreamCache() = default;
@@ -160,7 +160,7 @@ class MatchStreamCache {
 
 class InputMatchStreamManager {
  public:
-  InputMatchStreamManager(const std::string& node_name, size_t queue_size,
+  InputMatchStreamManager(std::string node_name, size_t queue_size,
                           size_t port_count);
 
   virtual ~InputMatchStreamManager() = default;
@@ -174,9 +174,9 @@ class InputMatchStreamManager {
   void UpdateStreamCountEachPort(
       std::unordered_map<std::string, size_t>&& stream_count_each_port);
 
-  Status LoadData(
-      std::vector<std::shared_ptr<InPort>>& data_ports,
-      std::function<bool(std::shared_ptr<Buffer>)> drop_filter = nullptr);
+  Status LoadData(std::vector<std::shared_ptr<InPort>>& data_ports,
+                  const std::function<bool(std::shared_ptr<Buffer>)>&
+                      drop_filter = nullptr);
 
   Status GenMatchStreamData(
       std::list<std::shared_ptr<MatchStreamData>>& match_stream_list);
@@ -194,8 +194,9 @@ class InputMatchStreamManager {
 
   size_t GetReadCount(const std::string& port_name);
 
-  MatchKey* GetInputStreamMatchKey(std::shared_ptr<BufferIndexInfo> index_info,
-                                   size_t backward_level);
+  MatchKey* GetInputStreamMatchKey(
+      const std::shared_ptr<BufferIndexInfo>& index_info,
+      size_t backward_level);
 
   bool InitInheritBackwardLevel(
       std::vector<std::shared_ptr<InPort>>& data_ports);
@@ -237,7 +238,7 @@ class OutputMatchStream {
 
 class OutputMatchStreamManager {
  public:
-  OutputMatchStreamManager(const std::string& node_name,
+  OutputMatchStreamManager(std::string node_name,
                            std::set<std::string>&& output_port_names);
 
   virtual ~OutputMatchStreamManager() = default;
@@ -251,7 +252,7 @@ class OutputMatchStreamManager {
           std::string, std::vector<std::shared_ptr<Buffer>>>& stream_data_map,
       const std::unordered_map<std::string, std::shared_ptr<DataMeta>>&
           port_stream_meta,
-      std::shared_ptr<Session> session);
+      const std::shared_ptr<Session>& session);
 
   void Clean();
 
@@ -266,10 +267,10 @@ class OutputMatchStreamManager {
           std::string, std::vector<std::shared_ptr<Buffer>>>& stream_data_map,
       const std::unordered_map<std::string, std::shared_ptr<DataMeta>>&
           port_stream_meta,
-      std::shared_ptr<Session> session);
+      const std::shared_ptr<Session>& session);
 
-  void SetIndexInStream(std::shared_ptr<BufferIndexInfo> buffer_index,
-                        std::shared_ptr<Stream> stream);
+  void SetIndexInStream(const std::shared_ptr<BufferIndexInfo>& buffer_index,
+                        const std::shared_ptr<Stream>& stream);
 
   std::string node_name_;
   std::set<std::string> output_port_names_;

@@ -44,11 +44,11 @@ void PriorityPort::UpdatePriority() { priority_ = port_->GetPriority(); }
 
 void PriorityPort::SetPushEventCallBack(const PushCallBack& func) {
   port_->SetPushEventCallBack(func);
-};
+}
 
 void PriorityPort::SetPopEventCallBack(const PopCallBack& func) {
   port_->SetPopEventCallBack(func);
-};
+}
 
 bool PriorityPort::HasData() { return !port_->Empty(); }
 
@@ -89,7 +89,7 @@ DefaultDataHub::~DefaultDataHub() {
   std::lock_guard<std::mutex> guard(active_mutex_);
   active_ports_.clear();
 
-  for (auto priority_port : priority_ports_) {
+  for (const auto& priority_port : priority_ports_) {
     priority_port->SetPushEventCallBack(nullptr);
     priority_port->SetPopEventCallBack(nullptr);
   }
@@ -165,7 +165,7 @@ Status DefaultDataHub::AddToActivePort(
   return STATUS_OK;
 }
 
-void DefaultDataHub::UpdateActivePort(std::shared_ptr<PriorityPort> port,
+void DefaultDataHub::UpdateActivePort(const std::shared_ptr<PriorityPort>& port,
                                       bool update_active_time) {
   auto it = active_ports_.find(port);
   if (active_ports_.end() != it) {
@@ -178,10 +178,10 @@ void DefaultDataHub::UpdateActivePort(std::shared_ptr<PriorityPort> port,
 
   port->UpdatePriority();
   active_ports_.insert(port);
-};
+}
 
-void DefaultDataHub::PortEventCallback(std::shared_ptr<PriorityPort> port,
-                                       bool update_active_time) {
+void DefaultDataHub::PortEventCallback(
+    const std::shared_ptr<PriorityPort>& port, bool update_active_time) {
   std::lock_guard<std::mutex> lock(active_mutex_);
   if (!port) {
     MBLOG_WARN << "port is nullptr";

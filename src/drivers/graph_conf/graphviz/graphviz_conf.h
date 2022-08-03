@@ -53,17 +53,17 @@ class GraphvizConfig : public GraphConfig {
 
   std::shared_ptr<Agraph_t> LoadGraphFromFile();
 
-  Status TraversalsGraph(std::shared_ptr<Agraph_t> g,
-                         std::shared_ptr<GCGraph> graph);
+  Status TraversalsGraph(const std::shared_ptr<Agraph_t> &g,
+                         const std::shared_ptr<GCGraph> &graph);
 
-  Status TraversalsNode(std::shared_ptr<Agraph_t> g,
-                        std::shared_ptr<GCGraph> graph);
+  Status TraversalsNode(const std::shared_ptr<Agraph_t> &g,
+                        const std::shared_ptr<GCGraph> &graph);
 
   std::shared_ptr<modelbox::GCEdge> NewGcEdgeFromAgedge(
-      std::shared_ptr<GCGraph> graph, Agedge_t *agedge);
+      const std::shared_ptr<GCGraph> &graph, Agedge_t *agedge);
 
-  Status TraversalsEdge(std::shared_ptr<Agraph_t> g,
-                        std::shared_ptr<GCGraph> graph);
+  Status TraversalsEdge(const std::shared_ptr<Agraph_t> &g,
+                        const std::shared_ptr<GCGraph> &graph);
 
   Status TraversalsSubGraph(std::shared_ptr<Agraph_t> g,
                             std::shared_ptr<GCGraph> graph);

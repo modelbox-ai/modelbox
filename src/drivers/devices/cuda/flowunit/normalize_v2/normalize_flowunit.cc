@@ -54,7 +54,7 @@ modelbox::Status NormalizeFlowUnitV2::Open(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status GetParm(std::shared_ptr<modelbox::Buffer> buffer,
+modelbox::Status GetParm(const std::shared_ptr<modelbox::Buffer> &buffer,
                          std::vector<size_t> &shape, std::string &input_layout,
                          modelbox::ModelBoxDataType &type) {
   if (!buffer->Get("shape", shape)) {
@@ -92,10 +92,10 @@ modelbox::Status GetParm(std::shared_ptr<modelbox::Buffer> buffer,
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status GetAndCheckParm(std::shared_ptr<modelbox::BufferList> input,
-                                 std::vector<size_t> &shape,
-                                 std::string &input_layout,
-                                 modelbox::ModelBoxDataType &type) {
+modelbox::Status GetAndCheckParm(
+    const std::shared_ptr<modelbox::BufferList> &input,
+    std::vector<size_t> &shape, std::string &input_layout,
+    modelbox::ModelBoxDataType &type) {
   std::vector<size_t> tmp_shape;
   std::string tmp_input_layout;
   modelbox::ModelBoxDataType tmp_type;
@@ -145,7 +145,9 @@ modelbox::Status NormalizeFlowUnitV2::CudaProcess(
     return status;
   }
 
-  int H = 0, W = 0, C = 0;
+  int H = 0;
+  int W = 0;
+  int C = 0;
   if (input_layout == "hwc") {
     H = shape[0];
     W = shape[1];
@@ -160,7 +162,7 @@ modelbox::Status NormalizeFlowUnitV2::CudaProcess(
     return modelbox::STATUS_FAULT;
   }
 
-  auto data = input->ConstData();
+  const auto *data = input->ConstData();
   // TODO sizeof arg used config
   output->Build(std::vector<size_t>(input->Size(), H * W * C * sizeof(float)));
   std::vector<size_t> output_shape;

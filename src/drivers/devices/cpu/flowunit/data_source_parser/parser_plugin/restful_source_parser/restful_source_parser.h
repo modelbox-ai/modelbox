@@ -46,7 +46,7 @@ class RestfulSourceParser : public DataSourceParserPlugin {
   modelbox::Status Deinit() override;
 
   modelbox::Status Parse(
-      std::shared_ptr<modelbox::SessionContext> session_context,
+      const std::shared_ptr<modelbox::SessionContext> &session_context,
       const std::string &config, std::string &uri,
       DestroyUriFunc &destroy_uri_func) override;
 

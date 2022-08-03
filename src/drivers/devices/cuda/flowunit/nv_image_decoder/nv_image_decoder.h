@@ -74,7 +74,6 @@ class NvImageDecoderFlowUnit : public modelbox::FlowUnit {
   bool DecodeOthers(const std::shared_ptr<modelbox::Buffer> &input_buffer,
                     std::shared_ptr<modelbox::Buffer> &output_buffer);
 
- private:
   std::string pixel_format_{"bgr"};
 
   nvjpegHandle_t handle_{nullptr};

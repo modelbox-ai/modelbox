@@ -29,20 +29,26 @@ class TensorRTInferencePlugin {
   TensorRTInferencePlugin() = default;
   virtual ~TensorRTInferencePlugin() = default;
 
+  // NOLINTNEXTLINE
   virtual modelbox::Status PluginInit(
       std::shared_ptr<modelbox::Configuration> config) = 0;
 
+  // NOLINTNEXTLINE
   virtual modelbox::Status PreProcess(
       std::shared_ptr<modelbox::DataContext> data_ctx) = 0;
 
+  // NOLINTNEXTLINE
   virtual modelbox::Status PostProcess(
       std::shared_ptr<modelbox::DataContext> data_ctx) = 0;
 
-  virtual modelbox::Status DataPre(std::shared_ptr<modelbox::DataContext> data_ctx) {
+  virtual modelbox::Status DataPre(
+      // NOLINTNEXTLINE
+      std::shared_ptr<modelbox::DataContext> data_ctx) {
     return modelbox::STATUS_OK;
   }
 
   virtual modelbox::Status DataPost(
+      // NOLINTNEXTLINE
       std::shared_ptr<modelbox::DataContext> data_ctx) {
     return modelbox::STATUS_OK;
   }

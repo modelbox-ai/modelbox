@@ -79,7 +79,7 @@ modelbox::Status UrlSourceParser::GetStreamType(const std::string &config,
 }
 
 modelbox::Status UrlSourceParser::Parse(
-    std::shared_ptr<modelbox::SessionContext> session_context,
+    const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
     DestroyUriFunc &destroy_uri_func) {
   nlohmann::json json;

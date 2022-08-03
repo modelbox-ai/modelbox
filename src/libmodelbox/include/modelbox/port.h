@@ -17,6 +17,8 @@
 #ifndef MODELBOX_PORT_H_
 #define MODELBOX_PORT_H_
 
+#include <utility>
+
 #include "modelbox/base/blocking_queue.h"
 #include "modelbox/base/status.h"
 #include "modelbox/inner_event.h"
@@ -59,7 +61,7 @@ class Port {
    * @param name the port name
    * @param node the parent node contains the port
    */
-  Port(const std::string& name, std::shared_ptr<NodeBase> node);
+  Port(std::string name, const std::shared_ptr<NodeBase>& node);
 
   /**
    * @brief destructor
@@ -92,7 +94,7 @@ using PopCallBack = std::function<void(void)>;
 
 class IPort : public Port {
  public:
-  IPort(const std::string& name, std::shared_ptr<NodeBase> node)
+  IPort(const std::string& name, const std::shared_ptr<NodeBase>& node)
       : Port(name, node){};
   ~IPort() override = default;
   virtual int32_t GetPriority() const = 0;
@@ -114,7 +116,7 @@ class IPort : public Port {
 template <typename QueueType, typename Compare>
 class NotifyPort : public IPort {
  public:
-  NotifyPort(const std::string& name, std::shared_ptr<NodeBase> node,
+  NotifyPort(const std::string& name, const std::shared_ptr<NodeBase>& node,
              uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
       : IPort(name, node),
         priority_(priority),
@@ -260,7 +262,7 @@ class NotifyPort : public IPort {
 
 class EventPort : public NotifyPort<FlowUnitInnerEvent, EventCompare> {
  public:
-  EventPort(const std::string& name, std::shared_ptr<NodeBase> node,
+  EventPort(const std::string& name, const std::shared_ptr<NodeBase>& node,
             uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
       : NotifyPort(name, node, priority, event_capacity){};
   ~EventPort() override = default;
@@ -278,7 +280,7 @@ class InPort : public NotifyPort<Buffer, CustomCompare> {
   friend class OutPort;
 
  public:
-  InPort(const std::string& name, std::shared_ptr<NodeBase> node,
+  InPort(const std::string& name, const std::shared_ptr<NodeBase>& node,
          uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
       : NotifyPort(name, node, priority, event_capacity) {}
 
@@ -294,14 +296,14 @@ class InPort : public NotifyPort<Buffer, CustomCompare> {
   std::vector<std::weak_ptr<OutPort>> GetAllOutPort();
 
  private:
-  bool SetOutputPort(std::shared_ptr<OutPort> output_port);
+  bool SetOutputPort(const std::shared_ptr<OutPort>& output_port);
 
   std::vector<std::weak_ptr<OutPort>> output_ports;
 };
 
 class OutPort : public Port, public std::enable_shared_from_this<OutPort> {
  public:
-  OutPort(const std::string& name, std::shared_ptr<NodeBase> node);
+  OutPort(const std::string& name, const std::shared_ptr<NodeBase>& node);
 
   ~OutPort() override;
 
@@ -311,7 +313,7 @@ class OutPort : public Port, public std::enable_shared_from_this<OutPort> {
 
   std::set<std::shared_ptr<InPort>> GetConnectInPort();
 
-  bool ConnectPort(std::shared_ptr<InPort> /*inport*/);
+  bool ConnectPort(const std::shared_ptr<InPort>& /*inport*/);
 
   void Shutdown() override;
 

@@ -49,7 +49,8 @@ class DataSourceObsParserPluginTest : public testing::Test {
 
   void TearDown() override { driver_flow_->Clear(); };
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
-  std::shared_ptr<DriverFlowTest> RunDriverFlow(std::string mock_flowunit_name);
+  std::shared_ptr<DriverFlowTest> RunDriverFlow(
+      const std::string &mock_flowunit_name);
   modelbox::Status SendDataSourceCfg(std::shared_ptr<DriverFlowTest> &driver_flow,
                                    const std::string &data_source_cfg,
                                    const std::string &source_type);
@@ -65,7 +66,7 @@ std::shared_ptr<DriverFlowTest> DataSourceObsParserPluginTest::GetDriverFlow() {
 }
 
 std::shared_ptr<DriverFlowTest> DataSourceObsParserPluginTest::RunDriverFlow(
-    const std::string mock_flowunit_name) {
+    const std::string &mock_flowunit_name) {
   const std::string test_lib_dir = TEST_DRIVER_DIR;
   std::string toml_content = R"(
     [driver]
@@ -144,7 +145,7 @@ Status DataSourceObsParserPluginTest::AddMockObs() {
 
     EXPECT_CALL(*mock_flowunit, DataPre(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext> &data_ctx) {
               auto stream_meta = data_ctx->GetInputMeta("stream_meta");
               EXPECT_NE(stream_meta, nullptr);
               if (!stream_meta) {
@@ -165,7 +166,7 @@ Status DataSourceObsParserPluginTest::AddMockObs() {
 
     EXPECT_CALL(*mock_flowunit, DataPost(_))
         .WillRepeatedly(
-            testing::Invoke([&](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([&](const std::shared_ptr<DataContext> &data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "DataPost";
               return modelbox::STATUS_OK;
@@ -174,7 +175,7 @@ Status DataSourceObsParserPluginTest::AddMockObs() {
     EXPECT_CALL(*mock_flowunit,
                 Process(testing::An<std::shared_ptr<modelbox::DataContext>>()))
         .WillRepeatedly(
-            testing::Invoke([=](std::shared_ptr<DataContext> data_ctx) {
+            testing::Invoke([=](const std::shared_ptr<DataContext> &data_ctx) {
               MBLOG_INFO << "stream_info "
                          << "Process";
               return modelbox::STATUS_OK;

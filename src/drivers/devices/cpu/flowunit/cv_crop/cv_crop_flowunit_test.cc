@@ -67,7 +67,7 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(16);
     auto open_func = [=](const std::shared_ptr<Configuration> &opts,
-                         std::shared_ptr<MockFlowUnit> mock_flowunit) {
+                         const std::shared_ptr<MockFlowUnit> &mock_flowunit) {
       std::weak_ptr<MockFlowUnit> mock_flowunit_wp;
       mock_flowunit_wp = mock_flowunit;
       auto spt = mock_flowunit_wp.lock();
@@ -102,8 +102,8 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
     };
 
     auto process_func =
-        [=](std::shared_ptr<DataContext> data_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext> &data_ctx,
+            const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
       MBLOG_INFO << "test_0_1_cv_crop process";
 
       auto output_img_bufs = data_ctx->Output("Out_img");
@@ -174,8 +174,8 @@ Status CVCropFlowUnitTest::AddMockFlowUnit() {
     mock_desc->SetFlowType(STREAM);
     mock_desc->SetMaxBatchSize(16);
     auto process_func =
-        [=](std::shared_ptr<DataContext> op_ctx,
-            std::shared_ptr<MockFlowUnit> mock_flowunit) -> Status {
+        [=](const std::shared_ptr<DataContext> &op_ctx,
+            const std::shared_ptr<MockFlowUnit> &mock_flowunit) -> Status {
       MBLOG_INFO << "test_1_0_cv_crop process";
 
       auto input_buf = op_ctx->Input("In_img");

@@ -62,9 +62,9 @@ void TokenManager::RequestAgencyToken() {
   std::unique_lock<std::mutex> lock_token(token_lock_);
   auto origin_user_token_map = user_token_map_;
   lock_token.unlock();
-  for (auto user_item : origin_user_token_map) {
-    auto &project_map = user_item.second;
-    for (auto &project_item : project_map) {
+  for (const auto &user_item : origin_user_token_map) {
+    const auto &project_map = user_item.second;
+    for (const auto &project_item : project_map) {
       auto status =
           RequestAgencyProjectToken(user_item.first, project_item.first, true);
       if (status != modelbox::STATUS_OK) {
@@ -92,7 +92,8 @@ modelbox::Status TokenManager::SetHostAddress(const std::string &host) {
 }
 
 modelbox::Status TokenManager::RequestAgencyProjectToken(
-    const AgencyInfo &agency_info, const ProjectInfo project_info, bool force) {
+    const AgencyInfo &agency_info, const ProjectInfo &project_info,
+    bool force) {
   if (!force) {
     if (modelbox::STATUS_EXIST ==
         FindUserAgencyToken(agency_info, project_info)) {

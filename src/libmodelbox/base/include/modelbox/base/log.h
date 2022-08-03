@@ -101,13 +101,13 @@ using LoggerPrint =
  * @brief Register va-list log function
  * @param func va-list log function
  */
-extern void RegLogVprint(LoggerVprint func);
+extern void RegLogVprint(const LoggerVprint &func);
 
 /**
  * @brief Register print log function
  * @param func print log function
  */
-extern void RegLogPrint(LoggerPrint func);
+extern void RegLogPrint(const LoggerPrint &func);
 
 class LoggerCallback : public Logger {
  public:
@@ -118,13 +118,13 @@ class LoggerCallback : public Logger {
    * @brief Register va-list log function
    * @param func va-list log function
    */
-  void RegVprint(LoggerVprint func);
+  void RegVprint(const LoggerVprint &func);
 
   /**
    * @brief Register print log function
    * @param func print log function
    */
-  void RegPrint(LoggerPrint func);
+  void RegPrint(const LoggerPrint &func);
 
   /**
    * @brief Set log level

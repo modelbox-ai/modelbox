@@ -101,13 +101,11 @@ modelbox::Status AtcInferenceFlowUnit::Close() {
   return modelbox::STATUS_OK;
 }
 
-void AtcInferenceFlowUnitDesc::SetModelEntry(const std::string model_entry) {
+void AtcInferenceFlowUnitDesc::SetModelEntry(const std::string &model_entry) {
   model_entry_ = model_entry;
 }
 
-const std::string AtcInferenceFlowUnitDesc::GetModelEntry() {
-  return model_entry_;
-}
+std::string AtcInferenceFlowUnitDesc::GetModelEntry() { return model_entry_; }
 
 std::shared_ptr<modelbox::FlowUnit>
 AtcInferenceFlowUnitFactory::VirtualCreateFlowUnit(

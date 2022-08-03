@@ -16,6 +16,8 @@
 
 #include "modelbox/buffer.h"
 
+#include <utility>
+
 #include "modelbox/buffer_index_info.h"
 
 namespace modelbox {
@@ -24,7 +26,7 @@ BufferMeta::BufferMeta() = default;
 
 BufferMeta::~BufferMeta() = default;
 
-Status BufferMeta::CopyMeta(const std::shared_ptr<BufferMeta> buf_meta,
+Status BufferMeta::CopyMeta(const std::shared_ptr<BufferMeta>& buf_meta,
                             bool is_override) {
   if (!buf_meta) {
     return STATUS_FAULT;
@@ -87,7 +89,7 @@ Status Buffer::Build(size_t size) {
   return STATUS_OK;
 }
 
-Status Buffer::Build(void* data, size_t data_size, DeleteFunction func) {
+Status Buffer::Build(void* data, size_t data_size, const DeleteFunction& func) {
   if (!dev_mem_) {
     return {STATUS_INVALID, "device memory must not be nullptr."};
   }
@@ -109,7 +111,7 @@ Status Buffer::Build(void* data, size_t data_size, DeleteFunction func) {
 }
 
 Status Buffer::BuildFromHost(void* data, size_t data_size,
-                             DeleteFunction func) {
+                             const DeleteFunction& func) {
   if (!dev_mem_ && !func) {
     return {STATUS_INVALID, "device memory must not be nullptr."};
   }
@@ -202,7 +204,7 @@ std::shared_ptr<Device> Buffer::GetDevice() const {
   return dev_mem_ ? dev_mem_->GetDevice() : nullptr;
 }
 
-Status Buffer::CopyMeta(const std::shared_ptr<Buffer> buf, bool is_override) {
+Status Buffer::CopyMeta(const std::shared_ptr<Buffer>& buf, bool is_override) {
   if (!buf) {
     return {STATUS_INVALID, "buffer must not be nullptr."};
   }
@@ -252,7 +254,7 @@ void Buffer::SetGetBufferType(BufferEnumType type) { type_ = type; }
 
 std::shared_ptr<DeviceMemory> Buffer::GetDeviceMemory() const {
   return dev_mem_;
-};
+}
 
 Status Buffer::DeepCopy(const Buffer& other) {
   if (other.meta_) {
@@ -284,7 +286,7 @@ Status Buffer::DeepCopy(const Buffer& other) {
 
 void Buffer::SetDelayedCopyDestinationDevice(
     std::shared_ptr<Device> dest_device) {
-  delayed_copy_dest_device_ = dest_device;
+  delayed_copy_dest_device_ = std::move(dest_device);
 }
 
 void Buffer::SetDelayedCopyDestinationMemFlags(uint32_t mem_flags) {
@@ -296,7 +298,7 @@ void Buffer::ClearDelayedCopyDestinationInfo() {
   delayed_copy_dest_mem_flags_ = 0;
 }
 
-bool Buffer::GetDelayedCopyFlag(std::shared_ptr<Device> dest_device) {
+bool Buffer::GetDelayedCopyFlag(const std::shared_ptr<Device>& dest_device) {
   // if current buffer device type is "cuda"/"ascend" and input port device
   // type is "cpu" , the real data will be copied to target device when the
   // user calls Buffer::ConstData()

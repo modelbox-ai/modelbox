@@ -24,7 +24,7 @@ namespace videodecoder {
 
 static modelbox::Status StartFlowUnitOpenFunc(
     const std::shared_ptr<modelbox::Configuration>& flow_option,
-    std::shared_ptr<modelbox::MockFlowUnit> mock_flowunit) {
+    const std::shared_ptr<modelbox::MockFlowUnit>& mock_flowunit) {
   for (uint32_t i = 0; i < 2; i++) {
     auto ext_data = mock_flowunit->CreateExternalData();
     if (!ext_data) {
@@ -76,11 +76,11 @@ static void AddStartFlowUnit(std::shared_ptr<modelbox::MockFlow>& flow) {
   mock_desc->SetFlowType(modelbox::STREAM);
   mock_desc->SetStreamSameCount(true);
   auto process_func =
-      [=](std::shared_ptr<modelbox::DataContext> data_ctx,
-          std::shared_ptr<modelbox::MockFlowUnit> mock_flowunit) {
+      [=](const std::shared_ptr<modelbox::DataContext>& data_ctx,
+          const std::shared_ptr<modelbox::MockFlowUnit>& mock_flowunit) {
         auto output_buffers = data_ctx->Output("stream_meta");
         auto input_buffers = data_ctx->External();
-        for (auto buffer : *input_buffers) {
+        for (const auto& buffer : *input_buffers) {
           output_buffers->PushBack(buffer);
         }
         return modelbox::STATUS_OK;
@@ -92,8 +92,9 @@ static void AddStartFlowUnit(std::shared_ptr<modelbox::MockFlow>& flow) {
                         TEST_DRIVER_DIR);
 }
 
-static void CheckVideoFrame(std::shared_ptr<modelbox::Buffer> frame_buffer,
-                            std::shared_ptr<int64_t> index_counter) {
+static void CheckVideoFrame(
+    const std::shared_ptr<modelbox::Buffer>& frame_buffer,
+    const std::shared_ptr<int64_t>& index_counter) {
   int64_t index = 0;
   int32_t width = 0;
   int32_t height = 0;
@@ -137,16 +138,16 @@ static void AddReadFrameFlowUnit(std::shared_ptr<modelbox::MockFlow>& flow,
       modelbox::GenerateFlowunitDesc("read_frame", {"frame_info"}, {});
   mock_desc->SetFlowType(modelbox::STREAM);
   auto data_pre_func =
-      [&](std::shared_ptr<modelbox::DataContext> data_ctx,
-          std::shared_ptr<modelbox::MockFlowUnit> mock_flowunit) {
+      [&](const std::shared_ptr<modelbox::DataContext>& data_ctx,
+          const std::shared_ptr<modelbox::MockFlowUnit>& mock_flowunit) {
         MBLOG_INFO << "read_frame DataPre";
         auto index_counter = std::make_shared<int64_t>(0);
         data_ctx->SetPrivate("index", index_counter);
         return modelbox::STATUS_OK;
       };
   auto process_func =
-      [=](std::shared_ptr<modelbox::DataContext> op_ctx,
-          std::shared_ptr<modelbox::MockFlowUnit> mock_flowunit) {
+      [=](const std::shared_ptr<modelbox::DataContext>& op_ctx,
+          const std::shared_ptr<modelbox::MockFlowUnit>& mock_flowunit) {
         auto index_counter =
             std::static_pointer_cast<int64_t>(op_ctx->GetPrivate("index"));
 

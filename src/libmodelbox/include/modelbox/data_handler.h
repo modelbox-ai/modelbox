@@ -35,7 +35,7 @@ class ModelBoxEngine;
 class DataHandler : public std::enable_shared_from_this<DataHandler> {
  public:
   DataHandler(BindNodeType type = BUFFERLIST_NODE,
-              std::shared_ptr<ModelBoxEngine> env = nullptr);
+              const std::shared_ptr<ModelBoxEngine> &env = nullptr);
 
   virtual ~DataHandler();
 
@@ -49,11 +49,11 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
    * @param data data handler which stores data
    * @return  return result
    */
-  Status PushData(std::shared_ptr<DataHandler> &data, std::string key);
+  Status PushData(std::shared_ptr<DataHandler> &data, const std::string &key);
 
-  Status PushData(std::shared_ptr<Buffer> &data, std::string key);
+  Status PushData(std::shared_ptr<Buffer> &data, const std::string &key);
 
-  Status PushData(std::shared_ptr<BufferList> &data, std::string key);
+  Status PushData(std::shared_ptr<BufferList> &data, const std::string &key);
   /**
    * @brief push meta to data handler
    * @param key  key of meta info
@@ -166,7 +166,7 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
   DataHandlerType data_handler_type_{INPUT};
   BindNodeType data_type_{BUFFERLIST_NODE};
 
-  std::string node_name_{""};
+  std::string node_name_;
   std::set<std::string> port_names_;
   std::unordered_map<std::string, std::string> port_to_port_;    
   std::unordered_map<std::string, std::string> port_to_node_;    

@@ -17,6 +17,7 @@
 #include "modelbox/node.h"
 
 #include <functional>
+#include <utility>
 
 #include "modelbox/port.h"
 #include "modelbox/session.h"
@@ -43,7 +44,7 @@ namespace modelbox {
 
 Status NodeBase::Init(const std::set<std::string>& input_port_names,
                       const std::set<std::string>& output_port_names,
-                      std::shared_ptr<Configuration> config) {
+                      const std::shared_ptr<Configuration>& config) {
   config_ = config;
   queue_size_ = config_->GetUint64("queue_size", DEFAULT_QUEUE_SIZE);
   if (0 == queue_size_) {
@@ -56,7 +57,7 @@ Status NodeBase::Init(const std::set<std::string>& input_port_names,
 
 Status NodeBase::InitPorts(const std::set<std::string>& input_port_names,
                            const std::set<std::string>& output_port_names,
-                           std::shared_ptr<Configuration> config) {
+                           const std::shared_ptr<Configuration>& config) {
   // create event port
   event_port_ = std::make_shared<EventPort>(EVENT_PORT_NAME, shared_from_this(),
                                             GetPriority(), event_queue_size_);
@@ -196,7 +197,7 @@ Node::Node() = default;
 
 Status Node::Init(const std::set<std::string>& input_port_names,
                   const std::set<std::string>& output_port_names,
-                  std::shared_ptr<Configuration> config) {
+                  const std::shared_ptr<Configuration>& config) {
   auto ret = NodeBase::Init(input_port_names, output_port_names, config);
   if (!ret) {
     return ret;
@@ -268,7 +269,8 @@ Status Node::InitNodeProperties() {
   return STATUS_OK;
 }
 
-void Node::UpdatePropConstrain(std::shared_ptr<FlowUnitDesc> flowunit_desc) {
+void Node::UpdatePropConstrain(
+    const std::shared_ptr<FlowUnitDesc>& flowunit_desc) {
   /**
    * constrain, Take effect by order
    * 1. expand: default normal
@@ -315,7 +317,7 @@ void Node::SetFlowUnitInfo(const std::string& flowunit_name,
   flowunit_name_ = flowunit_name;
   flowunit_type_ = flowunit_type;
   flowunit_device_id_ = flowunit_device_id;
-  flowunit_manager_ = flowunit_manager;
+  flowunit_manager_ = std::move(flowunit_manager);
 }
 
 std::shared_ptr<FlowUnitGroup> Node::GetFlowUnitGroup() {
@@ -323,15 +325,15 @@ std::shared_ptr<FlowUnitGroup> Node::GetFlowUnitGroup() {
 }
 
 void Node::SetProfiler(std::shared_ptr<Profiler> profiler) {
-  profiler_ = profiler;
+  profiler_ = std::move(profiler);
 }
 
 void Node::SetStats(std::shared_ptr<StatisticsItem> graph_stats) {
-  graph_stats_ = graph_stats;
+  graph_stats_ = std::move(graph_stats);
 }
 
 std::shared_ptr<ExternalData> Node::CreateExternalData(
-    std::shared_ptr<Device> device) {
+    const std::shared_ptr<Device>& device) {
   if (session_mgr_ == nullptr) {
     MBLOG_ERROR << "session manager is null";
     return nullptr;
@@ -424,7 +426,7 @@ Status Node::GenDataContextList(
 }
 
 Status Node::AppendDataContextByEvent(
-    std::shared_ptr<MatchStreamData> match_stream_data,
+    const std::shared_ptr<MatchStreamData>& match_stream_data,
     std::set<std::shared_ptr<FlowUnitDataContext>>& data_ctx_set) {
   auto event = match_stream_data->GetEvent();
   auto* data_ctx_match_key = event->GetDataCtxMatchKey();
@@ -483,7 +485,7 @@ Status Node::AppendDataContextByEvent(
 }
 
 Status Node::AppendDataContextByData(
-    std::shared_ptr<MatchStreamData> match_stream_data,
+    const std::shared_ptr<MatchStreamData>& match_stream_data,
     std::set<std::shared_ptr<FlowUnitDataContext>>& data_ctx_set) {
   MatchKey* data_ctx_match_key = nullptr;
   if (GetFlowType() == STREAM) {
@@ -545,7 +547,7 @@ std::shared_ptr<FlowUnitDataContext> Node::GetDataContext(MatchKey* key) {
 }
 
 std::shared_ptr<FlowUnitDataContext> Node::CreateDataContext(
-    MatchKey* key, std::shared_ptr<Session> session) {
+    MatchKey* key, const std::shared_ptr<Session>& session) {
   std::shared_ptr<FlowUnitDataContext> data_ctx;
   if (GetFlowType() == STREAM) {
     if (GetOutputType() == EXPAND) {
@@ -580,7 +582,7 @@ std::shared_ptr<FlowUnitDataContext> Node::CreateDataContext(
 }
 
 std::shared_ptr<FlowUnitDataContext> Node::AppendDataToDataContext(
-    MatchKey* key, std::shared_ptr<MatchStreamData> match_stream_data,
+    MatchKey* key, const std::shared_ptr<MatchStreamData>& match_stream_data,
     bool append_single_buffer, size_t buffer_index) {
   auto data_ctx = GetDataContext(key);
   if (data_ctx == nullptr) {
