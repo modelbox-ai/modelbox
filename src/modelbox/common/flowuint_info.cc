@@ -129,6 +129,8 @@ Status FlowUnitInfo::GetInfoInJson(std::string *result) {
       for (const auto &input : flow->GetFlowUnitInput()) {
         nlohmann::json json_input;
         json_input["name"] = input.GetPortName();
+        json_input["device_type"] = input.GetDeviceType();
+        json_input["port_type"] = input.GetPortType();
         json_inputs.push_back(json_input);
       }
       json["inputports"] = json_inputs;
@@ -136,6 +138,8 @@ Status FlowUnitInfo::GetInfoInJson(std::string *result) {
       for (const auto &output : flow->GetFlowUnitOutput()) {
         nlohmann::json json_output;
         json_output["name"] = output.GetPortName();
+        json_output["device_type"] = output.GetDeviceType();
+        json_output["port_type"] = output.GetPortType();
         json_outputs.push_back(json_output);
       }
       json["outputports"] = json_outputs;
