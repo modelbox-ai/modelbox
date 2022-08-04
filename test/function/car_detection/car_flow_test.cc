@@ -216,9 +216,9 @@ Status CarFlowTest::AddMockFlowUnit() {
               }
 
               output_buf->Build(shape_vector);
-              int32_t width;
-              int32_t height;
-              int32_t channel;
+              int32_t width = 0;
+              int32_t height = 0;
+              int32_t channel = 0;
               std::string pix_fmt;
               modelbox::ModelBoxDataType type = MODELBOX_TYPE_INVALID;
               input_buf->At(0)->Get("width", width);

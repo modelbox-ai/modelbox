@@ -98,8 +98,8 @@ TEST_F(ResizeFlowUnitTest, TestCase1) {
   auto output_buffer_list = output_buffer_lists[0];
   EXPECT_EQ(output_buffer_list->Size(), 1);
   auto output_buffer = output_buffer_list->At(0);
-  int32_t width;
-  int32_t height;
+  int32_t width = 0;
+  int32_t height = 0;
   auto exists = output_buffer->Get("width", width);
   EXPECT_EQ(exists, true);
   exists = output_buffer->Get("height", height);
@@ -167,8 +167,8 @@ TEST_F(ResizeFlowUnitTest, TestCase2) {
   uint32_t count = 1;
   for (auto &output_buffer_list : output_buffer_lists) {
     for (size_t i = 0; i < output_buffer_list->Size(); i++) {
-      int32_t width;
-      int32_t height;
+      int32_t width = 0;
+      int32_t height = 0;
       auto output_buffer = output_buffer_list->At(i);
       auto exists = output_buffer->Get("width", width);
       EXPECT_EQ(exists, true);

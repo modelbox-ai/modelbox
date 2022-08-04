@@ -620,7 +620,7 @@ TEST_F(BlockingQueueTest, QueueShutdown) {
 
   for (int i = 0; i < queue_size; i++) {
     int value = i * i;
-    ret = queueTwo.Pop(&value);
+    queueTwo.Pop(&value);
     EXPECT_EQ(value, i * i);
   }
 

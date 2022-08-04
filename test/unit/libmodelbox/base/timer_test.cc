@@ -335,8 +335,7 @@ TEST_F(TimerTest, TakeOwnerShipStopBeforeHit) {
     // no trigger
     std::shared_ptr<TimerTask> task;
     task = std::make_shared<TimerTask>();
-    auto *task_ptr = task.get();
-    task->Callback([&, task_ptr]() {
+    task->Callback([&]() {
       count++;
       EXPECT_TRUE(true);
     });

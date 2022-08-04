@@ -244,9 +244,9 @@ Status NvImageDecoderFlowUnitTest::AddMockFlowUnit() {
             testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               MBLOG_INFO << "test_1_0_decode process";
               auto input_bufs = op_ctx->Input("In_1");
-              int32_t cols;
-              int32_t rows;
-              int32_t channels;
+              int32_t cols = 0;
+              int32_t rows = 0;
+              int32_t channels = 0;
 
               if (input_bufs->Size() == 0) {
                 MBLOG_ERROR << "test_1_0_decode input buffersize is 0";

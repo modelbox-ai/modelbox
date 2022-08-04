@@ -113,10 +113,10 @@ Status ImageRotateFlowUnitTest::AddMockFlowUnit() {
       MBLOG_INFO << "test_1_0_rotate process";
       auto origin_buf = data_ctx->Input("in_origin");
       auto rotate_buf = data_ctx->Input("in_rotate");
-      int32_t width;
-      int32_t height;
-      int32_t channels;
-      int32_t rotate_angle;
+      int32_t width = 0;
+      int32_t height = 0;
+      int32_t channels = 0;
+      int32_t rotate_angle = 0;
 
       for (size_t i = 0; i < rotate_buf->Size(); ++i) {
         rotate_buf->At(i)->Get("width", width);

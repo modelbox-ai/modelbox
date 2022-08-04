@@ -35,7 +35,7 @@ std::string string_masking(const std::string &input) {
   output =
       std::regex_replace(output, pattern_vcn_pwd, R"("vcn_stream_pwd":"*")");
 
-  return std::move(output);
+  return output;
 }
 
 }  // namespace driverutil

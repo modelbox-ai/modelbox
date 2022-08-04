@@ -189,9 +189,9 @@ Status NppiCropFlowUnitTest::AddMockFlowUnit() {
       }
 
       for (size_t i = 0; i < input_buf->Size(); ++i) {
-        int32_t width;
-        int32_t height;
-        int32_t channels;
+        int32_t width = 0;
+        int32_t height = 0;
+        int32_t channels = 0;
 
         bool exists = false;
 

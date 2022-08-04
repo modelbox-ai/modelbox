@@ -98,7 +98,7 @@ modelbox::Status GetAndCheckParm(
     modelbox::ModelBoxDataType &type) {
   std::vector<size_t> tmp_shape;
   std::string tmp_input_layout;
-  modelbox::ModelBoxDataType tmp_type;
+  modelbox::ModelBoxDataType tmp_type = modelbox::MODELBOX_TYPE_INVALID;
 
   for (auto &buffer : *input) {
     if (buffer == *input->begin()) {

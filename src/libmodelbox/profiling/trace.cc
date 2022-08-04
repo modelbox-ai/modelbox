@@ -104,7 +104,6 @@ void Trace::TraceWork() {
 
   MBLOG_INFO << "trace timer start";
 
-  sleep_time = sleep;
   now = GetTickCount();
   expect_time = now + sleep;
 

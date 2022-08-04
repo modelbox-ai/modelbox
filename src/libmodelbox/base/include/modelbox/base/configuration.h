@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_CONFIGURATION_H_
 #define MODELBOX_CONFIGURATION_H_
 
@@ -36,7 +35,7 @@ constexpr const uint32_t VALID_RANGE_OF_DOUBLE = 15;
 class ConfigStore {
  public:
   virtual ~ConfigStore() = default;
-  
+
   void WriteProperty(const std::string &key, const std::string &property);
 
   Status ReadProperty(const std::string &key, std::string *property) const;
@@ -93,7 +92,7 @@ class Configuration {
   Configuration &operator=(const Configuration &config) = delete;
   Configuration(const Configuration &&config) = delete;
   Configuration &operator=(const Configuration &&config) = delete;
-  
+
   virtual ~Configuration() = default;
 
   static void Trim(std::string *value);
@@ -245,7 +244,7 @@ T Configuration::GetProperty(const std::string &key,
     return default_prop;
   }
 
-  T convert_prop;
+  T convert_prop{};
   ret = Convert<T>(raw_prop, convert_prop);
   if (ret != STATUS_SUCCESS) {
     MBLOG_ERROR << "Convert [" << key << " : " << raw_prop << "] to "
@@ -269,7 +268,7 @@ std::vector<T> Configuration::GetProperty(
   StringSplit(raw_prop, LIST_DELIMITER, raw_value_list);
 
   std::vector<T> value_list;
-  T convert_prop;
+  T convert_prop{};
   for (const auto &raw_value : raw_value_list) {
     ret = Convert<T>(raw_value, convert_prop);
     if (ret != STATUS_SUCCESS) {
@@ -343,8 +342,8 @@ Status Configuration::Convert<double>(const std::string &property,
 
 class ConfigParser {
  public:
-  virtual Status Parse(const std::shared_ptr<Configuration> &config, std::istream &is,
-                       const std::string &fname) = 0;
+  virtual Status Parse(const std::shared_ptr<Configuration> &config,
+                       std::istream &is, const std::string &fname) = 0;
   virtual Status Parse(const std::shared_ptr<Configuration> &config,
                        const std::string &file) = 0;
 };

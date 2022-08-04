@@ -130,7 +130,6 @@ int modelbox_create_pid(const char *pid_file) {
 errout:
   if (fd > 0) {
     close(fd);
-    fd = -1;
   }
   return -1;
 }

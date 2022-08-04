@@ -144,7 +144,7 @@ modelbox::Status GetAndCheckParm(
     modelbox::ModelBoxDataType &type, std::string &in_pix_fmt) {
   std::vector<size_t> tmp_shape;
   std::string tmp_input_layout;
-  modelbox::ModelBoxDataType tmp_type;
+  modelbox::ModelBoxDataType tmp_type = modelbox::MODELBOX_TYPE_INVALID;
   std::string tmp_in_pix_fmt;
 
   for (auto &buffer : *input) {
