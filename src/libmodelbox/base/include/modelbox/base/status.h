@@ -54,6 +54,7 @@ enum StatusCode {
   STATUS_NOENT,       /* No such file or directory */
   STATUS_DEADLOCK,    /* Resource deadlock */
   STATUS_NORESPONSE,  /* No response*/
+  STATUS_IO,          /* Input/output error */
   STATUS_LASTFLAG,    /* Status flag, don't used it */
 };
 

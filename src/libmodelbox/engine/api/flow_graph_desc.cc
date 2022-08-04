@@ -200,6 +200,11 @@ std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
     const std::string &flowunit_name, const std::string &device,
     const std::vector<std::string> &config,
     const std::shared_ptr<FlowNodeDesc> &source_node) {
+  if (source_node == nullptr) {
+    build_status_ = {STATUS_FAULT, "add source node failed"};
+    return nullptr;
+  }
+
   return AddNode(flowunit_name, device, config, {{"", (*source_node)[0]}});
 }
 
@@ -213,6 +218,11 @@ std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
 std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddNode(
     const std::string &flowunit_name, const std::string &device,
     const std::shared_ptr<FlowNodeDesc> &source_node) {
+  if (source_node == nullptr) {
+    build_status_ = {STATUS_FAULT, "add source node failed"};
+    return nullptr;
+  }
+
   return AddNode(flowunit_name, device, {}, source_node);
 }
 
