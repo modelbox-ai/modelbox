@@ -32,6 +32,7 @@ constexpr const char *DRIVER_CLASS_VIRTUAL = "DRIVER-VIRTUAL";
 constexpr const char *DRIVER_CLASS_INFERENCE = "DRIVER-INFERENCE";
 constexpr const char *DRIVER_TYPE_VIRTUAL = "virtual";
 constexpr const char *DEFAULT_SCAN_INFO = "/tmp/modelbox-driver-info";
+constexpr const char *DRIVER_SCAN_INFO = "/tmp/modelbox-driver-scan-info";
 
 class Driver;
 class DriverFactory {
@@ -234,6 +235,7 @@ class Drivers {
 
  private:
   Status InnerScan();
+  Status ReadExcludeInfo();
   Status WriteScanInfo(const std::string &scan_info_path,
                        const std::string &check_code);
   Status GatherScanInfo(const std::string &scan_path);
@@ -257,6 +259,8 @@ class Drivers {
   uint64_t last_modify_time_sum_{0};
   static std::string default_scan_path_;
   static std::string default_driver_info_path_;
+  std::map<std::string, bool> scan_exclude_file_list_;
+  std::string scan_info_file_;
 };
 
 }  // namespace modelbox

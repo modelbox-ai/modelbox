@@ -65,8 +65,8 @@ TEST_F(FlowGraphDescTest, AddFunction) {
         return STATUS_OK;
       },
       {"in1", "in2"}, {"out"}, {{"in2", nullptr}});
+  ASSERT_NE(func_node, nullptr);
   func_node->SetNodeName("my_function");
-  EXPECT_NE(func_node, nullptr);
   auto port0 = (*func_node)[0];
   ASSERT_NE(port0, nullptr);
   EXPECT_EQ(port0->GetNodeName(), "my_function");

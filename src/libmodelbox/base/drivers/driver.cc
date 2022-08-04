@@ -17,6 +17,8 @@
 #include "modelbox/base/driver.h"
 
 #include <dlfcn.h>
+#include <fcntl.h>
+#include <poll.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -29,6 +31,7 @@
 #include <nlohmann/json.hpp>
 #include <regex>
 #include <sstream>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -39,6 +42,136 @@
 namespace modelbox {
 
 constexpr const char *DEFAULT_LD_CACHE = "/etc/ld.so.cache";
+
+int SubProcessWaitAndLog(int fd) {
+  struct pollfd fdset;
+  std::string log;
+  char tmp[4096];
+  fdset.fd = fd;
+  fdset.events = POLLIN | POLLHUP;
+  if (fd <= 0) {
+    return 0;
+  }
+
+  Defer {
+    if (log.length() > 0) {
+      MBLOG_INFO << "scan process log: \n" << log;
+    }
+  };
+
+  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+
+  while (true) {
+    int count = poll(&fdset, 1, 60000);
+    if (count < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+
+      return -1;
+    }
+
+    if (count == 0) {
+      return 1;
+    }
+
+    int len = read(fd, tmp, sizeof(tmp));
+    if (len < 0) {
+      return -1;
+    }
+
+    if (len == 0) {
+      break;
+    }
+
+    log.append(tmp, len);
+    if (log.length() > 4096) {
+      MBLOG_INFO << "scan process log: \n" << log;
+      log.clear();
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * @brief fork a process to Run func
+ * @return func result
+ */
+template <typename func, typename... ts>
+Status SubProcessRun(func &&fun, ts &&...params) {
+  const char *enable_debug = getenv("MODELBOX_DEBUG_DRIVER_SCAN");
+  if (enable_debug == nullptr) {
+    int fd[2] = {-1, -1};
+    pipe(fd);
+    auto pid = fork();
+    if (pid == 0) {
+      signal(SIGSEGV, SIG_DFL);
+      signal(SIGTERM, SIG_DFL);
+      signal(SIGABRT, SIG_DFL);
+      close(fd[0]);
+      dup2(fd[1], 1);
+      // output log to console
+      auto loglevel = klogger.GetLogger()->GetLogLevel();
+      klogger.SetLogger(nullptr);
+      klogger.GetLogger()->SetLogLevel(loglevel);
+
+      Status ret = fun(params...);
+      if (!ret) {
+        _exit(0);
+      }
+
+      _exit(1);
+    }
+
+    Defer { close(fd[0]); };
+    close(fd[1]);
+
+    if (pid == -1) {
+      const auto *err_msg = "fork subprocess failed";
+      MBLOG_ERROR << err_msg;
+      return {STATUS_NOMEM, err_msg};
+    }
+
+    MBLOG_INFO << "wait for subprocess " << pid << " process finished";
+    int status = 0;
+
+    auto ret = SubProcessWaitAndLog(fd[0]);
+    if (ret == 1) {
+      MBLOG_WARN << "scan process timeout, kill scan process.";
+      kill(pid, 9);
+    }
+
+    ret = waitpid(pid, &status, 0);
+    if (ret < 0) {
+      auto err_msg =
+          "subprocess run failed, wait error, ret:" + std::to_string(errno) +
+          ", msg: " + StrError(errno);
+      MBLOG_ERROR << err_msg;
+      return {STATUS_FAULT, err_msg};
+    }
+
+    if (WIFEXITED(status) != 0) {
+      return {STATUS_NORESPONSE, "process exit abnormal."};
+    }
+
+    if (WIFSIGNALED(status)) {
+      const auto *err_msg = "killed by signal";
+      MBLOG_ERROR << err_msg;
+      return {STATUS_NORESPONSE, err_msg};
+    }
+
+    if (status != 0) {
+      const auto *err_msg = "scan process exit result is fail.";
+      MBLOG_ERROR << err_msg;
+      return {STATUS_FAULT, err_msg};
+    }
+  } else {
+    return fun(params...);
+  }
+
+  return STATUS_OK;
+}
 
 Driver::Driver() = default;
 
@@ -740,16 +873,55 @@ void Drivers::PrintScanResults(const std::string &scan_path) {
   }
 }
 
+Status Drivers::ReadExcludeInfo() {
+  std::ifstream infile(scan_info_file_);
+  if (infile.fail()) {
+    std::string msg = "read scan info file " + scan_info_file_ + " failed, " +
+                      StrError(errno);
+    return {STATUS_IO, msg};
+  }
+
+  Defer { infile.close(); };
+  std::string data((std::istreambuf_iterator<char>(infile)),
+                   std::istreambuf_iterator<char>());
+
+  if (access(data.c_str(), F_OK) != 0) {
+    return {STATUS_NOENT, "not found info file" + data};
+  }
+
+  scan_exclude_file_list_[data] = true;
+
+  return STATUS_OK;
+}
+
 Status Drivers::Scan() {
   Status status = STATUS_FAULT;
   if (!CheckPathAndMagicCode()) {
-    auto exec_func = std::bind(&Drivers::InnerScan, this);
-    auto status = SubProcessRun(exec_func);
-    if (status != STATUS_OK) {
-      auto err_msg =
-          "fork subprocess run scan so failed, " + status.WrapErrormsgs();
-      MBLOG_ERROR << err_msg;
-      return {STATUS_FAULT, err_msg};
+    while (true) {
+      scan_info_file_ = DRIVER_SCAN_INFO;
+      Defer { unlink(scan_info_file_.c_str()); };
+      auto exec_func = std::bind(&Drivers::InnerScan, this);
+      auto status = SubProcessRun(exec_func);
+
+      if (status == STATUS_NORESPONSE) {
+        MBLOG_WARN << "Scan process may crash, retry.";
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if (ReadExcludeInfo() != STATUS_OK) {
+          break;
+        }
+
+        continue;
+      }
+
+      scan_exclude_file_list_.clear();
+      if (status != STATUS_OK) {
+        auto err_msg =
+            "fork subprocess run scan so failed, " + status.WrapErrormsgs();
+        MBLOG_ERROR << err_msg;
+        return {STATUS_FAULT, err_msg};
+      }
+
+      break;
     }
   }
 
@@ -760,7 +932,6 @@ Status Drivers::Scan() {
     return {STATUS_FAULT, err_msg};
   }
 
-  PrintScanResults(default_driver_info_path_);
   MBLOG_INFO << "begin scan virtual drivers";
   status = VirtualDriverScan();
   MBLOG_INFO << "end scan virtual drivers";
@@ -818,6 +989,26 @@ Status Drivers::Add(const std::string &file) {
   typedef void (*DriverDescription)(DriverDesc *);
   DriverDescription driver_func = nullptr;
 
+  if (scan_exclude_file_list_.find(file) != scan_exclude_file_list_.end()) {
+    MBLOG_WARN << "Skip scan file: " << file;
+    return STATUS_OK;
+  }
+
+  if (!scan_info_file_.empty()) {
+    std::ofstream out(scan_info_file_, std::ios::trunc);
+    if (!out.fail()) {
+      chmod(scan_info_file_.c_str(), 0600);
+      Defer { out.close(); };
+      out << file;
+    }
+  }
+
+  Defer {
+    if (!scan_info_file_.empty()) {
+      unlink(scan_info_file_.c_str());
+    }
+  };
+
   void *driver_handler = dlopen(file.c_str(), RTLD_LAZY | RTLD_LOCAL);
   if (driver_handler == nullptr) {
     std::string errmsg = file + " : dlopen failed, ";
@@ -828,6 +1019,7 @@ Status Drivers::Add(const std::string &file) {
       errmsg += "no error msg.";
     }
 
+    MBLOG_WARN << errmsg;
     return {STATUS_INVALID, errmsg};
   }
 
@@ -842,6 +1034,7 @@ Status Drivers::Add(const std::string &file) {
     }
 
     dlclose(driver_handler);
+    MBLOG_WARN << errmsg;
     return {STATUS_NOTSUPPORT, errmsg};
   }
 
