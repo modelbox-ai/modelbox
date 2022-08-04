@@ -57,9 +57,9 @@ modelbox::Status ResizeFlowUnitTest::Process(
   output_bufs->Build(tensor_shape);
 
   for (size_t i = 0; i < input_bufs->Size(); ++i) {
-    int32_t width;
-    int32_t height;
-    int32_t channel;
+    int32_t width = 0;
+    int32_t height = 0;
+    int32_t channel = 0;
     std::string pix_fmt;
     bool exists = false;
     exists = input_bufs->At(i)->Get("height", height);

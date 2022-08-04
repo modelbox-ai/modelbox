@@ -466,9 +466,9 @@ Status NppiResizeFlowUnitTest::AddMockFlowUnit() {
               auto input = op_ctx->Input("In_1");
 
               for (size_t i = 0; i < input->Size(); i++) {
-                int32_t cols;
-                int32_t rows;
-                int32_t channels;
+                int32_t cols = 0;
+                int32_t rows = 0;
+                int32_t channels = 0;
                 input->At(i)->Get("width", cols);
                 input->At(i)->Get("height", rows);
                 input->At(i)->Get("channel", channels);

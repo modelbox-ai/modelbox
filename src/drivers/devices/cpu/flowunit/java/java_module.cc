@@ -33,7 +33,7 @@ JNIEnv *JavaJVM::GetEnv() { return env_; }
 modelbox::Status JavaJVM::InitJNI() {
   jsize vms_num = 0;
   auto ret = JNI_GetCreatedJavaVMs(nullptr, 0, &vms_num);
-  if (vms_num <= 0) {
+  if (vms_num <= 0 || ret != JNI_OK) {
     JavaVMInitArgs vm_args;
     ret = JNI_CreateJavaVM(&jvm_, (void **)&env_, &vm_args);
     if (ret != JNI_OK) {

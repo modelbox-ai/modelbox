@@ -188,11 +188,11 @@ Status DvppVideoDecoderFlowUnitTest::AddMockFlowUnit() {
           continue;
         }
 
-        int64_t index;
-        int32_t width;
-        int32_t height;
-        int32_t rate_num;
-        int32_t rate_den;
+        int64_t index = 0;
+        int32_t width = 0;
+        int32_t height = 0;
+        int32_t rate_num = 0;
+        int32_t rate_den = 0;
         bool eos;
         frame_buffer->Get("index", index);
         frame_buffer->Get("width", width);

@@ -22,6 +22,7 @@
 #include "modelbox/base/os.h"
 
 namespace modelbox {
+
 CpuMemory::CpuMemory(const std::shared_ptr<Device> &device,
                      const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
                      const std::shared_ptr<void> &device_mem_ptr, size_t size)

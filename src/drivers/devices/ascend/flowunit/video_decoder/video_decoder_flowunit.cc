@@ -293,9 +293,9 @@ modelbox::Status VideoDecodeFlowUnit::ReadDvppStreamDesc(
   }
 
   const auto *buffer = packet_buffer->ConstData();
-  int32_t width;
-  int32_t height;
-  int64_t pts;
+  int32_t width = 0;
+  int32_t height = 0;
+  int64_t pts = 0;
   auto exists = packet_buffer->Get("width", width);
   if (!exists) {
     const auto *errMsg = "get width in input buffer meta failed.";

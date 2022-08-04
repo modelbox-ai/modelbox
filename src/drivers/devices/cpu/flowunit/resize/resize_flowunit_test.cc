@@ -234,9 +234,9 @@ Status CVResizeFlowUnitTest::AddMockFlowUnit() {
             testing::Invoke([=](const std::shared_ptr<DataContext>& op_ctx) {
               MBLOG_INFO << "test_1_0_resize process";
               auto input_buf = op_ctx->Input("In_1");
-              int32_t cols;
-              int32_t rows;
-              int32_t channels;
+              int32_t cols = 0;
+              int32_t rows = 0;
+              int32_t channels = 0;
 
               for (size_t i = 0; i < input_buf->Size(); i++) {
                 input_buf->At(i)->Get("width", cols);

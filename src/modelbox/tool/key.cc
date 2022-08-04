@@ -125,7 +125,7 @@ Status EncryptWithFile(const std::string &plain_path,
   std::shared_ptr<EVP_CIPHER_CTX> ctx;
   const EVP_CIPHER *cipher = nullptr;
   EVP_CIPHER_CTX *ctx_new = nullptr;
-  int len;
+  int len = 0;
 
   if (read_buf == nullptr) {
     return {STATUS_FAULT, "read_buf new err"};

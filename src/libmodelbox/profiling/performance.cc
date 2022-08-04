@@ -281,7 +281,6 @@ void Performance::PerformanceWorker() {
 
   MBLOG_INFO << "profiler timer start";
 
-  sleep_time = sleep;
   now = GetTickCount();
   expect_time = now + sleep;
 
