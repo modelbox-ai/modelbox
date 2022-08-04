@@ -21,6 +21,7 @@
 #include <list>
 #include <toml.hpp>
 #include <string.h>
+#include <mutex>
 
 #include <nlohmann/json.hpp>
 #include "gtest/gtest.h"
@@ -36,6 +37,32 @@ class BaseUtilsTest : public testing::Test {
   void SetUp() override{};
   void TearDown() override{};
 };
+
+class GlobalRefTest {
+ public:
+  GlobalRefTest() { count_++; }
+  ~GlobalRefTest() { count_--; }
+  static int GetRefCount() { return count_; }
+
+ private:
+  static int count_;
+};
+
+int GlobalRefTest::count_ = 0;
+
+TEST_F(BaseUtilsTest, GlobalRefVar) {
+  GlobalRefVar<GlobalRefTest>::MakeFunc(
+      [](int index) { return std::make_shared<GlobalRefTest>(); });
+
+  auto a = GlobalRefVar<GlobalRefTest>::Get();
+  auto b = GlobalRefVar<GlobalRefTest>::Get();
+  EXPECT_EQ(GlobalRefTest::GetRefCount(), 1);
+  EXPECT_EQ(a.get(), b.get());
+  a = nullptr;
+  EXPECT_EQ(GlobalRefTest::GetRefCount(), 1);
+  b = nullptr;
+  EXPECT_EQ(GlobalRefTest::GetRefCount(), 0);
+}
 
 TEST_F(BaseUtilsTest, Volume) {
   {
@@ -378,7 +405,7 @@ TEST_F(BaseUtilsTest, FindTheEarliestFileIndex) {
   EXPECT_EQ(earliest_file_index, 0);
   EXPECT_EQ(list_files.size(), 5);
 
-  for (const auto& file : list_files) {
+  for (const auto &file : list_files) {
     auto ret = remove(file.c_str());
     EXPECT_EQ(ret, 0);
   }

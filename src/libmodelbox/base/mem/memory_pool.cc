@@ -106,12 +106,14 @@ std::vector<std::shared_ptr<SlabCache>> MemoryPoolBase::GetSlabCaches() {
 
 void MemoryPoolBase::DestroySlabCache() { slab_caches_.clear(); }
 
-void MemoryPoolBase::RegisterCollector(const std::string &name) {
-  GetInstance()->AddObject(name, shared_from_this());
+MemoryPoolBase::~MemoryPoolBase() {
+  if (pool_name_.length() > 0) {
+    GetInstance()->RmvObject(pool_name_);
+  }
 }
 
-void MemoryPoolBase::UnregisterCollector(const std::string &name) {
-  GetInstance()->RmvObject(name);
+void MemoryPoolBase::RegisterCollector(const std::string &name) {
+  GetInstance()->AddObject(name, shared_from_this());
 }
 
 Collector<MemoryPoolBase> *MemoryPoolBase::GetInstance() {

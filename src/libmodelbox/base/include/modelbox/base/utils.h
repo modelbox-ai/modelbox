@@ -24,6 +24,7 @@
 
 #include <functional>
 #include <list>
+#include <mutex>
 #include <numeric>
 #include <regex>
 #include <string>
@@ -50,7 +51,7 @@ class DeferGuard {
    * @param fn function
    */
   // NOLINTNEXTLINE
-  DeferGuard(Callable &&fn) noexcept: fn_(std::forward<Callable>(fn)) {}
+  DeferGuard(Callable &&fn) noexcept : fn_(std::forward<Callable>(fn)) {}
 
   /**
    * @brief Copy constructor
@@ -129,6 +130,67 @@ class DeferGuardChain {
 #define DeferExt(...)                               \
   ::modelbox::DeferGuard MODELBOX_CONCAT(__defer__, \
                                          __LINE__) = [##__VA_ARGS__]()
+
+/**
+ * @brief Global reference variable
+ *
+ * @tparam T
+ */
+template <typename T, int MAX_INDEX = 1>
+class GlobalRefVar {
+ public:
+  template <class Callable>
+
+  /**
+   * @brief variable new function
+   *
+   * @param make_func
+   */
+  static void MakeFunc(Callable &&make_func) noexcept {
+    make_func_ = std::forward<Callable>(make_func);
+  }
+
+  /**
+   * @brief Get index
+   * 
+   * @param index variable index
+   * @return std::shared_ptr<T> 
+   */
+  static std::shared_ptr<T> Get(int index = 0) {
+    if (index >= MAX_INDEX) {
+      return nullptr;
+    }
+
+    auto weak_var = weak_var_[index].lock();
+    if (weak_var) {
+      return weak_var;
+    }
+
+    std::lock_guard<std::mutex> lock(weak_var_lock_);
+    weak_var = weak_var_[index].lock();
+    if (weak_var) {
+      return weak_var;
+    }
+
+    weak_var = make_func_(index);
+    weak_var_[index] = weak_var;
+    return weak_var;
+  }
+
+ private:
+  static std::weak_ptr<T> weak_var_[MAX_INDEX];
+  static std::mutex weak_var_lock_;
+  static std::function<std::shared_ptr<T>(int)> make_func_;
+};
+
+template <class T, int MAX_INDEX>
+std::weak_ptr<T> GlobalRefVar<T, MAX_INDEX>::weak_var_[MAX_INDEX];
+
+template <class T, int MAX_INDEX>
+std::mutex GlobalRefVar<T, MAX_INDEX>::weak_var_lock_;
+
+template <class T, int MAX_INDEX>
+std::function<std::shared_ptr<T>(int)> GlobalRefVar<T, MAX_INDEX>::make_func_;
 
 enum LIST_FILE_TYPE : unsigned int {
   LIST_FILES_ALL = 0x3,

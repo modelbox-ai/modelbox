@@ -82,16 +82,10 @@ class MemoryPoolBase : public MemoryAllocFree,
    */
   void RegisterCollector(const std::string &name);
 
-  /**
-   * @brief unregister memory pool
-   * @param name unregister name
-   */
-  void UnregisterCollector(const std::string &name);
-
   static Collector<MemoryPoolBase> *GetInstance();
 
   MemoryPoolBase() = default;
-  virtual ~MemoryPoolBase() = default;
+  virtual ~MemoryPoolBase();
 
  protected:
   /**
@@ -131,6 +125,7 @@ class MemoryPoolBase : public MemoryAllocFree,
 
  private:
   std::vector<std::shared_ptr<SlabCache>> slab_caches_;
+  std::string pool_name_;
 };
 
 }  // namespace modelbox
