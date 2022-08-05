@@ -23,6 +23,8 @@
 
 namespace modelbox {
 
+static RefVar<CpuMemoryPool> kCpuMemoryPool;
+
 CpuMemory::CpuMemory(const std::shared_ptr<Device> &device,
                      const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
                      const std::shared_ptr<void> &device_mem_ptr, size_t size)
@@ -69,6 +71,7 @@ Status CpuMemoryPool::Init() {
 }
 
 CpuMemoryPool::~CpuMemoryPool() {
+  ClearAllSlabs();
   if (flush_timer_) {
     flush_timer_->Stop();
     flush_timer_ = nullptr;
@@ -90,17 +93,33 @@ void *CpuMemoryPool::MemAlloc(size_t size) {
 void CpuMemoryPool::MemFree(void *ptr) { free(ptr); }
 
 CpuMemoryManager::CpuMemoryManager(const std::string &device_id)
-    : DeviceMemoryManager(device_id) {
-  mem_pool_ = std::make_shared<CpuMemoryPool>();
-  mem_pool_->RegisterCollector("cpu");
-}
+    : DeviceMemoryManager(device_id) {}
 
-CpuMemoryManager::~CpuMemoryManager() {
-  mem_pool_->DestroySlabCache();
-  mem_pool_->UnregisterCollector("cpu");
-}
+CpuMemoryManager::~CpuMemoryManager() = default;
 
-Status CpuMemoryManager::Init() { return mem_pool_->Init(); }
+Status CpuMemoryManager::Init() {
+  static std::once_flag flag;
+  std::call_once(flag, []() {
+    kCpuMemoryPool.MakeFunc([](int index) -> std::shared_ptr<CpuMemoryPool> {
+      auto pool = std::make_shared<CpuMemoryPool>();
+      if (pool->Init() != STATUS_OK) {
+        return nullptr;
+      }
+
+      pool->SetName("cpu");
+      return pool;
+    });
+  });
+
+  mem_pool_ = kCpuMemoryPool.Get();
+  if (mem_pool_ == nullptr) {
+    const auto *err_msg = "Get cpu memory pool failed.";
+    MBLOG_ERROR << err_msg;
+    return {STATUS_NOMEM, err_msg};
+  }
+
+  return STATUS_OK;
+}
 
 std::shared_ptr<DeviceMemory> CpuMemoryManager::MakeDeviceMemory(
     const std::shared_ptr<Device> &device, std::shared_ptr<void> mem_ptr,
@@ -110,6 +129,11 @@ std::shared_ptr<DeviceMemory> CpuMemoryManager::MakeDeviceMemory(
 
 std::shared_ptr<void> CpuMemoryManager::AllocSharedPtr(size_t size,
                                                        uint32_t mem_flags) {
+  if (mem_pool_ == nullptr) {
+    MBLOG_ERROR << "memory pool is not init.";
+    return nullptr;
+  }
+
   auto mem_size = size + sizeof(DeviceMemory::MEM_MAGIC_CODE);
   auto cpu_mem_ptr = mem_pool_->AllocSharedPtr(mem_size);
   if (cpu_mem_ptr == nullptr) {
@@ -123,10 +147,20 @@ std::shared_ptr<void> CpuMemoryManager::AllocSharedPtr(size_t size,
 }
 
 void *CpuMemoryManager::Malloc(size_t size, uint32_t mem_flags) {
+  if (mem_pool_ == nullptr) {
+    MBLOG_ERROR << "memory pool is not init.";
+    return nullptr;
+  }
+
   return mem_pool_->MemAlloc(size);
 }
 
 void CpuMemoryManager::Free(void *mem_ptr, uint32_t mem_flags) {
+  if (mem_pool_ == nullptr) {
+    MBLOG_ERROR << "memory pool is not init.";
+    return;
+  }
+
   mem_pool_->MemFree(mem_ptr);
 }
 

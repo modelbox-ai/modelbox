@@ -21,6 +21,7 @@
 #include <list>
 #include <toml.hpp>
 #include <string.h>
+#include <mutex>
 
 #include <nlohmann/json.hpp>
 #include "gtest/gtest.h"
@@ -36,6 +37,37 @@ class BaseUtilsTest : public testing::Test {
   void SetUp() override{};
   void TearDown() override{};
 };
+
+class RefVarTest {
+ public:
+  RefVarTest() { count_++; }
+  ~RefVarTest() { count_--; }
+  static int GetRefCount() { return count_; }
+
+ private:
+  static int count_;
+};
+
+int RefVarTest::count_ = 0;
+
+TEST_F(BaseUtilsTest, RefVar) {
+  RefVar<RefVarTest> Var(2);
+  Var.MakeFunc([](int index) { return std::make_shared<RefVarTest>(); });
+
+  auto a = Var.Get();
+  auto b = Var.Get();
+  EXPECT_EQ(RefVarTest::GetRefCount(), 1);
+  EXPECT_EQ(a.get(), b.get());
+  auto c = Var.Get(1);
+  EXPECT_EQ(RefVarTest::GetRefCount(), 2);
+  auto d = Var.Get(1);
+  EXPECT_EQ(RefVarTest::GetRefCount(), 2);
+  EXPECT_NE(c.get(), b.get());
+  a = nullptr;
+  EXPECT_EQ(RefVarTest::GetRefCount(), 2);
+  b = nullptr;
+  EXPECT_EQ(RefVarTest::GetRefCount(), 1);
+}
 
 TEST_F(BaseUtilsTest, Volume) {
   {
@@ -378,7 +410,7 @@ TEST_F(BaseUtilsTest, FindTheEarliestFileIndex) {
   EXPECT_EQ(earliest_file_index, 0);
   EXPECT_EQ(list_files.size(), 5);
 
-  for (const auto& file : list_files) {
+  for (const auto &file : list_files) {
     auto ret = remove(file.c_str());
     EXPECT_EQ(ret, 0);
   }

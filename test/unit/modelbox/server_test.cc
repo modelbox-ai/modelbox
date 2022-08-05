@@ -658,7 +658,7 @@ TEST_F(ModelboxServerTest, Slab) {
   ret = tool.Run("server slab --device --type cuda");
   EXPECT_EQ(ret, 1);
   ret = tool.Run("server slab --device --type cpu --id 0");
-  EXPECT_EQ(ret, 0);
+  EXPECT_EQ(ret, 1);
   ret = tool.Run("server slab --device --type cuda --id 0");
   EXPECT_EQ(ret, 1);
   sleep(1);

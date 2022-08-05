@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_MEMORY_POOL_H
 #define MODELBOX_MEMORY_POOL_H
 
@@ -77,21 +76,23 @@ class MemoryPoolBase : public MemoryAllocFree,
   std::vector<std::shared_ptr<SlabCache>> GetSlabCaches();
 
   /**
-   * @brief register memory pool
-   * @param name register name
+   * @brief Set memory pool name
+   * @param name
    */
-  void RegisterCollector(const std::string &name);
+  void SetName(std::string name);
 
   /**
-   * @brief unregister memory pool
-   * @param name unregister name
+   * @brief Get memory pool name
+   *
+   * @return std::string
    */
-  void UnregisterCollector(const std::string &name);
+  std::string GetName();
 
-  static Collector<MemoryPoolBase> *GetInstance();
+  static std::vector<std::shared_ptr<MemoryPoolBase>> GetAllPools();
 
   MemoryPoolBase() = default;
-  virtual ~MemoryPoolBase() = default;
+  MemoryPoolBase(std::string name);
+  virtual ~MemoryPoolBase();
 
  protected:
   /**
@@ -129,8 +130,16 @@ class MemoryPoolBase : public MemoryAllocFree,
    */
   void AddSlabCache(const std::shared_ptr<SlabCache> &slab_cache);
 
+  /**
+   * @brief Clear all slabs 
+   */
+  void ClearAllSlabs();
+  
  private:
   std::vector<std::shared_ptr<SlabCache>> slab_caches_;
+  std::string pool_name_;
+  static std::map<MemoryPoolBase *, std::weak_ptr<MemoryPoolBase>> pool_list_;
+  static std::mutex pool_list_lock_;
 };
 
 }  // namespace modelbox
