@@ -105,4 +105,23 @@ TEST_F(MemoryPoolTest, MemoryPoolShrinkExpire) {
   EXPECT_EQ(p.GetAllObjectNum(), 0);
 }
 
+TEST_F(MemoryPoolTest, GetList) {
+  std::map<std::string, std::shared_ptr<MemoryPoolBase>> pool_list;
+  int num = 10;
+  for (int i = 0; i < num; i++) {
+    auto p = std::make_shared<MemoryPoolBase>(std::to_string(i));
+    p->InitSlabCache();
+    pool_list[std::to_string(i)] = p;
+  }
+
+  EXPECT_EQ(MemoryPoolBase::GetAllPools().size(), num);
+  pool_list.erase("1");
+  EXPECT_EQ(MemoryPoolBase::GetAllPools().size(), num - 1);
+
+  MBLOG_INFO << "Total Num: " << MemoryPoolBase::GetAllPools().size();
+  for (auto &p : MemoryPoolBase::GetAllPools()) {
+    EXPECT_EQ(p.get(), pool_list[p->GetName()].get());
+  }
+}
+
 }  // namespace modelbox

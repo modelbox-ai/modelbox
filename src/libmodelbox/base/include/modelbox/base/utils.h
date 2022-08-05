@@ -24,6 +24,7 @@
 
 #include <functional>
 #include <list>
+#include <mutex>
 #include <numeric>
 #include <regex>
 #include <string>
@@ -50,7 +51,7 @@ class DeferGuard {
    * @param fn function
    */
   // NOLINTNEXTLINE
-  DeferGuard(Callable &&fn) noexcept: fn_(std::forward<Callable>(fn)) {}
+  DeferGuard(Callable &&fn) noexcept : fn_(std::forward<Callable>(fn)) {}
 
   /**
    * @brief Copy constructor
@@ -129,6 +130,114 @@ class DeferGuardChain {
 #define DeferExt(...)                               \
   ::modelbox::DeferGuard MODELBOX_CONCAT(__defer__, \
                                          __LINE__) = [##__VA_ARGS__]()
+/**
+ * @brief reference variable
+ *
+ * @tparam T
+ */
+template <typename T>
+class RefVar {
+ public:
+  RefVar() {
+    weak_var_ = new std::weak_ptr<T>[max_var_num_];
+    make_func_ = new std::function<std::shared_ptr<T>(int)>[max_var_num_];
+  }
+
+  RefVar(int max_var_num) {
+    if (max_var_num < 0 || max_var_num > 1024) {
+      max_var_num_ = 0;
+      return;
+    }
+
+    weak_var_ = new std::weak_ptr<T>[max_var_num];
+    make_func_ = new std::function<std::shared_ptr<T>(int)>[max_var_num];
+    max_var_num_ = max_var_num;
+  }
+
+  virtual ~RefVar() {
+    delete[] make_func_;
+    delete[] weak_var_;
+    max_var_num_ = 0;
+  }
+  /**
+   * @brief variable new function
+   *
+   * @param make_func
+   * @param index make function index
+   */
+  template <class Callable>
+  void MakeFunc(Callable &&make_func, int index = -1) noexcept {
+    if (index < 0) {
+      for (int i = 0; i < max_var_num_; i++) {
+        make_func_[i] = std::forward<Callable>(make_func);
+      }
+      return;
+    }
+
+    if (index >= max_var_num_) {
+      return;
+    }
+
+    make_func_[index] = std::forward<Callable>(make_func);
+  }
+
+  /**
+   * @brief Get All objects
+   *
+   * @return std::vector<std::shared_ptr<T>>
+   */
+  std::vector<std::shared_ptr<T>> GetAll() {
+    std::lock_guard<std::mutex> lock(weak_var_lock_);
+    std::vector<std::shared_ptr<T>> result;
+    for (int i = 0; i < max_var_num_; i++) {
+      const auto &var = weak_var_[i].lock();
+      if (var == nullptr) {
+        continue;
+      }
+
+      result.emplace_back(var);
+    }
+
+    return result;
+  }
+
+  /**
+   * @brief Get index
+   *
+   * @param index variable index
+   * @return std::shared_ptr<T>
+   */
+  std::shared_ptr<T> Get(int index = 0) {
+    if (index >= max_var_num_) {
+      return nullptr;
+    }
+
+    auto weak_var = weak_var_[index].lock();
+    if (weak_var) {
+      return weak_var;
+    }
+
+    std::lock_guard<std::mutex> lock(weak_var_lock_);
+    weak_var = weak_var_[index].lock();
+    if (weak_var) {
+      return weak_var;
+    }
+
+    if (make_func_[index] == nullptr) {
+      return nullptr;
+    }
+
+    weak_var = make_func_[index](index);
+    weak_var_[index] = weak_var;
+    return weak_var;
+  }
+
+ private:
+  std::weak_ptr<T> *weak_var_;
+  std::mutex weak_var_lock_;
+  std::function<std::shared_ptr<T>(int)> *make_func_;
+  int max_var_num_{1};
+};
 
 enum LIST_FILE_TYPE : unsigned int {
   LIST_FILES_ALL = 0x3,

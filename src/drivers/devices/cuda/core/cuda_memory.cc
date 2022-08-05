@@ -18,6 +18,10 @@
 
 #include "modelbox/base/collector.h"
 namespace modelbox {
+
+constexpr int MAX_CUDA_DEVICE_NUMBER = 32;
+static RefVar<CudaMemoryPool> kCudaMemoryPool(MAX_CUDA_DEVICE_NUMBER);
+
 /**
  * @brief Call be cuda stream.
  *   Will release mem reference used before.
@@ -148,8 +152,7 @@ CudaMemory::CudaMemory(const std::shared_ptr<Device> &device,
 
 CudaMemory::~CudaMemory() = default;
 
-Status CudaMemory::BindStream(
-    const std::shared_ptr<CudaStream> &stream_ptr) {
+Status CudaMemory::BindStream(const std::shared_ptr<CudaStream> &stream_ptr) {
   if (cuda_stream_ptr_ != nullptr) {
     if (cuda_stream_ptr_ == stream_ptr) {
       return STATUS_SUCCESS;
@@ -244,6 +247,7 @@ Status CudaMemoryPool::Init() {
 }
 
 CudaMemoryPool::~CudaMemoryPool() {
+  ClearAllSlabs();
   if (flush_timer_) {
     flush_timer_->Stop();
     flush_timer_ = nullptr;
@@ -310,7 +314,6 @@ void CudaMemoryPool::MemFree(void *ptr) {
 CudaMemoryManager::CudaMemoryManager(const std::string &device_id)
     : DeviceMemoryManager(device_id),
       stream_pool_(device_id),
-      mem_pool_(std::make_shared<CudaMemoryPool>(device_id)),
       mem_copy_kind_map_{{DeviceMemoryCopyKind::FromHost,
                           cudaMemcpyKind::cudaMemcpyHostToDevice},
                          {DeviceMemoryCopyKind::SameDeviceType,
@@ -323,18 +326,38 @@ CudaMemoryManager::CudaMemoryManager(const std::string &device_id)
     MBLOG_WARN << "Convert device id to int failed, id " << device_id
                << ", err " << e.what() << "; use device 0 as default";
   }
-
-  std::string name = "cuda_" + std::to_string(gpu_id_);
-  mem_pool_->RegisterCollector(name);
 }
 
-CudaMemoryManager::~CudaMemoryManager() {
-  mem_pool_->DestroySlabCache();
-  std::string name = "cuda_" + std::to_string(gpu_id_);
-  mem_pool_->UnregisterCollector(name);
-}
+CudaMemoryManager::~CudaMemoryManager() = default;
 
-Status CudaMemoryManager::Init() { return mem_pool_->Init(); }
+Status CudaMemoryManager::Init() {
+  static std::once_flag flag;
+  if (gpu_id_ >= MAX_CUDA_DEVICE_NUMBER) {
+    return {STATUS_RANGE, "gpu id is out of range"};
+  }
+
+  std::call_once(flag, []() {
+    kCudaMemoryPool.MakeFunc([](int gpuid) -> std::shared_ptr<CudaMemoryPool> {
+      std::string memorypool_name = "cuda-" + std::to_string(gpuid);
+      auto pool = std::make_shared<CudaMemoryPool>(std::to_string(gpuid));
+      if (pool->Init() != STATUS_OK) {
+        return nullptr;
+      }
+
+      pool->SetName(memorypool_name);
+      return pool;
+    });
+  });
+
+  mem_pool_ = kCudaMemoryPool.Get(gpu_id_);
+  if (mem_pool_ == nullptr) {
+    const auto *err_msg = "Get cuda memory pool failed.";
+    MBLOG_ERROR << err_msg;
+    return {STATUS_NOMEM, err_msg};
+  }
+
+  return STATUS_OK;
+}
 
 std::shared_ptr<DeviceMemory> CudaMemoryManager::MakeDeviceMemory(
     const std::shared_ptr<Device> &device, std::shared_ptr<void> mem_ptr,
@@ -345,14 +368,29 @@ std::shared_ptr<DeviceMemory> CudaMemoryManager::MakeDeviceMemory(
 
 std::shared_ptr<void> CudaMemoryManager::AllocSharedPtr(size_t size,
                                                         uint32_t mem_flags) {
+  if (mem_pool_ == nullptr) {
+    MBLOG_ERROR << "cuda memory is not init.";
+    return nullptr;
+  }
+
   return mem_pool_->AllocSharedPtr(size);
 }
 
 void *CudaMemoryManager::Malloc(size_t size, uint32_t mem_flags) {
+  if (mem_pool_ == nullptr) {
+    MBLOG_ERROR << "cuda memory is not init.";
+    return nullptr;
+  }
+
   return mem_pool_->MemAlloc(size);
 };
 
 void CudaMemoryManager::Free(void *mem_ptr, uint32_t mem_flags) {
+  if (mem_pool_ == nullptr) {
+    MBLOG_ERROR << "cuda memory is not init.";
+    return;
+  }
+
   mem_pool_->MemFree(mem_ptr);
 }
 

@@ -29,6 +29,11 @@ void *MemoryPoolBase::MemAlloc(size_t size) { return malloc(size); }
 
 void MemoryPoolBase::MemFree(void *ptr) { free(ptr); }
 
+std::map<MemoryPoolBase *, std::weak_ptr<MemoryPoolBase>>
+    MemoryPoolBase::pool_list_;
+
+std::mutex MemoryPoolBase::pool_list_lock_;
+
 std::shared_ptr<void> MemoryPoolBase::AllocSharedPtr(size_t size) {
   std::shared_ptr<void> ret = nullptr;
 
@@ -106,17 +111,30 @@ std::vector<std::shared_ptr<SlabCache>> MemoryPoolBase::GetSlabCaches() {
 
 void MemoryPoolBase::DestroySlabCache() { slab_caches_.clear(); }
 
-void MemoryPoolBase::RegisterCollector(const std::string &name) {
-  GetInstance()->AddObject(name, shared_from_this());
+MemoryPoolBase::MemoryPoolBase(std::string name)
+    : pool_name_(std::move(name)) {}
+
+MemoryPoolBase::~MemoryPoolBase() {
+  std::lock_guard<std::mutex> lock(pool_list_lock_);
+  pool_list_.erase(this);
 }
 
-void MemoryPoolBase::UnregisterCollector(const std::string &name) {
-  GetInstance()->RmvObject(name);
-}
+void MemoryPoolBase::SetName(std::string name) { pool_name_ = std::move(name); }
 
-Collector<MemoryPoolBase> *MemoryPoolBase::GetInstance() {
-  static Collector<MemoryPoolBase> instance;
-  return &instance;
+std::string MemoryPoolBase::GetName() { return pool_name_; }
+
+std::vector<std::shared_ptr<MemoryPoolBase>> MemoryPoolBase::GetAllPools() {
+  std::vector<std::shared_ptr<MemoryPoolBase>> result;
+  std::lock_guard<std::mutex> lock(pool_list_lock_);
+  for (const auto &pool : pool_list_) {
+    const auto &p = pool.second.lock();
+    if (p == nullptr) {
+      continue;
+    }
+    result.emplace_back(p);
+  }
+
+  return result;
 }
 
 std::shared_ptr<SlabCache> MemoryPoolBase::MakeSlabCache(size_t obj_size,
@@ -133,6 +151,8 @@ void MemoryPoolBase::AddSlabCache(
               return a->ObjectSize() < b->ObjectSize();
             });
 }
+
+void MemoryPoolBase::ClearAllSlabs() { slab_caches_.clear(); }
 
 size_t MemoryPoolBase::CalSlabSize(size_t object_size) {
   const size_t size_1K = 1024;
@@ -203,6 +223,13 @@ Status MemoryPoolBase::InitSlabCache(int low, int high) {
     }
     slab = MakeSlabCache(obj_size, slab_size);
     AddSlabCache(slab);
+  }
+
+  try {
+    auto shared_this = shared_from_this();
+    pool_list_[this] = shared_this;
+  } catch (const std::exception &e) {
+    MBLOG_INFO << "Skip add memory pool.";
   }
 
   return STATUS_OK;

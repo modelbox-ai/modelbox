@@ -134,26 +134,18 @@ bool ToolCommandSlab::GetMemPools(
     std::vector<std::shared_ptr<modelbox::MemoryPoolBase>> &mempools,
     const std::string &type, const std::string &id) {
   std::shared_ptr<modelbox::MemoryPoolBase> mempool;
-  if (!id.empty()) {
-    std::string name = (type == CPU_MEMPOOL_TYPE) ? type : type + "_" + id;
-    auto res =
-        modelbox::MemoryPoolBase::GetInstance()->GetObject(name, mempool);
-    if (!res) {
-      return false;
-    }
-    mempools.push_back(mempool);
-    return true;
+
+  std::string name = type;
+  if (id.length() > 0) {
+    name += "-" + id;
   }
 
-  int size = modelbox::MemoryPoolBase::GetInstance()->GetObjectSize();
-  for (int i = 0; i < size; ++i) {
-    std::string name =
-        (type == CPU_MEMPOOL_TYPE) ? type : type + "_" + std::to_string(i);
-    auto res =
-        modelbox::MemoryPoolBase::GetInstance()->GetObject(name, mempool);
-    if (res) {
-      mempools.push_back(mempool);
+  for (auto &p : modelbox::MemoryPoolBase::GetAllPools()) {
+    if (p->GetName().find(name) == std::string::npos) {
+      continue;
     }
+
+    mempools.emplace_back(p);
   }
 
   if (mempools.size() == 0) {
@@ -181,8 +173,7 @@ void ToolCommandSlab::DisplaySlabInfo(
               << slabcaches[i]->GetObjNumber() << "\n";
     total_memory += slabcaches[i]->ObjectSize() * slabcaches[i]->GetObjNumber();
   }
-  std::string name = (type == CPU_MEMPOOL_TYPE) ? type : type + "_" + id;
-  TOOL_COUT << "name: " << name
+  TOOL_COUT << "name: " << mem_pool->GetName()
             << "    total_active_objects: " << mem_pool->GetAllActiveObjectNum()
             << "    total_objects: " << mem_pool->GetAllObjectNum()
             << "    total_memory: " << modelbox::GetBytesReadable(total_memory)
