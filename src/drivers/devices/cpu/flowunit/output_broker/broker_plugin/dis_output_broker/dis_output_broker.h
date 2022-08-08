@@ -47,7 +47,7 @@ using DisOutputConfigurations =
 class DisOutputBroker : public OutputBrokerPlugin {
  public:
   DisOutputBroker();
-  virtual ~DisOutputBroker();
+  ~DisOutputBroker() override;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
