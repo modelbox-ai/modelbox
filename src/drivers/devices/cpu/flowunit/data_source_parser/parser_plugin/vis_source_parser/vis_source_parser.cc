@@ -17,6 +17,10 @@
 #include "vis_source_parser.h"
 
 #include <dirent.h>
+#include <modelbox/base/utils.h>
+#include <modelbox/base/uuid.h>
+#include <modelbox/device/cpu/device_cpu.h>
+#include <modelbox/iam_auth.h>
 #include <securec.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -28,19 +32,24 @@
 #include <string>
 
 #include "cpprest/http_client.h"
-#include "iam_auth.h"
-#include "modelbox/base/utils.h"
-#include "modelbox/base/uuid.h"
-#include "modelbox/device/cpu/device_cpu.h"
 #include "signer.h"
+
+#define STREAM_DEFAULT_RETRY_TIMES (-1)
+#define DEFAULT_RETRY_INTERVAL 1000
+#define RETRY_ON 1
 
 VisSourceParser::VisSourceParser() = default;
 VisSourceParser::~VisSourceParser() = default;
 
 modelbox::Status VisSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
-  ReadConf(opts);
-  retry_enabled_ = opts->GetBool("vis_retry_enable", RETRY_ON);
+  retry_enabled_ = opts->GetBool("retry_enable", DATASOURCE_PARSER_RETRY_ON);
+  retry_interval_ = opts->GetInt32("retry_interval_ms",
+                                   DATASOURCE_PARSER_DEFAULT_RETRY_INTERVAL);
+  retry_max_times_ = opts->GetInt32(
+      "retry_count_limit", DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES);
+
+  retry_enabled_ = opts->GetBool("vis_retry_enable", retry_enabled_);
   retry_interval_ = opts->GetInt32("vis_retry_interval_ms", retry_interval_);
   retry_max_times_ = opts->GetInt32("vis_retry_count_limit", retry_max_times_);
   return modelbox::STATUS_OK;
@@ -51,7 +60,7 @@ modelbox::Status VisSourceParser::Deinit() { return modelbox::STATUS_OK; }
 modelbox::Status VisSourceParser::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
-    DestroyUriFunc &destroy_uri_func) {
+    modelbox::DestroyUriFunc &destroy_uri_func) {
   VisInputInfo input_info;
 
   if (GetVisInfo(input_info, config) != modelbox::STATUS_OK) {
@@ -243,6 +252,13 @@ modelbox::Status VisSourceParser::GetTempAKSKInfo(VisInputInfo &input_info) {
   input_info.ak = credential.user_ak;
   input_info.sk = credential.user_sk;
   input_info.token = credential.user_secure_token;
+
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status VisSourceParser::GetStreamType(const std::string &config,
+                                                std::string &stream_type) {
+  stream_type = "stream";
 
   return modelbox::STATUS_OK;
 }

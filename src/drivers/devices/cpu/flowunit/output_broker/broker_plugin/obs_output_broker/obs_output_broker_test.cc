@@ -29,7 +29,7 @@
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "iam_auth.h"
+#include "modelbox/iam_auth.h"
 
 using ObsOutputDataPack = struct _OutputDataPack {
   std::string output_data;

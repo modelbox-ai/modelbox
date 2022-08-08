@@ -18,10 +18,11 @@
 #define MODELBOX_FLOWUNIT_IAM_AUTH_H_
 
 #include <modelbox/base/status.h>
+#include <modelbox/token_header.h>
 
+#include <functional>
 #include <memory>
 
-#include "token_manager.h"
 namespace modelbox {
 /**
  * @brief
@@ -30,6 +31,9 @@ namespace modelbox {
  */
 class IAMAuth {
  public:
+  IAMAuth() = default;
+  ~IAMAuth() = default;
+
   /*
    * @brief get iamauth instance
    * @return iamauth instance
@@ -50,8 +54,8 @@ class IAMAuth {
 
   /**
    * @brief Set Consignee info: ak, sk, domain_id and project_id
-   * @param ak - in, access key for vas
-   * @param sk - in, secret key for vas
+   * @param service_ak - in, access key for vas
+   * @param service_sk - in, secret key for vas
    * @param domain_id - in, domain id
    * @param project_id - in, project id
    * @return successful or fault
@@ -65,6 +69,7 @@ class IAMAuth {
    * user agency Project credential to access user cloud resource
    * @param agency_user_credential - out, agency credential
    * @param agency_info - in, agency info
+   * @param user_id - in, user id
    * @return successful or fault
    */
   modelbox::Status GetUserAgencyProjectCredential(
@@ -74,7 +79,7 @@ class IAMAuth {
   /**
    * @brief If service cert has been set, then you can get
    * user agency Project token to access user cloud resource
-   * @param agency_project_token - out, agency project token
+   * @param agency_user_token - out, agency user token
    * @param agency_info - in, agency info
    * @param project_info - in, project info
    * @return successful or fault
@@ -109,26 +114,15 @@ class IAMAuth {
 
   /**
    * @brief Save vas token
-   * @param xrole_name - in
    * @param token - in, vas token from iva
    */
   void SetAgentToken(const AgentToken &token);
 
   /**
-   * @brif set update token callback function
+   * @brief set update token callback function
    * @param callback -in
    */
   void SetUpdateAgentTokenCallBack(std::function<void()> &callback);
-
-  virtual ~IAMAuth() = default;
-
- private:
-  IAMAuth() = default;
-
-  std::shared_ptr<TokenManager> token_manager_{
-      std::make_shared<TokenManager>()};
 };
-
 }  // namespace modelbox
-
 #endif  // MODELBOX_FLOWUNIT_IAM_AUTH_H_

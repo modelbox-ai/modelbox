@@ -20,7 +20,7 @@
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
 
-#include "data_source_parser_plugin.h"
+#include <modelbox/data_source_parser_plugin.h>
 #include "eSDKOBS.h"
 
 #define OBS_TEMP_PATH "/tmp/ObsDownload/"
@@ -43,7 +43,7 @@ typedef struct tag_OBSDownloadInfo {
   std::string file_local_path;  // local path of the downloaded file
 } OBSDownloadInfo;
 
-class ObsSourceParser : public DataSourceParserPlugin {
+class ObsSourceParser : public modelbox::DataSourceParserPlugin {
  public:
   ObsSourceParser();
   ~ObsSourceParser() override;
@@ -56,7 +56,7 @@ class ObsSourceParser : public DataSourceParserPlugin {
   modelbox::Status Parse(
       const std::shared_ptr<modelbox::SessionContext> &session_context,
       const std::string &config, std::string &uri,
-      DestroyUriFunc &destroy_uri_func) override;
+      modelbox::DestroyUriFunc &destroy_uri_func) override;
   modelbox::Status GetStreamType(const std::string &config,
                                  std::string &stream_type) override;
 

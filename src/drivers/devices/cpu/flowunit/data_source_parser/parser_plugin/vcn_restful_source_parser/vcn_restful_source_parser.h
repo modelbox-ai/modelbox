@@ -19,8 +19,8 @@
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
+#include <modelbox/data_source_parser_plugin.h>
 
-#include "data_source_parser_plugin.h"
 #include "vcn_restful_client.h"
 
 constexpr const char *DRIVER_NAME = "vcn_restful";
@@ -28,7 +28,7 @@ constexpr const char *DRIVER_DESC =
     "A VCN restful data source parser plugin on CPU";
 constexpr const char *DRIVER_TYPE = "cpu";
 
-class VcnRestfulSourceParser : public DataSourceParserPlugin {
+class VcnRestfulSourceParser : public modelbox::DataSourceParserPlugin {
  public:
   VcnRestfulSourceParser() = default;
   ~VcnRestfulSourceParser() override = default;
@@ -41,7 +41,10 @@ class VcnRestfulSourceParser : public DataSourceParserPlugin {
   modelbox::Status Parse(
       const std::shared_ptr<modelbox::SessionContext> &session_context,
       const std::string &config, std::string &uri,
-      DestroyUriFunc &destroy_uri_func) override;
+      modelbox::DestroyUriFunc &destroy_uri_func) override;
+
+  modelbox::Status GetStreamType(const std::string &config,
+                                 std::string &stream_type) override;
 
  private:
   int32_t keep_alive_interval_{KEEP_ALIVE_INTERVAL_DEFAULT_SEC};

@@ -54,9 +54,6 @@ constexpr const char *DEMUX_TIMER_TASK = "demux_timer_task";
 
 enum DemuxStatus { DEMUX_FAIL = 0, DEMUX_SUCCESS = 1 };
 
-#define RETRY_ON 1
-#define RETRY_OFF 0
-
 class VideoDemuxerFlowUnit
     : public modelbox::FlowUnit,
       public std::enable_shared_from_this<VideoDemuxerFlowUnit> {

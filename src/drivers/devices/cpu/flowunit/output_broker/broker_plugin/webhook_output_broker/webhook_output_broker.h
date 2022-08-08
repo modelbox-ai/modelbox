@@ -22,7 +22,7 @@
 #include <modelbox/base/status.h>
  
 #include "cpprest/http_client.h"
-#include "output_broker_plugin.h"
+#include <modelbox/output_broker_plugin.h>
  
 constexpr const char *DRIVER_NAME = "webhook";
 constexpr const char *DRIVER_DESC = "A webhook output broker plugin on CPU";
@@ -33,7 +33,7 @@ typedef struct tag_WebhookOutputInfo {
   std::map<std::string, std::string> headers;
 }WebhookOutputInfo;
 
-class WebhookOutputBroker : public OutputBrokerPlugin {
+class WebhookOutputBroker : public modelbox::OutputBrokerPlugin {
  public:
   WebhookOutputBroker();
 
@@ -44,19 +44,19 @@ class WebhookOutputBroker : public OutputBrokerPlugin {
  
   modelbox::Status Deinit() override;
  
-  std::shared_ptr<OutputBrokerHandle> Open(const std::string &config) override;
+  std::shared_ptr<modelbox::OutputBrokerHandle> Open(const std::string &config) override;
  
-  modelbox::Status Write(const std::shared_ptr<OutputBrokerHandle> &handle,
+  modelbox::Status Write(const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
                        const std::shared_ptr<modelbox::Buffer> &buffer) override;
  
   modelbox::Status Sync(
-      const std::shared_ptr<OutputBrokerHandle> &handle) override;
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) override;
  
   modelbox::Status Close(
-      const std::shared_ptr<OutputBrokerHandle> &handle) override;
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) override;
  
  private:
-  modelbox::Status ParseConfig(const std::shared_ptr<OutputBrokerHandle> &handle,
+  modelbox::Status ParseConfig(const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
                              const std::string &config);
   std::map<std::string, std::shared_ptr<WebhookOutputInfo>> output_configs_;
   std::mutex output_configs_lock_;

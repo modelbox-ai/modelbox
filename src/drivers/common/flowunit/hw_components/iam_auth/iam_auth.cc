@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-#include "iam_auth.h"
+#include <modelbox/base/log.h>
+#include <modelbox/iam_auth.h>
 
-#include "modelbox/base/log.h"
+#include "token_manager.h"
 namespace modelbox {
+
+static std::shared_ptr<TokenManager> token_manager_ =
+    std::make_shared<TokenManager>();
 
 std::shared_ptr<IAMAuth> IAMAuth::GetInstance() {
   static std::shared_ptr<IAMAuth> instance(new IAMAuth());
@@ -38,6 +42,7 @@ modelbox::Status IAMAuth::GetUserAgencyProjectCredential(
   if (agency_info.user_domain_name.empty()) {
     if (modelbox::STATUS_OK != token_manager_->GetPersistUserAgencyCredential(
                                    agency_user_credential, user_id)) {
+      MBLOG_ERROR << "failed to get user credential info, user_id: " << user_id;
       return modelbox::STATUS_FAULT;
     }
     return modelbox::STATUS_OK;

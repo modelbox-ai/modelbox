@@ -20,20 +20,23 @@ project(example)
 
 # 替换的环境变量
 set(THIRDPARTY_DOWNLOAD_DIR @THIRDPARTY_DOWNLOAD_DIR@)
+set(WITH_TEST @WITH_TEST@)
 
 # 预先下载代码库列表，此处仅包含需要使用ADD_SUBDIRECTORY添加的外部项目。
 include(ExternalProject)
 find_package(Git)
 
 # 下载googletest
-ExternalProject_Add(
-  GoogleTest
-  URL               https://github.com/google/googletest/archive/refs/tags/release-1.10.0.zip
-  SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/googletest
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND     ""
-  INSTALL_COMMAND   ""
-  TEST_COMMAND      ""
-)
+if (${WITH_TEST})
+  ExternalProject_Add(
+    GoogleTest
+    URL               https://github.com/google/googletest/archive/refs/tags/release-1.10.0.zip
+    SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/googletest
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND     ""
+    INSTALL_COMMAND   ""
+    TEST_COMMAND      ""
+  )
+endif()
 
 

@@ -22,33 +22,34 @@
 
 #include "modelbox/device/cpu/device_cpu.h"
 #define RETRY_PARAMS_NOT_SET (-2)
-#define FILE_DEFAULT_RETRY_TIMES 10
-#define STREAM_DEFAULT_RETRY_TIMES (-1)
-#define DEFAULT_RETRY_INTERVAL 1000
 
 UrlSourceParser::UrlSourceParser() = default;
 UrlSourceParser::~UrlSourceParser() = default;
 
 modelbox::Status UrlSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
-  ReadConf(opts);
-  retry_enabled_ = opts->GetBool("url_retry_enable", RETRY_ON);
-  retry_interval_ =
-      opts->GetInt32("url_retry_interval_ms", DEFAULT_RETRY_INTERVAL);
+  retry_enabled_ = opts->GetBool("retry_enable", DATASOURCE_PARSER_RETRY_ON);
+  retry_interval_ = opts->GetInt32("retry_interval_ms",
+                                   DATASOURCE_PARSER_DEFAULT_RETRY_INTERVAL);
+  retry_max_times_ = opts->GetInt32("retry_count_limit", RETRY_PARAMS_NOT_SET);
+
+  retry_enabled_ = opts->GetBool("url_retry_enable", retry_enabled_);
+  retry_interval_ = opts->GetInt32("url_retry_interval_ms", retry_interval_);
   file_retry_interval_ =
-      opts->GetInt32("url_file_retry_interval_ms", DEFAULT_RETRY_INTERVAL);
+      opts->GetInt32("url_file_retry_interval_ms", retry_interval_);
   stream_retry_interval_ =
-      opts->GetInt32("url_stream_retry_interval_ms", DEFAULT_RETRY_INTERVAL);
-  retry_max_times_ =
-      opts->GetInt32("url_retry_count_limit", RETRY_PARAMS_NOT_SET);
-  file_retry_times_ = opts->GetInt32("url_file_retry_count_limit",
-                                     retry_max_times_ == RETRY_PARAMS_NOT_SET
-                                         ? FILE_DEFAULT_RETRY_TIMES
-                                         : retry_max_times_);
-  stream_retry_times_ = opts->GetInt32("url_stream_retry_count_limit",
-                                       retry_max_times_ == RETRY_PARAMS_NOT_SET
-                                           ? STREAM_DEFAULT_RETRY_TIMES
-                                           : retry_max_times_);
+      opts->GetInt32("url_stream_retry_interval_ms", retry_interval_);
+  retry_max_times_ = opts->GetInt32("url_retry_count_limit", retry_max_times_);
+  file_retry_times_ =
+      opts->GetInt32("url_file_retry_count_limit",
+                     retry_max_times_ == RETRY_PARAMS_NOT_SET
+                         ? DATASOURCE_PARSER_FILE_DEFAULT_RETRY_TIMES
+                         : retry_max_times_);
+  stream_retry_times_ =
+      opts->GetInt32("url_stream_retry_count_limit",
+                     retry_max_times_ == RETRY_PARAMS_NOT_SET
+                         ? DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES
+                         : retry_max_times_);
   return modelbox::STATUS_OK;
 }
 
@@ -81,7 +82,7 @@ modelbox::Status UrlSourceParser::GetStreamType(const std::string &config,
 modelbox::Status UrlSourceParser::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
-    DestroyUriFunc &destroy_uri_func) {
+    modelbox::DestroyUriFunc &destroy_uri_func) {
   nlohmann::json json;
   std::string url_type;
   if (GetStreamType(config, url_type) != modelbox::STATUS_OK) {

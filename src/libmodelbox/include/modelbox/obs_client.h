@@ -49,7 +49,6 @@ class ObsClient {
    * @return  Pointer to an ObsClient object.
    *          Notes: 1. return nullptr if it's failed to new the object;
    *                 2. return nullptr if it's failed to initialize the OBS SDK
-   * .
    */
   static std::shared_ptr<ObsClient> GetInstance();
 

@@ -28,7 +28,7 @@
 #include "modelbox/base/timer.h"
 #include "modelbox/buffer.h"
 #include "modelbox/flowunit.h"
-#include "output_broker_plugin.h"
+#include <modelbox/output_broker_plugin.h>
 
 constexpr const char *FLOWUNIT_NAME = "output_broker";
 constexpr const char *FLOWUNIT_TYPE = "cpu";
@@ -77,9 +77,9 @@ class BrokerDataQueue {
 
 class BrokerInstance {
  public:
-  BrokerInstance(std::shared_ptr<OutputBrokerPlugin> &plugin,
+  BrokerInstance(std::shared_ptr<modelbox::OutputBrokerPlugin> &plugin,
                  const std::string &name,
-                 std::shared_ptr<OutputBrokerHandle> &handle,
+                 std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
                  size_t async_queue_size);
 
   virtual ~BrokerInstance();
@@ -101,9 +101,9 @@ class BrokerInstance {
  private:
   void UpdateInstaceState(modelbox::Status write_result);
 
-  std::shared_ptr<OutputBrokerPlugin> plugin_;
+  std::shared_ptr<modelbox::OutputBrokerPlugin> plugin_;
   std::string name_;
-  std::shared_ptr<OutputBrokerHandle> handle_;
+  std::shared_ptr<modelbox::OutputBrokerHandle> handle_;
   BrokerDataQueue data_queue_;
 
   size_t send_interval_{0};          // State of instance
@@ -167,10 +167,10 @@ class OutputBrokerFlowUnit : public modelbox::FlowUnit {
                  std::shared_ptr<BrokerNames> &broker_names,
                  const nlohmann::json &broker_json);
 
-  std::shared_ptr<OutputBrokerPlugin> GetPlugin(const std::string &type);
+  std::shared_ptr<modelbox::OutputBrokerPlugin> GetPlugin(const std::string &type);
 
   std::vector<std::shared_ptr<modelbox::DriverFactory>> factories_;
-  std::map<std::string, std::shared_ptr<OutputBrokerPlugin>> plugins_;
+  std::map<std::string, std::shared_ptr<modelbox::OutputBrokerPlugin>> plugins_;
 
   std::string mode_;
   int64_t retry_count_limit_{0};  // < 0 means unlimited, >= 0 means limited

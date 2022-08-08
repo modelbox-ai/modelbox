@@ -22,10 +22,6 @@
 #include "modelbox/base/config.h"
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
-#include "source_context.h"
-
-DataSourceParserFlowUnit::DataSourceParserFlowUnit() = default;
-DataSourceParserFlowUnit::~DataSourceParserFlowUnit() = default;
 
 modelbox::Status DataSourceParserFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
@@ -41,7 +37,7 @@ modelbox::Status DataSourceParserFlowUnit::Open(
     return modelbox::STATUS_FAULT;
   }
 
-  auto ret = driverutil::GetPlugin<DataSourceParserPlugin>(
+  auto ret = driverutil::GetPlugin<modelbox::DataSourceParserPlugin>(
       DRIVER_CLASS_DATA_SOURCE_PARSER_PLUGIN, drivers, factories_, plugins_);
   if (!ret) {
     return ret;
@@ -125,7 +121,7 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
   }
 
   std::string uri_str;
-  DestroyUriFunc destroy_uri_func;
+  modelbox::DestroyUriFunc destroy_uri_func;
   std::string stream_type;
 
   auto ret = plugin->Parse(session_context, data_source_cfg, uri_str,
@@ -134,12 +130,14 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
     MBLOG_ERROR << "Parse config failed, source uri is empty";
   }
 
-  auto source_context = plugin->GetSourceContext(source_type);
+  std::shared_ptr<modelbox::SourceContext> source_context =
+      std::make_shared<modelbox::SourceContext>(plugin, source_type);
+  source_context->SetRetryParam(plugin->GetRetryEnabled(),
+                                plugin->GetRetryInterval(),
+                                plugin->GetRetryTimes());
   plugin->GetStreamType(data_source_cfg, stream_type);
-  if (source_context) {
-    source_context->SetStreamType(stream_type);
-    source_context->SetSessionContext(session_context);
-  }
+  source_context->SetStreamType(stream_type);
+  source_context->SetSessionContext(session_context);
 
   uri = std::shared_ptr<std::string>(new std::string(uri_str),
                                      [destroy_uri_func](std::string *ptr) {
@@ -151,8 +149,8 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
   return source_context;
 }
 
-std::shared_ptr<DataSourceParserPlugin> DataSourceParserFlowUnit::GetPlugin(
-    const std::string &source_type) {
+std::shared_ptr<modelbox::DataSourceParserPlugin>
+DataSourceParserFlowUnit::GetPlugin(const std::string &source_type) {
   auto item = plugins_.find(source_type);
   if (item == plugins_.end()) {
     return nullptr;

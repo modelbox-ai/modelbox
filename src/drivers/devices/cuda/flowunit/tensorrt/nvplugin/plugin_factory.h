@@ -41,7 +41,6 @@ class YoloPluginFactory : public nvinfer1::IPluginFactory,
  public:
   // NOLINTNEXTLINE
   virtual ~YoloPluginFactory() = default;
-
   inline bool isLeakyRelu(const char *layerName) {
     std::string src(layerName);
     bool LeakyRelu_flag = src.find("leaky", 0) != std::string::npos and
@@ -106,7 +105,8 @@ class YoloPluginFactory : public nvinfer1::IPluginFactory,
     if (isLeakyRelu(layerName)) {
       auto plugin = std::unique_ptr<nvinfer1::plugin::INvPlugin,
                                     void (*)(nvinfer1::plugin::INvPlugin *)>(
-          nvinfer1::plugin::createPReLUPlugin(serialData, serialLength), nvPluginDeleter);
+          nvinfer1::plugin::createPReLUPlugin(serialData, serialLength),
+          nvPluginDeleter);
       mPluginLeakyRelu.emplace_back(std::move(plugin));
       return mPluginLeakyRelu.back().get();
     }

@@ -21,11 +21,14 @@
 #include <modelbox/base/device.h>
 #include <modelbox/base/log.h>
 #include <modelbox/base/status.h>
+#include <modelbox/data_source_parser_plugin.h>
 
 #include "modelbox/data_context.h"
-#include "source_parser.h"
 
 namespace modelbox {
+
+enum RetryStatus { RETRY_NONEED = 0, RETRY_NEED = 1, RETRY_STOP = 2 };
+
 class RetryContext {
  public:
   void SetRetryEnable(int32_t retry_enabled) {
@@ -57,7 +60,7 @@ class RetryContext {
 
 class SourceContext {
  public:
-  SourceContext(std::weak_ptr<SourceParser> /*plugin*/,
+  SourceContext(std::shared_ptr<DataSourceParserPlugin> plugin,
                 std::string plugin_name);
 
   virtual ~SourceContext();
@@ -77,7 +80,7 @@ class SourceContext {
  private:
   std::shared_ptr<modelbox::SessionContext> session_context_;
   std::string data_source_cfg_;
-  std::weak_ptr<SourceParser> plugin_;
+  std::shared_ptr<DataSourceParserPlugin> plugin_;
   modelbox::Status last_status_{modelbox::STATUS_SUCCESS};
   std::string stream_type_;
   RetryContext retry_context_;

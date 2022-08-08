@@ -29,6 +29,10 @@
 #include "modelbox/base/utils.h"
 #include "modelbox/device/cpu/device_cpu.h"
 
+#define STREAM_DEFAULT_RETRY_TIMES (-1)
+#define DEFAULT_RETRY_INTERVAL 1000
+#define RETRY_ON 1
+
 void RemoveFileCallback(std::string uri);
 
 VcnSourceParser::VcnSourceParser() {}
@@ -36,7 +40,11 @@ VcnSourceParser::~VcnSourceParser() {}
 
 modelbox::Status VcnSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
-  ReadConf(opts);
+  retry_enabled_ = opts->GetBool("retry_enable", DATASOURCE_PARSER_RETRY_ON);
+  retry_interval_ = opts->GetInt32("retry_interval_ms",
+                                   DATASOURCE_PARSER_DEFAULT_RETRY_INTERVAL);
+  retry_max_times_ = opts->GetInt32(
+      "retry_count_limit", DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES);
 
   ReadConfVcnCommon(opts, retry_enabled_, retry_interval_, retry_max_times_);
   return modelbox::STATUS_OK;
@@ -80,4 +88,11 @@ modelbox::Status VcnSourceParser::Parse(
 modelbox::Status VcnSourceParser::GetVcnInfo(modelbox::VcnInfo &vcn_info,
                                              const std::string &config) {
   return modelbox::GetVcnInfo(vcn_info, config);
+}
+
+modelbox::Status VcnSourceParser::GetStreamType(const std::string &config,
+                                                std::string &stream_type) {
+  stream_type = "stream";
+
+  return modelbox::STATUS_OK;
 }

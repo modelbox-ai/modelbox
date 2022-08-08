@@ -24,10 +24,17 @@ RestfulSourceParser::~RestfulSourceParser() = default;
 
 modelbox::Status RestfulSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
-  ReadConf(opts);
+  retry_enabled_ = opts->GetBool("retry_enable", DATASOURCE_PARSER_RETRY_ON);
+  retry_interval_ = opts->GetInt32("retry_interval_ms",
+                                   DATASOURCE_PARSER_DEFAULT_RETRY_INTERVAL);
+  retry_max_times_ = opts->GetInt32(
+      "retry_count_limit", DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES);
+
   retry_enabled_ = opts->GetBool("restful_retry_enable", retry_enabled_);
-  retry_interval_ = opts->GetInt32("restful_retry_interval_ms", 1000);
-  retry_max_times_ = opts->GetInt32("restful_retry_count_limit", -1);
+  retry_interval_ =
+      opts->GetInt32("restful_retry_interval_ms", retry_interval_);
+  retry_max_times_ =
+      opts->GetInt32("restful_retry_count_limit", retry_max_times_);
   return modelbox::STATUS_OK;
 }
 
@@ -36,7 +43,7 @@ modelbox::Status RestfulSourceParser::Deinit() { return modelbox::STATUS_OK; }
 modelbox::Status RestfulSourceParser::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
-    DestroyUriFunc &destroy_uri_func) {
+    modelbox::DestroyUriFunc &destroy_uri_func) {
   RestfulInputInfo input_info;
 
   if (GetRestfulInfo(input_info, config) != modelbox::STATUS_OK) {
@@ -193,4 +200,11 @@ modelbox::Status RestfulSourceParser::ProcessRestfulResponse(
                 << ". Http response body: " << resp.extract_string().get();
     return modelbox::STATUS_FAULT;
   }
+}
+
+modelbox::Status RestfulSourceParser::GetStreamType(const std::string &config,
+                                                    std::string &stream_type) {
+  stream_type = "stream";
+
+  return modelbox::STATUS_OK;
 }

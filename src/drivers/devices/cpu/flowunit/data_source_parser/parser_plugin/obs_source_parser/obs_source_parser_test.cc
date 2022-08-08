@@ -27,7 +27,7 @@
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "iam_auth.h"
+#include "modelbox/iam_auth.h"
 
 #define CHECK_SOURCE_OUTPUT_OBS "check_data_source_obs_parser_output"
 

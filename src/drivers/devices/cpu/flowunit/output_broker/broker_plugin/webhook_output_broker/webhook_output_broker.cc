@@ -34,7 +34,7 @@ modelbox::Status WebhookOutputBroker::Init(
 
 modelbox::Status WebhookOutputBroker::Deinit() { return modelbox::STATUS_OK; }
 
-std::shared_ptr<OutputBrokerHandle> WebhookOutputBroker::Open(
+std::shared_ptr<modelbox::OutputBrokerHandle> WebhookOutputBroker::Open(
     const std::string &config) {
   std::string uuid;
   if (modelbox::STATUS_OK != modelbox::GetUUID(&uuid)) {
@@ -42,7 +42,7 @@ std::shared_ptr<OutputBrokerHandle> WebhookOutputBroker::Open(
     return nullptr;
   }
 
-  auto handle = std::make_shared<OutputBrokerHandle>();
+  auto handle = std::make_shared<modelbox::OutputBrokerHandle>();
   handle->broker_id_ = uuid;
 
   if (modelbox::STATUS_OK != ParseConfig(handle, config)) {
@@ -74,7 +74,7 @@ std::shared_ptr<OutputBrokerHandle> WebhookOutputBroker::Open(
 }
 
 modelbox::Status WebhookOutputBroker::Write(
-    const std::shared_ptr<OutputBrokerHandle> &handle,
+    const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
     const std::shared_ptr<modelbox::Buffer> &buffer) {
   if (buffer == nullptr) {
     MBLOG_ERROR << "Invalid buffer: buffer is nullptr!";
@@ -138,12 +138,12 @@ modelbox::Status WebhookOutputBroker::Write(
 }
 
 modelbox::Status WebhookOutputBroker::Sync(
-    const std::shared_ptr<OutputBrokerHandle> &handle) {
+    const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) {
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status WebhookOutputBroker::Close(
-    const std::shared_ptr<OutputBrokerHandle> &handle) {
+    const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) {
   std::unique_lock<std::mutex> guard(output_configs_lock_);
   auto iter = output_configs_.find(handle->broker_id_);
   if (iter == output_configs_.end()) {
@@ -160,7 +160,7 @@ modelbox::Status WebhookOutputBroker::Close(
 }
 
 modelbox::Status WebhookOutputBroker::ParseConfig(
-    const std::shared_ptr<OutputBrokerHandle> &handle,
+    const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
     const std::string &config) {
   nlohmann::json json;
   std::shared_ptr<WebhookOutputInfo> output_info =

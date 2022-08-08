@@ -24,7 +24,7 @@
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "iam_auth.h"
+#include "modelbox/iam_auth.h"
 #include "modelbox/base/log.h"
 #include "modelbox/base/utils.h"
 #include "modelbox/buffer.h"

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "data_source_parser_flowunit.h"
 
 #include <securec.h>
@@ -22,15 +21,15 @@
 #include <functional>
 #include <thread>
 
-#include "modelbox/base/log.h"
-#include "modelbox/base/utils.h"
-#include "modelbox/buffer.h"
 #include "common/mock_cert.h"
 #include "driver_flow_test.h"
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "iam_auth.h"
+#include "modelbox/base/log.h"
+#include "modelbox/base/utils.h"
+#include "modelbox/buffer.h"
+#include "modelbox/iam_auth.h"
 #define _TURN_OFF_PLATFORM_STRING
 #include "cpprest/http_listener.h"
 #include "test/mock/minimodelbox/mockflow.h"
@@ -69,8 +68,8 @@ class DataSourceParserFlowUnitTest : public testing::Test {
   std::shared_ptr<MockFlow> RunDriverFlow(
       const std::string &mock_flowunit_name);
   modelbox::Status SendDataSourceCfg(std::shared_ptr<MockFlow> &driver_flow,
-                                   const std::string &data_source_cfg,
-                                   const std::string &source_type);
+                                     const std::string &data_source_cfg,
+                                     const std::string &source_type);
 
   void GetMockKey(std::string &key, std::string &cert) {
     key = key_;
@@ -303,7 +302,7 @@ void DataSourceParserFlowUnitTest::PreparationToGetCert() {
 
   modelbox::IAMAuth::GetInstance()->SetIAMHostAddress(iam_host);
   if (modelbox::STATUS_OK != modelbox::IAMAuth::GetInstance()->SetConsigneeInfo(
-                               ak, sk, domain_id, project_id)) {
+                                 ak, sk, domain_id, project_id)) {
     MBLOG_ERROR << "set Consignee failed";
     return;
   }

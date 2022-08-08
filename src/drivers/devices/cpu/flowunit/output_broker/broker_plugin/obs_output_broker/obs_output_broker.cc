@@ -20,9 +20,9 @@
 
 #include <nlohmann/json.hpp>
 
-#include "iam_auth.h"
-#include "modelbox/base/uuid.h"
-#include "modelbox/device/cpu/device_cpu.h"
+#include <modelbox/iam_auth.h>
+#include <modelbox/base/uuid.h>
+#include <modelbox/device/cpu/device_cpu.h>
 
 ObsOutputBroker::ObsOutputBroker() = default;
 ObsOutputBroker::~ObsOutputBroker() = default;
@@ -45,7 +45,7 @@ modelbox::Status ObsOutputBroker::Init(
 
 modelbox::Status ObsOutputBroker::Deinit() { return modelbox::STATUS_OK; }
 
-std::shared_ptr<OutputBrokerHandle> ObsOutputBroker::Open(
+std::shared_ptr<modelbox::OutputBrokerHandle> ObsOutputBroker::Open(
     const std::string &config) {
   nlohmann::json config_json;
   std::shared_ptr<OBSOutputInfo> output_info =
@@ -103,7 +103,7 @@ std::shared_ptr<OutputBrokerHandle> ObsOutputBroker::Open(
   }
   output_info->file_key_index = 0;
 
-  auto handle = std::make_shared<OutputBrokerHandle>();
+  auto handle = std::make_shared<modelbox::OutputBrokerHandle>();
   std::string uuid;
   if (modelbox::STATUS_OK != modelbox::GetUUID(&uuid)) {
     MBLOG_ERROR << "Failed to generate a uuid for the OBS output broker!";
@@ -117,7 +117,7 @@ std::shared_ptr<OutputBrokerHandle> ObsOutputBroker::Open(
 }
 
 modelbox::Status ObsOutputBroker::Write(
-    const std::shared_ptr<OutputBrokerHandle> &handle,
+    const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
     const std::shared_ptr<modelbox::Buffer> &buffer) {
   size_t data_size = buffer->GetBytes();
   auto *data = const_cast<char *>((const char *)buffer->ConstData());
@@ -182,12 +182,12 @@ modelbox::Status ObsOutputBroker::Write(
 }
 
 modelbox::Status ObsOutputBroker::Sync(
-    const std::shared_ptr<OutputBrokerHandle> &handle) {
+    const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) {
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status ObsOutputBroker::Close(
-    const std::shared_ptr<OutputBrokerHandle> &handle) {
+    const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) {
   std::unique_lock<std::mutex> lock(output_cfgs_mutex_);
   auto iter = output_configs_.find(handle->broker_id_);
   if (iter == output_configs_.end()) {
