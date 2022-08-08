@@ -307,15 +307,14 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
     std::shared_ptr<nvinfer1::INetworkDefinition>& network) {
 #ifndef TENSORRT8
   // parse the caffe model to populate the network, then set the outputs
-  std::shared_ptr<ICaffeParser> parser =
-      TensorRTInferObject(createCaffeParser());
+  auto parser = TensorRTInferObject(nvcaffeparser1::createCaffeParser());
   if (parser == nullptr) {
     auto err_msg = "create parser from caffe model failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  const IBlobNameToTensor* blobNameToTensor = nullptr;
+  const nvcaffeparser1::IBlobNameToTensor* blobNameToTensor = nullptr;
   auto drivers_ptr = GetBindDevice()->GetDeviceManager()->GetDrivers();
 
   ModelDecryption deploy_decrypt;
@@ -343,12 +342,14 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
     blobNameToTensor = parser->parseBuffers(
         (const char*)deployBuf.get(), (size_t)deploy_len,
         modelBuf ? (const char*)modelBuf.get() : nullptr, (size_t)deploy_len,
-        *network, params_.fp16 ? DataType::kHALF : DataType::kFLOAT);
+        *network,
+        params_.fp16 ? nvinfer1::DataType::kHALF : nvinfer1::DataType::kFLOAT);
   } else {
     blobNameToTensor = parser->parse(
         params_.deploy_file.c_str(),
         params_.model_file.empty() ? nullptr : params_.model_file.c_str(),
-        *network, params_.fp16 ? DataType::kHALF : DataType::kFLOAT);
+        *network,
+        params_.fp16 ? nvinfer1::DataType::kHALF : nvinfer1::DataType::kFLOAT);
   }
   if (!blobNameToTensor) {
     return {modelbox::STATUS_FAULT, "parser caffe model failed."};
@@ -361,7 +362,8 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
       return {modelbox::STATUS_FAULT, "get input failed"};
     }
 
-    Dims3 dims = static_cast<Dims3&&>(input->getDimensions());
+    nvinfer1::Dims3 dims =
+        static_cast<nvinfer1::Dims3&&>(input->getDimensions());
     input_dims_.insert(std::make_pair(input->getName(), dims));
   }
 
@@ -401,7 +403,7 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
     std::shared_ptr<nvinfer1::INetworkDefinition>& network) {
 #ifndef TENSORRT8
   // parse the uff model to populate the network, then set the outputs
-  std::shared_ptr<IUffParser> parser = TensorRTInferObject(createUffParser());
+  auto parser = TensorRTInferObject(nvuffparser::createUffParser());
   if (parser == nullptr) {
     auto err_msg = "create parser from uff model engine failed.";
     MBLOG_ERROR << err_msg;
@@ -421,7 +423,7 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
   // TODO set nhwc or nchw
   for (auto& input_item : params_.uff_input_list) {
     if (!parser->registerInput(input_item.first.c_str(), *(input_item.second),
-                               UffInputOrder::kNCHW)) {
+                               nvuffparser::UffInputOrder::kNCHW)) {
       auto err_msg =
           "Failed to register input " + input_item.first + " in uff file.";
       return {modelbox::STATUS_FAULT, err_msg};
@@ -438,14 +440,16 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
     std::shared_ptr<uint8_t> modelBuf =
         uff_decrypt.GetModelSharedBuffer(model_len);
     if (modelBuf) {
-      parseRet = parser->parseBuffer(
-          (const char*)modelBuf.get(), (size_t)model_len, *network,
-          params_.fp16 ? DataType::kHALF : DataType::kFLOAT);
+      parseRet = parser->parseBuffer((const char*)modelBuf.get(),
+                                     (size_t)model_len, *network,
+                                     params_.fp16 ? nvinfer1::DataType::kHALF
+                                                  : nvinfer1::DataType::kFLOAT);
     }
   } else if (uff_decrypt.GetModelState() ==
              ModelDecryption::MODEL_STATE_PLAIN) {
-    parseRet = parser->parse(params_.uff_file.c_str(), *network,
-                             params_.fp16 ? DataType::kHALF : DataType::kFLOAT);
+    parseRet = parser->parse(
+        params_.uff_file.c_str(), *network,
+        params_.fp16 ? nvinfer1::DataType::kHALF : nvinfer1::DataType::kFLOAT);
   }
   if (!parseRet) {
     return {modelbox::STATUS_FAULT, "parser uff model failed."};
@@ -458,7 +462,8 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
       return {modelbox::STATUS_FAULT, "get input failed"};
     }
 
-    Dims3 dims = static_cast<Dims3&&>(input->getDimensions());
+    nvinfer1::Dims3 dims =
+        static_cast<nvinfer1::Dims3&&>(input->getDimensions());
     input_dims_.insert(std::make_pair(input->getName(), dims));
   }
 

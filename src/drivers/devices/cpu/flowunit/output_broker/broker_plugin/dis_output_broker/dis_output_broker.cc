@@ -79,7 +79,7 @@ modelbox::Status DisOutputBroker::Deinit() {
 std::shared_ptr<OutputBrokerHandle> DisOutputBroker::Open(
     const std::string &config) {
   std::string uuid;
-  if (modelbox::STATUS_OK != GetUUID(&uuid)) {
+  if (modelbox::STATUS_OK != modelbox::GetUUID(&uuid)) {
     MBLOG_ERROR << "Failed to generate a uuid for the dis output broker!";
     return nullptr;
   }
