@@ -68,7 +68,6 @@ target_link_libraries(unit gmock_main)
 target_link_libraries(unit ${MOCKFLOW_LIB})
 target_link_libraries(unit ${TEST_LINK_LIBRARIES})
 target_link_libraries(unit ${LIBMODELBOX_SHARED})
-target_link_libraries(unit ${MODELBOX_IVA_PLUGIN})
 target_link_libraries(unit ${DUKTAPE_LIBRARIES})
 
 add_custom_target(unittest-modelbox

@@ -14,32 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_RESTFUL_CPU_H_
-#define MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_RESTFUL_CPU_H_
+#ifndef MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_EXAMPLE_CPU_H_
+#define MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_EXAMPLE_CPU_H_
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
-#define _TURN_OFF_PLATFORM_STRING
 #include <modelbox/data_source_parser_plugin.h>
 
-#include "cpprest/http_client.h"
-
-constexpr const char *DRIVER_NAME = "restful";
-constexpr const char *DRIVER_DESC =
-    "An restful data source parser plugin on CPU";
+constexpr const char *DRIVER_NAME = "example";
+constexpr const char *DRIVER_DESC = "A data source parser plugin on CPU";
 constexpr const char *DRIVER_TYPE = "cpu";
 
-typedef struct tag_RestfulInputInfo {
-  std::string encode_full_url;
-  web::http::http_headers headers;
-  std::string response_url_position;
-  std::string response_body;
-} RestfulInputInfo;
-
-class RestfulSourceParser : public modelbox::DataSourceParserPlugin {
+class ExampleSourceParser : public modelbox::DataSourceParserPlugin {
  public:
-  RestfulSourceParser();
-  ~RestfulSourceParser() override;
+  ExampleSourceParser() = default;
+  virtual ~ExampleSourceParser() = default;
 
   modelbox::Status Init(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -53,27 +42,18 @@ class RestfulSourceParser : public modelbox::DataSourceParserPlugin {
 
   modelbox::Status GetStreamType(const std::string &config,
                                  std::string &stream_type) override;
-
- private:
-  modelbox::Status GetRestfulInfo(RestfulInputInfo &input_info,
-                                  const std::string &config);
-  modelbox::Status SendRestfulRequest(RestfulInputInfo &input_info,
-                                      web::http::http_response &resp);
-  modelbox::Status ProcessRestfulResponse(RestfulInputInfo &input_info,
-                                          web::http::http_response &resp,
-                                          std::string &uri);
 };
 
-class RestfulSourceParserFactory : public modelbox::DriverFactory {
+class ExampleSourceParserFactory : public modelbox::DriverFactory {
  public:
-  RestfulSourceParserFactory() = default;
-  ~RestfulSourceParserFactory() override = default;
+  ExampleSourceParserFactory() = default;
+  virtual ~ExampleSourceParserFactory() = default;
 
   std::shared_ptr<modelbox::Driver> GetDriver() override {
     std::shared_ptr<modelbox::Driver> parser =
-        std::make_shared<RestfulSourceParser>();
+        std::make_shared<ExampleSourceParser>();
     return parser;
   }
 };
 
-#endif  // MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_RESTFUL_CPU_H_
+#endif  // MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_EXAMPLE_CPU_H_

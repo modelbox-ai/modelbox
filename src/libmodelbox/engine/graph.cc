@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/graph.h"
+
+#include <utility>
 
 #include "modelbox/base/log.h"
 #include "modelbox/base/uuid.h"
@@ -151,56 +151,56 @@ Status Graph::Build(const std::shared_ptr<GCGraph> &g) {
   // build node and add link
   Status status = BuildGraph(g);
   if (!status) {
-    const auto *msg = "build graph from config fail.";
+    const auto *msg = "build graph failed, please check graph config.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = IsValidGraph();
   if (!status) {
-    const auto *msg = "invalid graph.";
+    const auto *msg = "invalid graph, please check graph config.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = FindLoopStructure();
   if (!status) {
-    const auto *msg = "loop node is illegal.";
+    const auto *msg = "loop node is illegal, please check graph config.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = GenerateTopology();
   if (!status) {
-    const auto *msg = "generate topology fail.";
+    const auto *msg = "generate topology fail, please check graph config.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = UpdatePriority();
   if (!status) {
-    const auto *msg = "update proiority fail.";
+    const auto *msg = "update proiority fail, please check graph config.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = InitPort();
   if (!status) {
-    const auto *msg = "init port fail.";
+    const auto *msg = "init port fail, please check graph config.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = CheckLoopStructureNode();
   if (!status) {
-    const auto *msg = "check loop node fail.";
+    const auto *msg = "check loop node fail, please check graph config.";
     auto ret = Status(status, msg);
     return ret;
   }
 
   status = CheckGraph();
   if (!status) {
-    const auto *msg = "check graph failed.";
+    const auto *msg = "check graph failed, please check graph config.";
     auto ret = Status(status, msg);
     return ret;
   }
@@ -642,8 +642,7 @@ Status Graph::BuildNodes(const std::shared_ptr<GCGraph> &g) {
     auto status = BuildNode(g, gcnode, strict);
     if (!status) {
       MBLOG_ERROR << status;
-      auto msg = "build node failed. name: '" + name + "'";
-      return {status, msg};
+      return status;
     }
     MBLOG_INFO << "build node " << name << " success";
   }

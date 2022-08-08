@@ -32,7 +32,7 @@
 #include "flowunit_mockflowunit/flowunit_mockflowunit.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "iam_auth.h"
+#include "modelbox/iam_auth.h"
 #include "test/mock/minimodelbox/mockflow.h"
 
 namespace modelbox {

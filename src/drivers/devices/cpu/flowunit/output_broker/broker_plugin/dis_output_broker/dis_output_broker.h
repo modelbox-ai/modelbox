@@ -22,7 +22,7 @@
 
 #include "dis/dis.h"
 #include "output_broker_flowunit.h"
-#include "output_broker_plugin.h"
+#include <modelbox/output_broker_plugin.h>
 
 constexpr const char *DRIVER_NAME = "dis";
 constexpr const char *DRIVER_DESC = "A dis output broker plugin on CPU";
@@ -44,7 +44,7 @@ typedef struct tag_DisOutputInfo {
 using DisOutputConfigurations =
     std::map<std::string, std::shared_ptr<DisOutputInfo>>;
 
-class DisOutputBroker : public OutputBrokerPlugin {
+class DisOutputBroker : public modelbox::OutputBrokerPlugin {
  public:
   DisOutputBroker();
   ~DisOutputBroker() override;
@@ -54,17 +54,17 @@ class DisOutputBroker : public OutputBrokerPlugin {
 
   modelbox::Status Deinit() override;
 
-  std::shared_ptr<OutputBrokerHandle> Open(const std::string &config) override;
+  std::shared_ptr<modelbox::OutputBrokerHandle> Open(const std::string &config) override;
 
   modelbox::Status Write(
-      const std::shared_ptr<OutputBrokerHandle> &handle,
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
       const std::shared_ptr<modelbox::Buffer> &buffer) override;
 
   modelbox::Status Sync(
-      const std::shared_ptr<OutputBrokerHandle> &handle) override;
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) override;
 
   modelbox::Status Close(
-      const std::shared_ptr<OutputBrokerHandle> &handle) override;
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) override;
 
  private:
   static DISStatus GetUserAuthInfo(char *project_id, char *ak_array,
@@ -72,7 +72,7 @@ class DisOutputBroker : public OutputBrokerPlugin {
   static modelbox::Status GetCertInfo(
       std::shared_ptr<DisOutputInfo> &output_info);
   modelbox::Status ParseConfig(
-      const std::shared_ptr<OutputBrokerHandle> &handle,
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
       const std::string &config);
   static DISStatus PutRecordCallBack(char *error_code, char *error_details,
                                      char *stream_name,

@@ -16,7 +16,7 @@
  
 cmake_minimum_required(VERSION 3.10)
  
-set(PLUGIN_NAME "url_source")
+set(PLUGIN_NAME "url")
  
 project(modelbox-flowunit-${UNIT_DEVICE}-${UNIT_NAME}-${PLUGIN_NAME})
  

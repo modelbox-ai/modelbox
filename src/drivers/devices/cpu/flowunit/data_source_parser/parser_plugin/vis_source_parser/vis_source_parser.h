@@ -19,8 +19,7 @@
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
-
-#include "data_source_parser_plugin.h"
+#include <modelbox/data_source_parser_plugin.h>
 
 constexpr const char *DRIVER_NAME = "vis";
 constexpr const char *DRIVER_DESC = "An vis data source parser plugin on CPU";
@@ -39,7 +38,7 @@ typedef struct tag_VisInputInfo {
   bool cert_flag;
 } VisInputInfo;
 
-class VisSourceParser : public DataSourceParserPlugin {
+class VisSourceParser : public modelbox::DataSourceParserPlugin {
  public:
   VisSourceParser();
   ~VisSourceParser() override;
@@ -52,7 +51,10 @@ class VisSourceParser : public DataSourceParserPlugin {
   modelbox::Status Parse(
       const std::shared_ptr<modelbox::SessionContext> &session_context,
       const std::string &config, std::string &uri,
-      DestroyUriFunc &destroy_uri_func) override;
+      modelbox::DestroyUriFunc &destroy_uri_func) override;
+
+  modelbox::Status GetStreamType(const std::string &config,
+                                 std::string &stream_type) override;
 
  private:
   modelbox::Status GetVisInfo(VisInputInfo &input_info,

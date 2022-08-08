@@ -22,7 +22,7 @@
 
 #include <map>
 
-#include "token_header.h"
+#include <modelbox/token_header.h>
 
 namespace modelbox {
 class TokenManager {

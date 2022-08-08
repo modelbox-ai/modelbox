@@ -21,9 +21,9 @@
 #include <modelbox/base/status.h>
 
 #include "eSDKOBS.h"
-#include "obs_client.h"
+#include <modelbox/obs_client.h>
 #include "output_broker_flowunit.h"
-#include "output_broker_plugin.h"
+#include <modelbox/output_broker_plugin.h>
 
 
 constexpr const char *DRIVER_NAME = "obs";
@@ -50,7 +50,7 @@ typedef struct tag_OBSOutputInfo {
 using ObsOutputConfigurations =
     std::map<std::string, std::shared_ptr<OBSOutputInfo>>;
 
-class ObsOutputBroker : public OutputBrokerPlugin {
+class ObsOutputBroker : public modelbox::OutputBrokerPlugin {
  public:
   ObsOutputBroker();
   ~ObsOutputBroker() override;
@@ -66,7 +66,7 @@ class ObsOutputBroker : public OutputBrokerPlugin {
    * @param config - configurations in json style
    * @return a handle
    */
-  std::shared_ptr<OutputBrokerHandle> Open(const std::string &config) override;
+  std::shared_ptr<modelbox::OutputBrokerHandle> Open(const std::string &config) override;
 
   /**
    * @brief Write data to target output
@@ -76,11 +76,11 @@ class ObsOutputBroker : public OutputBrokerPlugin {
    * @return Successful or not
    */
   modelbox::Status Write(
-      const std::shared_ptr<OutputBrokerHandle> &handle,
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
       const std::shared_ptr<modelbox::Buffer> &buffer) override;
 
   modelbox::Status Sync(
-      const std::shared_ptr<OutputBrokerHandle> &handle) override;
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) override;
 
   /**
    * @brief Remove the configuration
@@ -88,7 +88,7 @@ class ObsOutputBroker : public OutputBrokerPlugin {
    * @return Successful or not
    */
   modelbox::Status Close(
-      const std::shared_ptr<OutputBrokerHandle> &handle) override;
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) override;
 
  private:
   /**

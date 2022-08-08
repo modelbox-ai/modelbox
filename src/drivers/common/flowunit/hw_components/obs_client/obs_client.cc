@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "obs_client.h"
+#include <modelbox/obs_client.h>
 
 #include <securec.h>
 
-#include "iam_auth/iam_auth.h"
-#include "modelbox/base/utils.h"
+#include <modelbox/iam_auth.h>
+#include <modelbox/base/utils.h>
 
 #define OBS_SDK_MAX_KEYS 1000
 #define MAX_RETRY_COUNTS 3

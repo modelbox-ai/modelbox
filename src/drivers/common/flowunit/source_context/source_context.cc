@@ -18,13 +18,9 @@
 
 #include <utility>
 
-#include "source_parser.h"
-
 namespace modelbox {
 
-using DestroyUriFunc = std::function<void(const std::string &uri)>;
-
-SourceContext::SourceContext(std::weak_ptr<SourceParser> plugin,
+SourceContext::SourceContext(std::shared_ptr<DataSourceParserPlugin> plugin,
                              std::string plugin_name)
     : plugin_(std::move(plugin)), plugin_name_(std::move(plugin_name)) {}
 
@@ -35,12 +31,8 @@ std::shared_ptr<std::string> SourceContext::GetSourceURL() {
   std::string uri_str;
   DestroyUriFunc destroy_uri_func;
 
-  auto plugin = plugin_.lock();
-  if (plugin == nullptr) {
-    return nullptr;
-  }
-  auto ret = plugin->Parse(session_context_, data_source_cfg_, uri_str,
-                           destroy_uri_func);
+  auto ret = plugin_->Parse(session_context_, data_source_cfg_, uri_str,
+                            destroy_uri_func);
   if (!ret) {
     MBLOG_ERROR << "Parse config failed, source uri is empty";
     return nullptr;
@@ -58,15 +50,21 @@ std::shared_ptr<std::string> SourceContext::GetSourceURL() {
 }
 
 RetryStatus SourceContext::NeedRetry() {
-  auto plugin = plugin_.lock();
-  if (plugin == nullptr) {
-    MBLOG_WARN << "plugin is null, no need retry";
-    return RETRY_NONEED;
+  retry_context_.RetryTimesInc();
+
+  if (last_status_ == modelbox::STATUS_NODATA && stream_type_ == "file") {
+    return modelbox::RETRY_STOP;
   }
 
-  retry_context_.RetryTimesInc();
-  return plugin->NeedRetry(stream_type_, last_status_,
-                           retry_context_.GetRetryTimes());
+  if (plugin_->GetRetryEnabled() &&
+      ((retry_context_.GetRetryTimes() <= plugin_->GetRetryTimes()) ||
+       (plugin_->GetRetryTimes() == -1))) {
+    return modelbox::RETRY_NEED;
+  }
+  MBLOG_INFO << "retry_enable_: " << plugin_->GetRetryEnabled()
+             << " retry_times: " << retry_context_.GetRetryTimes()
+             << " retry_max_times_: " << plugin_->GetRetryTimes();
+  return modelbox::RETRY_NONEED;
 }
 
 void SourceContext::SetLastProcessStatus(const modelbox::Status &status) {

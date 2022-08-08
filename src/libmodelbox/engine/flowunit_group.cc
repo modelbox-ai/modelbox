@@ -363,10 +363,10 @@ Status FlowUnitGroup::Open(const CreateExternalDataFunc &create_func) {
       MBLOG_WARN << flowunit_desc->GetFlowUnitName() << ":"
                  << flowunit_desc->GetFlowUnitAliasName()
                  << " open failed: " << status;
-      status = {status, "open flowunit " + flowunit_desc->GetFlowUnitName() +
-                            ", type " +
+      status = {status, "open flowunit '" + flowunit_desc->GetFlowUnitName() +
+                            "', type '" +
                             flowunit_desc->GetDriverDesc()->GetType() +
-                            " failed."};
+                            "' failed."};
       break;
     }
 

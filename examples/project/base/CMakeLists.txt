@@ -21,6 +21,8 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "cannot build the project in the source directory! Out-of-source build is enforced!")
 endif()
 
+option(WITH_TEST "build with test" OFF)
+
 set(MODELBOX_PROJECT_VERSION_MAJOR 1)
 set(MODELBOX_PROJECT_VERSION_MINOR 0)
 set(MODELBOX_PROJECT_VERSION_PATCH 0)

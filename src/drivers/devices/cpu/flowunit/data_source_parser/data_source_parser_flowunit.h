@@ -26,9 +26,10 @@
 #include <string>
 #include <vector>
 
-#include "data_source_parser_plugin.h"
 #include "modelbox/buffer.h"
+#include "modelbox/data_source_parser_plugin.h"
 #include "modelbox/flowunit.h"
+#include "source_context.h"
 
 constexpr const char *FLOWUNIT_NAME = "data_source_parser";
 constexpr const char *FLOWUNIT_TYPE = "cpu";
@@ -54,8 +55,8 @@ constexpr const char *PARSER_RETRY_CONTEXT = "source_context";
 
 class DataSourceParserFlowUnit : public modelbox::FlowUnit {
  public:
-  DataSourceParserFlowUnit();
-  ~DataSourceParserFlowUnit() override;
+  DataSourceParserFlowUnit() = default;
+  ~DataSourceParserFlowUnit() override = default;
 
   modelbox::Status Open(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -72,7 +73,7 @@ class DataSourceParserFlowUnit : public modelbox::FlowUnit {
       const std::string &source_type, const std::string &data_source_cfg,
       std::shared_ptr<std::string> &uri);
 
-  std::shared_ptr<DataSourceParserPlugin> GetPlugin(
+  std::shared_ptr<modelbox::DataSourceParserPlugin> GetPlugin(
       const std::string &source_type);
 
   modelbox::Status WriteData(
@@ -82,7 +83,8 @@ class DataSourceParserFlowUnit : public modelbox::FlowUnit {
       std::shared_ptr<modelbox::SourceContext> &source_context);
 
   std::vector<std::shared_ptr<modelbox::DriverFactory>> factories_;
-  std::map<std::string, std::shared_ptr<DataSourceParserPlugin>> plugins_;
+  std::map<std::string, std::shared_ptr<modelbox::DataSourceParserPlugin>>
+      plugins_;
 };
 
 #endif  // MODELBOX_FLOWUNIT_DATA_SOURCE_PARSER_CPU_H_

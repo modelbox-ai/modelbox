@@ -18,7 +18,11 @@
 
 modelbox::Status VcnRestfulSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
-  ReadConf(opts);
+  retry_enabled_ = opts->GetBool("retry_enable", DATASOURCE_PARSER_RETRY_ON);
+  retry_interval_ = opts->GetInt32("retry_interval_ms",
+                                   DATASOURCE_PARSER_DEFAULT_RETRY_INTERVAL);
+  retry_max_times_ = opts->GetInt32(
+      "retry_count_limit", DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES);
 
   ReadConfVcnCommon(opts, retry_enabled_, retry_interval_, retry_max_times_);
 
@@ -34,7 +38,7 @@ modelbox::Status VcnRestfulSourceParser::Deinit() {
 modelbox::Status VcnRestfulSourceParser::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
-    DestroyUriFunc &destroy_uri_func) {
+    modelbox::DestroyUriFunc &destroy_uri_func) {
   modelbox::VcnRestfulInfo vcn_info;
   uri = "";
 
@@ -63,6 +67,13 @@ modelbox::Status VcnRestfulSourceParser::Parse(
   destroy_uri_func = [stream](const std::string &uri) {
     MBLOG_DEBUG << "destory " << uri;
   };
+
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status VcnRestfulSourceParser::GetStreamType(
+    const std::string &config, std::string &stream_type) {
+  stream_type = "stream";
 
   return modelbox::STATUS_OK;
 }

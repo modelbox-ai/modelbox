@@ -19,14 +19,13 @@
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
-
-#include "data_source_parser_plugin.h"
+#include <modelbox/data_source_parser_plugin.h>
 
 constexpr const char *DRIVER_NAME = "url";
 constexpr const char *DRIVER_DESC = "A url data source parser plugin on CPU";
 constexpr const char *DRIVER_TYPE = "cpu";
 
-class UrlSourceParser : public DataSourceParserPlugin {
+class UrlSourceParser : public modelbox::DataSourceParserPlugin {
  public:
   UrlSourceParser();
   ~UrlSourceParser() override;
@@ -39,7 +38,7 @@ class UrlSourceParser : public DataSourceParserPlugin {
   modelbox::Status Parse(
       const std::shared_ptr<modelbox::SessionContext> &session_context,
       const std::string &config, std::string &uri,
-      DestroyUriFunc &destroy_uri_func) override;
+      modelbox::DestroyUriFunc &destroy_uri_func) override;
   modelbox::Status GetStreamType(const std::string &config,
                                  std::string &stream_type) override;
 

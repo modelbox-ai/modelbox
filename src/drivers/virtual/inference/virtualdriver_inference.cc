@@ -375,9 +375,11 @@ VirtualInferenceFlowUnitFactory::VirtualCreateFlowUnit(
     return std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
         ->CreateFlowUnit(unit_name, unit_type);
   }
-  modelbox::StatusError = {modelbox::STATUS_NOTFOUND,
-                           "Cannot found virtual flowunit " + virtual_type +
-                               " for " + unit_name + ":" + unit_type};
+  modelbox::StatusError = {
+      modelbox::STATUS_NOTFOUND,
+      "current environment does not support the inference type: '" +
+          virtual_type + ":" + unit_type + "'"};
+
   return nullptr;
 };
 

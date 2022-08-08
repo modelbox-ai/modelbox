@@ -75,10 +75,10 @@ void BrokerDataQueue::PopIfEqual(
   queue_.pop();
 }
 
-BrokerInstance::BrokerInstance(std::shared_ptr<OutputBrokerPlugin> &plugin,
-                               const std::string &name,
-                               std::shared_ptr<OutputBrokerHandle> &handle,
-                               size_t async_queue_size)
+BrokerInstance::BrokerInstance(std::shared_ptr<modelbox::OutputBrokerPlugin> &plugin,
+               const std::string &name,
+               std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
+               size_t async_queue_size)
     : plugin_(plugin),
       name_(name),
       handle_(handle),
@@ -235,7 +235,7 @@ modelbox::Status OutputBrokerFlowUnit::Open(
     return modelbox::STATUS_FAULT;
   }
 
-  auto ret = driverutil::GetPlugin<OutputBrokerPlugin>(
+  auto ret = driverutil::GetPlugin<modelbox::OutputBrokerPlugin>(
       DRIVER_CLASS_OUTPUT_BROKER_PLUGIN, drivers, factories_, plugins_);
   if (!ret) {
     return ret;
@@ -492,7 +492,7 @@ void OutputBrokerFlowUnit::AddBroker(
   broker_names->push_back(name);
 }
 
-std::shared_ptr<OutputBrokerPlugin> OutputBrokerFlowUnit::GetPlugin(
+std::shared_ptr<modelbox::OutputBrokerPlugin> OutputBrokerFlowUnit::GetPlugin(
     const std::string &type) {
   auto item = plugins_.find(type);
   if (item == plugins_.end()) {

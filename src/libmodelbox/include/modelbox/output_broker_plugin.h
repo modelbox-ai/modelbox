@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_OUTPUT_BROKER_PLUGIN_H_
 #define MODELBOX_FLOWUNIT_OUTPUT_BROKER_PLUGIN_H_
 
@@ -28,31 +27,31 @@
 constexpr const char *DRIVER_CLASS_OUTPUT_BROKER_PLUGIN =
     "DRIVER-OUTPUT-BROKER";
 
+namespace modelbox {
+
 class OutputBrokerHandle {
  public:
   std::string output_broker_type_;
   std::string broker_id_;
 };
 
-class OutputBrokerPlugin : public modelbox::Driver {
+class OutputBrokerPlugin : public Driver {
  public:
-  virtual modelbox::Status Init(
-      const std::shared_ptr<modelbox::Configuration> &opts) = 0;
+  virtual Status Init(const std::shared_ptr<Configuration> &opts) = 0;
 
-  virtual modelbox::Status Deinit() = 0;
+  virtual Status Deinit() = 0;
 
-  virtual std::shared_ptr<OutputBrokerHandle> Open(
+  virtual std::shared_ptr<modelbox::OutputBrokerHandle> Open(
       const std::string &config) = 0;
 
-  virtual modelbox::Status Write(
-      const std::shared_ptr<OutputBrokerHandle> &handle,
-      const std::shared_ptr<modelbox::Buffer> &buffer) = 0;
+  virtual Status Write(const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
+                       const std::shared_ptr<Buffer> &buffer) = 0;
 
-  virtual modelbox::Status Sync(
-      const std::shared_ptr<OutputBrokerHandle> &handle) = 0;
+  virtual Status Sync(const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) = 0;
 
-  virtual modelbox::Status Close(
-      const std::shared_ptr<OutputBrokerHandle> &handle) = 0;
+  virtual Status Close(const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) = 0;
 };
+
+}  // namespace modelbox
 
 #endif  // MODELBOX_FLOWUNIT_OUTPUT_BROKER_PLUGIN_H_

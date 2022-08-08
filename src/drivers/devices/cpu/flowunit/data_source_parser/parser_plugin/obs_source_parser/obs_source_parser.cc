@@ -17,6 +17,11 @@
 #include "obs_source_parser.h"
 
 #include <dirent.h>
+#include <modelbox/base/utils.h>
+#include <modelbox/base/uuid.h>
+#include <modelbox/device/cpu/device_cpu.h>
+#include <modelbox/iam_auth.h>
+#include <modelbox/obs_client.h>
 #include <securec.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -27,15 +32,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "iam_auth.h"
-#include "modelbox/base/utils.h"
-#include "modelbox/base/uuid.h"
-#include "modelbox/device/cpu/device_cpu.h"
-#include "obs_client.h"
 #include "obs_file_handler.h"
-
-#define OBS_RETRY_INTERVAL_DEFALUT 1000
-#define OBS_RETRY_TIMES_DEFALUT 5
 
 #define OBS_STREAM_READ_SIZE_LOW 1
 #define OBS_STREAM_READ_SIZE_NORMAL 5
@@ -48,12 +45,15 @@ ObsSourceParser::~ObsSourceParser() = default;
 
 modelbox::Status ObsSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
-  ReadConf(opts);
+  retry_enabled_ = opts->GetBool("retry_enable", DATASOURCE_PARSER_RETRY_ON);
+  retry_interval_ = opts->GetInt32(
+      "retry_interval_ms", DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES);
+  retry_max_times_ = opts->GetInt32("retry_count_limit",
+                                    DATASOURCE_PARSER_DEFAULT_RETRY_INTERVAL);
+
   retry_enabled_ = opts->GetBool("obs_retry_enable", retry_enabled_);
-  retry_interval_ =
-      opts->GetInt32("obs_retry_interval_ms", OBS_RETRY_INTERVAL_DEFALUT);
-  retry_max_times_ =
-      opts->GetInt32("obs_retry_count_limit", OBS_RETRY_TIMES_DEFALUT);
+  retry_interval_ = opts->GetInt32("obs_retry_interval_ms", retry_interval_);
+  retry_max_times_ = opts->GetInt32("obs_retry_count_limit", retry_max_times_);
   read_type_ = opts->GetString("obs_download_method", "file");
   if (read_type_ != "stream") {
     return modelbox::STATUS_OK;
@@ -74,7 +74,7 @@ modelbox::Status ObsSourceParser::Deinit() { return modelbox::STATUS_OK; }
 modelbox::Status ObsSourceParser::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
-    DestroyUriFunc &destroy_uri_func) {
+    modelbox::DestroyUriFunc &destroy_uri_func) {
   OBSDownloadInfo download_info;
   uri = "";
 

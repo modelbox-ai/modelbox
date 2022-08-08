@@ -24,7 +24,7 @@
 
 #include <string>
 
-#include "token_header.h"
+#include <modelbox/token_header.h>
 #define TOKEN_REQUEST 0
 #define CREDENTIAL_REQUEST 1
 #define ONE_DAY_SECONDS 86400
