@@ -49,9 +49,9 @@ RUN apt update && \
     if [ "${CUDA_VERSION}" = "10.2" ]; then \
         dnn_ver="8.0.0.180-1+cuda10.2"; \
     elif [ "${CUDA_VERSION}" = "11.2" ]; then \
-        dnn_ver="8.4.1.50-1+cuda11.6"; \
+        dnn_ver="8.4.1.50-1+cuda11.6";fi && \
     apt install -y --no-install-recommends \
-        libcudnn8=${dnn_ver};fi && \
+        libcudnn8=${dnn_ver} && \
     if [ -n "${TF_VERSION}" ]; then \
         curl -LO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz && \
         tar zxf libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz -C /usr/local/ && \
@@ -66,7 +66,7 @@ RUN apt update && \
             libnvonnxparsers${trt_ver} \
             libnvparsers${trt_ver} \
             libnvinfer-plugin${trt_ver} \
-            python3-libnvinfer${trt_ver#8}; \
+            python3-libnvinfer=${trt_ver#*=}; \
     elif [ -n "${TORCH_VERSION}" ]; then \
         curl -LO https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-abi-shared-with-deps-1.9.1%2Bcu102.zip && \
         unzip libtorch-*.zip -d /root >/dev/null 2>&1 && \

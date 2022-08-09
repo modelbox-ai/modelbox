@@ -25,7 +25,7 @@ download() {
 }
 
 if [ "$(arch)" == "x86_64" ];then
-    if [ "$VERSION_ID" == "18.04" ];then
+    if [ "$VERSION_ID" == "22.04" ];then
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev-ubuntu.tar.gz
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obssdk_3.22.3_dev-ubuntu.tar.gz
     elif [ "$VERSION_ID" == "20.04" ];then
@@ -38,7 +38,7 @@ if [ "$(arch)" == "x86_64" ];then
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/nlohmann-json_3.7.3.tar.gz
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.tar.gz
 elif [ "$(arch)" == "aarch64" ];then
-    if [ "$VERSION_ID" == "18.04" ];then
+    if [ "$VERSION_ID" == "22.04" ];then
         download http://download.modelbox-ai.com/third-party/aarch64/opencv_4.2.0_dev-ubuntu.tar.gz
         download http://download.modelbox-ai.com/third-party/aarch64/obssdk_3.22.3_dev-ubuntu.tar.gz
     elif [ "$VERSION_ID" == "20.03" ];then

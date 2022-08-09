@@ -18,10 +18,12 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shang
     apt update && apt upgrade -y && \
     apt install -y python3.7-dev python3-pip python3-apt python3-setuptools && \
     apt install -y \
-        dbus systemd systemd-cron iproute2 gnupg2 curl libcurl4-openssl-dev ca-certificates netcat clang \
+        dbus systemd systemd-cron iproute2 gnupg2 curl libcurl4-openssl-dev ca-certificates \
         build-essential unzip ffmpeg sudo bash vim gdb git doxygen autoconf cmake gettext openssh-server \
         pkg-config kmod net-tools pciutils libgtk-3-dev libprotobuf-c-dev protobuf-c-compiler duktape-dev \
-        libssl-dev libcpprest-dev libswscale-dev libavformat-dev graphviz libgraphviz-dev libfuse-dev && \
+        libssl-dev libcpprest-dev libswscale-dev libavformat-dev graphviz libgraphviz-dev libfuse-dev \
+        netcat clang clang-tidy-10 && \
+    ln -sf clang-tidy-10 /usr/bin/clang-tidy && ln -sf run-clang-tidy-10 /usr/bin/run-clang-tidy && \
     rm -f /usr/bin/python3 /usr/bin/python && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3.7 100 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 100 && \
@@ -56,11 +58,12 @@ RUN mkdir -p /root/.pip && \
 
 RUN apt update && \
     if [ "${CUDA_VERSION}" = "10.2" ]; then \
-        dnn_ver="8.0.0.180-1+cuda10.2"; \
+        dnn_ver="8=8.0.0.180-1+cuda10.2"; \
     elif [ "${CUDA_VERSION}" = "11.2" ]; then \
-        dnn_ver="8.4.1.50-1+cuda11.6"; \
+        dnn_ver="8=8.4.1.50-1+cuda11.6";fi && \
     apt install -y --no-install-recommends \
-        libcudnn8-dev=${dnn_ver};fi && \
+        libcudnn${dnn_ver} \
+        libcudnn${dnn_ver%=*}-dev=${dnn_ver#*=} && \
     if [ -n "${TF_VERSION}" ]; then \
         curl -LO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz && \
         tar zxf libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz -C /usr/local/ && \
@@ -71,15 +74,20 @@ RUN apt update && \
         cp -af libtorch/* /usr/local/; \
     elif [ -n "${TRT_VERSION}" ]; then \
         if [ "${TRT_VERSION}" = "7.1.3.4" ]; then \
-            trt_ver="7.1.3-1+cuda10.2"; \
+            trt_ver="7=7.1.3-1+cuda10.2"; \
         elif [ "${TRT_VERSION}" = "8.4.2.4" ]; then \
-            trt_ver="8.4.2-1+cuda11.6";fi && \
+            trt_ver="8=8.4.2-1+cuda11.6";fi && \
         apt install -y --no-install-recommends \
-            libnvinfer-dev=${trt_ver} \
-            libnvonnxparsers-dev=${trt_ver} \
-            libnvparsers-dev=${trt_ver} \
-            libnvinfer-plugin-dev=${trt_ver} \
-            python3-libnvinfer-dev=${trt_ver};fi && \
+            libnvinfer${trt_ver} \
+            libnvinfer-dev=${trt_ver#*=} \
+            libnvparsers${trt_ver} \
+            libnvparsers-dev=${trt_ver#*=} \
+            libnvonnxparsers${trt_ver} \
+            libnvonnxparsers-dev=${trt_ver#*=} \
+            libnvinfer-plugin${trt_ver} \
+            libnvinfer-plugin-dev=${trt_ver#*=} \
+            python3-libnvinfer=${trt_ver#*=} \
+            python3-libnvinfer-dev=${trt_ver#*=};fi && \
     rm -rf /var/lib/apt/lists/* /root/*
 
 RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && \

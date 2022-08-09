@@ -43,9 +43,9 @@ RUN mkdir -p /root/.pip && \
 RUN if [ "${CUDA_VERSION}" = "10.2" ]; then \
         dnn_ver="8.0.0.180-1.cuda10.2"; \
     elif [ "${CUDA_VERSION}" = "11.2" ]; then \
-        dnn_ver="8.4.1.50-1.cuda11.6"; \
+        dnn_ver="8.4.1.50-1.cuda11.6";fi && \
     dnf install -y --nogpgcheck --setopt=obsoletes=0 \
-        libcudnn8-${dnn_ver};fi && \
+        libcudnn8-${dnn_ver} && \
     if [ -n "${TF_VERSION}" ]; then \
         curl -LO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz && \
         tar zxf libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz -C /usr/local/ && \
