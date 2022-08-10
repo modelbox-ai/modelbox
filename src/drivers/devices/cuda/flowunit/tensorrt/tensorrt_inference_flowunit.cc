@@ -575,7 +575,7 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
       return {modelbox::STATUS_FAULT, "get input failed"};
     }
 
-    Dims3 dims = static_cast<Dims3&&>(input->getDimensions());
+    nvinfer1::Dims3 dims = static_cast<nvinfer1::Dims3&&>(input->getDimensions());
     input_dims_.insert(std::make_pair(input->getName(), dims));
   }
 
