@@ -25,6 +25,7 @@ VideoDemuxerFlowUnit::~VideoDemuxerFlowUnit() = default;
 modelbox::Status VideoDemuxerFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   key_frame_only_ = opts->GetBool("key_frame_only", false);
+  queue_size_ = opts->GetUint64("queue_size", queue_size_);
   return modelbox::STATUS_OK;
 }
 modelbox::Status VideoDemuxerFlowUnit::Close() { return modelbox::STATUS_OK; }
@@ -62,15 +63,16 @@ modelbox::Status VideoDemuxerFlowUnit::Reconnect(
 
 modelbox::Status VideoDemuxerFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
-  auto video_demuxer = std::static_pointer_cast<FfmpegVideoDemuxer>(
+  auto demuxer_worker = std::static_pointer_cast<DemuxerWorker>(
       data_ctx->GetPrivate(DEMUXER_CTX));
   modelbox::Status demux_status = modelbox::STATUS_FAULT;
   std::shared_ptr<AVPacket> pkt;
-  if (video_demuxer != nullptr) {
-    demux_status = video_demuxer->Demux(pkt);
+  if (demuxer_worker != nullptr) {
+    demux_status = demuxer_worker->ReadPacket(pkt);
   }
 
   if (demux_status == modelbox::STATUS_OK) {
+    auto video_demuxer = demuxer_worker->GetDemuxer();
     auto ret = WriteData(data_ctx, pkt, video_demuxer);
     if (!ret) {
       return ret;
@@ -86,8 +88,9 @@ modelbox::Status VideoDemuxerFlowUnit::Process(
 
 void VideoDemuxerFlowUnit::WriteEnd(
     std::shared_ptr<modelbox::DataContext> &data_ctx) {
-  auto video_demuxer = std::static_pointer_cast<FfmpegVideoDemuxer>(
+  auto demuxer_worker = std::static_pointer_cast<DemuxerWorker>(
       data_ctx->GetPrivate(DEMUXER_CTX));
+  auto video_demuxer = demuxer_worker->GetDemuxer();
   auto video_packet_output = data_ctx->Output(VIDEO_PACKET_OUTPUT);
   video_packet_output->Build({1});
   auto end_packet = video_packet_output->At(0);
@@ -287,7 +290,16 @@ modelbox::Status VideoDemuxerFlowUnit::InitDemuxer(
       std::static_pointer_cast<std::string>(meta->GetMeta(SOURCE_URL));
   *uri_meta = *source_url;
 
-  data_ctx->SetPrivate(DEMUXER_CTX, video_demuxer);
+  auto is_rtsp = (source_url->find("rtsp://") == 0);
+  auto demuxer_worker =
+      std::make_shared<DemuxerWorker>(is_rtsp, queue_size_, video_demuxer);
+  ret = demuxer_worker->Init();
+  if (ret != modelbox::STATUS_OK) {
+    MBLOG_ERROR << "init demuxer failed, ret " << ret;
+    return ret;
+  }
+
+  data_ctx->SetPrivate(DEMUXER_CTX, demuxer_worker);
   data_ctx->SetPrivate(SOURCE_URL, source_url);
 
   UpdateStatsInfo(data_ctx, video_demuxer);
@@ -321,4 +333,107 @@ MODELBOX_DRIVER_FLOWUNIT(desc) {
   desc.Desc.SetType(FLOWUNIT_TYPE);
   desc.Desc.SetDescription(FLOWUNIT_DESC);
   desc.Desc.SetVersion("1.0.0");
+}
+
+DemuxerWorker::DemuxerWorker(bool is_async, size_t cache_size,
+                             std::shared_ptr<FfmpegVideoDemuxer> demuxer)
+    : is_async_(is_async),
+      cache_size_(cache_size),
+      demuxer_(std::move(demuxer)) {
+  if (cache_size_ < 2) {
+    cache_size_ = 2;
+  }
+}
+
+DemuxerWorker::~DemuxerWorker() {
+  if (demux_thread_ != nullptr) {
+    demux_thread_running_ = false;
+    demux_thread_->join();
+  }
+}
+
+modelbox::Status DemuxerWorker::Init() {
+  if (!is_async_) {
+    return modelbox::STATUS_OK;
+  }
+
+  demux_thread_running_ = true;
+  demux_thread_ = std::make_shared<std::thread>([this]() {
+    while (IsRunning()) {
+      Process();
+    }
+  });
+
+  return modelbox::STATUS_OK;
+}
+
+std::shared_ptr<FfmpegVideoDemuxer> DemuxerWorker::GetDemuxer() const {
+  return demuxer_;
+}
+
+size_t DemuxerWorker::GetDropCount() const { return packet_drop_count_; }
+
+modelbox::Status DemuxerWorker::ReadPacket(
+    std::shared_ptr<AVPacket> &av_packet) {
+  if (!is_async_) {
+    return demuxer_->Demux(av_packet);
+  }
+
+  PopCache(av_packet);
+  if (av_packet == nullptr) {
+    return last_demux_status_;
+  }
+
+  return modelbox::STATUS_OK;
+}
+
+bool DemuxerWorker::IsRunning() const { return demux_thread_running_; }
+
+void DemuxerWorker::Process() {
+  std::shared_ptr<AVPacket> av_packet;
+  last_demux_status_ = demuxer_->Demux(av_packet);
+  if (last_demux_status_ != modelbox::STATUS_OK) {
+    demux_thread_running_ = false;
+    av_packet = nullptr;
+  }
+
+  PushCache(av_packet);
+}
+
+void DemuxerWorker::PushCache(const std::shared_ptr<AVPacket> &av_packet) {
+  std::unique_lock<std::mutex> lock(packet_cache_lock_);
+  while (packet_cache_.size() >= cache_size_) {
+    ++packet_drop_count_;
+    // drop packet, cache_size >= 2
+    auto iter = packet_cache_.begin();
+    auto first_iter = iter;
+    auto second_iter = ++iter;
+    if (IsKeyFrame(*first_iter) && !IsKeyFrame(*second_iter)) {
+      // we need drop the frame rely on key frame first to avoid invalid picture
+      packet_cache_.erase(second_iter);
+      continue;
+    }
+
+    // no more frame rely on front frame, just drop front
+    packet_cache_.pop_front();
+  }
+
+  packet_cache_.push_back(av_packet);
+  packet_cache_not_empty_.notify_all();
+}
+
+void DemuxerWorker::PopCache(std::shared_ptr<AVPacket> &av_packet) {
+  std::unique_lock<std::mutex> lock(packet_cache_lock_);
+  packet_cache_not_empty_.wait(lock, [&]() { return !packet_cache_.empty(); });
+  av_packet = packet_cache_.front();
+  if (av_packet == nullptr) {
+    // stream end, keep nullptr in cache
+    return;
+  }
+
+  packet_cache_.pop_front();
+}
+
+bool DemuxerWorker::IsKeyFrame(const std::shared_ptr<AVPacket> &av_packet) {
+  return (av_packet->flags & AV_PKT_FLAG_KEY) != 0;
 }

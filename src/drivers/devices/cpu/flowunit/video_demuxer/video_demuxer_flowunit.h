@@ -110,6 +110,47 @@ class VideoDemuxerFlowUnit
                        const std::shared_ptr<FfmpegVideoDemuxer> &demuxer);
 
   bool key_frame_only_{false};
+  size_t queue_size_{32};
+};
+
+class DemuxerWorker {
+ public:
+  DemuxerWorker(bool is_async, size_t cache_size,
+                std::shared_ptr<FfmpegVideoDemuxer> demuxer);
+
+  virtual ~DemuxerWorker();
+
+  modelbox::Status Init();
+
+  std::shared_ptr<FfmpegVideoDemuxer> GetDemuxer() const;
+
+  size_t GetDropCount() const;
+
+  modelbox::Status ReadPacket(std::shared_ptr<AVPacket> &av_packet);
+
+  bool IsRunning() const;
+
+  void Process();
+
+ private:
+  void PushCache(const std::shared_ptr<AVPacket> &av_packet);
+
+  void PopCache(std::shared_ptr<AVPacket> &av_packet);
+
+  bool IsKeyFrame(const std::shared_ptr<AVPacket> &av_packet);
+
+  bool is_async_{false};
+  size_t cache_size_{0};
+  std::shared_ptr<FfmpegVideoDemuxer> demuxer_;
+
+  std::atomic_bool demux_thread_running_{false};
+  std::shared_ptr<std::thread> demux_thread_;
+
+  std::mutex packet_cache_lock_;
+  std::condition_variable packet_cache_not_empty_;
+  std::list<std::shared_ptr<AVPacket>> packet_cache_;
+  modelbox::Status last_demux_status_;
+  size_t packet_drop_count_{0};
 };
 
 #endif  // MODELBOX_FLOWUNIT_VIDEO_DEMUXER_CPU_H_
