@@ -169,7 +169,7 @@ bool FfmpegVideoDemuxer::IsTargetPacket(std::shared_ptr<AVPacket> &av_packet) {
     return false;
   }
 
-  if (key_frame_only_ && av_packet->flags != AV_PKT_FLAG_KEY) {
+  if (key_frame_only_ && ((av_packet->flags & AV_PKT_FLAG_KEY) != 0)) {
     return false;
   }
 
