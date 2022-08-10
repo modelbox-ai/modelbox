@@ -30,12 +30,11 @@
 namespace nvinfer1 {
 class UpsampleLayerPlugin2 : public IPluginExt {
  public:
-  explicit UpsampleLayerPlugin2(const float scale,
-                                const float cudaThread = 512);
+  explicit UpsampleLayerPlugin2(float scale, float cudaThread = 512);
   // create the plugin at runtime from a byte stream
   UpsampleLayerPlugin2(const void *data, size_t length);
 
-  virtual ~UpsampleLayerPlugin2();
+  ~UpsampleLayerPlugin2() override;
 
   int getNbOutputs() const override { return 1; }
 
@@ -54,19 +53,19 @@ class UpsampleLayerPlugin2 : public IPluginExt {
 
   int initialize() override;
 
-  virtual void terminate() override{};
+  void terminate() override{};
 
-  virtual size_t getWorkspaceSize(int maxBatchSize) const override { return 0; }
+  size_t getWorkspaceSize(int maxBatchSize) const override { return 0; }
 
-  virtual int enqueue(int batchSize, const void *const *inputs, void **outputs,
-                      void *workspace, cudaStream_t stream) override;
+  int enqueue(int batchSize, const void *const *inputs, void **outputs,
+              void *workspace, cudaStream_t stream) override;
 
-  virtual size_t getSerializationSize() override {
+  size_t getSerializationSize() override {
     return sizeof(nvinfer1::Dims) + sizeof(mDataType) + sizeof(mScale) +
            sizeof(mOutputWidth) + sizeof(mOutputHeight) + sizeof(mThreadCount);
   }
 
-  virtual void serialize(void *buffer) override;
+  void serialize(void *buffer) override;
 
   template <typename Dtype>
   void forwardGpu(const Dtype *input, Dtype *outputint, int N, int C, int H,
