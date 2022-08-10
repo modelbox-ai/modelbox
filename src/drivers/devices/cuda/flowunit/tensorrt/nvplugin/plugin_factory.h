@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_INFERENCE_PLUGIN_FACTORY_H
 #define MODELBOX_FLOWUNIT_INFERENCE_PLUGIN_FACTORY_H
 
@@ -37,13 +36,12 @@ static constexpr float UPSAMPLE_SCALE2 = 2.0;
 static constexpr int CUDA_THREAD_NUM2 = 512;
 
 // Integration for serialization.
-using nvinfer1::UpsampleLayerPlugin2;
-using nvinfer1::plugin::INvPlugin;
 class YoloPluginFactory : public nvinfer1::IPluginFactory,
                           public nvcaffeparser1::IPluginFactoryExt {
  public:
+  // NOLINTNEXTLINE
   virtual ~YoloPluginFactory() = default;
-  
+
   inline bool isLeakyRelu(const char *layerName) {
     std::string src(layerName);
     bool LeakyRelu_flag = src.find("leaky", 0) != std::string::npos and
@@ -58,9 +56,9 @@ class YoloPluginFactory : public nvinfer1::IPluginFactory,
     return Upsample_flag;
   }
 
-  virtual nvinfer1::IPlugin *createPlugin(const char *layerName,
-                                          const nvinfer1::Weights *weights,
-                                          int nbWeights) override {
+  nvinfer1::IPlugin *createPlugin(const char *layerName,
+                                  const nvinfer1::Weights *weights,
+                                  int nbWeights) override {
     if (isPlugin(layerName) == false) {
       MBLOG_ERROR << "plugin layername is null";
       return nullptr;
@@ -73,24 +71,26 @@ class YoloPluginFactory : public nvinfer1::IPluginFactory,
         return nullptr;
       }
 
-      auto plugin = std::unique_ptr<INvPlugin, void (*)(INvPlugin *)>(
-          createPReLUPlugin(NEG_SLOPE2), nvPluginDeleter);
-      mPluginLeakyRelu.push_back(move(plugin));
+      auto plugin = std::unique_ptr<nvinfer1::plugin::INvPlugin,
+                                    void (*)(nvinfer1::plugin::INvPlugin *)>(
+          nvinfer1::plugin::createPReLUPlugin(NEG_SLOPE2), nvPluginDeleter);
+      mPluginLeakyRelu.emplace_back(std::move(plugin));
       return mPluginLeakyRelu.back().get();
-    } 
+    }
 #endif
-    
+
     if (isUpsample(layerName)) {
       if (nbWeights != 0 || weights != nullptr) {
         MBLOG_ERROR << "weights error.";
         return nullptr;
       }
 
-      auto plugin = std::unique_ptr<UpsampleLayerPlugin2>(
-          new UpsampleLayerPlugin2(UPSAMPLE_SCALE2, CUDA_THREAD_NUM2));
-      mPluginUpsample.push_back(move(plugin));
+      auto plugin = std::unique_ptr<nvinfer1::UpsampleLayerPlugin2>(
+          new nvinfer1::UpsampleLayerPlugin2(UPSAMPLE_SCALE2,
+                                             CUDA_THREAD_NUM2));
+      mPluginUpsample.emplace_back(std::move(plugin));
       return mPluginUpsample.back().get();
-    } 
+    }
 
     return nullptr;
   }
@@ -104,19 +104,20 @@ class YoloPluginFactory : public nvinfer1::IPluginFactory,
 
 #ifndef TENSORRT7
     if (isLeakyRelu(layerName)) {
-      auto plugin = std::unique_ptr<INvPlugin, void (*)(INvPlugin *)>(
-          createPReLUPlugin(serialData, serialLength), nvPluginDeleter);
-      mPluginLeakyRelu.push_back(move(plugin));
+      auto plugin = std::unique_ptr<nvinfer1::plugin::INvPlugin,
+                                    void (*)(nvinfer1::plugin::INvPlugin *)>(
+          nvinfer1::plugin::createPReLUPlugin(serialData, serialLength), nvPluginDeleter);
+      mPluginLeakyRelu.emplace_back(std::move(plugin));
       return mPluginLeakyRelu.back().get();
-    } 
+    }
 #endif
-    
+
     if (isUpsample(layerName)) {
-      auto plugin = std::unique_ptr<UpsampleLayerPlugin2>(
-          new UpsampleLayerPlugin2(serialData, serialLength));
-      mPluginUpsample.push_back(move(plugin));
+      auto plugin = std::unique_ptr<nvinfer1::UpsampleLayerPlugin2>(
+          new nvinfer1::UpsampleLayerPlugin2(serialData, serialLength));
+      mPluginUpsample.emplace_back(std::move(plugin));
       return mPluginUpsample.back().get();
-    } 
+    }
 
     return nullptr;
   }
@@ -133,14 +134,19 @@ class YoloPluginFactory : public nvinfer1::IPluginFactory,
 
   // The application has to destroy the plugin when it knows it's safe to do so.
   void destroyPlugin() {
-    for (auto &item : mPluginUpsample) item.reset();
+    for (auto &item : mPluginUpsample) {
+      item.reset();
+    }
   }
 
-  void (*nvPluginDeleter)(INvPlugin *){[](INvPlugin *ptr) { ptr->destroy(); }};
+  void (*nvPluginDeleter)(nvinfer1::plugin::INvPlugin *){
+      [](nvinfer1::plugin::INvPlugin *ptr) { ptr->destroy(); }};
 
-  std::vector<std::unique_ptr<INvPlugin, void (*)(INvPlugin *)>>
+  std::vector<std::unique_ptr<nvinfer1::plugin::INvPlugin,
+                              void (*)(nvinfer1::plugin::INvPlugin *)>>
       mPluginLeakyRelu{};
-  std::vector<std::unique_ptr<UpsampleLayerPlugin2>> mPluginUpsample{};
+  std::vector<std::unique_ptr<nvinfer1::UpsampleLayerPlugin2>>
+      mPluginUpsample{};
 };
 
 #endif  // MODELBOX_FLOWUNIT_INFERENCE_PLUGIN_FACTORY_H

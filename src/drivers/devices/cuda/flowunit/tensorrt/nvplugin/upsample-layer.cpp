@@ -43,7 +43,7 @@ UpsampleLayerPlugin2::UpsampleLayerPlugin2(const float scale,
   mThreadCount = 0;
 }
 
-UpsampleLayerPlugin2::~UpsampleLayerPlugin2() {}
+UpsampleLayerPlugin2::~UpsampleLayerPlugin2() = default;
 
 // create the plugin at runtime from a byte stream
 UpsampleLayerPlugin2::UpsampleLayerPlugin2(const void *data, size_t length) {

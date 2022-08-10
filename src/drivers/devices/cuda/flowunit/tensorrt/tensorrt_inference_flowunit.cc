@@ -309,7 +309,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
   // parse the caffe model to populate the network, then set the outputs
   auto parser = TensorRTInferObject(nvcaffeparser1::createCaffeParser());
   if (parser == nullptr) {
-    auto err_msg = "create parser from caffe model failed.";
+    const auto* err_msg = "create parser from caffe model failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -356,7 +356,7 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
   }
 
   for (int i = 0, n = network->getNbInputs(); i < n; i++) {
-    auto input = network->getInput(i);
+    auto* input = network->getInput(i);
     if (input == nullptr) {
       MBLOG_ERROR << "input " << i << "is invalid";
       return {modelbox::STATUS_FAULT, "get input failed"};
@@ -382,14 +382,14 @@ modelbox::Status TensorRTInferenceFlowUnit::CaffeToTRTModel(
 
   engine_ = TensorRTInferObject(builder->buildCudaEngine(*network));
   if (engine_ == nullptr) {
-    auto err_msg = "build engine from caffe model failed.";
+    const auto* err_msg = "build engine from caffe model failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
   context_ = TensorRTInferObject(engine_->createExecutionContext());
   if (context_ == nullptr) {
-    auto err_msg = "build context from caffe model engine failed.";
+    const auto* err_msg = "build context from caffe model engine failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -405,7 +405,7 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
   // parse the uff model to populate the network, then set the outputs
   auto parser = TensorRTInferObject(nvuffparser::createUffParser());
   if (parser == nullptr) {
-    auto err_msg = "create parser from uff model engine failed.";
+    const auto* err_msg = "create parser from uff model engine failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
@@ -456,7 +456,7 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
   }
 
   for (int i = 0, n = network->getNbInputs(); i < n; i++) {
-    auto input = network->getInput(i);
+    auto* input = network->getInput(i);
     if (input == nullptr) {
       MBLOG_ERROR << "input " << i << "is invalid";
       return {modelbox::STATUS_FAULT, "get input failed"};
@@ -473,14 +473,14 @@ modelbox::Status TensorRTInferenceFlowUnit::UffToTRTModel(
 
   engine_ = TensorRTInferObject(builder->buildCudaEngine(*network));
   if (engine_ == nullptr) {
-    auto err_msg = "build engine from uff model failed.";
+    const auto* err_msg = "build engine from uff model failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
   context_ = TensorRTInferObject(engine_->createExecutionContext());
   if (context_ == nullptr) {
-    auto err_msg = "build context from uff model engine failed.";
+    const auto* err_msg = "build context from uff model engine failed.";
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
