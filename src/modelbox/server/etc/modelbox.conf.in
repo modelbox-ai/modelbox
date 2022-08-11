@@ -36,6 +36,9 @@ demo_root = "@MODELBOX_ROOT_VAR@@CMAKE_INSTALL_FULL_DATAROOTDIR@/modelbox/demo"
 # log file path
 path = "@MODELBOX_ROOT_VAR@/var/log/modelbox/modelbox.log"
 
+# log to screen
+screen = false
+
 # include config files
 [include]
 files = [

@@ -82,7 +82,7 @@ pid_t get_pid_from_pidfile(char *pid_file, int *is_locked) {
 
   fd = open(pid_file, O_RDONLY, S_IRUSR | S_IWUSR);
   if (fd == -1) {
-    fprintf(stderr, "create pid file failed, %s\n", strerror(errno));
+    fprintf(stderr, "open pid file failed, %s\n", strerror(errno));
     return -1;
   }
 

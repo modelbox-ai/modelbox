@@ -102,8 +102,9 @@ template <typename func, typename... ts>
 Status SubProcessRun(func &&fun, ts &&...params) {
   const char *enable_debug = getenv("MODELBOX_DEBUG_DRIVER_SCAN");
   if (enable_debug == nullptr) {
+    int unused __attribute__((unused));
     int fd[2] = {-1, -1};
-    pipe(fd);
+    unused = pipe(fd);
     auto pid = fork();
     if (pid == 0) {
       signal(SIGSEGV, SIG_DFL);

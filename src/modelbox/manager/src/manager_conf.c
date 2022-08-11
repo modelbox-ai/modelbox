@@ -106,14 +106,21 @@ int manager_load_app(void *item, int argc, char *argv[]) {
     conf_app->check_alive_time = conf_watchdog_timeout;
   }
 
+  char *ptr = conf_app->cmd;
   for (i = optind; i < argc; i++) {
-    strncat(conf_app->cmd, " ", PATH_MAX - 1);
-    strncat(conf_app->cmd, get_modelbox_full_path(argv[i]), PATH_MAX - 1);
+    strncpy(ptr, get_modelbox_full_path(argv[i]),
+            PATH_MAX - 1 - (ptr - conf_app->cmd));
+    ptr += strnlen(ptr, PATH_MAX - 1 - (ptr - conf_app->cmd));
+    ptr++;
+    if (conf_app->cmd - ptr >= PATH_MAX - 1) {
+      manager_log(MANAGER_LOG_ERR, "command line too long");
+      return -1;
+    }
   }
 
   if (strlen(conf_app->name) <= 0 || strlen(conf_app->cmd) <= 0) {
     manager_log(MANAGER_LOG_ERR, "load app failed, name %s, cmd %s.",
-                conf_app->name, conf_app->cmd);
+                conf_app->name, strcmds(conf_app->cmd, PATH_MAX));
     return -1;
   }
 

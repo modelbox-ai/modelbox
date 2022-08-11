@@ -93,6 +93,12 @@ install(FILES
     )
 
 install(DIRECTORY 
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/modelbox/init-script/modelbox-manager
+    DIRECTORY_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    COMPONENT server
+    )
+
+install(DIRECTORY 
     DESTINATION /${CMAKE_INSTALL_RUNSTATEDIR}/modelbox/
     COMPONENT server
 )

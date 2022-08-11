@@ -36,6 +36,9 @@ const char *get_modelbox_root_path(void);
 /* 获取完整的路径，非线程安全 */
 const char *get_modelbox_full_path(const char *path);
 
+/* 合并命令行为字符串,格式arg1\0arg2\0\0，非线程安全*/
+const char *strcmds(const char *cmd, int cmd_max_len);
+
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */
