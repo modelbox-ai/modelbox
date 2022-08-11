@@ -39,6 +39,7 @@ else
 	. ${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/manager-opts
 	PIDDIR=${MODELBOX_ROOT}/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager
 	PIDFILE=${MODELBOX_ROOT}/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox-manager.pid
+	MANAGER_INITSCRIPT_DIR=${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/init-script/modelbox-manager
 fi
 
 MODELBOX_MANAGER=${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_BINDIR@/modelbox-manager
@@ -50,9 +51,34 @@ fi
 
 
 case $1 in
+	exec)
+		if [ ! -d "$PIDDIR" ]; then
+			mkdir $PIDDIR
+		fi
+
+		if [ -d ${MANAGER_INITSCRIPT_DIR} ]; then
+			for i in ${MANAGER_INITSCRIPT_DIR}/*.sh; do
+				if [ -r $i ]; then
+				. $i
+				fi
+			done
+			unset i	
+		fi
+
+		exec $MODELBOX_MANAGER $MODELBOX_MANAGER_OPTS -v -f -p $PIDFILE
+		;;
 	start)
 		if [ ! -d "$PIDDIR" ]; then
 			mkdir $PIDDIR
+		fi
+
+		if [ -d ${MANAGER_INITSCRIPT_DIR} ]; then
+			for i in ${MANAGER_INITSCRIPT_DIR}/*.sh; do
+				if [ -r $i ]; then
+				. $i
+				fi
+			done
+			unset i	
 		fi
 
 		$MODELBOX_MANAGER $MODELBOX_MANAGER_OPTS -p $PIDFILE
@@ -128,7 +154,7 @@ case $1 in
 		status=$?
 		;;
 	*)
-		echo "Usage: $0 {start|stop|restart|status}"
+		echo "Usage: $0 {start|exec|stop|restart|status}"
 		exit 2
 		;;
 esac

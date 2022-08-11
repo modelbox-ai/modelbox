@@ -146,7 +146,7 @@ class ManagerTestApp {
 TEST_F(ManagerTest, DISABLED_Start) {
   ManagerTestServer server;
   server.Start();
-  EXPECT_EQ(0, app_start("1", "sleep 1", nullptr, 1, 60, 5));
+  EXPECT_EQ(0, app_start("1", "sleep\0 1\0\0", PATH_MAX, nullptr, 1, 60, 5));
   sleep(1);
   int pid = app_getpid("1");
   EXPECT_GT(pid, 0);
@@ -160,10 +160,10 @@ TEST_F(ManagerTest, DISABLED_Start) {
 TEST_F(ManagerTest, DISABLED_Start_dup) {
   ManagerTestServer server;
   server.Start();
-  EXPECT_EQ(0, app_start("1", "test", nullptr, 1, 60, 5));
-  EXPECT_EQ(0, app_start("2", "test", nullptr, 1, 60, 5));
-  EXPECT_EQ(0, app_start("3", "test", nullptr, 1, 60, 5));
-  EXPECT_NE(0, app_start("2", "test", nullptr, 1, 60, 5));
+  EXPECT_EQ(0, app_start("1", "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
+  EXPECT_EQ(0, app_start("2", "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
+  EXPECT_EQ(0, app_start("3", "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
+  EXPECT_NE(0, app_start("2", "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
 }
 
 TEST_F(ManagerTest, DISABLED_Start_many) {
@@ -171,7 +171,7 @@ TEST_F(ManagerTest, DISABLED_Start_many) {
   server.Start();
   for (int i = 0; i < 8; i++) {
     EXPECT_EQ(0,
-              app_start(std::to_string(i).c_str(), "test", nullptr, 1, 60, 5));
+              app_start(std::to_string(i).c_str(), "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
   }
   sleep(1);
   for (int i = 0; i < 8; i++) {
@@ -184,7 +184,7 @@ TEST_F(ManagerTest, DISABLED_Start_stop_half) {
   server.Start();
   for (int i = 0; i < 8; i++) {
     EXPECT_EQ(0,
-              app_start(std::to_string(i).c_str(), "test", nullptr, 1, 60, 5));
+              app_start(std::to_string(i).c_str(), "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
   }
   for (int i = 0; i < 8; i++) {
     if (i % 2 == 0) {
@@ -207,7 +207,7 @@ TEST_F(ManagerTest, DISABLED_Start_stop_all) {
   server.Start();
   for (int i = 0; i < 8; i++) {
     EXPECT_EQ(0,
-              app_start(std::to_string(i).c_str(), "test", nullptr, 1, 60, 5));
+              app_start(std::to_string(i).c_str(), "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
   }
   for (int i = 0; i < 8; i++) {
     EXPECT_EQ(0, app_stop(std::to_string(i).c_str(), 0));

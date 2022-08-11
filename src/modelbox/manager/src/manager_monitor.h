@@ -25,9 +25,28 @@ extern "C" {
 
 int manager_monitor_init(void);
 
-int app_start(const char *name, const char *cmdline, const char *pidfile,
+/**
+ * @brief start app
+ * 
+ * @param name app name
+ * @param cmdline command list, format arg1\0arg2\0arg3\0\0
+ * @param cmd_max_len max length of cmdline string.
+ * @param pidfile pid file path
+ * @param check_alive whether check alive
+ * @param keepalive_time keep alive time
+ * @param heartbeat_interval heart beat interval
+ * @return int 
+ */
+int app_start(const char *name, const char *cmdline, int cmd_max_len, const char *pidfile,
               int check_alive, int keepalive_time, int heartbeat_interval);
 
+/**
+ * @brief stop app
+ * 
+ * @param name app name
+ * @param gracefull gracefull stop
+ * @return int 
+ */
 int app_stop(const char *name, int gracefull);
 
 int app_alive(const char *name);

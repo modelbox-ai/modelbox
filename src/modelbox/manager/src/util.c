@@ -156,10 +156,33 @@ const char *get_modelbox_full_path(const char *path) {
   const char *root_path = get_modelbox_root_path();
   static char full_path[PATH_MAX * 4] = {0};
   full_path[0] = '\0';
+  memset(full_path, 0, sizeof(full_path));
   if (string_replace(path, full_path, PATH_MAX * 4, "${MODELBOX_ROOT}",
                      root_path) == NULL) {
     return NULL;
   }
 
   return full_path;
+}
+
+const char *strcmds(const char *cmd, int cmd_max_len) {
+  static char full_cmd[PATH_MAX * 4] = {0};
+  full_cmd[0] = 0;
+  for (int i = 0; i < PATH_MAX && i < cmd_max_len; i++) {
+    if (i > 0) {
+      if (cmd[i] == '\0' && cmd[i - 1] == '\0') {
+        full_cmd[i] = '\0';
+        break;
+      }
+    }
+
+    if (cmd[i] == '\0') {
+      full_cmd[i] = ' ';
+      continue;
+    }
+
+    full_cmd[i] = cmd[i];
+  }
+
+  return full_cmd;
 }

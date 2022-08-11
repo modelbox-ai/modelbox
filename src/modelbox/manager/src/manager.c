@@ -104,9 +104,9 @@ static int manager_sig_register(void) {
 int manager_add_apps(void) {
   int i = 0;
   for (i = 0; i < conf_apps_num; i++) {
-    manager_log(MANAGER_LOG_INFO, "add %s, %s, %s\n", conf_apps[i].name,
-                conf_apps[i].cmd, conf_apps[i].pidfile);
-    if (app_start(conf_apps[i].name, conf_apps[i].cmd, conf_apps[i].pidfile,
+    manager_log(MANAGER_LOG_INFO, "add %s, %s, %s, check alive %d\n", conf_apps[i].name,
+                conf_apps[i].cmd, conf_apps[i].pidfile, conf_apps[i].check_alive);
+    if (app_start(conf_apps[i].name, conf_apps[i].cmd, PATH_MAX, conf_apps[i].pidfile,
                   conf_apps[i].check_alive, conf_apps[i].check_alive_time,
                   conf_apps[i].heartbeat_interval) != 0) {
       manager_log(MANAGER_LOG_ERR, "add app %s failed.", conf_apps[i].name);
@@ -151,7 +151,7 @@ void manager_reload_apps(struct conf_app oldapps[CONF_MAX_APPS]) {
     }
 
     if (j == CONF_MAX_APPS) {
-      if (app_start(conf_apps[i].name, conf_apps[i].cmd, conf_apps[i].pidfile,
+      if (app_start(conf_apps[i].name, conf_apps[i].cmd, PATH_MAX, conf_apps[i].pidfile,
                     conf_apps[i].check_alive, conf_apps[i].check_alive_time,
                     conf_apps[i].heartbeat_interval) == 0) {
         manager_log(MANAGER_LOG_INFO, "start app %s success.",

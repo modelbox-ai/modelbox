@@ -82,7 +82,7 @@ modelbox::Status IPACL::IsMatch(const std::string &ipaddr) {
 
 uint32_t IPACL::GetIPV4Addr(const std::shared_ptr<struct addrinfo> &addrinfo) {
   auto *in4 = (struct sockaddr_in *)addrinfo->ai_addr;
-  uint32_t ip = ntohl(in4->sin_addr.s_addr);
+  uint32_t ip = ntohl(in4->sin_addr.s_addr); // NOLINT
   return ip;
 }
 

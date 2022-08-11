@@ -33,6 +33,7 @@
 
 #define MANAGER_MON_MAX_APP_NUM 256
 #define SHM_MODE 0600
+#define APP_MAX_ARGS 128
 
 static key_t g_msgkey = 0;
 static int g_msgid = 0;
@@ -133,6 +134,9 @@ int _app_exists(struct app_monitor *app) {
 
 /* run shell command */
 void _app_start_exec(struct app_monitor *app) {
+  char *argv[APP_MAX_ARGS];
+  int argc = 0;
+  int i = 0;
   if (app->check_alive) {
     char keyfileenv[PATH_MAX];
     char appnameenv[PATH_MAX];
@@ -155,7 +159,22 @@ void _app_start_exec(struct app_monitor *app) {
     putenv(intervaltime);
   }
 
-  execl("/bin/sh", "sh", "-c", app->cmdline, NULL);
+  argv[argc] = app->cmdline;
+  for (i = 0; i < PATH_MAX - 2 && argc < APP_MAX_ARGS - 1; i++) {
+    if (app->cmdline[i] == '\0') {
+      argc++;
+      argv[argc] = app->cmdline + i + 1;
+    }
+
+    if (i > 0) {
+      if (app->cmdline[i - 1] == '\0' && app->cmdline[i] == '\0') {
+        break;
+      }
+    }
+  }
+
+  argv[argc] = 0;
+  execvp(argv[0], argv);
 }
 
 int app_getpid_from_pidfile(struct app_monitor *app) {
@@ -199,10 +218,12 @@ int app_getpid_by_ps(struct app_monitor *app) {
   }
 
   pid_buff[0] = 0;
-  snprintf(cmdline, PATH_MAX * 2 - 1, "pgrep -x -f \"%s\"", app->cmdline);
+  snprintf(cmdline, PATH_MAX * 2 - 1, "pgrep -x -f \"%s\"",
+           strcmds(app->cmdline, PATH_MAX));
   fp = popen(cmdline, "re");
   if (fp == NULL) {
-    manager_log(MANAGER_LOG_ERR, "run command %s failed", cmdline);
+    manager_log(MANAGER_LOG_ERR, "run command %s failed",
+                strcmds(app->cmdline, PATH_MAX));
     goto errout;
   }
 
@@ -262,14 +283,14 @@ int _app_start(struct app_monitor *app) {
     char intervaltime[64];
 
     snprintf_s(keyfileenv, sizeof(keyfileenv), sizeof(keyfileenv),
-                "MANAGER_MONITOR_KEYFILE=%s", key_file_path);
+               "MANAGER_MONITOR_KEYFILE=%s", key_file_path);
     snprintf_s(appnameenv, sizeof(appnameenv), sizeof(appnameenv),
-                "MANAGER_MONITOR_NAME=%s", app->name);
+               "MANAGER_MONITOR_NAME=%s", app->name);
     snprintf_s(keepalivetime, sizeof(keepalivetime), sizeof(keepalivetime),
-                "MANAGER_MONITOR_KEEPALIVE_TIME=%d", app->check_alive_time);
+               "MANAGER_MONITOR_KEEPALIVE_TIME=%d", app->check_alive_time);
     snprintf_s(intervaltime, sizeof(intervaltime), sizeof(intervaltime),
-                "MANAGER_MONITOR_HEARTBEAT_INTERVAL=%d",
-                app->heartbeat_interval);
+               "MANAGER_MONITOR_HEARTBEAT_INTERVAL=%d",
+               app->heartbeat_interval);
 
     putenv(keyfileenv);
     putenv(appnameenv);
@@ -382,14 +403,20 @@ out:
   return -1;
 }
 
-int app_start(const char *name, const char *cmdline, const char *pidfile,
-              int check_alive, int keepalive_time, int heartbeat_interval) {
+int app_start(const char *name, const char *cmdline, int cmd_max_len,
+              const char *pidfile, int check_alive, int keepalive_time,
+              int heartbeat_interval) {
   struct app_monitor *app = NULL;
   unsigned int key;
 
   if (name == NULL || cmdline == NULL) {
     manager_log(MANAGER_LOG_ERR, "parameter is invalid, name(%p), cmdline(%p)",
-                name, cmdline);
+                name, strcmds(cmdline, cmd_max_len));
+    return -1;
+  }
+
+  if (cmd_max_len > PATH_MAX) {
+    manager_log(MANAGER_LOG_ERR, "command line is too long");
     return -1;
   }
 
@@ -407,6 +434,10 @@ int app_start(const char *name, const char *cmdline, const char *pidfile,
 
   strncpy(app->name, name, APP_NAME_LEN - 1);
   strncpy(app->cmdline, cmdline, PATH_MAX - 1);
+  memcpy(app->cmdline, cmdline, cmd_max_len);
+  app->cmdline[PATH_MAX - 1] = '\0';
+  app->cmdline[PATH_MAX - 2] = '\0';
+
   if (pidfile) {
     strncpy(app->pid_file, pidfile, PATH_MAX - 1);
   } else {
@@ -445,7 +476,7 @@ errout:
   if (app) {
     free(app);
   }
-  return 0;
+  return -1;
 }
 
 int app_stop(const char *name, int gracefull) {
@@ -695,11 +726,11 @@ int _app_alive(struct app_monitor *app) {
   time(&now);
 
   if (app->state == APP_PENDING) {
-    time_out = 3;
+    time_out = 10;
   }
 
   /* if no check, return */
-  if (app->check_alive == 0) {
+  if (app->check_alive == 0 && app->state  == APP_RUNNING) {
     return 0;
   }
 

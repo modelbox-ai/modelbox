@@ -165,12 +165,6 @@ int modelbox_init() {
     return 1;
   }
 
-  if (modelbox::LoadConfig(modelbox::kConfigPath) == false) {
-    fprintf(stderr, "can not load configuration : %s \n",
-            modelbox::kConfigPath.c_str());
-    return 1;
-  }
-
   if (modelbox_init_log()) {
     return 1;
   }
@@ -388,8 +382,15 @@ int main(int argc, char *argv[])
     return GetConfig(get_conf_key);
   }
 
-  if (kForground == false) {
-    if (daemon(0, 0) < 0) {
+  if (modelbox::LoadConfig(modelbox::kConfigPath) == false) {
+    fprintf(stderr, "can not load configuration : %s \n",
+            modelbox::kConfigPath.c_str());
+    return 1;
+  }
+
+  auto log_screen = modelbox::kConfig->GetBool("log.screen", kVerbose);
+  if (kForground == false && kVerbose == false) {
+    if (daemon(0, log_screen) < 0) {
       fprintf(stderr, "run daemon process failed, %s\n",
               modelbox::StrError(errno).c_str());
       return 1;
