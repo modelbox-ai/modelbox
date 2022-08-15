@@ -16,6 +16,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - run: apt update
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ubuntu-latest
+        max-size: 1024M
     - name: Configure CMake
       run: |
         mkdir build
