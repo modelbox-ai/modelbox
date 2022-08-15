@@ -42,6 +42,7 @@
 namespace modelbox {
 
 constexpr const char *DEFAULT_LD_CACHE = "/etc/ld.so.cache";
+constexpr const int DRIVER_SCAN_TIMEOUT = 60 * 3;
 
 int SubProcessWaitAndLog(int fd) {
   struct pollfd fdset;
@@ -49,6 +50,8 @@ int SubProcessWaitAndLog(int fd) {
   char tmp[4096];
   fdset.fd = fd;
   fdset.events = POLLIN | POLLHUP;
+  time_t begin = 0;
+  time_t now;
   if (fd <= 0) {
     return 0;
   }
@@ -61,8 +64,11 @@ int SubProcessWaitAndLog(int fd) {
 
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
 
+  time(&begin);
   while (true) {
-    int count = poll(&fdset, 1, 60000);
+    int count = poll(&fdset, 1, 10000);
+    time(&now);
+
     if (count < 0) {
       if (errno == EINTR) {
         continue;
@@ -72,7 +78,11 @@ int SubProcessWaitAndLog(int fd) {
     }
 
     if (count == 0) {
-      return 1;
+      if (now - begin >= DRIVER_SCAN_TIMEOUT) {
+        return 1;
+      }
+
+      continue;
     }
 
     int len = read(fd, tmp, sizeof(tmp));
@@ -112,16 +122,21 @@ Status SubProcessRun(func &&fun, ts &&...params) {
       signal(SIGABRT, SIG_DFL);
       close(fd[0]);
       dup2(fd[1], 1);
-      // output log to console
-      auto loglevel = klogger.GetLogger()->GetLogLevel();
-      klogger.SetLogger(nullptr);
-      klogger.GetLogger()->SetLogLevel(loglevel);
+      close(fd[1]);
+      setbuf(stdout, nullptr);
 
+      // Keep old log avoid deadlock
+      auto oldlogger_keeper = klogger.GetLogger();
+
+      // output log to console
+      klogger.SetLogger(nullptr);
+      klogger.GetLogger()->SetLogLevel(oldlogger_keeper->GetLogLevel());
       Status ret = fun(params...);
-      if (!ret) {
+      if (ret == STATUS_OK) {
         _exit(0);
       }
 
+      MBLOG_WARN << "run function failed, errmsg: " << ret.WrapErrormsgs();
       _exit(1);
     }
 
@@ -152,12 +167,15 @@ Status SubProcessRun(func &&fun, ts &&...params) {
       return {STATUS_FAULT, err_msg};
     }
 
-    if (WIFEXITED(status) != 0) {
-      return {STATUS_NORESPONSE, "process exit abnormal."};
-    }
-
     if (WIFSIGNALED(status)) {
       const auto *err_msg = "killed by signal";
+      MBLOG_ERROR << err_msg;
+      return {STATUS_NORESPONSE, err_msg};
+    }
+
+    if (!WIFEXITED(status)) {
+      std::string err_msg =
+          "process exit abnormal, ret = " + std::to_string(status);
       MBLOG_ERROR << err_msg;
       return {STATUS_NORESPONSE, err_msg};
     }
@@ -517,7 +535,7 @@ Status Drivers::Scan(const std::string &path, const std::string &filter) {
   struct stat s;
   auto ret = lstat(path.c_str(), &s);
   if (ret) {
-    auto err_msg = "lstat " + path + " failed, errno:" + StrError(errno);
+    auto err_msg = "lstat " + path + " failed, " + StrError(errno);
     return {STATUS_FAULT, err_msg};
   }
 
@@ -819,9 +837,10 @@ bool Drivers::CheckPathAndMagicCode() {
 Status Drivers::InnerScan() {
   Status ret = STATUS_NOTFOUND;
   for (const auto &dir : driver_dirs_) {
+    MBLOG_INFO << "Scan dir: " << dir;
     ret = Scan(dir, "libmodelbox-*.so*");
     if (!ret && ret != STATUS_NOTFOUND) {
-      MBLOG_WARN << "scan " << dir << " failed";
+      MBLOG_WARN << "scan " << dir << " failed, " << ret.WrapErrormsgs();
     }
     ret = STATUS_OK;
   }
@@ -830,9 +849,9 @@ Status Drivers::InnerScan() {
 
   ret = WriteScanInfo(default_driver_info_path_, check_code);
   if (ret != STATUS_OK) {
-    const auto *err_msg = "write scan info failed";
+    std::string err_msg = "write scan info failed, " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
-    return {STATUS_FAULT, err_msg};
+    return {ret, err_msg};
   }
 
   return ret;
@@ -897,6 +916,7 @@ Status Drivers::ReadExcludeInfo() {
 
 Status Drivers::Scan() {
   Status status = STATUS_FAULT;
+  int retry_count = 0;
   if (!CheckPathAndMagicCode()) {
     while (true) {
       scan_info_file_ = DRIVER_SCAN_INFO;
@@ -908,6 +928,11 @@ Status Drivers::Scan() {
         MBLOG_WARN << "Scan process may crash, retry.";
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         if (ReadExcludeInfo() != STATUS_OK) {
+          retry_count++;
+          if (retry_count < 3) {
+            continue;
+          }
+
           break;
         }
 
