@@ -41,7 +41,7 @@ class BoundingBox {
 
   BoundingBox(float x, float y, float w, float h, int32_t category, float score)
       : x_(x), y_(y), w_(w), h_(h), category_(category), score_(score) {}
-  virtual ~BoundingBox() = default;
+  ~BoundingBox() = default;
 };
 
 constexpr const char *FLOWUNIT_NAME = "yolov3_postprocess";
