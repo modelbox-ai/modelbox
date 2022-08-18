@@ -85,7 +85,7 @@ RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && 
     rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
     rm -f /lib/systemd/system/basic.target.wants/*; \
     rm -f /lib/systemd/system/anaconda.target.wants/*; \
-    echo "/usr/local/lib" >>  /etc/ld.so.conf && \
+    sed -i '/include/i\/usr/local/lib' /etc/ld.so.conf && \
     echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
     echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf && \
     sed -i 's/^SystemMaxUse=.*/SystemMaxUse=16M/g' /etc/systemd/journald.conf && \

@@ -1,4 +1,5 @@
 #!/bin/bash
+CUR_DIR=$(cd $(dirname "${BASH_SOURCE[0]}");pwd)
 VERSION_ID=$(sed -nr '/VERSION_ID/s/^VERSION_ID="(.*)"$/\1/gp' /etc/os-release)
 echo "VERSION_ID:$VERSION_ID"
 
@@ -38,10 +39,18 @@ if [ "$(arch)" == "x86_64" ];then
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/nlohmann-json_3.7.3.tar.gz
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.tar.gz
 elif [ "$(arch)" == "aarch64" ];then
-    if [ "$VERSION_ID" == "22.04" ];then
+    if [ "$VERSION_ID" == "18.04" ];then
+        cp -af /opt/ubuntu/* .
+        sed -i '1d;5,6d' ${CUR_DIR}/Dockerfile.ascend.develop.ubuntu
+        sed -i '/COPY release/a\COPY Ascend_dev /usr/local/Ascend' ${CUR_DIR}/Dockerfile.ascend.develop.ubuntu
+        sed -i '/COPY release/a\COPY npu-smi /usr/local/sbin/npu-smi' ${CUR_DIR}/Dockerfile.ascend.develop.ubuntu
         download http://download.modelbox-ai.com/third-party/aarch64/opencv_4.2.0_dev-ubuntu.tar.gz
         download http://download.modelbox-ai.com/third-party/aarch64/obssdk_3.22.3_dev-ubuntu.tar.gz
     elif [ "$VERSION_ID" == "20.03" ];then
+        cp -af /opt/openeuler/* .
+        sed -i '1d;5,6d' ${CUR_DIR}/Dockerfile.ascend.develop.openeuler
+        sed -i '/COPY release/a\COPY Ascend_dev /usr/local/Ascend' ${CUR_DIR}/Dockerfile.ascend.develop.openeuler
+        sed -i '/COPY release/a\COPY npu-smi /usr/local/sbin/npu-smi' ${CUR_DIR}/Dockerfile.ascend.develop.openeuler
         download http://download.modelbox-ai.com/third-party/aarch64/cpprestsdk_2.10.18_dev.tar.gz
         download http://download.modelbox-ai.com/third-party/aarch64/duktape_2.6.0_dev.tar.gz
         download http://download.modelbox-ai.com/third-party/aarch64/ffmpeg_4.4_dev.tar.gz

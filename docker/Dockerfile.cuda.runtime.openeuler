@@ -80,8 +80,8 @@ RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && 
     rm -f /lib/systemd/system/basic.target.wants/*; \
     rm -f /lib/systemd/system/anaconda.target.wants/*; \
     sed -i 's/^SystemMaxUse=.*/SystemMaxUse=16M/g' /etc/systemd/journald.conf && \
-    echo "/usr/local/lib" >>/etc/ld.so.conf && \
-    echo "/usr/local/lib64" >>/etc/ld.so.conf && \
+    sed -i '/include/i\/usr/local/lib' /etc/ld.so.conf && \
+    sed -i '/include/i\/usr/local/lib64' /etc/ld.so.conf && \
     echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
     echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf && \
     echo "export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig" > /etc/profile.d/pkgconfig.sh && \
