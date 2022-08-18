@@ -22,7 +22,7 @@ WORKDIR /root
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     dnf update -y --nogpgcheck && \
     dnf install -y --nogpgcheck curl boost libnsl libssh2 libatomic mesa-libGL graphviz protobuf-c \
-        systemd openblas python3-devel lapack python3-perf fuse libxml2 openssl bc && \
+        systemd openblas gcc python3-devel lapack python3-perf fuse libxml2 openssl bc && \
     ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python && \
     dnf clean all && rm -rf /var/cache/dnf/*
 
@@ -40,10 +40,10 @@ RUN mkdir -p /root/.pip && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/topi-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/te-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/hccl-0.1.0-py3-none-any.whl && \
-    echo "${ASCEND_PATH}/nnae/latest/fwkacllib/lib64" >>/etc/ld.so.conf && \
-    echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf && \
-    echo "/usr/local/lib64" >>/etc/ld.so.conf && \
-    echo "/usr/local/lib" >>/etc/ld.so.conf && \
+    echo "${ASCEND_PATH}/nnae/latest/fwkacllib/lib64" >>/etc/ld.so.conf.d/ascend.conf && \
+    echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf.d/ascend.conf && \
+    sed -i '/include/i\/usr/local/lib64' /etc/ld.so.conf && \
+    sed -i '/include/i\/usr/local/lib' /etc/ld.so.conf && \
     find /usr/local -name "*.a"|xargs rm -f
 
 RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && \

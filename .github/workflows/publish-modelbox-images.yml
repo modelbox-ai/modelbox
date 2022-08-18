@@ -728,20 +728,15 @@ jobs:
       working-directory: build
       run: |
         npm cache clean --force
-        make package -j4
+        make package -j8
     - name: Release check
       run: ./docker/artifact_check.sh
       shell: bash
     - name: Prepare Artifact
       run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: modelbox_armd_ubuntu
-        path: artifact
+        rm -rf /mnt/*
+        cp -af build/release /mnt/
+        ls -lh /mnt/
 
   build_armd_ubuntu_develop_image:
     runs-on: ubuntu
@@ -757,10 +752,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: modelbox_armd_ubuntu
-          path: .
+        run: cp -af /mnt/release .
       - name: Download for dev package
         run: ./docker/prepare_for_dev.sh
         shell: bash
@@ -788,10 +780,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: modelbox_armd_ubuntu
-          path: .
+        run: cp -af /mnt/release .
       - name: Download for run package
         run: ./docker/prepare_for_run.sh
         shell: bash
@@ -807,7 +796,7 @@ jobs:
 
   test_armd_ubuntu:
     runs-on: ubuntu
-    needs: [build_armd_ubuntu_runtime_image]
+    needs: build_armd_ubuntu_develop_image
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -819,7 +808,7 @@ jobs:
     - name: Test
       working-directory: build
       run: | 
-        make build-test -j4
+        make build-test -j8
         make unittest
 
   compile_cuda112_trt_openeuler:
@@ -1518,6 +1507,7 @@ jobs:
 
   compile_armd_openeuler:
     runs-on: openeuler
+    needs: compile_armd_ubuntu
     outputs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
@@ -1538,20 +1528,15 @@ jobs:
       working-directory: build
       run: |
         npm cache clean --force
-        make package -j4
+        make package -j8
     - name: Release check
       run: ./docker/artifact_check.sh
       shell: bash
     - name: Prepare Artifact
       run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: modelbox_armd_openeuler
-        path: artifact
+        rm -rf /mnt/*
+        cp -af build/release /mnt/
+        ls -lh /mnt/
 
   build_armd_openeuler_develop_image:
     runs-on: openeuler
@@ -1567,10 +1552,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: modelbox_armd_openeuler
-          path: .
+        run: cp -af /mnt/release .
       - name: Download for dev package
         run: ./docker/prepare_for_dev.sh
         shell: bash
@@ -1598,10 +1580,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: modelbox_armd_openeuler
-          path: .
+        run: cp -af /mnt/release .
       - name: Download for run package
         run: ./docker/prepare_for_run.sh
         shell: bash
@@ -1617,7 +1596,7 @@ jobs:
 
   test_armd_openeuler:
     runs-on: openeuler
-    needs: build_armd_openeuler_runtime_image
+    needs: build_armd_openeuler_develop_image
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -1629,5 +1608,5 @@ jobs:
     - name: Test
       working-directory: build
       run: | 
-        make build-test -j4
+        make build-test -j8
         make unittest

@@ -39,8 +39,7 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shang
     rm -rf /var/lib/dpkg/info/* && \
     apt update && apt upgrade -y && \
     apt install -y python3.7-dev python3-pip python3-apt python3-setuptools apt-utils && \
-    apt install -y \
-        dbus systemd systemd-cron iproute2 gnupg2 curl libcurl4-openssl-dev ca-certificates \
+    apt install -y dbus systemd systemd-cron iproute2 gnupg2 curl libcurl4-openssl-dev ca-certificates \
         build-essential unzip ffmpeg sudo bash vim gdb git doxygen autoconf cmake gettext openssh-server \
         pkg-config kmod net-tools pciutils libssl-dev libcpprest-dev libswscale-dev libavformat-dev \
         graphviz libgraphviz-dev libfuse-dev libprotobuf-c-dev protobuf-c-compiler duktape-dev \
@@ -67,9 +66,9 @@ RUN mkdir -p /root/.pip && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/topi-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/te-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/hccl-0.1.0-py3-none-any.whl && \
-    echo "/usr/local/lib" >>  /etc/ld.so.conf && \
-    echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf && \
-    echo "${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64" >>/etc/ld.so.conf
+    echo "${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64" >>/etc/ld.so.conf.d/ascend.conf && \
+    echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf.d/ascend.conf && \
+    sed -i '/include/i\/usr/local/lib' /etc/ld.so.conf
 
 RUN if [ "$(arch)" = "aarch64" ];then node_arch="arm64";else node_arch="x64";fi && \
     curl https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-${node_arch}.tar.xz|tar -xJ && \
