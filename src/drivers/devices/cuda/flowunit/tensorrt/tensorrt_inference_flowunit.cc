@@ -575,7 +575,8 @@ modelbox::Status TensorRTInferenceFlowUnit::OnnxToTRTModel(
       return {modelbox::STATUS_FAULT, "get input failed"};
     }
 
-    nvinfer1::Dims3 dims = static_cast<nvinfer1::Dims3&&>(input->getDimensions());
+    nvinfer1::Dims3 dims =
+        static_cast<nvinfer1::Dims3&&>(input->getDimensions());
     input_dims_.insert(std::make_pair(input->getName(), dims));
   }
 
@@ -1017,7 +1018,12 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateMemory(
   std::vector<size_t> output_shape;
   output_shape.reserve(dims.nbDims);
   for (int i = 0; i < dims.nbDims; ++i) {
-    output_shape.push_back(dims.d[i]);
+    auto dim = dims.d[i];
+    if (dim == -1) {
+      dim = 1;
+    }
+
+    output_shape.push_back(dim);
   }
   std::vector<size_t> shape_vector(size, single_bytes);
   status = output_buf->Build(shape_vector);

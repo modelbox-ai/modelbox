@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/flow_graph_desc.h"
+
+#include <utility>
 
 #include "modelbox/base/register_flowunit.h"
 
@@ -49,6 +49,10 @@ void FlowConfig::SetSkipDefaultDrivers(bool is_skip) {
 FlowGraphDesc::FlowGraphDesc() { config_ = ConfigurationBuilder().Build(); }
 
 FlowGraphDesc::~FlowGraphDesc() {
+  // we need destroy component in order
+  device_mgr_ = nullptr;
+  flowunit_mgr_ = nullptr;
+  drivers_ = nullptr;
   for (auto &node_desc : node_desc_list_) {
     node_desc->Clear();
   }
