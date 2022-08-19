@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/session.h"
+
+#include <utility>
 
 namespace modelbox {
 
@@ -40,9 +40,12 @@ void Session::AddStateListener(
 
 void Session::SetSessionIO(const std::shared_ptr<SessionIO> &io_handle) {
   io_handle_ = io_handle;
+  has_io_ = true;
 }
 
 std::shared_ptr<SessionIO> Session::GetSessionIO() { return io_handle_.lock(); }
+
+bool Session::HasSessionIO() { return has_io_; }
 
 std::shared_ptr<SessionContext> Session::GetSessionCtx() { return ctx_; }
 

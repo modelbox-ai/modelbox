@@ -149,7 +149,7 @@ void OutputVirtualNode::EraseInvalidData() {
     std::shared_ptr<Buffer> buffer;
     while (in_queue->Front(&buffer)) {
       auto index_info = BufferManageView::GetIndexInfo(buffer);
-      if (index_info->GetStream()->GetSession()->GetSessionIO() != nullptr) {
+      if (index_info->GetStream()->GetSession()->HasSessionIO()) {
         // front data in this port is valid, jump to run
         break;
       }
@@ -166,7 +166,7 @@ Status OutputVirtualNode::Run(RunType type) {
       input_ports_, [](const std::shared_ptr<Buffer>& buffer) {
         // no need to cache buffer that can not send to user
         auto index_info = BufferManageView::GetIndexInfo(buffer);
-        return index_info->GetStream()->GetSession()->GetSessionIO() == nullptr;
+        return !(index_info->GetStream()->GetSession()->HasSessionIO());
       });
   if (!ret) {
     MBLOG_ERROR << "OutputVirtualNode load data from input ports failed, error "

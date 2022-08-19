@@ -28,6 +28,7 @@
 
 #include "modelbox/python/log.h"
 #include "modelbox_api.h"
+#include "python_flow.h"
 
 namespace modelbox {
 
@@ -182,8 +183,18 @@ void SetUpFlow(pybind11::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def("create_external_data_map", &modelbox::Flow::CreateExternalDataMap,
            py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
-      .def("create_stream_io", &modelbox::Flow::CreateStreamIO,
-           py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
+      .def(
+          "create_stream_io",
+          [](modelbox::UniqueFlow &self)
+              -> std::shared_ptr<PythonFlowStreamIO> {
+            auto io = self.CreateStreamIO();
+            if (io == nullptr) {
+              return nullptr;
+            }
+
+            return std::make_shared<PythonFlowStreamIO>(io);
+          },
+          py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
       .def("start_run", &modelbox::Flow::StartRun,
            py::call_guard<py::gil_scoped_release>());
 }
@@ -207,6 +218,7 @@ PYBIND11_MODULE(_modelbox, m) {
   ModelboxPyApiSetUpFlowNodeDesc(m);
   ModelboxPyApiSetUpFlowPortDesc(m);
   ModelboxPyApiSetUpFlowStreamIO(m);
+  ModelboxPyApiSetUpModel(m);
 
 #ifdef VERSION_INFO
   m.attr("__version__") = VERSION_INFO;

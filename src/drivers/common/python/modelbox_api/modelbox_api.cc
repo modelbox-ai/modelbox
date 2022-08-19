@@ -36,7 +36,10 @@
 #include "modelbox/flow.h"
 #include "modelbox/modelbox_engine.h"
 #include "modelbox/type.h"
+#include "python_common.h"
+#include "python_flow.h"
 #include "python_log.h"
+#include "python_model.h"
 
 constexpr int NPY_FLOAT16 = 23;
 template <>
@@ -58,62 +61,6 @@ struct pybind11::detail::npy_format_descriptor<modelbox::Float16> {
 };
 
 namespace modelbox {
-
-static std::unordered_map<int, std::string> kTypeToNPType;
-static std::unordered_map<std::string, ModelBoxDataType> kNPTypeToType;
-
-void BuildTypeToNumpyType() {
-  if (kTypeToNPType.empty() && kNPTypeToType.empty()) {
-    kTypeToNPType[MODELBOX_UINT8] = py::format_descriptor<uint8_t>::format();
-    kTypeToNPType[MODELBOX_INT8] = py::format_descriptor<int8_t>::format();
-    kTypeToNPType[MODELBOX_BOOL] = py::format_descriptor<bool>::format();
-    kTypeToNPType[MODELBOX_INT16] = py::format_descriptor<int16_t>::format();
-    kTypeToNPType[MODELBOX_UINT16] = py::format_descriptor<uint16_t>::format();
-    kTypeToNPType[MODELBOX_INT32] = py::format_descriptor<int32_t>::format();
-    kTypeToNPType[MODELBOX_UINT32] = py::format_descriptor<uint32_t>::format();
-    kTypeToNPType[MODELBOX_INT64] = py::format_descriptor<int64_t>::format();
-    kTypeToNPType[MODELBOX_UINT64] = py::format_descriptor<uint64_t>::format();
-    kTypeToNPType[MODELBOX_FLOAT] = py::format_descriptor<float>::format();
-    kTypeToNPType[MODELBOX_DOUBLE] = py::format_descriptor<double>::format();
-    kNPTypeToType[py::format_descriptor<uint8_t>::format()] = MODELBOX_UINT8;
-    kNPTypeToType[py::format_descriptor<int8_t>::format()] = MODELBOX_INT8;
-    kNPTypeToType[py::format_descriptor<bool>::format()] = MODELBOX_BOOL;
-    kNPTypeToType[py::format_descriptor<int16_t>::format()] = MODELBOX_INT16;
-    kNPTypeToType[py::format_descriptor<uint16_t>::format()] = MODELBOX_UINT16;
-    kNPTypeToType[py::format_descriptor<int32_t>::format()] = MODELBOX_INT32;
-    kNPTypeToType[py::format_descriptor<uint32_t>::format()] = MODELBOX_UINT32;
-    kNPTypeToType[py::format_descriptor<int64_t>::format()] = MODELBOX_INT64;
-    kNPTypeToType[py::format_descriptor<uint64_t>::format()] = MODELBOX_UINT64;
-    kNPTypeToType[py::format_descriptor<float>::format()] = MODELBOX_FLOAT;
-    kNPTypeToType[py::format_descriptor<double>::format()] = MODELBOX_DOUBLE;
-    kNPTypeToType["e"] = MODELBOX_FLOAT;
-    kNPTypeToType["l"] = MODELBOX_INT64;
-  }
-}
-
-std::string FormatStrFromType(const modelbox::ModelBoxDataType &type) {
-  BuildTypeToNumpyType();
-
-  auto iter = kTypeToNPType.find(type);
-  if (iter == kTypeToNPType.end()) {
-    std::string errmsg = "invalid modelbox data type: ";
-    errmsg += std::to_string(type);
-    throw std::runtime_error(errmsg);
-  }
-
-  return iter->second;
-}
-
-modelbox::ModelBoxDataType TypeFromFormatStr(const std::string &format) {
-  BuildTypeToNumpyType();
-
-  auto iter = kNPTypeToType.find(format);
-  if (iter == kNPTypeToType.end()) {
-    throw std::runtime_error("invalid numpy data type: " + format);
-  }
-
-  return iter->second;
-}
 
 class NumpyInfo {
  public:
@@ -658,25 +605,6 @@ py::object BufferToPyObject(modelbox::Buffer &buffer) {
   }
 
   throw std::runtime_error("invalid type");
-}
-
-void PyBufferToBuffer(const std::shared_ptr<Buffer> &buffer,
-                      const py::buffer &data) {
-  py::buffer_info info = data.request();
-  std::vector<size_t> i_shape;
-  for (auto &dim : info.shape) {
-    i_shape.push_back(dim);
-  }
-
-  if (info.shape.size() == 0) {
-    throw std::runtime_error("can not accept empty numpy.");
-  }
-
-  size_t bytes = Volume(i_shape) * info.itemsize;
-  buffer->BuildFromHost(info.ptr, bytes);
-  buffer->Set("shape", i_shape);
-  buffer->Set("type", TypeFromFormatStr(info.format));
-  buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
 }
 
 void StrToBuffer(const std::shared_ptr<Buffer> &buffer,
@@ -1435,14 +1363,14 @@ void ModelboxPyApiSetUpFlowPortDesc(pybind11::module &m) {
 }
 
 void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
-  py::class_<modelbox::FlowStreamIO, std::shared_ptr<modelbox::FlowStreamIO>>(
+  py::class_<PythonFlowStreamIO, std::shared_ptr<PythonFlowStreamIO>>(
       m, "FlowStreamIO")
-      .def(py::init<std::shared_ptr<ExternalDataMap>>())
-      .def("create_buffer", &modelbox::FlowStreamIO::CreateBuffer,
+      .def(py::init<std::shared_ptr<FlowStreamIO>>())
+      .def("create_buffer", &PythonFlowStreamIO::CreateBuffer,
            py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
       .def(
           "create_buffer",
-          [](FlowStreamIO &self, const py::buffer &data) {
+          [](PythonFlowStreamIO &self, const py::buffer &data) {
             auto buffer = self.CreateBuffer();
             PyBufferToBuffer(buffer, data);
             return buffer;
@@ -1450,24 +1378,29 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
           py::keep_alive<0, 1>())
       .def(
           "create_buffer",
-          [](FlowStreamIO &self, const std::string &data) {
+          [](PythonFlowStreamIO &self, const std::string &data) {
             auto buffer = self.CreateBuffer();
             StrToBuffer(buffer, data);
             return buffer;
           },
           py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
-      .def("send", &modelbox::FlowStreamIO::Send,
+      .def("send", &PythonFlowStreamIO::Send,
            py::call_guard<py::gil_scoped_release>())
-      .def("send",
-           [](FlowStreamIO &self, const std::string &input_name,
-              const py::buffer &data) {
-             auto buffer = self.CreateBuffer();
-             PyBufferToBuffer(buffer, data);
-             return self.Send(input_name, buffer);
-           })
       .def(
           "send",
-          [](FlowStreamIO &self, const std::string &input_name,
+          [](PythonFlowStreamIO &self, const std::string &input_name,
+             const py::buffer &data) {
+            auto buffer = self.CreateBuffer();
+            {
+              py::gil_scoped_acquire ac;
+              PyBufferToBuffer(buffer, data);
+            }
+            return self.Send(input_name, buffer);
+          },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "send",
+          [](PythonFlowStreamIO &self, const std::string &input_name,
              const std::string &data) {
             auto buffer = self.CreateBuffer();
             StrToBuffer(buffer, data);
@@ -1476,7 +1409,7 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
           py::call_guard<py::gil_scoped_release>())
       .def(
           "recv",
-          [](FlowStreamIO &self, const std::string &output_name,
+          [](PythonFlowStreamIO &self, const std::string &output_name,
              std::shared_ptr<Buffer> &buffer,
              size_t timeout) -> modelbox::Status {
             std::shared_ptr<Buffer> out_buffer;
@@ -1492,7 +1425,7 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
           py::call_guard<py::gil_scoped_release>())
       .def(
           "recv",
-          [](FlowStreamIO &self, const std::string &output_name,
+          [](PythonFlowStreamIO &self, const std::string &output_name,
              size_t timeout) {
             std::shared_ptr<Buffer> buffer;
             self.Recv(output_name, buffer, timeout);
@@ -1501,13 +1434,13 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
           py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
       .def(
           "recv",
-          [](FlowStreamIO &self, const std::string &output_name) {
+          [](PythonFlowStreamIO &self, const std::string &output_name) {
             std::shared_ptr<Buffer> buffer;
             self.Recv(output_name, buffer, 0);
             return buffer;
           },
           py::keep_alive<0, 1>(), py::call_guard<py::gil_scoped_release>())
-      .def("close_input", &modelbox::FlowStreamIO::CloseInput,
+      .def("close_input", &PythonFlowStreamIO::CloseInput,
            py::call_guard<py::gil_scoped_release>());
 }
 
@@ -1535,6 +1468,23 @@ void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m) {
              }
              return nullptr;
            });
+}
+
+void ModelboxPyApiSetUpModel(pybind11::module &m) {
+  py::class_<PythonModel, std::shared_ptr<PythonModel>>(m, "Model",
+                                                        py::module_local())
+      .def(py::init<std::string, std::string, std::vector<std::string>,
+                    std::vector<std::string>, size_t, std::string,
+                    std::string>())
+      .def("add_path", &PythonModel::AddPath,
+           py::call_guard<py::gil_scoped_release>())
+      .def("start", &PythonModel::Start,
+           py::call_guard<py::gil_scoped_release>())
+      .def("stop", &PythonModel::Stop, py::call_guard<py::gil_scoped_release>())
+      .def("infer", &PythonModel::Infer,
+           py::call_guard<py::gil_scoped_release>())
+      .def("infer_batch", &PythonModel::InferBatch,
+           py::call_guard<py::gil_scoped_release>());
 }
 
 }  // namespace modelbox

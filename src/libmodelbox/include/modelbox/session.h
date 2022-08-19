@@ -39,8 +39,9 @@ class SessionIO {
   virtual Status Recv(OutputBufferList& map_buffer_list, int timeout = 0) = 0;
   virtual Status Close() = 0;
   virtual Status Shutdown() = 0;
-  
+
   virtual ~SessionIO() = default;
+
  protected:
   friend class Session;
   virtual void SessionEnd(std::shared_ptr<FlowUnitError> error = nullptr) = 0;
@@ -63,6 +64,8 @@ class Session {
 
   std::shared_ptr<SessionIO> GetSessionIO();
 
+  bool HasSessionIO();
+
   std::shared_ptr<SessionContext> GetSessionCtx();
   /**
    * @brief will cause session end after current data in engine processed over
@@ -83,6 +86,7 @@ class Session {
   std::shared_ptr<FlowUnitError> GetError();
 
  private:
+  std::atomic_bool has_io_{false};
   std::weak_ptr<SessionIO> io_handle_;  // hold by user
   std::shared_ptr<SessionContext> ctx_;
 
