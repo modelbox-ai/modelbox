@@ -55,7 +55,7 @@ modelbox::Status VcnSourceParser::Deinit() { return modelbox::STATUS_OK; }
 modelbox::Status VcnSourceParser::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
     const std::string &config, std::string &uri,
-    DestroyUriFunc &destroy_uri_func) {
+    modelbox::DestroyUriFunc &destroy_uri_func) {
   modelbox::VcnInfo vcn_info;
   uri = "";
 
