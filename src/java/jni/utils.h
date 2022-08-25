@@ -18,8 +18,16 @@
 #define MODELBOX_JNI_UTILS_H_
 
 #include <jni.h>
+
+#include <memory>
 #include <string>
 
+#include "modelbox/base/status.h"
+
+namespace modelbox {
+
 std::string jstring2string(JNIEnv *env, jstring jStr);
+
+}  // namespace modelbox
 
 #endif  // MODELBOX_JNI_UTILS_H_

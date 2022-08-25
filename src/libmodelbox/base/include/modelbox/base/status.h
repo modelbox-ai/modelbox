@@ -117,6 +117,12 @@ class Status {
   std::string StrCode() const;
 
   /**
+   * @brief Get status raw code in string
+   * 
+   */
+  std::string StrStatusCode() const;
+
+  /**
    * @brief Set error message to status
    * @param errmsg error mesage.
    */

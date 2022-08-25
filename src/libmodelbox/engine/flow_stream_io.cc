@@ -45,6 +45,9 @@ Status FlowStreamIO::Recv(const std::string &output_name,
     auto status = data_map_->Recv(map_buffer_list, timeout);
 
     if (!status) {
+      if (status == STATUS_EOF) {
+        return status;
+      }
       MBLOG_ERROR << "Recv data failed, ret " << status;
       return status;
     }

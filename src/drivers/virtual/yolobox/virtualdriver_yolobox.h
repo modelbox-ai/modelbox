@@ -46,9 +46,7 @@ class YoloBoxVirtualFlowUnitDesc : public modelbox::FlowUnitDesc {
   std::shared_ptr<modelbox::Configuration> config_;
 };
 
-class YoloBoxVirtualDriver
-    : public modelbox::VirtualDriver,
-      public std::enable_shared_from_this<YoloBoxVirtualDriver> {
+class YoloBoxVirtualDriver : public modelbox::VirtualDriver {
  public:
   YoloBoxVirtualDriver() = default;
   ~YoloBoxVirtualDriver() override = default;

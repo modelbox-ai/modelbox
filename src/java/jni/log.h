@@ -17,31 +17,32 @@
 #ifndef MODELBOX_JAVA_LIB_LOG_H_
 #define MODELBOX_JAVA_LIB_LOG_H_
 
-#include <modelbox/base/log.h>
 #include <jni.h>
+#include <modelbox/base/log.h>
 
 namespace modelbox {
 
 class LoggerJava : public Logger {
  public:
   LoggerJava();
-  virtual ~LoggerJava();
+  ~LoggerJava() override;
 
-  virtual void Print(LogLevel level, const char *file, int lineno,
-                     const char *func, const char *msg);
+  void Print(LogLevel level, const char *file, int lineno, const char *func,
+             const char *msg) override;
 
   void RegJNICaller(JNIEnv *env, jobject logger);
 
-  void UnReg();
+  jobject GetJNICaller();
 
-  void SetLogLevel(LogLevel level);
+  void UnReg(JNIEnv *env);
 
-  virtual LogLevel GetLogLevel();
+  void SetLogLevel(LogLevel level) override;
+
+  LogLevel GetLogLevel() override;
 
  private:
-  JNIEnv *env_;
-  jobject logger_;
-  jmethodID log_mid_; 
+  jobject logger_{nullptr};
+  jmethodID log_mid_{nullptr};
   LogLevel level_{LOG_OFF};
 };
 
@@ -50,13 +51,13 @@ class LoggerJavaWapper {
   LoggerJavaWapper();
   virtual ~LoggerJavaWapper();
 
-  void RegLogFunc(std::string pylog);
+  void RegLogFunc(const std::string &pylog);
 
   void SetLogLevel(LogLevel level);
 
-  const std::shared_ptr<Logger> GetLogger();
+  std::shared_ptr<Logger> GetLogger();
 
-  void SetLogger(std::shared_ptr<Logger> logger);
+  void SetLogger(const std::shared_ptr<Logger> &logger);
 
   void PrintExt(LogLevel level, const char *file, int lineno, const char *func,
                 const char *msg);

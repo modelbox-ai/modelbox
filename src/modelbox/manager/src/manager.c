@@ -173,7 +173,7 @@ int manager_reload(void) {
     return -1;
   }
 
-  tlog_setlevel(conf_log_level);
+  tlog_setlevel((tlog_level)conf_log_level);
 
   manager_reload_apps(oldapps);
 
@@ -360,7 +360,7 @@ int manager_init(const char *conf_file, char *name) {
   }
 
   tlog_setlogscreen(g_is_verbose);
-  tlog_setlevel(conf_log_level);
+  tlog_setlevel((tlog_level)conf_log_level);
 
   manager_log(MANAGER_LOG_INFO, "%s starting... (Build : %s %s)",
               program_invocation_short_name, __DATE__, __TIME__);

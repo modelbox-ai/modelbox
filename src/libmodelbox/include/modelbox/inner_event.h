@@ -33,6 +33,11 @@ class FlowUnitEvent {
                   const std::shared_ptr<void> &private_content);
   std::shared_ptr<void> GetPrivate(const std::string &key);
 
+  template <typename T>
+  inline std::shared_ptr<T> GetPrivate(const std::string &key) {
+    return std::static_pointer_cast<T>(GetPrivate(key));
+  }
+
  private:
   std::unordered_map<std::string, std::shared_ptr<void>> private_map_;
 };

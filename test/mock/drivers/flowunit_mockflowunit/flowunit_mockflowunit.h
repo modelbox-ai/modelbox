@@ -32,14 +32,14 @@ class MockFlowUnit : public FlowUnit {
   MockFlowUnit() = default;
   ~MockFlowUnit() override = default;
 
-  MOCK_METHOD(Status, Open, (const std::shared_ptr<Configuration> &opts));
-  MOCK_METHOD(Status, Close, ());
+  MOCK_METHOD(Status, Open, (const std::shared_ptr<Configuration> &opts), (override));
+  MOCK_METHOD(Status, Close, (), (override));
 
-  MOCK_METHOD(Status, Process, (std::shared_ptr<DataContext>));
-  MOCK_METHOD(Status, DataPre, (std::shared_ptr<DataContext>));
-  MOCK_METHOD(Status, DataPost, (std::shared_ptr<DataContext>));
-  MOCK_METHOD(Status, DataGroupPre, (std::shared_ptr<DataContext>));
-  MOCK_METHOD(Status, DataGroupPost, (std::shared_ptr<DataContext>));
+  MOCK_METHOD(Status, Process, (std::shared_ptr<DataContext>), (override));
+  MOCK_METHOD(Status, DataPre, (std::shared_ptr<DataContext>), (override));
+  MOCK_METHOD(Status, DataPost, (std::shared_ptr<DataContext>), (override));
+  MOCK_METHOD(Status, DataGroupPre, (std::shared_ptr<DataContext>), (override));
+  MOCK_METHOD(Status, DataGroupPost, (std::shared_ptr<DataContext>), (override));
 };
 
 class MockFlowUnitFactory : public FlowUnitFactory {

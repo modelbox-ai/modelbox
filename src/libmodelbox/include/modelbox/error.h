@@ -30,6 +30,7 @@ class FlowUnitError {
                 const Status& error_status);
   virtual ~FlowUnitError();
   std::string GetDesc();
+  Status GetStatus();
 
  private:
   std::string desc_;

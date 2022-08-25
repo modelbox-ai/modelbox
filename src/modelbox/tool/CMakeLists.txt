@@ -35,6 +35,7 @@ set(HEADER
     )
 
 add_executable(modelbox-tool ${MODELBOX_TOOL_SOURCES})
+set_target_properties(modelbox-tool PROPERTIES ENABLE_EXPORTS 1)
 target_link_libraries(modelbox-tool ${TLOG_STATIC_LIBRARIES})
 target_link_libraries(modelbox-tool ${LIBMODELBOX_SHARED})
 target_link_libraries(modelbox-tool ${MODELBOX_COMMON_LIBRARY})

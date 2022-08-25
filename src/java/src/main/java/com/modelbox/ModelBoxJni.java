@@ -14,32 +14,19 @@
  * limitations under the License.
  */
 
+
+
 package com.modelbox;
 
+/**
+ * modelbox defulat JNI
+ */
 public class ModelBoxJni {
   static {
     System.loadLibrary("modelbox-jni");
   }
 
   // CHECKSTYLE:OFF
-  public static native long FlowNew();
 
-  public static native void FlowFree(long flow);
-
-  public static native void FlowInit(long flow, String name, String graph);
-
-  public static native void FlowBuild(long flow);
-
-  public static native long LogNew();
-
-  public static native void LogFree(long log);
-
-  public static native void SetLogLevel(long log, long level);
-
-  public static native void LogReg(Log log);
-
-  public static native void LogUnReg();
-
-  public static native void LogPrint(long level, String file, int lineno, String func, String msg);
   // CHECKSTYLE:ON
 }

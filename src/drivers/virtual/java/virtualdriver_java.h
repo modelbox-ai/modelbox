@@ -54,9 +54,7 @@ class VirtualJavaFlowUnitDesc : public modelbox::FlowUnitDesc {
   std::string jar_file_path_;
 };
 
-class JavaVirtualDriver
-    : public modelbox::VirtualDriver,
-      public std::enable_shared_from_this<JavaVirtualDriver> {
+class JavaVirtualDriver : public modelbox::VirtualDriver {
  public:
   JavaVirtualDriver() = default;
   ~JavaVirtualDriver() override = default;

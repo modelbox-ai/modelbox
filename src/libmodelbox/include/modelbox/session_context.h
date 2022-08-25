@@ -57,6 +57,16 @@ class SessionContext {
   std::shared_ptr<void> GetPrivate(const std::string &key);
 
   /**
+   * @brief Get private data from session context
+   * @param key private data key
+   * @return private data
+   */
+  template <typename T>
+  inline std::shared_ptr<T> GetPrivate(const std::string &key) {
+    return std::static_pointer_cast<T>(GetPrivate(key));
+  }
+
+  /**
    * @brief Get private data typeid from session context
    * @param key private data key
    * @return private data typeid
