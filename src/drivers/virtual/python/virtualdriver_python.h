@@ -54,9 +54,7 @@ class VirtualPythonFlowUnitDesc : public modelbox::FlowUnitDesc {
   std::string python_file_path_;
 };
 
-class PythonVirtualDriver
-    : public modelbox::VirtualDriver,
-      public std::enable_shared_from_this<PythonVirtualDriver> {
+class PythonVirtualDriver : public modelbox::VirtualDriver {
  public:
   PythonVirtualDriver() = default;
   ~PythonVirtualDriver() override = default;

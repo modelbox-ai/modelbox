@@ -31,21 +31,24 @@ include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(${JNI_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_LIST_DIR})
 include_directories(${MODELBOX_JNI_HEADER_DIR})
-
-file(GLOB_RECURSE LIBMODELBOX_JAVA_JNI_SOURCES *.cpp *.cc *.c)
-add_library(modelbox-jni SHARED ${LIBMODELBOX_JAVA_JNI_SOURCES})
-
-add_dependencies(modelbox-jni modelbox-java)
+include_directories(${HUAWEI_SECURE_C_INCLUDE_DIR})
 
 set(MODELBOX_JNI "modelbox-jni")
+file(GLOB_RECURSE LIBMODELBOX_JAVA_JNI_SOURCES *.cpp *.cc *.c)
+add_library(${MODELBOX_JNI} SHARED ${LIBMODELBOX_JAVA_JNI_SOURCES})
+target_compile_options(${MODELBOX_JNI} PUBLIC -fvisibility=hidden)
+add_dependencies(${MODELBOX_JNI} modelbox-java-jni-header)
+
 target_link_libraries(${MODELBOX_JNI} ${LIBMODELBOX_SHARED})
 set(JNI_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
+set(JNI_PACKAGE_INSTALLDIR "/usr/java/packages/lib")
 
-install(TARGETS modelbox-jni 
+install(TARGETS ${MODELBOX_JNI} 
     COMPONENT cpu-device-flowunit
     RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
+    LIBRARY DESTINATION ${JNI_PACKAGE_INSTALLDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
     OPTIONAL
     )

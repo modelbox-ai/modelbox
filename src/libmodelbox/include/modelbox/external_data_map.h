@@ -45,6 +45,15 @@ class ExternalDataMap : public SessionIO {
   virtual std::shared_ptr<SessionContext> GetSessionContext() = 0;
   virtual std::shared_ptr<Configuration> GetSessionConfig() = 0;
   virtual std::shared_ptr<FlowUnitError> GetLastError() = 0;
+
+  virtual void SetPrivate(std::shared_ptr<void> ptr) = 0;
+
+  virtual std::shared_ptr<void> GetPrivate() = 0;
+
+  template <typename T>
+  inline std::shared_ptr<T> GetPrivate() {
+    return std::static_pointer_cast<T>(GetPrivate());
+  }
 };
 
 class ExternalDataMapImpl
@@ -73,6 +82,10 @@ class ExternalDataMapImpl
   std::shared_ptr<SessionContext> GetSessionContext() override;
 
   std::shared_ptr<Configuration> GetSessionConfig() override;
+
+  void SetPrivate(std::shared_ptr<void> ptr) override;
+
+  std::shared_ptr<void> GetPrivate() override;
 
   void SetLastError(std::shared_ptr<FlowUnitError> error);
 
@@ -127,6 +140,7 @@ class ExternalDataMapImpl
   bool close_flag_{false};
   bool shutdown_flag_{false};
   std::recursive_mutex close_state_lock_;
+  std::shared_ptr<void> private_ptr_;
 };
 
 class ExternalDataSelect

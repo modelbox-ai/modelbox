@@ -86,10 +86,7 @@ class LeastCommonAncestor {
                         const std::string &port_name, IndexPortType &port_type);
 
   std::unordered_map<std::string, std::shared_ptr<NodeBase>> all_nodes_;
-
-  int nodes_num_;
   std::map<int, std::vector<int>> paths_;
-
   std::unordered_map<int, std::string> index_name_map_;
   std::unordered_map<std::string, int> name_index_map_;
 };

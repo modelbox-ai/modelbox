@@ -114,7 +114,7 @@ class DriverHandler {
   std::map<void *, std::shared_ptr<DriverHandlerInfo>> handler_map;
 };
 
-class Driver {
+class Driver : public std::enable_shared_from_this<Driver>  {
  public:
   Driver();
   virtual ~Driver();
@@ -135,6 +135,7 @@ class Driver {
  private:
   int GetMode(bool no_delete, bool global, bool deep_bind);
   void CloseFactory();
+  void CloseFactoryLocked();
   bool is_virtual_ = false;
   void *driver_handler_{nullptr};
   int factory_count_ = 0;

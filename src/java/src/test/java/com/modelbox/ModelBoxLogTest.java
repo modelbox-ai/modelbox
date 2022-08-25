@@ -17,10 +17,8 @@
 package com.modelbox;
 
 import static org.junit.Assert.assertEquals;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
 import org.junit.Test;
 
 public class ModelBoxLogTest {
@@ -38,11 +36,48 @@ public class ModelBoxLogTest {
   @Test
   public void testLogReg() throws Exception {
     String mesg = "This is hello msg";
+    Log.getLogger().setLogLevel(Log.LogLevel.LOG_DEBUG);
+    Log.debug(mesg);
     TestLog log = new TestLog();
     Log.regLog(log);
     log.setLogLevel(Log.LogLevel.LOG_DEBUG);
     Log.info(mesg);
     assertEquals(log.lastMsg, mesg);
+    assertEquals(log, Log.LogGetLogger());
     Log.unRegLog();
+  }
+
+  @Test
+  public void testLogFormat() throws Exception {
+    String mesg = "This is hello msg";
+    String mesg1 = "This is message 2";
+    String expect_msg = "Msg: " + mesg + " " + mesg1;
+    Log.getLogger().setLogLevel(Log.LogLevel.LOG_DEBUG);
+    Log.debug(mesg);
+    TestLog log = new TestLog();
+    Log.regLog(log);
+    log.setLogLevel(Log.LogLevel.LOG_DEBUG);
+    Log.info("Msg: %s %s", mesg, mesg1);
+    assertEquals(log.lastMsg, expect_msg);
+    assertEquals(log, Log.LogGetLogger());
+    Log.unRegLog();
+  }
+
+  @Test
+  public void testLogLevel() throws Exception {
+    Log.LogLevel oldLevel = Log.getLogger().getLogLevel();
+
+    Log.getLogger().setLogLevel(Log.LogLevel.LOG_DEBUG);
+    assertEquals(Log.getLogger().getLogLevel(), Log.LogLevel.LOG_DEBUG);
+    Log.getLogger().setLogLevel(Log.LogLevel.LOG_INFO);
+    assertEquals(Log.getLogger().getLogLevel(), Log.LogLevel.LOG_INFO);
+    Log.getLogger().setLogLevel(Log.LogLevel.LOG_NOTICE);
+    assertEquals(Log.getLogger().getLogLevel(), Log.LogLevel.LOG_NOTICE);
+    Log.getLogger().setLogLevel(Log.LogLevel.LOG_WARN);
+    assertEquals(Log.getLogger().getLogLevel(), Log.LogLevel.LOG_WARN);
+    Log.getLogger().setLogLevel(Log.LogLevel.LOG_ERROR);
+    assertEquals(Log.getLogger().getLogLevel(), Log.LogLevel.LOG_ERROR);
+    
+    Log.getLogger().setLogLevel(oldLevel);
   }
 }

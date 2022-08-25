@@ -14,8 +14,29 @@
  * limitations under the License.
  */
 
-package com.modelbox;
+#ifndef MODELBOX_SCOPED_JVM_H_
+#define MODELBOX_SCOPED_JVM_H_
 
-public class FlowException extends Exception {
+#include <jni.h>
 
-}
+namespace modelbox {
+
+class ScopedJvm {
+ public:
+  ScopedJvm();
+  virtual ~ScopedJvm();
+
+  JNIEnv *GetJNIEnv();
+
+  static JavaVM *GetJavaVM();
+
+  static void SetJavaVM(JavaVM *vm);
+
+ private:
+  static JavaVM *jvm_;
+  bool do_attach_{false};
+  JNIEnv *env_{nullptr};
+};
+}  // namespace modelbox
+
+#endif  // MODELBOX_SCOPED_JVM_H_

@@ -527,6 +527,11 @@ class FlowUnitStreamContext {
 
   std::shared_ptr<void> GetPrivate(const std::string &key);
 
+  template <typename T>
+  inline std::shared_ptr<T> GetPrivate(const std::string &key) {
+    return std::static_pointer_cast<T>(GetPrivate(key));
+  }
+
   Status CloseAll();
 
   Status Close(const std::string &port);

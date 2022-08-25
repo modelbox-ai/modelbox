@@ -60,6 +60,20 @@ const char* kStatusCodeString[] = {
     "End flag",
 };
 
+const char* kStatusCodeRawString[] = {
+    "STATUS_SUCCESS",    "STATUS_FAULT",    "STATUS_NOTFOUND",
+    "STATUS_INVALID",    "STATUS_AGAIN",    "STATUS_BADCONF",
+    "STATUS_NOMEM",      "STATUS_RANGE",    "STATUS_EXIST",
+    "STATUS_INTERNAL",   "STATUS_BUSY",     "STATUS_PERMIT",
+    "STATUS_NOTSUPPORT", "STATUS_NODATA",   "STATUS_NOSPACE",
+    "STATUS_NOBUFS",     "STATUS_OVERFLOW", "STATUS_INPROGRESS",
+    "STATUS_ALREADY",    "STATUS_TIMEDOUT", "STATUS_NOSTREAM",
+    "STATUS_RESET",      "STATUS_CONTINUE", "STATUS_EDQUOT",
+    "STATUS_STOP",       "STATUS_SHUTDOWN", "STATUS_EOF",
+    "STATUS_NOENT",      "STATUS_DEADLOCK", "STATUS_NORESPONSE",
+    "STATUS_IO",
+};
+
 Status::Status() = default;
 
 Status::~Status() = default;
@@ -90,6 +104,10 @@ Status::Status(const Status& status, const std::string& errmsg) {
 
 void Status::Wrap(const Status& status, const StatusCode& code,
                   const std::string& errmsg) {
+  if (code >= STATUS_LASTFLAG) {
+    return;
+  }
+
   code_ = code;
   errmsg_ = errmsg;
   wrap_status_ = std::make_shared<Status>(status);
@@ -131,11 +149,19 @@ std::string Status::ToString() const {
 }
 
 std::string Status::StrCode() const {
-  if (code_ >= sizeof(kStatusCodeString) / sizeof(char*)) {
+  if ((size_t)code_ >= sizeof(kStatusCodeString) / sizeof(char*)) {
     return "";
   }
 
   return kStatusCodeString[code_];
+}
+
+std::string Status::StrStatusCode() const {
+  if ((size_t)code_ >= sizeof(kStatusCodeString) / sizeof(char*)) {
+    return "";
+  }
+
+  return kStatusCodeRawString[code_];
 }
 
 void Status::SetErrormsg(const std::string& errmsg) { errmsg_ = errmsg; }

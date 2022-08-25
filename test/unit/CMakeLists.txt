@@ -16,7 +16,7 @@
  
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 
 file(GLOB_RECURSE UNIT_TEST_SOURCE *.cpp *.cc *.c)
  
@@ -35,6 +35,8 @@ add_executable(unit EXCLUDE_FROM_ALL
     ${TEST_SOURCE}
     ${TEST_MAIN_SOURCE}
 )
+
+set_target_properties(unit PROPERTIES ENABLE_EXPORTS 1)
 
 
 if (TARGET ${MODELBOX_SERVER_PLUGIN_EDITOR})

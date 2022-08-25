@@ -16,8 +16,6 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
-
 if(DUKTAPE_FOUND)
     add_definitions(-DENABLE_JS_PLUGIN)
 endif()
@@ -52,6 +50,7 @@ set(HEADER
 add_subdirectory(plugin)
 
 add_executable(modelbox-server ${MODELBOX_SOURCES})
+set_target_properties(modelbox-server PROPERTIES ENABLE_EXPORTS 1)
 target_link_libraries(modelbox-server ${LIBMODELBOX_SHARED})
 target_link_libraries(modelbox-server ${MODELBOX_COMMON_LIBRARY})
 target_link_libraries(modelbox-server pthread)

@@ -74,10 +74,10 @@ class MockGraphConfigFactory : public modelbox::GraphConfigFactory {
   ~MockGraphConfigFactory() override = default;
 
   MOCK_METHOD(std::shared_ptr<GraphConfig>, CreateGraphConfigFromStr,
-              (const std::string &config_path));
+              (const std::string &config_path), (override));
   MOCK_METHOD(std::shared_ptr<GraphConfig>, CreateGraphConfigFromFile,
-              (const std::string &file_path));
-  MOCK_METHOD(std::string, GetGraphConfFactoryType, ());
+              (const std::string &file_path), (override));
+  MOCK_METHOD(std::string, GetGraphConfFactoryType, (), (override));
 
  private:
   std::shared_ptr<GraphvizFactory> bind_factory_;
