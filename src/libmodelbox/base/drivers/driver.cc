@@ -213,7 +213,13 @@ bool Driver::IsVirtual() { return is_virtual_; }
 void Driver::SetVirtual(bool is_virtual) { is_virtual_ = is_virtual; }
 
 void Driver::CloseFactory() {
-  if (--factory_count_ > 0) {
+  std::lock_guard<std::mutex> guard(mutex_);
+  CloseFactoryLocked();
+}
+
+void Driver::CloseFactoryLocked() {
+  factory_count_--;
+  if (factory_count_ > 0) {
     return;
   }
 
@@ -309,7 +315,8 @@ int Driver::GetMode(bool no_delete, bool global, bool deep_bind) {
 
 std::shared_ptr<DriverFactory> Driver::CreateFactory() {
   std::lock_guard<std::mutex> guard(mutex_);
-  if (++factory_count_ == 1) {
+  factory_count_++;
+  if (factory_count_ == 1) {
     auto no_delete = GetDriverDesc()->GetNoDelete();
     auto global = GetDriverDesc()->GetGlobal();
     auto deep_bind = GetDriverDesc()->GetDeepBind();
@@ -330,7 +337,7 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
       StatusError = {STATUS_INVALID, "dlopen " + GetDriverFile() +
                                          " failed, error: " + dl_errmsg};
       MBLOG_ERROR << StatusError.Errormsg();
-      CloseFactory();
+      CloseFactoryLocked();
       return nullptr;
     }
 
@@ -351,7 +358,7 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
         StatusError = {STATUS_INVALID,
                        "failed to dlsym function DriverInit in file: " +
                            GetDriverFile() + ", error: " + dl_errmsg};
-        CloseFactory();
+        CloseFactoryLocked();
         return nullptr;
       }
 
@@ -362,7 +369,7 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
         StatusError = {init, "driver init failed, driver:" + GetDriverFile()};
         MBLOG_ERROR << "driverInit failed in " << GetDriverFile() << ", "
                     << init;
-        CloseFactory();
+        CloseFactoryLocked();
         return nullptr;
       }
     }
@@ -384,7 +391,7 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
       }
 
       MBLOG_ERROR << StatusError.Errormsg();
-      CloseFactory();
+      CloseFactoryLocked();
       return nullptr;
     }
 
@@ -393,16 +400,14 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
       StatusError = {STATUS_FAULT,
                      "create driver failed, driver:" + GetDriverFile()};
       MBLOG_ERROR << StatusError.Errormsg();
-      CloseFactory();
+      CloseFactoryLocked();
       return nullptr;
     }
   }
 
+  auto holder = shared_from_this();
   std::shared_ptr<DriverFactory> child_factory(
-      factory_.get(), [&](DriverFactory *child_factory) {
-        std::lock_guard<std::mutex> guard(mutex_);
-        CloseFactory();
-      });
+      factory_.get(), [&, holder](DriverFactory *child_factory) { holder->CloseFactory(); });
 
   return child_factory;
 }

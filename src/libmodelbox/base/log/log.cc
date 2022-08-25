@@ -19,6 +19,7 @@
 #include <libgen.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <chrono>
@@ -167,7 +168,10 @@ void LoggerCallback::Print(LogLevel level, const char *file, int lineno,
   Logger::Print(level, file, lineno, func, msg);
 }
 
-LoggerConsole::LoggerConsole() { SetLogLevelFromEnv(); }
+LoggerConsole::LoggerConsole() {
+  neeed_flush_ = !isatty(STDOUT_FILENO);
+  SetLogLevelFromEnv();
+}
 
 void LoggerConsole::SetLogLevelFromEnv() {
   const char *log_level = getenv("MODELBOX_CONSOLE_LOGLEVEL");
@@ -222,6 +226,9 @@ void LoggerConsole::Print(LogLevel level, const char *file, int lineno,
   }
 
   printf("%s%s\n", prefix_msg, msg);
+  if (neeed_flush_) {
+    fflush(stdout);
+  }
 }
 
 void LoggerConsole::SetLogLevel(LogLevel level) { level_ = level; }

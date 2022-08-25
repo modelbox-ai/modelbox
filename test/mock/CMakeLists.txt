@@ -22,3 +22,4 @@ endif()
 
 add_subdirectory(drivers)
 add_subdirectory(minimodelbox)
+add_subdirectory(flowunit)

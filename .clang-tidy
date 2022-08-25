@@ -68,5 +68,5 @@ Checks: >
   # clang-analyzer-optin.cplusplus.VirtualCall,
 
 # Turn all the warnings from the checks above into errors.
-HeaderFilterRegex: '(src|test/unit|test/drivers|test/mock)/*'
+HeaderFilterRegex: '((?!build/)src|test/unit|test/drivers|test/function|test/mock)/*'
 FormatStyle: file

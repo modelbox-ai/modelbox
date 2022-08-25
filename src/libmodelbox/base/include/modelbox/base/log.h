@@ -201,6 +201,7 @@ class LoggerConsole : public Logger {
  private:
   void SetLogLevelFromEnv();
   LogLevel level_ = LOG_OFF;
+  bool neeed_flush_;
 };
 
 class Log {

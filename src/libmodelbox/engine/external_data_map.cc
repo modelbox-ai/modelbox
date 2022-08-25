@@ -288,6 +288,12 @@ std::shared_ptr<Configuration> ExternalDataMapImpl::GetSessionConfig() {
   return ctx->GetConfig();
 }
 
+void ExternalDataMapImpl::SetPrivate(std::shared_ptr<void> ptr) {
+  private_ptr_ = ptr;
+}
+
+std::shared_ptr<void> ExternalDataMapImpl::GetPrivate() { return private_ptr_; }
+
 void ExternalDataMapImpl::SetLastError(std::shared_ptr<FlowUnitError> error) {
   last_error_ = std::move(error);
 }

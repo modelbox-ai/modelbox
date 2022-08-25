@@ -5,6 +5,10 @@ on:
     branches: 
       - main
 
+concurrency: 
+  group: ${{ github.head_ref && github.workflow}}
+  cancel-in-progress: true
+
 env:
   BUILD_TYPE: Release
 
@@ -17,16 +21,32 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: apt update
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+        maven-version: '3.6.2'
+        cache: 'maven'
+    - name: Set up Maven
+      uses: stCarolas/setup-maven@v4.4
+      with:
+        maven-version: 3.8.2
+    - uses: actions/cache@v1
+      with:
+        path: /root/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('src/java/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         key: ubuntu-latest
-        max-size: 1024M
+        max-size: 512M
     - name: Configure CMake
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEBUI=off -DCLANG_TIDY=on -DCLANG_TIDY_AS_ERROR=on
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEBUI=off -DCLANG_TIDY=on -DCLANG_TIDY_AS_ERROR=on -DWITH_JAVA=on
 
     - name: Build
       working-directory: build

@@ -49,9 +49,7 @@ class VirtualInferenceFlowUnitDesc : public modelbox::FlowUnitDesc {
   std::shared_ptr<modelbox::Configuration> config_;
 };
 
-class InferenceVirtualDriver
-    : public modelbox::VirtualDriver,
-      public std::enable_shared_from_this<InferenceVirtualDriver> {
+class InferenceVirtualDriver : public modelbox::VirtualDriver {
  public:
   InferenceVirtualDriver() = default;
   ~InferenceVirtualDriver() override = default;

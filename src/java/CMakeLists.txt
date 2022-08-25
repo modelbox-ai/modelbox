@@ -46,15 +46,31 @@ endif()
 set(TEST_CONFIG_JSON_FILE ${CMAKE_CURRENT_BINARY_DIR}/src/test/java/com/modelbox/TestConfig.json)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/test/java/com/modelbox/TestConfig.json.in ${TEST_CONFIG_JSON_FILE})
 set(MODELBOX_JNI_HEADER_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
+set(JAVA_NATIVE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/main/java/com/modelbox)
+
+file(MAKE_DIRECTORY ${MODELBOX_JNI_HEADER_DIR})
 
 add_subdirectory(jni)
+
+ADD_CUSTOM_TARGET(modelbox-java-jni-header
+   DEPENDS ${MODELBOX_JNI_HEADER_DIR}/*.h
+)
+
+add_custom_command(OUTPUT ${MODELBOX_JNI_HEADER_DIR}/*.h
+    COMMAND javac -h ${MODELBOX_JNI_HEADER_DIR} ${JAVA_NATIVE_SOURCE}/* -cp ${CMAKE_CURRENT_BINARY_DIR}/*.jar -d ${MODELBOX_JNI_HEADER_DIR}
+    DEPENDS ${JAVA_NATIVE_SOURCE}
+)
+set_source_files_properties(${MODELBOX_JNI_HEADER_DIR} PROPERTIES
+    GENERATED TRUE
+)
+
+add_dependencies(modelbox-java-jni-header modelbox-java)
 
 add_custom_target(
     modelbox-java
     COMMAND mvn package -DskipTests -DbuildDirectory=${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
 
 add_custom_target(
     unittest-java
@@ -75,3 +91,4 @@ install(CODE
 
 add_dependencies(unittest-java modelbox-java)
 add_dependencies(unittest-java modelbox-jni)
+add_dependencies(unittest-java all-drivers)

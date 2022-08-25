@@ -14,17 +14,30 @@
  * limitations under the License.
  */
 
+
 package com.modelbox;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
 import org.json.JSONObject;
 
 public class TestConfig {
 
   static {
+    /**
+     for vscode junit:
+     add the following settings in settings.json
+          
+     "java.test.config": {
+        "vmArgs": [
+            "-Djava.library.path=${workspaceFolder}/build/src/java/jni"
+        ],
+        "env" : {
+            "TEST_CONFIG_JSON_FILE" : "${workspaceFolder}/build/src/java/src/test/java/com/modelbox/TestConfig.json"
+        }
+      },
+     */
     String jsonfile = System.getenv("TEST_CONFIG_JSON_FILE");
     if (jsonfile != null) {
       try {

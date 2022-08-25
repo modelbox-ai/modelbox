@@ -34,7 +34,7 @@ class HelloWorld(modelbox.FlowUnit):
         out_data = data_context.output("out_data")
 
         for buffer in in_data:
-            request_body = json.loads(buffer.as_object().strip(chr(0)))
+            request_body = json.loads(str(buffer))
             msg = request_body.get("msg")
             msg = msg.title()
             msg = addTimestamp(msg)

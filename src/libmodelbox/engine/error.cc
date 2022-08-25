@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/error.h"
+
+#include <utility>
 
 namespace modelbox {
 
@@ -34,9 +34,10 @@ FlowUnitError::FlowUnitError(const std::string& node,
 FlowUnitError::~FlowUnitError() = default;
 
 std::string FlowUnitError::GetDesc() { return desc_; };
+Status FlowUnitError::GetStatus() { return error_status_; };
 
-DataError::DataError(const std::string &error_code,
-                     const std::string &error_msg) {
+DataError::DataError(const std::string& error_code,
+                     const std::string& error_msg) {
   error_code_ = error_code;
   error_msg_ = error_msg;
   new_error_ = true;
