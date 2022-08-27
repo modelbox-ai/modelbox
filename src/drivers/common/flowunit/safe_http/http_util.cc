@@ -12,7 +12,7 @@ void SafeReply(const web::http::http_request &request,
   resp.headers().add(
       U("Content-Security-Policy"),
       U("default-src 'self'  data: 'unsafe-inline' 'unsafe-eval'; "
-        "objectsrc 'none'; "
+        "object-src 'none'; "
         "frame-ancestors 'none'"));
   resp.headers().add(U("X-Frame-Options"), U("DENY"));
   request.reply(resp).then([](pplx::task<void> t) { HandleError(t); });
@@ -27,7 +27,7 @@ void SafeReply(const web::http::http_request &request,
   resp.headers().add(
       U("Content-Security-Policy"),
       U("default-src 'self'  data: 'unsafe-inline' 'unsafe-eval'; "
-        "objectsrc 'none'; "
+        "object-src 'none'; "
         "frame-ancestors 'none'"));
   resp.headers().add(U("X-Frame-Options"), U("DENY"));
   request.reply(resp).then([](pplx::task<void> t) { HandleError(t); });
@@ -44,7 +44,7 @@ void SafeReply(const web::http::http_request &request,
   resp.headers().add(
       U("Content-Security-Policy"),
       U("default-src 'self'  data: 'unsafe-inline' 'unsafe-eval'; "
-        "objectsrc 'none'; "
+        "object-src 'none'; "
         "frame-ancestors 'none'"));
   resp.headers().add(U("X-Frame-Options"), U("DENY"));
   request.reply(resp).then([](pplx::task<void> t) { HandleError(t); });

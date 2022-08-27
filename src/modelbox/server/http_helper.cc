@@ -569,7 +569,7 @@ void AddSafeHeader(httplib::Response &response) {
   response.headers.insert(std::pair<std::string, std::string>(
       "Content-Security-Policy",
       "default-src 'self'  data: 'unsafe-inline' 'unsafe-eval' "
-      "console-static.huaweicloud.com res.hc-cdn.com;objectsrc 'none'; "
+      "console-static.huaweicloud.com res.hc-cdn.com;object-src 'none'; "
       "frame-ancestors 'none'"));
   response.headers.insert(
       std::pair<std::string, std::string>("X-Frame-Options", "DENY"));
