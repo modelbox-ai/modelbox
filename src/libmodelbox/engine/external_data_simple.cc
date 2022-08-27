@@ -38,13 +38,13 @@ std::shared_ptr<BufferList> ExternalDataSimple::CreateBufferList() {
 Status ExternalDataSimple::PushData(const std::string& port_name,
                                     std::shared_ptr<BufferList>& bufferlist) {
   if (data_map_ == nullptr) {
-    return STATUS_INVALID;
+    return {STATUS_INVALID, "data_map is nullptr"};
   }
 
   auto temp = data_map_->CreateBufferList();
   if (temp->GetDevice() != bufferlist->GetDevice()) {
     MBLOG_ERROR << "pushed buffer is on different device";
-    return STATUS_INVALID;
+    return {STATUS_INVALID, "pushed buffer is on different device"};
   }
 
   auto status = data_map_->Send(port_name, bufferlist);
@@ -105,6 +105,10 @@ Status ExternalDataSimple::PushData(
 Status ExternalDataSimple::GetResult(const std::string& port_name,
                                      std::shared_ptr<Buffer>& buffer,
                                      const int& timeout) {
+  if (data_map_ == nullptr) {
+    return {STATUS_INVALID, "data map is null"};
+  }
+
   if (buffer_list_map_[port_name].size() == 0) {
     if (status_ != STATUS_OK) {
       return status_;
@@ -121,6 +125,12 @@ Status ExternalDataSimple::GetResult(const std::string& port_name,
     if (status_ != STATUS_SUCCESS) {
       MBLOG_ERROR << "recv failed, error is " << data_map_->GetLastError();
       return status_;
+    }
+
+    if (map_buffer_list.find(port_name) == map_buffer_list.end()) {
+      std::string error_msg = "port name not found: " + port_name;
+      buffer_list_map_.erase(port_name);
+      return {STATUS_INVALID, error_msg};
     }
 
     for (auto& iter : map_buffer_list) {

@@ -40,6 +40,23 @@ Device::Device(size_t thread_count,
   }
 }
 
+std::string Device::GetDeviceID() const {
+  if (device_desc_ != nullptr) {
+    return device_desc_->GetDeviceId();
+  }
+
+  return "";
+}
+
+std::shared_ptr<Executor> Device::GetDeviceExecutor() { return executor_; }
+
+Status Device::DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
+                             size_t count) {
+  return STATUS_NOTSUPPORT;
+}
+
+std::string Device::GetType() const { return ""; }
+
 bool Device::NeedResourceNice() { return false; }
 
 std::list<std::future<Status>> Device::DeviceExecuteAsync(

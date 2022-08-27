@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/buffer_type.h"
+
+#include <utility>
 
 #include "modelbox/base/log.h"
 namespace modelbox {
@@ -28,7 +28,7 @@ std::shared_ptr<BufferTypeTree> BufferTypeTree::instance_(nullptr);
 
 void BufferType::SetType(std::string type) { type_ = std::move(type); }
 
-const std::string &BufferType::GetType() const { return type_; }
+const std::string& BufferType::GetType() const { return type_; }
 
 bool BufferType::AddParentType(const std::shared_ptr<BufferType>& parent) {
   if (parent == nullptr) {
@@ -89,7 +89,7 @@ void BufferType::RemoveType() {
   children_.clear();
 }
 
-bool BufferType::IsAncestor(const BufferType &other) {
+bool BufferType::IsAncestor(const BufferType& other) {
   const auto& type = other.GetType();
 
   for (const auto& child : children_) {
@@ -105,7 +105,7 @@ bool BufferType::IsAncestor(const BufferType &other) {
   return false;
 }
 
-bool BufferType::IsOffspring(const BufferType &other) {
+bool BufferType::IsOffspring(const BufferType& other) {
   const auto& type = other.GetType();
 
   if (parent_ == nullptr) {
@@ -133,7 +133,7 @@ bool BufferTypeTree::AddRootType(const std::string& root_type) {
   std::shared_ptr<BufferType> root_buffer_type_ptr = GetType(root_);
 
   if (root_buffer_type_ptr == nullptr) {
-    auto *root_buffer_type = new BufferType();
+    auto* root_buffer_type = new BufferType();
     root_buffer_type->SetType(root_type);
     root_buffer_type_ptr.reset(root_buffer_type);
     nodes_.insert(std::make_pair(root_type, root_buffer_type_ptr));
@@ -161,7 +161,7 @@ bool BufferTypeTree::AddType(const std::string& type,
     return false;
   }
 
-  auto *child_buffer_type = new BufferType();
+  auto* child_buffer_type = new BufferType();
   child_buffer_type->SetType(type);
   child_buffer_type_ptr.reset(child_buffer_type);
   if (!parent_buffer_type_ptr->AddChildType(child_buffer_type_ptr)) {
@@ -218,6 +218,13 @@ bool BufferTypeTree::IsCompatible(const std::string& type,
   }
 
   return ancestor_buffer_type_ptr->IsAncestor(*(buffer_type_ptr.get()));
+}
+
+BufferTypeTree* BufferTypeTree::GetInstance() {
+  if (nullptr == instance_) {
+    instance_.reset(new BufferTypeTree());
+  }
+  return instance_.get();
 }
 
 }  // namespace modelbox

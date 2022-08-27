@@ -86,10 +86,7 @@ class BufferMeta {
    * @param key meta key
    * @return meta tuple
    */
-  std::tuple<Any*, bool> Get(const std::string& key) {
-    return custom_meta_.Get(key);
-  }
-
+  std::tuple<Any*, bool> Get(const std::string& key);
   /**
    * @brief Copy meta
    * @param other other meta
@@ -258,7 +255,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    * @param key meta key
    * @return meta tuple
    */
-  std::tuple<Any*, bool> Get(const std::string& key) { return meta_->Get(key); }
+  std::tuple<Any*, bool> Get(const std::string& key);
 
   /**
    * @brief Get meta key from the buffer, when the key does not exist, return to

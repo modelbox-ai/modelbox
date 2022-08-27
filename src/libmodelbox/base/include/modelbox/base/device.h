@@ -91,15 +91,9 @@ class Device : public std::enable_shared_from_this<Device> {
   Device(size_t thread_count, std::shared_ptr<DeviceMemoryManager> mem_mgr);
   virtual ~Device() = default;
 
-  virtual std::string GetDeviceID() const {
-    if (device_desc_ != nullptr) {
-      return device_desc_->GetDeviceId();
-    }
+  virtual std::string GetDeviceID() const;
 
-    return "";
-  };
-
-  virtual std::string GetType() const { return ""; };
+  virtual std::string GetType() const;
 
   void SetDeviceDesc(std::shared_ptr<DeviceDesc> device_desc);
 
@@ -108,15 +102,13 @@ class Device : public std::enable_shared_from_this<Device> {
   Status Init();
 
   virtual Status DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
-                               size_t count) {
-    return STATUS_NOTSUPPORT;
-  };
+                               size_t count);
 
   virtual std::list<std::future<Status>> DeviceExecuteAsync(
       const DevExecuteCallBack &fun, int32_t priority, size_t count,
       bool resource_nice);
 
-  std::shared_ptr<Executor> GetDeviceExecutor() { return executor_; }
+  std::shared_ptr<Executor> GetDeviceExecutor();
 
   /**
    * @brief Set allocatable memory limit
@@ -262,22 +254,16 @@ class Device : public std::enable_shared_from_this<Device> {
 
 class DeviceFactory : public DriverFactory {
  public:
-  DeviceFactory() = default;
-  ~DeviceFactory() override = default;
+  DeviceFactory();
+  ~DeviceFactory() override;
 
-  virtual std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe() {
-    return std::map<std::string, std::shared_ptr<DeviceDesc>>();
-  };
+  virtual std::map<std::string, std::shared_ptr<DeviceDesc>> DeviceProbe();
 
-  virtual std::shared_ptr<Device> CreateDevice(const std::string &device_id) {
-    return nullptr;
-  };
+  virtual std::shared_ptr<Device> CreateDevice(const std::string &device_id);
 
-  virtual std::string GetDeviceFactoryType() { return ""; };
+  virtual std::string GetDeviceFactoryType();
 
-  virtual std::vector<std::string> GetDeviceList() {
-    return std::vector<std::string>();
-  };
+  virtual std::vector<std::string> GetDeviceList();
 
  private:
 };

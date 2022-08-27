@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/base/register_flowunit.h"
+
+#include <utility>
 
 constexpr const char *VIRTUAL_TYPE = "register_flowunit";
 
@@ -60,6 +60,15 @@ RegisterFlowUnitFactory::RegisterFlowUnitFactory(
   if (STATUS_SUCCESS != Init()) {
     MBLOG_ERROR << "failed init RegisterFlowUnitFactory";
   }
+}
+
+std::map<std::string, std::shared_ptr<FlowUnitDesc>>
+RegisterFlowUnitFactory::FlowUnitProbe() {
+  return desc_map_;
+}
+
+std::string RegisterFlowUnitFactory::GetFlowUnitFactoryType() {
+  return FLOWUNIT_TYPE;
 }
 
 std::shared_ptr<FlowUnit> RegisterFlowUnitFactory::CreateFlowUnit(

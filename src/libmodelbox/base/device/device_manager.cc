@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include <stdio.h>
 
 #include <string>
@@ -27,6 +26,26 @@
 #include "modelbox/base/status.h"
 
 namespace modelbox {
+
+DeviceFactory::DeviceFactory() = default;
+DeviceFactory::~DeviceFactory() = default;
+
+std::map<std::string, std::shared_ptr<DeviceDesc>>
+DeviceFactory::DeviceProbe() {
+  return std::map<std::string, std::shared_ptr<DeviceDesc>>();
+}
+
+std::shared_ptr<Device> DeviceFactory::CreateDevice(
+    const std::string &device_id) {
+  return nullptr;
+}
+
+std::string DeviceFactory::GetDeviceFactoryType() { return ""; }
+
+std::vector<std::string> DeviceFactory::GetDeviceList() {
+  return std::vector<std::string>();
+}
+
 DeviceManager::DeviceManager() = default;
 DeviceManager::~DeviceManager() = default;
 
@@ -149,12 +168,12 @@ std::shared_ptr<Device> DeviceManager::CreateDevice(
 
   auto id_desc = device_desc_list_[device_type].find(device_id);
   if (id_desc == device_desc_list_[device_type].end()) {
-    StatusError = {STATUS_NOTFOUND,
-                   "Can't find device, type " + device_type + " id: " + device_id};
+    StatusError = {STATUS_NOTFOUND, "Can't find device, type " + device_type +
+                                        " id: " + device_id};
     MBLOG_ERROR << StatusError.Errormsg();
     return nullptr;
   }
-  
+
   auto iter = device_factory_.find(device_type);
   if (iter == device_factory_.end()) {
     StatusError = {STATUS_NOTFOUND, "device type not found: " + device_type};
@@ -172,7 +191,6 @@ std::shared_ptr<Device> DeviceManager::CreateDevice(
     MBLOG_ERROR << "Device init failed";
     return nullptr;
   }
-
 
   device->SetDeviceDesc(device_desc_list_[device_type][device_id]);
   auto &id_map = device_list_[device_type];

@@ -53,12 +53,9 @@ class RegisterFlowUnitFactory : public FlowUnitFactory {
       std::function<Status(std::shared_ptr<DataContext>)> callback);
   ~RegisterFlowUnitFactory() override = default;
 
-  std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe()
-      override {
-    return desc_map_;
-  }
+  std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe() override;
 
-  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
+  std::string GetFlowUnitFactoryType() override;
   std::shared_ptr<FlowUnit> CreateFlowUnit(
       const std::string &name, const std::string &unit_type) override;
 

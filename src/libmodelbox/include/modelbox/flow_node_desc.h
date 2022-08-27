@@ -38,20 +38,19 @@ class FlowPortDesc {
   friend class FlowGraphDesc;
 
  public:
-  FlowPortDesc(std::string node_name, std::string port_name)
-      : node_name_(std::move(node_name)), port_name_(std::move(port_name)) {}
+  FlowPortDesc(std::string node_name, std::string port_name);
 
   /**
    * @brief get node name
    * @return node name
    **/
-  std::string GetNodeName() { return node_name_; }
+  std::string GetNodeName();
 
   /**
    * @brief get port name
    * @return port name
    **/
-  std::string GetPortName() { return port_name_; }
+  std::string GetPortName();
 
  private:
   std::string node_name_;

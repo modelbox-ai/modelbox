@@ -109,9 +109,9 @@ class MockDeviceFactory : public DeviceFactory {
   ~MockDeviceFactory() override = default;
 
   using DescMap = std::map<std::string, std::shared_ptr<DeviceDesc>>;
-  MOCK_METHOD(DescMap, DeviceProbe, ());
+  MOCK_METHOD(DescMap, DeviceProbe, (), (override));
   using DevicePtr = std::shared_ptr<Device>;
-  MOCK_METHOD(DevicePtr, CreateDevice, (const std::string &));
+  MOCK_METHOD(DevicePtr, CreateDevice, (const std::string &), (override));
 
  private:
   std::shared_ptr<DeviceFactory> bind_factory_ = std::make_shared<CPUFactory>();

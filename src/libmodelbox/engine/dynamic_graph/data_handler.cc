@@ -317,4 +317,8 @@ std::string DataHandler::GetMeta(std::string &key) {
   return context_->GetMeta(key);
 }
 
+Status DataHandler::GetError() { return error_; }
+
+void DataHandler::SetError(const Status &status) { error_ = status; }
+
 }  // namespace modelbox

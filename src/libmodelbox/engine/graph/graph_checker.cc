@@ -30,6 +30,34 @@ static std::shared_ptr<Node> CastNode(
   return std::dynamic_pointer_cast<Node>(node_base);
 }
 
+IndexPort::IndexPort() = default;
+IndexPort::IndexPort(std::string node, std::string port,
+                     const IndexPortType &type)
+    : node_name_(std::move(node)),
+      port_name_(std::move(port)),
+      port_type_(type) {}
+IndexPort::~IndexPort() = default;
+
+std::string IndexPort::ToString() const {
+  return node_name_ + "." + port_name_ + "." + std::to_string(port_type_);
+}
+
+void IndexPort::SetNodeName(std::string node_name) {
+  node_name_ = std::move(node_name);
+}
+
+void IndexPort::SetPortName(std::string port_name) {
+  port_name_ = std::move(port_name);
+}
+
+void IndexPort::SetPortType(IndexPortType port_type) { port_type_ = port_type; }
+
+const std::string &IndexPort::GetNodeName() const { return node_name_; }
+
+const std::string &IndexPort::GetPortName() const { return port_name_; }
+
+const IndexPortType &IndexPort::GetPortType() const { return port_type_; }
+
 void LeastCommonAncestor::InitMap() {
   int index = 0;
   for (auto &all_node : all_nodes_) {
@@ -54,7 +82,7 @@ void LeastCommonAncestor::Update(
     const std::vector<IndexPort> &values,
     const std::unordered_map<std::string, std::string> &match_map) {
   for (const auto &value : values) {
-    auto cur_name = value.node_name;
+    auto cur_name = value.GetNodeName();
     auto index = name_index_map_[cur_name];
     std::vector<int> path{index};
     auto pre_name = match_map.at(cur_name);
@@ -106,20 +134,21 @@ std::string LeastCommonAncestor::GetMatchPortName(
 
 IndexPort LeastCommonAncestor::ProcessSameNode(const IndexPort &node_a,
                                                const IndexPort &node_b) {
-  if (node_a.port_name == node_b.port_name) {
-    return IndexPort(node_a.node_name, node_a.port_name, node_a.port_type);
+  if (node_a.GetPortName() == node_b.GetPortName()) {
+    return IndexPort(node_a.GetNodeName(), node_a.GetPortName(),
+                     node_a.GetPortType());
   }
 
   std::string match_port_name;
-  auto input_nums = all_nodes_[node_a.node_name]->GetInputNum();
+  auto input_nums = all_nodes_[node_a.GetNodeName()]->GetInputNum();
   if (input_nums == 0) {
     match_port_name = EXTERNAL;
   } else {
     match_port_name =
-        all_nodes_[node_a.node_name]->GetInputPorts()[0]->GetName();
+        all_nodes_[node_a.GetNodeName()]->GetInputPorts()[0]->GetName();
   }
 
-  return IndexPort(node_a.node_name, match_port_name, IndexPortType::INPUT);
+  return IndexPort(node_a.GetNodeName(), match_port_name, IndexPortType::INPUT);
 }
 
 void LeastCommonAncestor::FindMatchNode(const IndexPort &node_a,
@@ -128,8 +157,8 @@ void LeastCommonAncestor::FindMatchNode(const IndexPort &node_a,
                                         std::string &match_b_name,
                                         std::string &match_node_name,
                                         std::string &port_name) {
-  int index_a = name_index_map_[node_a.node_name];
-  int index_b = name_index_map_[node_b.node_name];
+  int index_a = name_index_map_[node_a.GetNodeName()];
+  int index_b = name_index_map_[node_b.GetNodeName()];
   auto path_a = paths_[index_a];
   auto path_b = paths_[index_b];
   int res = -1;
@@ -160,9 +189,9 @@ void LeastCommonAncestor::FindMatchNode(const IndexPort &node_a,
     match_a_name = match_node_name;
     match_b_name = index_name_map_[path_b[begin_b - 1]];
     if (swap_flag) {
-      port_name = node_b.port_name;
+      port_name = node_b.GetPortName();
     } else {
-      port_name = node_a.port_name;
+      port_name = node_a.GetPortName();
     }
     return;
   }
@@ -231,7 +260,7 @@ void LeastCommonAncestor::GetIndexPortType(const std::string &node_name,
 
 IndexPort LeastCommonAncestor::Find(const IndexPort &node_a,
                                     const IndexPort &node_b) {
-  if (node_a.node_name == node_b.node_name) {
+  if (node_a.GetNodeName() == node_b.GetNodeName()) {
     return ProcessSameNode(node_a, node_b);
   }
 
@@ -310,14 +339,14 @@ bool OverHierarchyCheck::CheckEndIfPort(
     return false;
   }
 
-  if (graph_single_port_match_map.find(index_port->node_name) ==
+  if (graph_single_port_match_map.find(index_port->GetNodeName()) ==
       graph_single_port_match_map.end()) {
     return false;
   }
 
-  if (graph_single_port_match_map.at(index_port->node_name)
-          .find(index_port->port_name) ==
-      graph_single_port_match_map.at(index_port->node_name).end()) {
+  if (graph_single_port_match_map.at(index_port->GetNodeName())
+          .find(index_port->GetPortName()) ==
+      graph_single_port_match_map.at(index_port->GetNodeName()).end()) {
     return false;
   }
 
@@ -328,8 +357,8 @@ Status OverHierarchyCheck::CheckInputPortsColorReady(
     std::shared_ptr<IndexPort> &index_port,
     const std::vector<std::shared_ptr<InPort>> &input_ports) {
   for (const auto &input_port : input_ports) {
-    index_port->port_name = input_port->GetName();
-    index_port->port_type = IndexPortType::INPUT;
+    index_port->SetPortName(input_port->GetName());
+    index_port->SetPortType(IndexPortType::INPUT);
     if (color_map_.find(index_port->ToString()) == color_map_.end()) {
       return STATUS_NODATA;
     }
@@ -347,14 +376,14 @@ Status OverHierarchyCheck::CheckInputPorts(
   auto input_ports = node->GetInputPorts();
   std::vector<int> color;
   std::shared_ptr<IndexPort> index_port = std::make_shared<IndexPort>();
-  index_port->node_name = node->GetName();
+  index_port->SetNodeName(node->GetName());
   status = CheckInputPortsColorReady(index_port, input_ports);
   if (status != STATUS_SUCCESS) {
     return status;
   }
 
   for (auto &input_port : input_ports) {
-    index_port->port_name = input_port->GetName();
+    index_port->SetPortName(input_port->GetName());
     std::vector<int> tmp_color(color_map_[index_port->ToString()]);
     if (CheckEndIfPort(input_port, index_port, graph_single_port_match_map)) {
       tmp_color.pop_back();
@@ -437,12 +466,12 @@ void OverHierarchyCheck::GetColorMap(
   std::vector<int> new_color;
   auto input_ports = node->GetInputPorts();
   std::shared_ptr<IndexPort> input_index_port = std::make_shared<IndexPort>();
-  input_index_port->node_name = node->GetName();
-  input_index_port->port_type = IndexPortType::INPUT;
+  input_index_port->SetNodeName(node->GetName());
+  input_index_port->SetPortType(IndexPortType::INPUT);
   if (input_ports.size() == 0) {
-    input_index_port->port_name = EXTERNAL;
+    input_index_port->SetPortName(EXTERNAL);
   } else {
-    input_index_port->port_name = input_ports[0]->GetName();
+    input_index_port->SetPortName(input_ports[0]->GetName());
   }
 
   auto input_color = color_map_[input_index_port->ToString()];
@@ -480,9 +509,9 @@ void OverHierarchyCheck::GetColorMap(
     for (const auto &out_port : output_ports) {
       std::shared_ptr<IndexPort> index_output_port =
           std::make_shared<IndexPort>();
-      index_output_port->node_name = node_name;
-      index_output_port->port_name = out_port->GetName();
-      index_output_port->port_type = IndexPortType::OUTPUT;
+      index_output_port->SetNodeName(node_name);
+      index_output_port->SetPortName(out_port->GetName());
+      index_output_port->SetPortType(IndexPortType::OUTPUT);
       auto inport = *out_port->GetConnectInPort().begin();
       auto link_node_name = inport->GetNode()->GetName();
       if (link_node->GetName() == link_node_name) {
@@ -513,9 +542,9 @@ void OverHierarchyCheck::GetColorMap(
       for (const auto &out_port : output_ports) {
         std::shared_ptr<IndexPort> index_output_port =
             std::make_shared<IndexPort>();
-        index_output_port->node_name = node_name;
-        index_output_port->port_name = out_port->GetName();
-        index_output_port->port_type = IndexPortType::OUTPUT;
+        index_output_port->SetNodeName(node_name);
+        index_output_port->SetPortName(out_port->GetName());
+        index_output_port->SetPortType(IndexPortType::OUTPUT);
         auto inport = *out_port->GetConnectInPort().begin();
         auto link_node_name = inport->GetNode()->GetName();
         if (links.first == link_node_name) {
@@ -580,9 +609,9 @@ void OverHierarchyCheck::SetOutPortColor(
   for (const auto &output_port : out_ports) {
     std::shared_ptr<IndexPort> index_output_port =
         std::make_shared<IndexPort>();
-    index_output_port->node_name = node_name;
-    index_output_port->port_name = output_port->GetName();
-    index_output_port->port_type = IndexPortType::OUTPUT;
+    index_output_port->SetNodeName(node_name);
+    index_output_port->SetPortName(output_port->GetName());
+    index_output_port->SetPortType(IndexPortType::OUTPUT);
     color_map_[index_output_port->ToString()] = new_color;
   }
 }
@@ -627,17 +656,17 @@ Status OverHierarchyCheck::Check(
       for (auto &output_port : output_ports) {
         std::shared_ptr<IndexPort> index_output_port =
             std::make_shared<IndexPort>();
-        index_output_port->node_name = node_name;
-        index_output_port->port_name = output_port->GetName();
-        index_output_port->port_type = IndexPortType::OUTPUT;
+        index_output_port->SetNodeName(node_name);
+        index_output_port->SetPortName(output_port->GetName());
+        index_output_port->SetPortType(IndexPortType::OUTPUT);
         auto input_ports = output_port->GetConnectInPort();
         for (const auto &input_port : input_ports) {
           std::shared_ptr<IndexPort> index_input_port =
               std::make_shared<IndexPort>();
           auto inport_node_name = input_port->GetNode()->GetName();
-          index_input_port->node_name = inport_node_name;
-          index_input_port->port_name = input_port->GetName();
-          index_input_port->port_type = IndexPortType::INPUT;
+          index_input_port->SetNodeName(inport_node_name);
+          index_input_port->SetPortName(input_port->GetName());
+          index_input_port->SetPortType(IndexPortType::INPUT);
 
           if (!visited_[inport_node_name]) {
             auto connect_node = CastNode(all_nodes_[inport_node_name]);
@@ -671,10 +700,10 @@ Status OverHierarchyCheck::Check(
           if (color_map_[index_input_port->ToString()] !=
               color_map_[index_output_port->ToString()]) {
             status = {STATUS_BADCONF,
-                      index_output_port->node_name + ":" +
-                          index_output_port->port_name + " links " +
-                          index_input_port->node_name + ":" +
-                          index_input_port->port_name + " failed. "};
+                      index_output_port->GetNodeName() + ":" +
+                          index_output_port->GetPortName() + " links " +
+                          index_input_port->GetNodeName() + ":" +
+                          index_input_port->GetPortName() + " failed. "};
             return status;
           }
         }
@@ -902,16 +931,16 @@ Status GraphChecker::CheckBranchPathMatch(const std::string &start,
 }
 
 bool GraphChecker::CheckPortMatch(const IndexPort &match_pair) {
-  std::shared_ptr<Node> node = CastNode(all_nodes_[match_pair.node_name]);
+  std::shared_ptr<Node> node = CastNode(all_nodes_[match_pair.GetNodeName()]);
   if (node == nullptr) {
-    if (match_pair.port_name == EXTERNAL) {
+    if (match_pair.GetPortName() == EXTERNAL) {
       return false;
     }
 
     return true;
   }
 
-  auto port = node->GetOutputPort(match_pair.port_name);
+  auto port = node->GetOutputPort(match_pair.GetPortName());
 
   // input port
   if (port == nullptr) {
@@ -959,7 +988,7 @@ Status GraphChecker::CheckNodeMatch(
     // one input port and one edge links the port
     if (values.size() == 1) {
       single_match_result.emplace_back(values[0]);
-      graph_match_map_[node_name] = values[0].node_name;
+      graph_match_map_[node_name] = values[0].GetNodeName();
       UpdateAncestorPath(values);
       continue;
     }
@@ -978,12 +1007,12 @@ Status GraphChecker::CheckNodeMatch(
         }
 
         for (auto &value : values) {
-          if (value.node_name == loop_link.second) {
+          if (value.GetNodeName() == loop_link.second) {
             continue;
           }
 
           single_match_result.emplace_back(value);
-          graph_match_map_[node_name] = value.node_name;
+          graph_match_map_[node_name] = value.GetNodeName();
           return status;
         }
       }
@@ -1014,30 +1043,30 @@ Status GraphChecker::CheckNodeMatch(
     if (CheckPortMatch(single_match_node)) {
       status = {STATUS_BADCONF,
                 node_name + ": " + iter.first + " match at " +
-                    single_match_node.node_name + ": " +
-                    single_match_node.port_name +
+                    single_match_node.GetNodeName() + ": " +
+                    single_match_node.GetPortName() +
                     ". One port links multi edges can not match at one port."};
       return status;
     }
 
     // scene 4)
     auto single_match_real_node =
-        CastNode(all_nodes_[single_match_node.node_name]);
+        CastNode(all_nodes_[single_match_node.GetNodeName()]);
     if (single_match_real_node != nullptr &&
         single_match_real_node->GetConditionType() != ConditionType::IF_ELSE) {
       status = {STATUS_BADCONF,
                 node_name + ": " + iter.first + " match at " +
-                    single_match_node.node_name + ": " +
-                    single_match_node.port_name +
+                    single_match_node.GetNodeName() + ": " +
+                    single_match_node.GetPortName() +
                     ". One port links multi edges can not match at multi ports "
                     "when the match node is condition node."};
       return status;
     }
-    single_port_match_map_[iter.first] = single_match_node.node_name;
+    single_port_match_map_[iter.first] = single_match_node.GetNodeName();
 
     for (auto &value : values) {
-      status =
-          CheckBranchPathMatch(value.node_name, single_match_node.node_name);
+      status = CheckBranchPathMatch(value.GetNodeName(),
+                                    single_match_node.GetNodeName());
       if (status != STATUS_SUCCESS) {
         return status;
       }
@@ -1045,7 +1074,7 @@ Status GraphChecker::CheckNodeMatch(
 
     if (!CheckUnmatchExpands(values.size())) {
       status = {STATUS_BADCONF,
-                "from " + node_name + " to " + single_match_node.node_name +
+                "from " + node_name + " to " + single_match_node.GetNodeName() +
                     " path branches have unmatched expand node."};
       return status;
     }
@@ -1056,8 +1085,8 @@ Status GraphChecker::CheckNodeMatch(
 
   // multi branch match at one node
   if (single_match_result.size() == 1) {
-    graph_match_map_[node_name] = single_match_result[0].node_name;
-    end_if_map_[node_name] = single_match_result[0].node_name;
+    graph_match_map_[node_name] = single_match_result[0].GetNodeName();
+    end_if_map_[node_name] = single_match_result[0].GetNodeName();
     return status;
   }
 
@@ -1072,23 +1101,25 @@ Status GraphChecker::CheckNodeMatch(
   }
 
   auto output_port = CheckPortMatch(multi_match_node);
-  auto multi_match_real_node = CastNode(all_nodes_[multi_match_node.node_name]);
+  auto multi_match_real_node =
+      CastNode(all_nodes_[multi_match_node.GetNodeName()]);
 
   if (multi_match_real_node != nullptr) {
     if (!output_port &&
         multi_match_real_node->GetConditionType() == ConditionType::IF_ELSE) {
       auto err_msg = node_name + " match from multi ports at " +
-                     multi_match_node.node_name + ":" +
-                     multi_match_node.port_name + ". " +
-                     multi_match_node.node_name + " can not be if-else node";
+                     multi_match_node.GetNodeName() + ":" +
+                     multi_match_node.GetPortName() + ". " +
+                     multi_match_node.GetNodeName() +
+                     " can not be if-else node";
       status = {STATUS_BADCONF, err_msg};
       return status;
     }
   }
 
   for (auto &single_match : single_match_result) {
-    status = CheckBranchPathMatch(single_match.node_name,
-                                  multi_match_node.node_name);
+    status = CheckBranchPathMatch(single_match.GetNodeName(),
+                                  multi_match_node.GetNodeName());
     if (status != STATUS_SUCCESS) {
       return status;
     }
@@ -1096,14 +1127,14 @@ Status GraphChecker::CheckNodeMatch(
 
   if (!CheckUnmatchExpands(single_match_result.size())) {
     status = {STATUS_BADCONF, "from " + node_name + " to " +
-                                  multi_match_node.node_name +
+                                  multi_match_node.GetNodeName() +
                                   " path branches have unmatched expand node."};
     return status;
   }
 
   // scene 5) 6) 7) 8)
   graph_match_map_[node_name] =
-      all_nodes_[multi_match_node.node_name]->GetName();
+      all_nodes_[multi_match_node.GetNodeName()]->GetName();
   graph_single_port_match_map_[node_name] = single_port_match_map_;
   return status;
 }
@@ -1185,11 +1216,12 @@ Status GraphChecker::CheckLeastCommonAncestorsAnyTwoNodes(
     for (size_t j = i + 1; j < match_nodes.size(); ++j) {
       auto second_node = match_nodes[j];
       auto res = lca_->Find(first_node, second_node);
-      if (res.node_name.empty() && res.port_name.empty()) {
+      if (res.GetNodeName().empty() && res.GetPortName().empty()) {
         std::string err_msg =
             "can not find LeastCommonAncestors node between " +
-            first_node.node_name + ":" + first_node.port_name + " and " +
-            second_node.node_name + ":" + second_node.port_name;
+            first_node.GetNodeName() + ":" + first_node.GetPortName() +
+            " and " + second_node.GetNodeName() + ":" +
+            second_node.GetPortName();
         status = {STATUS_BADCONF, err_msg};
         return status;
       }
@@ -1197,9 +1229,10 @@ Status GraphChecker::CheckLeastCommonAncestorsAnyTwoNodes(
       if (CheckPortMatch(res)) {
         status = {
             STATUS_BADCONF,
-            first_node.node_name + ": " + first_node.port_name + " and " +
-                second_node.node_name + ":" + second_node.port_name +
-                " match at " + res.node_name + ": " + res.node_name +
+            first_node.GetNodeName() + ": " + first_node.GetPortName() +
+                " and " + second_node.GetNodeName() + ":" +
+                second_node.GetPortName() + " match at " + res.GetNodeName() +
+                ": " + res.GetNodeName() +
                 ". One port links multi edges can not match at one port."};
         return status;
       }
@@ -1221,11 +1254,11 @@ Status GraphChecker::LeastCommonAncestors(
     auto res = lca_->Find(res_match_node, match_nodes[i]);
     auto tmp_node = res_match_node;
     res_match_node = res;
-    if (res.node_name.empty() && res.port_name.empty()) {
-      std::string err_msg = "can not find LeastCommonAncestors node between " +
-                            tmp_node.node_name + ":" + tmp_node.port_name +
-                            " and " + match_nodes[i].node_name + ":" +
-                            match_nodes[i].port_name;
+    if (res.GetNodeName().empty() && res.GetPortName().empty()) {
+      std::string err_msg =
+          "can not find LeastCommonAncestors node between " +
+          tmp_node.GetNodeName() + ":" + tmp_node.GetPortName() + " and " +
+          match_nodes[i].GetNodeName() + ":" + match_nodes[i].GetPortName();
       status = {STATUS_BADCONF, err_msg};
       return status;
     }

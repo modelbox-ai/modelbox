@@ -310,6 +310,19 @@ Status FlowUnitGroup::CheckInputAndOutput(
   return STATUS_SUCCESS;
 }
 
+FlowUnitGroup::FlowUnitGroup(std::string unit_name, std::string unit_type,
+                             std::string unit_device_id,
+                             std::shared_ptr<Configuration> config,
+                             std::shared_ptr<Profiler> profiler)
+    : batch_size_(1),
+      unit_name_(std::move(unit_name)),
+      unit_type_(std::move(unit_type)),
+      unit_device_id_(std::move(unit_device_id)),
+      config_(std::move(config)),
+      profiler_(std::move(profiler)){};
+
+FlowUnitGroup::~FlowUnitGroup() = default;
+
 Status FlowUnitGroup::Init(const std::set<std::string> &input_ports_name,
                            const std::set<std::string> &output_ports_name,
                            const std::shared_ptr<FlowUnitManager> &flowunit_mgr,

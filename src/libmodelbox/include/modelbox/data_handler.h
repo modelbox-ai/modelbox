@@ -91,12 +91,14 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
    * @brief get flow error
    * @return error code
    */
-  Status GetError() { return error_; }
+  Status GetError();
 
   // for output: record the node name
   void SetNodeName(const std::string &name);
+
   std::string GetNodeName();
-  void SetError(const Status &status) { error_ = status; }
+
+  void SetError(const Status &status);
 
  private:
   /*
@@ -111,7 +113,7 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
   */
   Status SetBindGraph(const std::shared_ptr<GraphState> &gcgraph);
   /*
-  get bind graph 
+  get bind graph
   */
   std::shared_ptr<GraphState> GetBindGraph();
   /*
@@ -168,9 +170,9 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
 
   std::string node_name_;
   std::set<std::string> port_names_;
-  std::unordered_map<std::string, std::string> port_to_port_;    
-  std::unordered_map<std::string, std::string> port_to_node_;    
-  std::unordered_map<std::string, BindNodeType> node_type_map_; 
+  std::unordered_map<std::string, std::string> port_to_port_;
+  std::unordered_map<std::string, std::string> port_to_node_;
+  std::unordered_map<std::string, BindNodeType> node_type_map_;
 
   std::shared_ptr<HandlerContext> context_;
 };

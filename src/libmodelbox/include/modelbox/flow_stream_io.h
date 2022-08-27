@@ -44,6 +44,14 @@ class FlowStreamIO {
    **/
   Status Send(const std::string &input_name,
               const std::shared_ptr<Buffer> &buffer);
+  /**
+   * @brief Send buffer of this stream to flow
+   * @param input_name input node name of flow
+   * @param data data pointer
+   * @param size data size
+   * @return Status
+   **/
+  Status Send(const std::string &input_name, void *data, size_t size);
 
   /**
    * @brief recv buffer of this stream result from flow
@@ -53,7 +61,15 @@ class FlowStreamIO {
    * @return Status
    **/
   Status Recv(const std::string &output_name, std::shared_ptr<Buffer> &buffer,
-              size_t timeout = 0);
+              long timeout = 0);
+
+  /**
+   * @brief recv buffer of this stream result from flow
+   * @param output_name output node name of flow
+   * @param timeout wait result timeout
+   * @return buffer
+   **/
+  std::shared_ptr<Buffer> Recv(const std::string &output_name, long timeout);
 
   /**
    * @brief close input stream, mark stream end

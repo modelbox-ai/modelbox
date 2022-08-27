@@ -83,7 +83,7 @@ class InputContext : public HandlerContext {
 
   std::shared_ptr<BufferList> GetBufferList(const std::string &key) override;
 
-  Status RunGraph(const std::shared_ptr<DataHandler> & /*handler*/) override;
+  Status RunGraph(const std::shared_ptr<DataHandler> &handler) override;
   void Close() override;
 
  private:

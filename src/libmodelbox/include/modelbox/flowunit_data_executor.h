@@ -34,14 +34,13 @@ namespace modelbox {
  **/
 class FlowUnitExecContext {
  public:
-  FlowUnitExecContext(std::shared_ptr<FlowUnitDataContext> data_ctx)
-      : data_ctx_(std::move(data_ctx)) {}
+  FlowUnitExecContext(std::shared_ptr<FlowUnitDataContext> data_ctx);
 
-  void SetFlowUnit(std::shared_ptr<FlowUnit> fu) { bind_fu_ = std::move(fu); }
+  void SetFlowUnit(std::shared_ptr<FlowUnit> fu);
 
-  const std::shared_ptr<FlowUnit> &GetFlowUnit() { return bind_fu_; }
+  const std::shared_ptr<FlowUnit> &GetFlowUnit();
 
-  const std::shared_ptr<FlowUnitDataContext> &GetDataCtx() { return data_ctx_; }
+  const std::shared_ptr<FlowUnitDataContext> &GetDataCtx();
 
  private:
   std::shared_ptr<FlowUnit> bind_fu_;

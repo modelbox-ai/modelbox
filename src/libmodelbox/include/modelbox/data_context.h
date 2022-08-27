@@ -232,12 +232,11 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   // buffers in stream_data_map is in order
   virtual void WriteInputData(std::shared_ptr<PortDataMap> stream_data_map);
 
-  virtual std::shared_ptr<FlowUnitInnerEvent> GenerateSendEvent() {
-    return nullptr;
-  }
+  virtual std::shared_ptr<FlowUnitInnerEvent> GenerateSendEvent();
 
-  virtual bool IsDataPre() { return false; }
-  virtual bool IsDataPost() { return false; }
+  virtual bool IsDataPre();
+
+  virtual bool IsDataPost();
 
   virtual void DealWithDataPreError(const std::string &error_code,
                                     const std::string &error_msg);
@@ -267,7 +266,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
   virtual Status AppendEndFlag();
 
-  virtual bool NeedStreamEndFlag() { return false; };
+  virtual bool NeedStreamEndFlag();
 
   void FillPlaceholderOutput(bool from_valid_input = false,
                              bool same_with_input_num = true);
@@ -280,7 +279,7 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
 
   size_t GetOutputBufferNum();
 
-  virtual Status CheckOutputData() { return STATUS_OK; };
+  virtual Status CheckOutputData();
 
   bool IsContinueProcess();
 
@@ -518,9 +517,7 @@ class StreamCollapseFlowUnitDataContext : public FlowUnitDataContext {
                                     const std::shared_ptr<Session> &session);
   ~StreamCollapseFlowUnitDataContext() override = default;
 
-  void SendEvent(std::shared_ptr<FlowUnitEvent> event) override {
-    // not support user send event
-  }
+  void SendEvent(std::shared_ptr<FlowUnitEvent> event) override;
 
   void WriteInputData(std::shared_ptr<PortDataMap> stream_data_map) override;
 

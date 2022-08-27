@@ -14,13 +14,29 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/flowunit_data_executor.h"
+
+#include <utility>
 
 #include "modelbox/node.h"
 
 namespace modelbox {
+
+FlowUnitExecContext::FlowUnitExecContext(
+    std::shared_ptr<FlowUnitDataContext> data_ctx)
+    : data_ctx_(std::move(data_ctx)) {}
+
+void FlowUnitExecContext::SetFlowUnit(std::shared_ptr<FlowUnit> fu) {
+  bind_fu_ = std::move(fu);
+}
+
+const std::shared_ptr<FlowUnit> &FlowUnitExecContext::GetFlowUnit() {
+  return bind_fu_;
+}
+
+const std::shared_ptr<FlowUnitDataContext> &FlowUnitExecContext::GetDataCtx() {
+  return data_ctx_;
+}
 
 FlowUnitExecData::FlowUnitExecData(const std::shared_ptr<FlowUnit> &fu)
     : fu_(fu) {
