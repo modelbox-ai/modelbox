@@ -291,7 +291,7 @@ class GraphCheckerTest : public testing::Test {
     config->SetProperty("graph.format", "graphviz");
     config->SetProperty("graph.graphconf", graph);
     std::shared_ptr<Graph> mb_graph;
-    EXPECT_TRUE(BuildGraph(config, mb_graph) == status);
+    EXPECT_EQ(BuildGraph(config, mb_graph), status);
   }
 
  private:

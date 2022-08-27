@@ -102,6 +102,10 @@ Status FlowGraphDesc::Init(const std::shared_ptr<FlowConfig> &config) {
   return STATUS_OK;
 }
 
+void FlowGraphDesc::AddFlowUnit(std::shared_ptr<FlowUnitDesc> flow_unit_desc) {
+  flowunit_factory_.emplace_back(std::move(flow_unit_desc));
+}
+
 // add input
 
 std::shared_ptr<FlowNodeDesc> FlowGraphDesc::AddInput(

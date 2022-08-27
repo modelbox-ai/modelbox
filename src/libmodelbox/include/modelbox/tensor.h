@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_TENSOR_H_
 #define MODELBOX_TENSOR_H_
 
@@ -25,10 +24,9 @@ namespace modelbox {
 
 /**
  * @brief Interface to access the data buffer with tensor API
- */ 
+ */
 class TensorBuffer : public Buffer {
  public:
-
   /**
    * @brief Tensor buffer object
    */
@@ -55,9 +53,9 @@ class TensorBuffer : public Buffer {
   ~TensorBuffer() override;
 
   /**
-   * @brief Resize tensor 
+   * @brief Resize tensor
    * @param shape shape list to resize
-   * @return resize result 
+   * @return resize result
    */
   template <typename T>
   Status Resize(const std::vector<size_t>& shape) {
@@ -74,15 +72,15 @@ class TensorBuffer : public Buffer {
   }
 
   /**
-   * @brief Get tensor buffer shape 
+   * @brief Get tensor buffer shape
    * @return tensor buffer shape list.
    */
   const std::vector<size_t>& Shape() const;
 
   /**
-   * @brief Set shape to tensor buffer 
+   * @brief Set shape to tensor buffer
    * @param shape shape list
-   * @return set result 
+   * @return set result
    */
   template <typename T>
   Status SetShape(const std::vector<size_t>& shape) {
@@ -105,13 +103,13 @@ class TensorBuffer : public Buffer {
    * @brief Set tensor buffer data type
    * @param type data type
    */
-  void SetType(ModelBoxDataType type) { type_ = type; }
+  void SetType(ModelBoxDataType type);
 
   /**
    * @brief Get tensor buffer data type
    * @return type data type
    */
-  ModelBoxDataType GetType() { return type_; }
+  ModelBoxDataType GetType();
 
   /**
    * @brief Get tensor buffer mutable raw data

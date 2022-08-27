@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/base/device_memory.h"
+
+#include <utility>
 
 #include "modelbox/base/device.h"
 #include "modelbox/base/log.h"
@@ -52,6 +52,30 @@ DeviceMemory::DeviceMemory(const std::shared_ptr<Device> &device,
 
 void DeviceMemory::UpdateMemID(void *device_mem_ptr) {
   memory_id_ = std::to_string((uintptr_t)device_mem_ptr);
+}
+
+Status DeviceMemory::SetContentMutable(bool content_mutable) {
+  is_content_mutable_ = content_mutable;
+  // TODO: Protect memory in device
+  return STATUS_SUCCESS;
+}
+
+size_t DeviceMemory::GetSize() const { return size_; };
+
+size_t DeviceMemory::GetCapacity() const { return capacity_; };
+
+std::string DeviceMemory::GetMemoryID() const { return memory_id_; }
+
+std::shared_ptr<Device> DeviceMemory::GetDevice() const { return device_; }
+
+uint32_t DeviceMemory::GetMemFlags() const { return mem_flags_; }
+
+bool DeviceMemory::IsHost() const { return is_host_mem_; }
+
+bool DeviceMemory::IsSameDevice(const std::shared_ptr<DeviceMemory> &dev_mem) {
+  return dev_mem ? (device_ == dev_mem->device_ &&
+                    mem_flags_ == dev_mem->mem_flags_)
+                 : false;
 }
 
 bool DeviceMemory::IsContiguous(
@@ -198,6 +222,8 @@ Status DeviceMemory::CountMemSize(
 
   return STATUS_SUCCESS;
 }
+
+Status DeviceMemory::Verify() const { return STATUS_SUCCESS; }
 
 Status DeviceMemory::Resize(size_t new_size) {
   if (new_size > capacity_) {

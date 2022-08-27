@@ -61,12 +61,7 @@ class BufferTypeTree {
   bool RemoveType(const std::string &type);
   bool IsCompatible(const std::string &type, const std::string &ancestor_type);
   std::shared_ptr<BufferType> GetType(const std::string &type);
-  static BufferTypeTree *GetInstance() {
-    if (nullptr == instance_) {
-      instance_.reset(new BufferTypeTree());
-    }
-    return instance_.get();
-  }
+  static BufferTypeTree *GetInstance();
 
   virtual ~BufferTypeTree();
  private:

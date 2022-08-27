@@ -91,6 +91,13 @@ class FlowGraphDesc {
   Status Init(const std::shared_ptr<FlowConfig> &config);
 
   /**
+   * @brief add flowunit to graph
+   * @param flow_unit_desc flowunit description
+   * @return
+   **/
+  void AddFlowUnit(std::shared_ptr<FlowUnitDesc> flow_unit_desc);
+
+  /**
    * @brief add input port for flow
    * @param input_name input port name
    * @return a node in graph
@@ -231,6 +238,7 @@ class FlowGraphDesc {
   std::shared_ptr<Drivers> drivers_;
   std::shared_ptr<DeviceManager> device_mgr_;
   std::shared_ptr<FlowUnitManager> flowunit_mgr_;
+  std::vector<std::shared_ptr<FlowUnitDesc>> flowunit_factory_;
 
   void AddOutput(const std::string &output_name, const std::string &device,
                  const std::shared_ptr<FlowPortDesc> &source_node_port);

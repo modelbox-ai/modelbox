@@ -36,8 +36,19 @@ Status FlowStreamIO::Send(const std::string &input_name,
   return data_map_->Send(input_name, buffer_list);
 }
 
+Status FlowStreamIO::Send(const std::string &input_name, void *data,
+                          size_t size) {
+  auto buffer = CreateBuffer();
+  auto ret = buffer->BuildFromHost(data, size);
+  if (!ret) {
+    return ret;
+  }
+
+  return Send(input_name, buffer);
+}
+
 Status FlowStreamIO::Recv(const std::string &output_name,
-                          std::shared_ptr<Buffer> &buffer, size_t timeout) {
+                          std::shared_ptr<Buffer> &buffer, long timeout) {
   auto port_data_cache_item = port_data_cache_map_.find(output_name);
   if (port_data_cache_item == port_data_cache_map_.end() ||
       port_data_cache_item->second.empty()) {
@@ -65,6 +76,19 @@ Status FlowStreamIO::Recv(const std::string &output_name,
   port_data_cache_map_[output_name].pop_front();
   return STATUS_OK;
 }
+
+std::shared_ptr<Buffer> FlowStreamIO::Recv(const std::string &output_name,
+                          long timeout) {
+  std::shared_ptr<Buffer> buffer;
+  auto ret = Recv(output_name, buffer, timeout);
+  if (ret != STATUS_SUCCESS) {
+    StatusError = ret;
+    return nullptr;
+  }
+
+  return buffer;
+}
+
 
 void FlowStreamIO::CloseInput() { data_map_->Close(); }
 

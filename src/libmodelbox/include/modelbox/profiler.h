@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_PROFLER_H_
 #define MODELBOX_PROFLER_H_
 
@@ -104,28 +103,19 @@ class TraceEvent {
   friend class TraceSlice;
 
  public:
-  virtual ~TraceEvent() = default;
+  virtual ~TraceEvent();
 
-  inline TraceEvent& SetEventType(const EventType& event_type) {
-    event_type_ = event_type;
-    return *this;
-  }
+  TraceEvent& SetEventType(const EventType& event_type);
 
-  inline const EventType& GetEventType() const { return event_type_; }
+  const EventType& GetEventType() const;
 
-  inline TraceEvent& SetEventTime(const TimePoint& event_time) {
-    event_time_ = event_time;
-    return *this;
-  }
+  TraceEvent& SetEventTime(const TimePoint& event_time);
 
-  inline const TimePoint& GetEventTime() const { return event_time_; }
+  const TimePoint& GetEventTime() const;
 
-  inline TraceEvent& SetThreadId(std::thread::id thread_id) {
-    thread_id_ = thread_id;
-    return *this;
-  }
+  TraceEvent& SetThreadId(std::thread::id thread_id);
 
-  inline std::thread::id GetThreadId() const { return thread_id_; }
+  std::thread::id GetThreadId() const;
 
  protected:
   TraceEvent();

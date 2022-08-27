@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-
-#include <modelbox/base/config.h>
 #include <dlfcn.h>
+#include <modelbox/base/config.h>
 
 #include <memory>
 #include <utility>
@@ -50,9 +49,7 @@ Status VirtualDriverManager::Scan(const std::vector<std::string> &scan_dirs) {
   return ret;
 }
 
-Status VirtualDriverManager::Scan(const std::string &path) {
-  return STATUS_OK;
-}
+Status VirtualDriverManager::Scan(const std::string &path) { return STATUS_OK; }
 
 std::vector<std::shared_ptr<VirtualDriver>>
 VirtualDriverManager::GetAllDriverList() {
@@ -68,6 +65,10 @@ std::shared_ptr<VirtualDriverDesc> VirtualDriver::GetVirtualDriverDesc() {
 void VirtualDriver::SetVirtualDriverDesc(
     std::shared_ptr<VirtualDriverDesc> desc) {
   virtual_driver_desc_ = std::move(desc);
+}
+
+std::vector<std::shared_ptr<Driver>> VirtualDriver::GetBindDriver() {
+  return std::vector<std::shared_ptr<Driver>>();
 }
 
 std::shared_ptr<DriverFactory> VirtualDriver::CreateFactory() {

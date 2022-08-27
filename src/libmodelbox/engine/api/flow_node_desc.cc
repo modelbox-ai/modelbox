@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/flow_node_desc.h"
 
+#include <utility>
+
 namespace modelbox {
+
+FlowPortDesc::FlowPortDesc(std::string node_name, std::string port_name)
+    : node_name_(std::move(node_name)), port_name_(std::move(port_name)) {}
+
+std::string FlowPortDesc::GetNodeName() { return node_name_; }
+
+std::string FlowPortDesc::GetPortName() { return port_name_; }
 
 FlowNodeDesc::FlowNodeDesc(std::string node_name)
     : node_name_(std::move(node_name)) {}

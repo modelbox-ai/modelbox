@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/configuration.h"
 
 #include <toml.hpp>
@@ -94,6 +93,32 @@ std::unique_ptr<ConfigStore> ConfigStore::GetSubConfigStore(
   std::unique_ptr<ConfigStore> sub_store(new ConfigStore());
   AddSubConfig(prefix_key, sub_store.get(), prefix_key.size() + 1);
   return sub_store;
+}
+
+size_t ConfigStore::Size() const { return properties_.size(); }
+
+bool ConfigStore::Contain(const std::string &key) const {
+  auto item = properties_.find(key);
+  return item != properties_.end();
+}
+
+void ConfigStore::Add(const ConfigStore &store) {
+  for (const auto &iter : store.properties_) {
+    properties_[iter.first] = iter.second;
+  }
+
+  for (const auto &iter : store.sub_key_index_) {
+    sub_key_index_[iter.first] = iter.second;
+  }
+}
+
+void ConfigStore::Copy(const ConfigStore &store, const std::string &key) {
+  if (store.Contain(key) == false) {
+    return;
+  }
+  std::string property;
+  store.ReadProperty(key, &property);
+  WriteProperty(key, property);
 }
 
 void ConfigStore::AddSubConfig(const std::string &prefix_key,

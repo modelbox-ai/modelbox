@@ -37,14 +37,12 @@ constexpr const char *DRIVER_SCAN_INFO = "/tmp/modelbox-driver-scan-info";
 class Driver;
 class DriverFactory {
  public:
-  DriverFactory() = default;
-  virtual ~DriverFactory() = default;
+  DriverFactory();
+  virtual ~DriverFactory();
 
-  virtual std::shared_ptr<Driver> GetDriver() {
-    return std::make_shared<Driver>();
-  };
+  virtual std::shared_ptr<Driver> GetDriver();
 
-  virtual void SetDriver(const std::shared_ptr<Driver> &driver) {}
+  virtual void SetDriver(const std::shared_ptr<Driver> &driver);
 
  private:
   friend class Driver;
@@ -114,7 +112,7 @@ class DriverHandler {
   std::map<void *, std::shared_ptr<DriverHandlerInfo>> handler_map;
 };
 
-class Driver : public std::enable_shared_from_this<Driver>  {
+class Driver : public std::enable_shared_from_this<Driver> {
  public:
   Driver();
   virtual ~Driver();
@@ -154,9 +152,7 @@ class VirtualDriver : public Driver {
   std::shared_ptr<VirtualDriverDesc> GetVirtualDriverDesc();
   void SetVirtualDriverDesc(std::shared_ptr<VirtualDriverDesc> desc);
   std::shared_ptr<DriverFactory> CreateFactory() override;
-  std::vector<std::shared_ptr<Driver>> GetBindDriver() {
-    return std::vector<std::shared_ptr<Driver>>();
-  }
+  std::vector<std::shared_ptr<Driver>> GetBindDriver();
 
  private:
   std::shared_ptr<VirtualDriverDesc> virtual_driver_desc_;
@@ -180,15 +176,10 @@ class VirtualDriverManager : public DriverFactory {
 
 class DriversScanResultInfo {
  public:
-  DriversScanResultInfo() = default;
-  ~DriversScanResultInfo() {
-    load_success_info_.clear();
-    load_failed_info_.clear();
-  }
-  std::list<std::string> &GetLoadSuccessInfo() { return load_success_info_; }
-  std::map<std::string, std::string> &GetLoadFailedInfo() {
-    return load_failed_info_;
-  }
+  DriversScanResultInfo();
+  virtual ~DriversScanResultInfo();
+  std::list<std::string> &GetLoadSuccessInfo();
+  std::map<std::string, std::string> &GetLoadFailedInfo();
 
  private:
   std::list<std::string> load_success_info_;
@@ -196,9 +187,9 @@ class DriversScanResultInfo {
 };
 class Drivers {
  public:
-  Drivers()
-      : drivers_scan_result_info_(std::make_shared<DriversScanResultInfo>()){};
-  virtual ~Drivers() = default;
+  Drivers();
+
+  virtual ~Drivers();
 
   /**
    * @brief Set default scan path

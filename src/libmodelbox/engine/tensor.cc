@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include <modelbox/tensor.h>
 
 namespace modelbox {
@@ -31,6 +30,10 @@ TensorBuffer::TensorBuffer(const TensorBuffer& other) = default;
 TensorBuffer::~TensorBuffer() = default;
 
 const std::vector<size_t>& TensorBuffer::Shape() const { return shape_; }
+
+void TensorBuffer::SetType(ModelBoxDataType type) { type_ = type; }
+
+ModelBoxDataType TensorBuffer::GetType() { return type_; }
 
 std::shared_ptr<Buffer> TensorBuffer::Copy() const {
   return std::make_shared<TensorBuffer>(*this);

@@ -533,7 +533,7 @@ TEST_F(FlowTest, Statistics) {
 
   auto profiler = flow->GetProfiler();
   auto statistics = Statistics::GetGlobalItem();
-  Defer {Statistics::ReleaseGlobalItem();};
+  Defer { Statistics::ReleaseGlobalItem(); };
   std::atomic<std::uint32_t> change_notify_count = {0};
   std::atomic<std::uint32_t> timer_notify_count = {0};
   const std::string path_pattern = "flow.*.*.statistic_test.test_key";
@@ -663,6 +663,50 @@ TEST_F(FlowTest, NormalError) {
   EXPECT_EQ(retval, STATUS_SUCCESS);
 
   flow->Stop();
+}
+
+TEST_F(FlowTest, DISABLED_InlineFlowUnit) {
+  const std::string test_lib_dir = TEST_LIB_DIR;
+  const std::string test_driver_dir = TEST_DRIVER_DIR;
+  std::string toml_content = R"(
+    [driver]
+    skip-default=true
+    dir=[")" + test_lib_dir + "\", \"" +
+                             test_driver_dir + "\"]\n    " +
+                             R"([graph]
+    graphconf = '''digraph demo {                                                                            
+          input[type=input]             
+          process[flowunit=passthrouth, device=cpu] 
+          output[type=output]                                
+          input -> process:in
+          process:out -> output                                                                     
+        }'''
+    format = "graphviz"
+  )";
+
+  auto flow = std::make_shared<Flow>();
+  auto ret = flow->Init("graph", toml_content);
+  ASSERT_EQ(ret, STATUS_OK);
+
+  FlowGraphDesc graph_desc;
+
+  auto test_flowunit_desc = std::make_shared<FlowUnitDesc>();
+  graph_desc.AddFlowUnit(test_flowunit_desc);
+
+  ret = flow->Build();
+  ASSERT_EQ(ret, STATUS_OK);
+
+  flow->RunAsync();
+
+  auto streamio = flow->CreateStreamIO();
+  std::string msg = "hello";
+  streamio->Send("input", (char*)msg.c_str(), msg.size());
+
+  auto retbuf = streamio->Recv("output", 10 * 1000);
+  ASSERT_NE(retbuf, nullptr);
+
+  std::string retmsg((const char*)retbuf->ConstData(), retbuf->GetBytes());
+  EXPECT_STREQ(msg.c_str(), retmsg.c_str());
 }
 
 }  // namespace modelbox

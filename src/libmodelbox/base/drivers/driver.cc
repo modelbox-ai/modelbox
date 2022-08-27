@@ -407,7 +407,8 @@ std::shared_ptr<DriverFactory> Driver::CreateFactory() {
 
   auto holder = shared_from_this();
   std::shared_ptr<DriverFactory> child_factory(
-      factory_.get(), [&, holder](DriverFactory *child_factory) { holder->CloseFactory(); });
+      factory_.get(),
+      [&, holder](DriverFactory *child_factory) { holder->CloseFactory(); });
 
   return child_factory;
 }
@@ -417,6 +418,15 @@ std::shared_ptr<DriverDesc> Driver::GetDriverDesc() { return desc_; }
 void Driver::SetDriverDesc(std::shared_ptr<DriverDesc> desc) {
   desc_ = std::move(desc);
 }
+
+DriverFactory::DriverFactory() = default;
+DriverFactory::~DriverFactory() = default;
+
+std::shared_ptr<Driver> DriverFactory::GetDriver() {
+  return std::make_shared<Driver>();
+};
+
+void DriverFactory::SetDriver(const std::shared_ptr<Driver> &driver) {}
 
 // DriverDesc
 std::string DriverDesc::GetClass() { return driver_class_; }
@@ -505,7 +515,25 @@ void DriverDesc::SetFilePath(const std::string &file_path) {
   driver_file_path_ = file_path;
 }
 
+DriversScanResultInfo::DriversScanResultInfo() = default;
+DriversScanResultInfo::~DriversScanResultInfo() {
+  load_success_info_.clear();
+  load_failed_info_.clear();
+}
+
+std::list<std::string> &DriversScanResultInfo::GetLoadSuccessInfo() {
+  return load_success_info_;
+}
+
+std::map<std::string, std::string> &DriversScanResultInfo::GetLoadFailedInfo() {
+  return load_failed_info_;
+}
+
 // Drivers
+Drivers::Drivers()
+    : drivers_scan_result_info_(std::make_shared<DriversScanResultInfo>()){};
+Drivers::~Drivers() = default;
+
 std::shared_ptr<Drivers> Drivers::GetInstance() {
   static std::shared_ptr<Drivers> drivers = std::make_shared<Drivers>();
   return drivers;

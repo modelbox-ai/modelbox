@@ -40,38 +40,20 @@ class ConfigStore {
 
   Status ReadProperty(const std::string &key, std::string *property) const;
 
-  inline size_t Size() const { return properties_.size(); }
+  size_t Size() const;
 
   std::set<std::string> GetKeys() const;
 
-  inline bool Contain(const std::string &key) const {
-    auto item = properties_.find(key);
-    return item != properties_.end();
-  }
+  bool Contain(const std::string &key) const;
 
   std::set<std::string> GetSubKeys(const std::string &prefix_key) const;
 
   std::unique_ptr<ConfigStore> GetSubConfigStore(
       const std::string &prefix_key) const;
 
-  void Add(const ConfigStore &store) {
-    for (const auto &iter : store.properties_) {
-      properties_[iter.first] = iter.second;
-    }
+  void Add(const ConfigStore &store);
 
-    for (const auto &iter : store.sub_key_index_) {
-      sub_key_index_[iter.first] = iter.second;
-    }
-  }
-
-  void Copy(const ConfigStore &store, const std::string &key) {
-    if (store.Contain(key) == false) {
-      return;
-    }
-    std::string property;
-    store.ReadProperty(key, &property);
-    WriteProperty(key, property);
-  }
+  void Copy(const ConfigStore &store, const std::string &key);
 
  private:
   std::map<std::string, std::string> properties_;

@@ -167,18 +167,16 @@ ValueType any_cast(Any& any) {
 
 class Collection {
  public:
-  Collection() = default;
+  Collection();
 
-  virtual ~Collection() = default;
+  virtual ~Collection();
 
   template <typename T>
   void Set(const std::string& key, T&& value) {
     entrys_[key] = Any(value);
   }
 
-  void Set(const std::string& key, const char* value) {
-    entrys_[key] = Any(std::string(value));
-  }
+  void Set(const std::string& key, const char* value);
 
   template <typename T>
   bool Get(const std::string& key, T&& value) {
@@ -200,43 +198,10 @@ class Collection {
     return true;
   }
 
-  std::tuple<Any*, bool> Get(const std::string& key) {
-    auto iter = entrys_.find(key);
-    if (iter != entrys_.end()) {
-      return std::make_tuple(&(iter->second), true);
-    }
+  std::tuple<Any*, bool> Get(const std::string& key);
 
-    return std::make_tuple(nullptr, false);
-  }
-
-  void Merge(const Collection& other, bool is_override = false) {
-    if (!is_override) {
-      entrys_.insert(other.entrys_.begin(), other.entrys_.end());
-    } else {
-      for (auto& iter : entrys_) {
-        entrys_[iter.first] = iter.second;
-      }
-    }
-  }
-
-  bool CanConvert(size_t cast_code, size_t origin_code) {
-    if (cast_code == origin_code) {
-      return true;
-    }
-
-    auto iter = type_hash_code_map.find(origin_code);
-    if (iter == type_hash_code_map.end()) {
-      return false;
-    }
-
-    if (type_hash_code_map[origin_code] == cast_code) {
-      MBLOG_DEBUG
-          << "origin type is not match cast type, maybe loss the accuracy.";
-      return true;
-    }
-
-    return false;
-  }
+  void Merge(const Collection& other, bool is_override = false);
+  bool CanConvert(size_t cast_code, size_t origin_code);
 
  private:
   std::map<std::string, Any> entrys_;

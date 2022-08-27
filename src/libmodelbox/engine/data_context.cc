@@ -154,6 +154,14 @@ void FlowUnitDataContext::WriteInputData(
   SetCurrentInputData(std::move(stream_data_map));
 }
 
+std::shared_ptr<FlowUnitInnerEvent> FlowUnitDataContext::GenerateSendEvent() {
+  return nullptr;
+}
+
+bool FlowUnitDataContext::IsDataPre() { return false; }
+
+bool FlowUnitDataContext::IsDataPost() { return false; }
+
 void FlowUnitDataContext::SetCurrentInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {
   cur_input_ = std::move(stream_data_map);
@@ -576,6 +584,8 @@ Status FlowUnitDataContext::AppendEndFlag() {
   return STATUS_OK;
 }
 
+bool FlowUnitDataContext::NeedStreamEndFlag() { return false; };
+
 void FlowUnitDataContext::FillPlaceholderOutput(bool from_valid_input,
                                                 bool same_with_input_num) {
   PortDataMap *cur_parent = &cur_input_placeholder_;
@@ -725,6 +735,8 @@ size_t FlowUnitDataContext::GetOutputBufferNum() {
   auto &first_port = cur_output_.begin()->second;
   return first_port.size();
 }
+
+Status FlowUnitDataContext::CheckOutputData() { return STATUS_OK; };
 
 Status FlowUnitDataContext::GenerateOutput() {
   for (const auto &port_name : node_->GetOutputNames()) {
@@ -936,8 +948,7 @@ void FlowUnitDataContext::UpdateInputInfo() {
 ExecutorDataContext::ExecutorDataContext(
     std::shared_ptr<FlowUnitDataContext> origin_ctx,
     std::shared_ptr<FlowUnitExecData> data)
-    : origin_ctx_(std::move(origin_ctx)),
-      data_(std::move(data)){};
+    : origin_ctx_(std::move(origin_ctx)), data_(std::move(data)){};
 
 std::shared_ptr<BufferList> ExecutorDataContext::Input(
     const std::string &port) const {
@@ -1455,6 +1466,11 @@ StreamCollapseFlowUnitDataContext::StreamCollapseFlowUnitDataContext(
     Node *node, MatchKey *data_ctx_match_key,
     const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
+
+void StreamCollapseFlowUnitDataContext::SendEvent(
+    std::shared_ptr<FlowUnitEvent> event) {
+  // not support user send event
+}
 
 void StreamCollapseFlowUnitDataContext::WriteInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {

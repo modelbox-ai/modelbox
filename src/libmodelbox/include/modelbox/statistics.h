@@ -145,68 +145,32 @@ class StatisticsNotifyCfg {
 
  public:
   StatisticsNotifyCfg(std::string path_pattern, StatisticsNotifyFunc func,
-                      const StatisticsNotifyType& type)
-      : path_pattern_(std::move(path_pattern)),
-        func_(std::move(func)),
-        id_((uintptr_t)this) {
-    type_set_.insert(type);
-  }
+                      const StatisticsNotifyType& type);
 
   StatisticsNotifyCfg(std::string path_pattern, StatisticsNotifyFunc func,
-                      std::set<StatisticsNotifyType> types = {})
-      : path_pattern_{std::move(path_pattern)},
-        func_{std::move(func)},
-        type_set_(std::move(types)),
-        id_((uintptr_t)this) {}
+                      std::set<StatisticsNotifyType> types = {});
 
-  StatisticsNotifyCfg(const StatisticsNotifyCfg& other)
-      : path_pattern_(other.path_pattern_),
-        func_(other.func_),
-        type_set_(other.type_set_),
-        delay_(other.delay_),
-        interval_(other.interval_),
-        id_(other.id_) {}
+  StatisticsNotifyCfg(const StatisticsNotifyCfg& other);
 
-  bool operator==(const StatisticsNotifyCfg& other) { return id_ == other.id_; }
+  bool operator==(const StatisticsNotifyCfg& other);
 
-  virtual ~StatisticsNotifyCfg() = default;
+  virtual ~StatisticsNotifyCfg();
 
   /**
    * @brief Set timer notify
    * @param delay Delay to run first, in second, >= 10s
    * @param interval Notify interval, in second, >= 10s
    */
-  inline void SetNotifyTimer(size_t delay, size_t interval = 0) {
-    type_set_.insert(StatisticsNotifyType::TIMER);
-    const size_t second_to_milli = 1000;
-    delay_ = delay * second_to_milli;
-    if (delay_ < minimum_notify_time) {
-      delay_ = minimum_notify_time;
-    }
-
-    interval_ = interval * second_to_milli;
-    if (interval_ < minimum_notify_time) {
-      interval_ = minimum_notify_time;
-    }
-  }
+  void SetNotifyTimer(size_t delay, size_t interval = 0);
 
  private:
   std::string GetRootPath() const;
 
   std::string GetSubPath() const;  // path without root
 
-  void BindTimerTask(const std::shared_ptr<TimerTask>& timer_task) {
-    timer_task_ = timer_task;
-  }
+  void BindTimerTask(const std::shared_ptr<TimerTask>& timer_task);
 
-  void RemoveTimerTask() {
-    if (timer_task_ == nullptr) {
-      return;
-    }
-
-    timer_task_->Stop();
-    timer_task_ = nullptr;
-  }
+  void RemoveTimerTask();
 
   std::string path_pattern_;
   StatisticsNotifyFunc func_;

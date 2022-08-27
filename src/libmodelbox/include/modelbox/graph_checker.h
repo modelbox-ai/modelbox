@@ -40,21 +40,29 @@ enum IndexPortType { INPUT, OUTPUT, UNKNOWN };
 
 class IndexPort {
  public:
-  IndexPort() = default;
+  IndexPort();
   IndexPort(std::string node, std::string port,
-            const IndexPortType &type = IndexPortType::UNKNOWN)
-      : node_name(std::move(node)),
-        port_name(std::move(port)),
-        port_type(type) {}
-  virtual ~IndexPort() = default;
+            const IndexPortType &type = IndexPortType::UNKNOWN);
+  virtual ~IndexPort();
 
-  std::string ToString() const {
-    return node_name + "." + port_name + "." + std::to_string(port_type);
-  }
+  std::string ToString() const;
 
-  std::string node_name;
-  std::string port_name;
-  IndexPortType port_type{IndexPortType::UNKNOWN};
+  void SetNodeName(std::string node_name);
+
+  void SetPortName(std::string port_name);
+
+  void SetPortType(IndexPortType port_type);
+
+  const std::string &GetNodeName() const;
+
+  const std::string &GetPortName() const;
+
+  const IndexPortType &GetPortType() const;
+
+ private:
+  std::string node_name_;
+  std::string port_name_;
+  IndexPortType port_type_{IndexPortType::UNKNOWN};
 };
 
 using NodeStreamConnection = std::map<std::string, std::vector<IndexPort>>;

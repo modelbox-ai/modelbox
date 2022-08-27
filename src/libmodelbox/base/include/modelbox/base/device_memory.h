@@ -96,58 +96,50 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
    * @brief Mutable if memory content can be modified
    * @param content_mutable Content mutable
    */
-  Status SetContentMutable(bool content_mutable) {
-    is_content_mutable_ = content_mutable;
-    // TODO: Protect memory in device
-    return STATUS_SUCCESS;
-  };
+  Status SetContentMutable(bool content_mutable);
 
   /**
    * @brief Get memory size, 0 if null
    * @return memory size
    */
-  size_t GetSize() const { return size_; };
+  size_t GetSize() const;
 
   /**
    * @brief Get memory capacity, 0 if null
    * @return memory capacity
    */
-  size_t GetCapacity() const { return capacity_; };
+  size_t GetCapacity() const;
 
   /**
    * @brief Get memory id
    * @return Memory id
    */
-  inline std::string GetMemoryID() const { return memory_id_; }
+  std::string GetMemoryID() const;
 
   /**
    * @brief Get device that memory located
    * @return Device
    */
-  inline std::shared_ptr<Device> GetDevice() const { return device_; }
+  std::shared_ptr<Device> GetDevice() const;
 
   /**
-   * @brief Get device memory flag. 
+   * @brief Get device memory flag.
    * @return device memory flag
    */
-  inline uint32_t GetMemFlags() const { return mem_flags_; }
+  uint32_t GetMemFlags() const;
 
   /**
    * @brief Check this memory belong to host
    * @return Host or not
    */
-  inline bool IsHost() const { return is_host_mem_; }
+  bool IsHost() const;
 
   /**
    * @brief Check memory on same device
    * @param dev_mem other device memory
    * @return same or not
    */
-  inline bool IsSameDevice(const std::shared_ptr<DeviceMemory> &dev_mem) {
-    return dev_mem ? (device_ == dev_mem->device_ &&
-                      mem_flags_ == dev_mem->mem_flags_)
-                   : false;
-  }
+  bool IsSameDevice(const std::shared_ptr<DeviceMemory> &dev_mem);
 
   /**
    * @brief Check memory is continguous in same mem block strictly
@@ -189,7 +181,7 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
    * @brief Check memory out of bound
    * @return Result of verify, 0 is ok
    */
-  virtual Status Verify() const { return STATUS_SUCCESS; }
+  virtual Status Verify() const;
 
   /**
    * @brief Resize memory, but will not exceed capacity

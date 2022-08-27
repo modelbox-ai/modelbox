@@ -75,57 +75,38 @@ enum LoopType {
 
 class FlowUnitPort {
  public:
-  FlowUnitPort(std::string name) : port_name_(std::move(name)){};
-  FlowUnitPort(std::string name, std::string device_type)
-      : port_name_(std::move(name)), device_type_(std::move(device_type)){};
-  FlowUnitPort(std::string name, uint32_t device_mem_flags)
-      : port_name_(std::move(name)), device_mem_flags_(device_mem_flags){};
+  FlowUnitPort(std::string name);
+  FlowUnitPort(std::string name, std::string device_type);
+  FlowUnitPort(std::string name, uint32_t device_mem_flags);
   FlowUnitPort(std::string name, std::string device_type,
-               uint32_t device_mem_flags)
-      : port_name_(std::move(name)),
-        device_type_(std::move(device_type)),
-        device_mem_flags_(device_mem_flags){};
-  FlowUnitPort(std::string name, std::string device_type, std::string type)
-      : port_name_(std::move(name)),
-        device_type_(std::move(device_type)),
-        port_type_(std::move(type)){};
+               uint32_t device_mem_flags);
+  FlowUnitPort(std::string name, std::string device_type, std::string type);
   FlowUnitPort(std::string name, std::string device_type, std::string type,
-               std::map<std::string, std::string> ext)
-      : port_name_(std::move(name)),
-        device_type_(std::move(device_type)),
-        port_type_(std::move(type)),
-        ext_(std::move(ext)){};
+               std::map<std::string, std::string> ext);
 
-  virtual ~FlowUnitPort() = default;
+  virtual ~FlowUnitPort();
 
-  void SetDeviceType(const std::string &device_type) {
-    device_type_ = device_type;
-  };
+  void SetDeviceType(const std::string &device_type);
 
-  void SetPortName(const std::string &port_name) { port_name_ = port_name; };
+  void SetPortName(const std::string &port_name);
 
-  void SetPortType(const std::string &port_type) { port_type_ = port_type; };
+  void SetPortType(const std::string &port_type);
 
-  void SetDevice(std::shared_ptr<Device> device) {
-    device_ = std::move(device);
-  }
+  void SetDevice(std::shared_ptr<Device> device);
 
-  void SetProperity(const std::string &key, const std::string &value) {
-    ext_[key] = value;
-  }
+  void SetProperity(const std::string &key, const std::string &value);
 
-  std::string GetDeviceType() const { return device_type_; };
-  std::string GetPortName() const { return port_name_; };
-  std::string GetPortType() const { return port_type_; };
-  std::shared_ptr<Device> GetDevice() const { return device_; }
-  uint32_t GetDeviceMemFlags() const { return device_mem_flags_; }
-  std::string GetProperity(const std::string &key) {
-    if (ext_.find(key) == ext_.end()) {
-      return "";
-    }
+  std::string GetDeviceType() const;
 
-    return ext_[key];
-  }
+  std::string GetPortName() const;
+
+  std::string GetPortType() const;
+
+  std::shared_ptr<Device> GetDevice() const;
+
+  uint32_t GetDeviceMemFlags() const;
+
+  std::string GetProperity(const std::string &key);
 
  private:
   std::string port_name_;
@@ -190,67 +171,39 @@ class FlowUnitOutput : public FlowUnitPort {
 
 class FlowUnitOption {
  public:
-  FlowUnitOption(std::string name, std::string type)
-      : option_name_(std::move(name)), option_type_(std::move(type)){};
-  FlowUnitOption(std::string name, std::string type, bool require)
-      : option_name_(std::move(name)),
-        option_type_(std::move(type)),
-        option_require_{require} {};
+  FlowUnitOption(std::string name, std::string type);
+  FlowUnitOption(std::string name, std::string type, bool require);
   FlowUnitOption(std::string name, std::string type, bool require,
                  std::string default_value, std::string desc,
-                 std::map<std::string, std::string> values)
-      : option_name_(std::move(name)),
-        option_type_(std::move(type)),
-        option_require_(require),
-        option_default_(std::move(default_value)),
-        option_desc_(std::move(desc)),
-        option_values_(std::move(values)){};
+                 std::map<std::string, std::string> values);
   FlowUnitOption(std::string name, std::string type, bool require,
-                 std::string default_value, std::string desc)
-      : option_name_(std::move(name)),
-        option_type_(std::move(type)),
-        option_require_(require),
-        option_default_(std::move(default_value)),
-        option_desc_(std::move(desc)){};
+                 std::string default_value, std::string desc);
 
-  virtual ~FlowUnitOption() { option_values_.clear(); }
+  virtual ~FlowUnitOption();
 
-  void SetOptionName(const std::string &option_name) {
-    option_name_ = option_name;
-  }
+  void SetOptionName(const std::string &option_name);
 
-  void SetOptionType(const std::string &option_type) {
-    option_type_ = option_type;
-  }
+  void SetOptionType(const std::string &option_type);
 
-  void SetOptionRequire(bool option_require) {
-    option_require_ = option_require;
-  }
+  void SetOptionRequire(bool option_require);
 
-  void SetOptionDesc(const std::string &option_desc) {
-    option_desc_ = option_desc;
-  }
+  void SetOptionDesc(const std::string &option_desc);
 
-  void AddOptionValue(const std::string &key, const std::string &value) {
-    option_values_.emplace(key, value);
-  }
+  void AddOptionValue(const std::string &key, const std::string &value);
 
-  std::string GetOptionName() const { return option_name_; }
-  std::string GetOptionType() const { return option_type_; }
-  bool IsRequire() const { return option_require_; }
-  std::string GetOptionDefault() const { return option_default_; }
-  std::string GetOptionDesc() const { return option_desc_; }
-  std::map<std::string, std::string> GetOptionValues() {
-    return option_values_;
-  }
-  std::string GetOptionValue(const std::string &key) {
-    auto iter = option_values_.find(key);
-    if (iter == option_values_.end()) {
-      return "";
-    }
+  std::string GetOptionName() const;
 
-    return option_values_[key];
-  }
+  std::string GetOptionType() const;
+
+  bool IsRequire() const;
+
+  std::string GetOptionDefault() const;
+
+  std::string GetOptionDesc() const;
+
+  std::map<std::string, std::string> GetOptionValues();
+
+  std::string GetOptionValue(const std::string &key);
 
  private:
   std::string option_name_;
@@ -263,180 +216,93 @@ class FlowUnitOption {
 
 class FlowUnitDesc {
  public:
-  FlowUnitDesc()
-
-      = default;
+  FlowUnitDesc() = default;
   virtual ~FlowUnitDesc() = default;
 
-  std::string GetFlowUnitName() { return flowunit_name_; };
-  std::string GetFlowUnitAliasName() { return alias_name_; };
-  std::string GetFlowUnitArgument() { return argument_; };
-  bool IsCollapseAll() {
-    if (loop_type_ != LOOP) {
-      if (output_type_ != COLLAPSE) {
-        return false;
-      }
-      return is_collapse_all_;
-    }
+  std::string GetFlowUnitName();
 
-    return true;
-  };
+  std::string GetFlowUnitAliasName();
 
-  bool IsStreamSameCount() {
-    if (flow_type_ == NORMAL) {
-      return true;
-    }
-    return is_stream_same_count_;
-  };
+  std::string GetFlowUnitArgument();
 
-  bool IsInputContiguous() const { return is_input_contiguous_; }
+  bool IsCollapseAll();
 
-  bool IsResourceNice() const { return is_resource_nice_; }
+  bool IsStreamSameCount();
 
-  bool IsExceptionVisible() { return is_exception_visible_; };
+  bool IsInputContiguous() const;
 
-  ConditionType GetConditionType() { return condition_type_; };
+  bool IsResourceNice() const;
 
-  FlowOutputType GetOutputType() { return output_type_; };
+  bool IsExceptionVisible();
 
-  bool IsUserSetFlowType() { return is_user_set_flow_type_; }
+  ConditionType GetConditionType();
 
-  FlowType GetFlowType() { return flow_type_; };
+  FlowOutputType GetOutputType();
 
-  LoopType GetLoopType() { return loop_type_; };
+  bool IsUserSetFlowType();
 
-  std::string GetGroupType() { return group_type_; };
+  FlowType GetFlowType();
 
-  uint32_t GetMaxBatchSize() {
-    if (max_batch_size_ != 0) {
-      return max_batch_size_;
-    }
+  LoopType GetLoopType();
 
-    // return default value
-    if (flow_type_ == STREAM) {
-      return STREAM_MAX_BATCH_SIZE;
-    }
-    return NORMAL_MAX_BATCH_SIZE;
-  };
+  std::string GetGroupType();
 
-  uint32_t GetDefaultBatchSize() {
-    if (default_batch_size_ != 0) {
-      return default_batch_size_;
-    }
+  uint32_t GetMaxBatchSize();
 
-    // return default value
-    if (flow_type_ == STREAM) {
-      return STREAM_DEFAULT_BATCH_SIZE;
-    }
-    return NORMAL_DEFAULT_BATCH_SIZE;
-  };
+  uint32_t GetDefaultBatchSize();
 
-  std::vector<FlowUnitInput> &GetFlowUnitInput() {
-    return flowunit_input_list_;
-  };
-  const std::vector<FlowUnitOutput> &GetFlowUnitOutput() {
-    return flowunit_output_list_;
-  };
+  std::vector<FlowUnitInput> &GetFlowUnitInput();
 
-  std::vector<FlowUnitOption> &GetFlowUnitOption() {
-    return flowunit_option_list_;
-  }
+  const std::vector<FlowUnitOutput> &GetFlowUnitOutput();
 
-  std::shared_ptr<DriverDesc> GetDriverDesc() { return driver_desc_; }
+  std::vector<FlowUnitOption> &GetFlowUnitOption();
 
-  std::string GetDescription() { return flowunit_description_; }
+  std::shared_ptr<DriverDesc> GetDriverDesc();
 
-  std::string GetVirtualType() { return virtual_type_; }
+  std::string GetDescription();
+
+  std::string GetVirtualType();
 
   void SetFlowUnitName(const std::string &flowunit_name);
+
   Status AddFlowUnitInput(const FlowUnitInput &flowunit_input);
+
   Status AddFlowUnitOutput(const FlowUnitOutput &flowunit_output);
+
   Status AddFlowUnitOption(const FlowUnitOption &flowunit_option);
 
-  void SetFlowUnitGroupType(const std::string &group_type) {
-    if (CheckGroupType(group_type) != STATUS_SUCCESS) {
-      MBLOG_WARN << "check group type failed , your group_type is "
-                 << group_type
-                 << ", the right group_type is a or a/b , for instance input "
-                    "or input/http.";
-      return;
-    }
+  void SetFlowUnitGroupType(const std::string &group_type);
 
-    group_type_ = group_type;
-  };
+  void SetDriverDesc(std::shared_ptr<DriverDesc> driver_desc);
 
-  void SetDriverDesc(std::shared_ptr<DriverDesc> driver_desc) {
-    driver_desc_ = std::move(driver_desc);
-  }
+  void SetFlowUnitAliasName(const std::string &alias_name);
 
-  void SetFlowUnitAliasName(const std::string &alias_name) {
-    alias_name_ = alias_name;
-  };
+  void SetFlowUnitArgument(const std::string &argument);
 
-  void SetFlowUnitArgument(const std::string &argument) {
-    argument_ = argument;
-  };
+  void SetConditionType(ConditionType condition_type);
 
-  void SetConditionType(ConditionType condition_type) {
-    condition_type_ = condition_type;
-  }
+  void SetLoopType(LoopType loop_type);
 
-  void SetLoopType(LoopType loop_type) { loop_type_ = loop_type; }
+  void SetOutputType(FlowOutputType output_type);
 
-  void SetOutputType(FlowOutputType output_type) { output_type_ = output_type; }
+  void SetFlowType(FlowType flow_type);
 
-  void SetFlowType(FlowType flow_type) {
-    is_user_set_flow_type_ = true;
-    flow_type_ = flow_type;
-  }
+  void SetStreamSameCount(bool is_stream_same_count);
 
-  void SetStreamSameCount(bool is_stream_same_count) {
-    if (flow_type_ == STREAM) {
-      is_stream_same_count_ = is_stream_same_count;
-    }
-  };
+  void SetInputContiguous(bool is_input_contiguous);
 
-  void SetInputContiguous(bool is_input_contiguous) {
-    is_input_contiguous_ = is_input_contiguous;
-  }
+  void SetResourceNice(bool is_resource_nice);
+  void SetCollapseAll(bool is_collapse_all);
 
-  void SetResourceNice(bool is_resource_nice) {
-    is_resource_nice_ = is_resource_nice;
-  }
+  void SetExceptionVisible(bool is_exception_visible);
 
-  void SetCollapseAll(bool is_collapse_all) {
-    if (output_type_ == COLLAPSE) {
-      is_collapse_all_ = is_collapse_all;
-    }
-  };
+  void SetVirtualType(const std::string &virtual_type);
 
-  void SetExceptionVisible(bool is_exception_visible) {
-    is_exception_visible_ = is_exception_visible;
-  };
+  void SetDescription(const std::string &description);
 
-  void SetVirtualType(const std::string &virtual_type) {
-    virtual_type_ = virtual_type;
-  }
+  void SetMaxBatchSize(const uint32_t &max_batch_size);
 
-  void SetDescription(const std::string &description) {
-    flowunit_description_ = description;
-  }
-
-  void SetMaxBatchSize(const uint32_t &max_batch_size) {
-    if (max_batch_size == 0) {
-      MBLOG_ERROR << "max_batch_size must be greater than zero.";
-      return;
-    }
-    max_batch_size_ = max_batch_size;
-  }
-
-  void SetDefaultBatchSize(const uint32_t &default_batch_size) {
-    if (default_batch_size == 0) {
-      MBLOG_ERROR << "default_batch_size must be greater than zero.";
-      return;
-    }
-    default_batch_size_ = default_batch_size;
-  }
+  void SetDefaultBatchSize(const uint32_t &default_batch_size);
 
  protected:
   FlowOutputType output_type_{ORIGIN};
@@ -541,66 +407,6 @@ class FlowUnitStreamContext {
   BufferList &NewBufferList();
 };
 
-/**使用说明
-
-class FlowUnitStream {
- public:
-  FlowUnitStream();
-  virtual ~FlowUnitStream();
-
-  Open();
-
-  Close();
-
-  virtual Status Process(std::shared_ptr<FlowUnitStreamContext> ctx) {
-    if (ctx.HasError("IN1|IN2|OUT1|OUT2") != 0) {
-      ctx.Close();
-      return;
-    }
-
-    if (ctx.HasEventData()) {
-      processEvent();
-    }
-
-    if (ctx.HasExternalData()) {
-      processEvent();
-    }
-
-    auto ret = ctx.GetExternalData(buffer1);
-    auto ret = ctx.RecvData("IN1", buffer1);
-    auto ret = ctx.RecvData("IN2", buffer2);
-
-    auto buff = ctx.NewBuffer();
-    //process;
-    ctx.SendData("OUT1", buff);
-    ctx.SendData("OUT2", buff);
-
-    return STATUS_FAULT;
-  }
-
-  virtual Status StreamOpen(FlowUnitStreamContext ctx) = 0 {
-    auto meta1 = ctx.GetMeta("IN1");
-    auto met2a = ctx.GetMeta("IN1");
-    cts.SetInRecvMode(MODE_MATCH);
-    auto groupmeta = in2.GetInputStreamGroupMeta();
-    ctx.NewOutputStream("out1", meta1, EXPAND_DATA);
-    ctx.NewOutputStream("out2", meta2, EXPAND_DATA);
-  }
-
-  virtual Status StreamClose(FlowUnitStreamContext ctx) = 0 {
-    ctx.CloseOutputStream("out1");
-    ctx.CloseOutputStream("out2");
-  }
-
-  virtual Status StreamGroupOpen(FlowUnitStreamContext ctx) = 0; {
-    ctx.NewOutputStream("out2", meta2, COLLAPSE_DATA);
-  }
-
-  virtual Status StreamGroupClose(FlowUnitStreamContext ctx) {
-    ctx.CloseOutputStream("out2");
-  }
-};
-**/
 class FlowUnitStream {
  public:
   FlowUnitStream();
@@ -690,38 +496,29 @@ class IFlowUnit {
 
 class FlowUnit : public IFlowUnit {
  public:
-  FlowUnit() = default;
-  ~FlowUnit() override = default;
+  FlowUnit();
+  ~FlowUnit() override;
 
   /* called when unit is open for process */
-  Status Open(const std::shared_ptr<Configuration> &config) override = 0;
+  Status Open(const std::shared_ptr<Configuration> &config) override;
 
   /* class when unit is close */
-  Status Close() override = 0;
+  Status Close() override;
 
   virtual void SetFlowUnitDesc(std::shared_ptr<FlowUnitDesc> desc);
+
   virtual std::shared_ptr<FlowUnitDesc> GetFlowUnitDesc();
 
   void SetBindDevice(const std::shared_ptr<Device> &device);
+
   std::shared_ptr<Device> GetBindDevice();
 
-  void SetExternalData(const CreateExternalDataFunc &create_external_data) {
-    create_ext_data_func_ = create_external_data;
-  }
+  void SetExternalData(const CreateExternalDataFunc &create_external_data);
 
-  std::shared_ptr<ExternalData> CreateExternalData() const {
-    if (!create_ext_data_func_) {
-      return nullptr;
-    }
-
-    return create_ext_data_func_(device_);
-  }
+  std::shared_ptr<ExternalData> CreateExternalData() const;
 
  protected:
-  CreateExternalDataFunc GetCreateExternalDataFunc() {
-    return create_ext_data_func_;
-  }
-
+  CreateExternalDataFunc GetCreateExternalDataFunc();
   int32_t dev_id_{0};
 
  private:
@@ -734,49 +531,35 @@ class FlowUnit : public IFlowUnit {
 
 class FlowUnitFactory : public DriverFactory {
  public:
-  FlowUnitFactory() = default;
-  ~FlowUnitFactory() override = default;
+  FlowUnitFactory();
+  ~FlowUnitFactory() override;
 
-  virtual std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe() {
-    return std::map<std::string, std::shared_ptr<FlowUnitDesc>>();
-  };
+  virtual std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe();
 
-  void SetDriver(const std::shared_ptr<Driver> &driver) override {
-    driver_ = driver;
-  }
+  void SetDriver(const std::shared_ptr<Driver> &driver) override;
 
-  std::shared_ptr<Driver> GetDriver() override { return driver_; }
+  std::shared_ptr<Driver> GetDriver() override;
 
-  virtual std::string GetFlowUnitFactoryType() { return ""; };
+  virtual std::string GetFlowUnitFactoryType();
 
-  virtual std::string GetFlowUnitFactoryName() { return ""; };
-  virtual std::vector<std::string> GetFlowUnitNames() {
-    return std::vector<std::string>();
-  };
+  virtual std::string GetFlowUnitFactoryName();
 
-  virtual std::string GetVirtualType() { return ""; };
-  virtual void SetVirtualType(const std::string &virtual_type){};
+  virtual std::vector<std::string> GetFlowUnitNames();
+
+  virtual std::string GetVirtualType();
+
+  virtual void SetVirtualType(const std::string &virtual_type);
 
   virtual std::shared_ptr<FlowUnit> CreateFlowUnit(
-      const std::string &unit_name, const std::string &unit_type) {
-    if (GetVirtualType().empty()) {
-      StatusError = {STATUS_FAULT, "invalid Flow Unit"};
-      return nullptr;
-    }
-
-    return VirtualCreateFlowUnit(unit_name, unit_type, GetVirtualType());
-  };
+      const std::string &unit_name, const std::string &unit_type);
 
   virtual std::shared_ptr<FlowUnit> VirtualCreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type,
-      const std::string &virtual_type) {
-    StatusError = {STATUS_FAULT, "Invalid virtual flowunit"};
-    return nullptr;
-  }
+      const std::string &virtual_type);
 
   virtual void SetFlowUnitFactory(
       const std::vector<std::shared_ptr<DriverFactory>>
-          &bind_flowunit_factory_list){};
+          &bind_flowunit_factory_list);
 
  private:
   std::shared_ptr<Driver> driver_;

@@ -244,6 +244,29 @@ TraceEvent::TraceEvent()
           std::chrono::system_clock::now())),
       thread_id_(std::this_thread::get_id()) {}
 
+TraceEvent::~TraceEvent() = default;
+
+TraceEvent& TraceEvent::SetEventType(const EventType& event_type) {
+  event_type_ = event_type;
+  return *this;
+}
+
+const EventType& TraceEvent::GetEventType() const { return event_type_; }
+
+TraceEvent& TraceEvent::SetEventTime(const TimePoint& event_time) {
+  event_time_ = event_time;
+  return *this;
+}
+
+const TimePoint& TraceEvent::GetEventTime() const { return event_time_; }
+
+TraceEvent& TraceEvent::SetThreadId(std::thread::id thread_id) {
+  thread_id_ = thread_id;
+  return *this;
+}
+
+std::thread::id TraceEvent::GetThreadId() const { return thread_id_; }
+
 TraceSlice::TraceSlice(
     TraceSliceType& slice_type, std::string session,
     const std::shared_ptr<FlowUnitTrace>& flow_unit_trace_ptr,

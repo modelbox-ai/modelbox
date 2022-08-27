@@ -39,6 +39,10 @@ Status BufferMeta::CopyMeta(const std::shared_ptr<BufferMeta>& buf_meta,
 
 BufferMeta& BufferMeta::operator=(const BufferMeta& other) = default;
 
+std::tuple<Any*, bool> BufferMeta::Get(const std::string& key) {
+  return custom_meta_.Get(key);
+}
+
 BufferMeta& BufferMeta::DeepCopy(const BufferMeta& other) {
   custom_meta_ = other.custom_meta_;
   return *this;
@@ -202,6 +206,10 @@ size_t Buffer::GetBytes() const { return dev_mem_ ? dev_mem_->GetSize() : 0; }
 
 std::shared_ptr<Device> Buffer::GetDevice() const {
   return dev_mem_ ? dev_mem_->GetDevice() : nullptr;
+}
+
+std::tuple<Any*, bool> Buffer::Get(const std::string& key) {
+  return meta_->Get(key);
 }
 
 Status Buffer::CopyMeta(const std::shared_ptr<Buffer>& buf, bool is_override) {
