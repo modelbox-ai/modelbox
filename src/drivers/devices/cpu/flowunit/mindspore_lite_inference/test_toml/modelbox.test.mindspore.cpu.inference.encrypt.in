@@ -10,8 +10,8 @@ virtual_type = "mindspore"
 [encryption]
 plugin_name = "modeldecrypt-plugin"
 plugin_version = "1.0.0"
-rootkey = "9v0CybHeDMeEQDrymhSxPKd4N+ZceM8Mm3VYazBD9TThdguUODmdDpyTY6vlqvA9QfnpzBtc4Ucqiw1+RNvU+gDcfq0ET4Wa8Lsf18WcCFZl"
-passwd = "ToT+qoCsXk6r49CowwSVM2rqJmU0y279CIlnqzaBfRdMbYaYF5lp2pwhbiZ4/L5lhr4LJuX7Wjl09WyL/3CKMg=="
+rootkey = "5yQMTJz5vFZFD7ABFyr6dCwjAVrPv5QTv3tfKSZ/cAAJz4Qnoj6VEiSCg2xVAr/z2MXsfSI1NZXYQ9zGqcMPB9+8H1NnSokrs3jKe7bSNDdo"
+passwd = "zTYD4Jued4ZotTeD8yBxVApnj74pMPlZQoG56FkGN2bcsBpcU/4IFQ4DGD55nNtZ2MUjoMYvWrVxSVuCMW5cqw=="
 
 [input]
 [input.input1]
