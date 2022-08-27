@@ -13,24 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.10)
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/modelbox/device/rockchip
 
-project(modelbox-device)
-
-if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-    message(FATAL_ERROR "Do not build in source directory!")
-endif()
-
-if(ACL_FOUND AND DSMI_FOUND)
-    add_subdirectory(ascend)
-endif()
-
-add_subdirectory(cpu)
-
-if(CUDA_FOUND)
-    add_subdirectory(cuda)
-endif()
-
-if(ROCKCHIP_FOUND)
-    add_subdirectory(rockchip)
-endif()
+Name: libmodelbox-device-rockchip
+Description: modelbox rockchip device SDK
+Version: @MODELBOX_VERSION_STRING@
+Libs: -L${libdir} -lmodelbox-device-rockchip
+Cflags: -I${includedir}

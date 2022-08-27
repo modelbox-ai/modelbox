@@ -1,0 +1,47 @@
+name: Merge Request RockChip
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+  
+jobs:
+  build:
+    runs-on: [rockchip-build, Linux, ARM64]
+
+    steps:
+      - run: echo "the build begin"
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ubuntu-latest
+          max-size: 1024M
+
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEBUI=off -DCLANG_TIDY=on -DCLANG_TIDY_AS_ERROR=on
+
+      - name: build
+        working-directory: build
+        run: |
+          make package -j8
+
+      - name: show result
+        working-directory: build
+        run: |
+          ls -l src/drivers/devices/rockchip/core
+          ls -l release
+
+      - name: Finish
+        run: echo "the build finish"
