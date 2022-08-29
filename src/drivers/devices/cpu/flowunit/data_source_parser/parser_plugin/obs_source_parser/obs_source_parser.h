@@ -19,8 +19,8 @@
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
-
 #include <modelbox/data_source_parser_plugin.h>
+
 #include "eSDKOBS.h"
 
 #define OBS_TEMP_PATH "/tmp/ObsDownload/"

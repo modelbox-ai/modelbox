@@ -19,10 +19,10 @@
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
+#include <modelbox/output_broker_plugin.h>
 
 #include "dis/dis.h"
 #include "output_broker_flowunit.h"
-#include <modelbox/output_broker_plugin.h>
 
 constexpr const char *DRIVER_NAME = "dis";
 constexpr const char *DRIVER_DESC = "A dis output broker plugin on CPU";
@@ -54,7 +54,9 @@ class DisOutputBroker : public modelbox::OutputBrokerPlugin {
 
   modelbox::Status Deinit() override;
 
-  std::shared_ptr<modelbox::OutputBrokerHandle> Open(const std::string &config) override;
+  std::shared_ptr<modelbox::OutputBrokerHandle> Open(
+      const std::shared_ptr<modelbox::Configuration> &session_config,
+      const std::string &config) override;
 
   modelbox::Status Write(
       const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,

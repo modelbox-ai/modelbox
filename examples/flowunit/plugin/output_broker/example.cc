@@ -24,6 +24,7 @@ modelbox::Status ExampleOutputBroker::Init(
 modelbox::Status ExampleOutputBroker::Deinit() { return modelbox::STATUS_OK; }
 
 std::shared_ptr<modelbox::OutputBrokerHandle> ExampleOutputBroker::Open(
+    const std::shared_ptr<modelbox::Configuration> &session_config,
     const std::string &config) {
   auto handle = std::make_shared<modelbox::OutputBrokerHandle>();
   // Your code goes here

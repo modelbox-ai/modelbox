@@ -19,12 +19,11 @@
 
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
-
-#include "eSDKOBS.h"
 #include <modelbox/obs_client.h>
-#include "output_broker_flowunit.h"
 #include <modelbox/output_broker_plugin.h>
 
+#include "eSDKOBS.h"
+#include "output_broker_flowunit.h"
 
 constexpr const char *DRIVER_NAME = "obs";
 constexpr const char *DRIVER_DESC = "A obs output broker plugin on CPU";
@@ -66,7 +65,9 @@ class ObsOutputBroker : public modelbox::OutputBrokerPlugin {
    * @param config - configurations in json style
    * @return a handle
    */
-  std::shared_ptr<modelbox::OutputBrokerHandle> Open(const std::string &config) override;
+  std::shared_ptr<modelbox::OutputBrokerHandle> Open(
+      const std::shared_ptr<modelbox::Configuration> &session_config,
+      const std::string &config) override;
 
   /**
    * @brief Write data to target output

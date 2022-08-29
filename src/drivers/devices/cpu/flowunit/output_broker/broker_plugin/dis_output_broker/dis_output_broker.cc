@@ -77,6 +77,7 @@ modelbox::Status DisOutputBroker::Deinit() {
 }
 
 std::shared_ptr<modelbox::OutputBrokerHandle> DisOutputBroker::Open(
+    const std::shared_ptr<modelbox::Configuration> &session_config,
     const std::string &config) {
   std::string uuid;
   if (modelbox::STATUS_OK != modelbox::GetUUID(&uuid)) {
