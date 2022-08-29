@@ -794,22 +794,8 @@ void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
       .def(
           "push_back",
           [](BufferList &bl, const py::buffer &b) {
-            py::buffer_info info = b.request();
-            std::vector<size_t> i_shape;
-            for (auto &dim : info.shape) {
-              i_shape.push_back(dim);
-            }
-
-            if (info.shape.size() == 0) {
-              throw std::runtime_error("can not accpet empty numpy.");
-            }
-
-            size_t bytes = Volume(i_shape) * info.itemsize;
             auto buffer = std::make_shared<Buffer>(bl.GetDevice());
-            buffer->BuildFromHost(info.ptr, bytes);
-            buffer->Set("shape", i_shape);
-            buffer->Set("type", TypeFromFormatStr(info.format));
-            buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
+            PyBufferToBuffer(buffer, b);
             bl.PushBack(buffer);
           },
           py::keep_alive<1, 2>())
@@ -1094,25 +1080,8 @@ void ModelboxPyApiSetUpFlowUnit(pybind11::module &m) {
           "create_buffer",
           [](modelbox::FlowUnit &flow,
              py::buffer &b) -> std::shared_ptr<Buffer> {
-            py::buffer_info info = b.request();
-            std::vector<size_t> i_shape;
-            for (auto &dim : info.shape) {
-              i_shape.push_back(dim);
-            }
-
-            if (info.shape.size() == 0) {
-              throw std::runtime_error("can not accpet empty numpy.");
-            }
-
-            size_t bytes = Volume(i_shape) * info.itemsize;
             auto buffer = std::make_shared<Buffer>(flow.GetBindDevice());
-            if (bytes != 0) {
-              buffer->BuildFromHost(info.ptr, bytes);
-            }
-
-            buffer->Set("shape", i_shape);
-            buffer->Set("type", TypeFromFormatStr(info.format));
-            buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
+            PyBufferToBuffer(buffer, b);
             return buffer;
           },
           py::keep_alive<0, 1>());

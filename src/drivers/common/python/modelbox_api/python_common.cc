@@ -100,7 +100,14 @@ void PyBufferToBuffer(const std::shared_ptr<Buffer> &buffer,
   }
 
   size_t bytes = Volume(i_shape) * info.itemsize;
-  buffer->BuildFromHost(info.ptr, bytes);
+  if (PyBuffer_IsContiguous(info.view(), 'C')) {
+    buffer->BuildFromHost(info.ptr, bytes);
+  } else {
+    // py_buffer is not C Contiguous, need convert
+    buffer->Build(bytes);
+    PyBuffer_ToContiguous(buffer->MutableData(), info.view(), bytes, 'C');
+  }
+
   buffer->Set("shape", i_shape);
   buffer->Set("type", TypeFromFormatStr(info.format));
   buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
