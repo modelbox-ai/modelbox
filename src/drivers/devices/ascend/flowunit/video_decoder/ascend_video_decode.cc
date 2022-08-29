@@ -23,6 +23,38 @@
 #define ACL_ENABLE
 #include "image_process.h"
 
+void DestroyStreamDesc(acldvppStreamDesc *stream_desc) {
+  if (stream_desc == nullptr) {
+    return;
+  }
+
+  auto *data_ptr = acldvppGetStreamDescData(stream_desc);
+  if (data_ptr != nullptr) {
+    acldvppFree(data_ptr);
+  }
+
+  auto ret = acldvppDestroyStreamDesc(stream_desc);
+  if (ret != ACL_ERROR_NONE) {
+    MBLOG_ERROR << "fail to destroy stream desc, err code " << ret;
+  }
+}
+
+void DestroyPicDesc(acldvppPicDesc *pic_desc) {
+  if (pic_desc == nullptr) {
+    return;
+  }
+
+  auto *data_ptr = acldvppGetPicDescData(pic_desc);
+  if (data_ptr != nullptr) {
+    acldvppFree(data_ptr);
+  }
+
+  auto ret = acldvppDestroyPicDesc(pic_desc);
+  if (ret != ACL_ERROR_NONE) {
+    MBLOG_ERROR << "destroy pic desc failed, err code " << ret;
+  }
+}
+
 ThreadHandler::ThreadHandler(
     int device_id, int instance_id,
     const std::shared_ptr<modelbox::DataContext> &data_ctx)
@@ -136,6 +168,15 @@ void AscendVideoDecoder::Callback(acldvppStreamDesc *input,
     return;
   }
 
+  auto dvpp_frame = std::make_shared<DvppFrame>();
+  dvpp_frame->GetPicDesc().reset(output, [](acldvppPicDesc *picDesc) {
+    // will not free pic buffer
+    auto ret = acldvppDestroyPicDesc(picDesc);
+    if (ret != ACL_ERROR_NONE) {
+      MBLOG_ERROR << "destroy pic desc failed, err code " << ret;
+    }
+  });
+
   void *vdecOutBufferDev = acldvppGetPicDescData(output);
   if (vdecOutBufferDev == nullptr) {
     MBLOG_ERROR << "dvpp decoder callback output data is nullptr.";
@@ -164,15 +205,6 @@ void AscendVideoDecoder::Callback(acldvppStreamDesc *input,
 
   auto *ctx = (DvppVideoDecodeContext *)userData;
   auto queue = ctx->GetCacheQueue();
-
-  auto dvpp_frame = std::make_shared<DvppFrame>();
-  dvpp_frame->GetPicDesc().reset(output, [](acldvppPicDesc *picDesc) {
-    auto ret = acldvppDestroyPicDesc(picDesc);
-    if (ret != ACL_ERROR_NONE) {
-      MBLOG_ERROR << "destroy pic desc failed, err code " << ret;
-    }
-  });
-
   auto res = queue->Push(dvpp_frame);
   if (!res) {
     acldvppFree(vdecOutBufferDev);
@@ -342,6 +374,7 @@ modelbox::Status AscendVideoDecoder::ProcessLastPacket(
                          nullptr, nullptr, (void *)dvpp_decoder_ctx.get());
   if (ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "send eos frame failed, err code: " << ret;
+    DestroyStreamDesc(dvpp_packet->GetStreamDesc());
   }
 
   return modelbox::STATUS_NODATA;
@@ -378,6 +411,8 @@ modelbox::Status AscendVideoDecoder::Decode(
 
   if (ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "send vdec frame failed, err code " << ret;
+    DestroyStreamDesc(dvpp_packet->GetStreamDesc());
+    DestroyPicDesc(pic_desc.get());
   }
 
   return modelbox::STATUS_SUCCESS;
