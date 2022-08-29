@@ -42,14 +42,18 @@ class OutputBrokerPlugin : public Driver {
   virtual Status Deinit() = 0;
 
   virtual std::shared_ptr<modelbox::OutputBrokerHandle> Open(
+      const std::shared_ptr<modelbox::Configuration> &session_config,
       const std::string &config) = 0;
 
-  virtual Status Write(const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
-                       const std::shared_ptr<Buffer> &buffer) = 0;
+  virtual Status Write(
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
+      const std::shared_ptr<Buffer> &buffer) = 0;
 
-  virtual Status Sync(const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) = 0;
+  virtual Status Sync(
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) = 0;
 
-  virtual Status Close(const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) = 0;
+  virtual Status Close(
+      const std::shared_ptr<modelbox::OutputBrokerHandle> &handle) = 0;
 };
 
 }  // namespace modelbox

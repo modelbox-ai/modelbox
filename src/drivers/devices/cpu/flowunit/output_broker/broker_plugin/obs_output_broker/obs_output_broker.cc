@@ -16,13 +16,12 @@
 
 #include "obs_output_broker.h"
 
+#include <modelbox/base/uuid.h>
+#include <modelbox/device/cpu/device_cpu.h>
+#include <modelbox/iam_auth.h>
 #include <securec.h>
 
 #include <nlohmann/json.hpp>
-
-#include <modelbox/iam_auth.h>
-#include <modelbox/base/uuid.h>
-#include <modelbox/device/cpu/device_cpu.h>
 
 ObsOutputBroker::ObsOutputBroker() = default;
 ObsOutputBroker::~ObsOutputBroker() = default;
@@ -46,6 +45,7 @@ modelbox::Status ObsOutputBroker::Init(
 modelbox::Status ObsOutputBroker::Deinit() { return modelbox::STATUS_OK; }
 
 std::shared_ptr<modelbox::OutputBrokerHandle> ObsOutputBroker::Open(
+    const std::shared_ptr<modelbox::Configuration> &session_config,
     const std::string &config) {
   nlohmann::json config_json;
   std::shared_ptr<OBSOutputInfo> output_info =

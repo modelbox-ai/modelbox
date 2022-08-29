@@ -75,10 +75,11 @@ void BrokerDataQueue::PopIfEqual(
   queue_.pop();
 }
 
-BrokerInstance::BrokerInstance(std::shared_ptr<modelbox::OutputBrokerPlugin> &plugin,
-               const std::string &name,
-               std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
-               size_t async_queue_size)
+BrokerInstance::BrokerInstance(
+    std::shared_ptr<modelbox::OutputBrokerPlugin> &plugin,
+    const std::string &name,
+    std::shared_ptr<modelbox::OutputBrokerHandle> &handle,
+    size_t async_queue_size)
     : plugin_(plugin),
       name_(name),
       handle_(handle),
@@ -412,7 +413,7 @@ modelbox::Status OutputBrokerFlowUnit::InitBrokers(
   auto broker_names = std::make_shared<BrokerNames>();
   for (const auto &broker_json : brokers_json) {
     try {
-      AddBroker(broker_instances, broker_names, broker_json);
+      AddBroker(data_ctx, broker_instances, broker_names, broker_json);
     } catch (const std::exception &e) {
       MBLOG_ERROR << "init output broker failed, config: "
                   << broker_json.dump();
@@ -426,6 +427,7 @@ modelbox::Status OutputBrokerFlowUnit::InitBrokers(
 }
 
 void OutputBrokerFlowUnit::AddBroker(
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::shared_ptr<BrokerInstances> &broker_instances,
     std::shared_ptr<BrokerNames> &broker_names,
     const nlohmann::json &broker_json) {
@@ -476,7 +478,7 @@ void OutputBrokerFlowUnit::AddBroker(
     return;
   }
 
-  auto handle = plugin->Open(cfg);
+  auto handle = plugin->Open(data_ctx->GetSessionConfig(), cfg);
   if (handle == nullptr) {
     MBLOG_WARN << "Get broker handle for " << name << ":" << type << " failed";
     return;

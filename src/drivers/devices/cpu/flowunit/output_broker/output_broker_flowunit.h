@@ -20,6 +20,7 @@
 #include <modelbox/base/device.h>
 #include <modelbox/base/status.h>
 #include <modelbox/flow.h>
+#include <modelbox/output_broker_plugin.h>
 
 #include <algorithm>
 #include <atomic>
@@ -28,7 +29,6 @@
 #include "modelbox/base/timer.h"
 #include "modelbox/buffer.h"
 #include "modelbox/flowunit.h"
-#include <modelbox/output_broker_plugin.h>
 
 constexpr const char *FLOWUNIT_NAME = "output_broker";
 constexpr const char *FLOWUNIT_TYPE = "cpu";
@@ -163,11 +163,13 @@ class OutputBrokerFlowUnit : public modelbox::FlowUnit {
   modelbox::Status InitBrokers(std::shared_ptr<modelbox::DataContext> &data_ctx,
                                const nlohmann::json &brokers_json);
 
-  void AddBroker(std::shared_ptr<BrokerInstances> &broker_instances,
+  void AddBroker(std::shared_ptr<modelbox::DataContext> &data_ctx,
+                 std::shared_ptr<BrokerInstances> &broker_instances,
                  std::shared_ptr<BrokerNames> &broker_names,
                  const nlohmann::json &broker_json);
 
-  std::shared_ptr<modelbox::OutputBrokerPlugin> GetPlugin(const std::string &type);
+  std::shared_ptr<modelbox::OutputBrokerPlugin> GetPlugin(
+      const std::string &type);
 
   std::vector<std::shared_ptr<modelbox::DriverFactory>> factories_;
   std::map<std::string, std::shared_ptr<modelbox::OutputBrokerPlugin>> plugins_;

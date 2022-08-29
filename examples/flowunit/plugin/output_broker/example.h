@@ -36,6 +36,7 @@ class ExampleOutputBroker : public modelbox::OutputBrokerPlugin {
   modelbox::Status Deinit() override;
 
   std::shared_ptr<modelbox::OutputBrokerHandle> Open(
+      const std::shared_ptr<modelbox::Configuration> &session_config,
       const std::string &config) override;
 
   modelbox::Status Write(

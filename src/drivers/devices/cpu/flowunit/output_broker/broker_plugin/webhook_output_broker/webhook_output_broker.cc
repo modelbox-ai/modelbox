@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "webhook_output_broker.h"
 
 #include <securec.h>
@@ -35,6 +34,7 @@ modelbox::Status WebhookOutputBroker::Init(
 modelbox::Status WebhookOutputBroker::Deinit() { return modelbox::STATUS_OK; }
 
 std::shared_ptr<modelbox::OutputBrokerHandle> WebhookOutputBroker::Open(
+    const std::shared_ptr<modelbox::Configuration> &session_config,
     const std::string &config) {
   std::string uuid;
   if (modelbox::STATUS_OK != modelbox::GetUUID(&uuid)) {
@@ -125,11 +125,11 @@ modelbox::Status WebhookOutputBroker::Write(
                   << ". Response body: " << resp_post.extract_string().get();
       return modelbox::STATUS_OK;
     }
-    
+
     MBLOG_WARN << "Send data to webhook failed. Message name: " << msg_name
-                << ". Http status code: " << resp_post.status_code()
-                << ". Response body: " << resp_post.extract_string().get()
-                << ". Try again.";
+               << ". Http status code: " << resp_post.status_code()
+               << ". Response body: " << resp_post.extract_string().get()
+               << ". Try again.";
     return modelbox::STATUS_AGAIN;
   } catch (std::exception const &e) {
     MBLOG_ERROR << e.what();
