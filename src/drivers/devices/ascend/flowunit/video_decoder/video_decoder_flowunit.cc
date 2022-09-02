@@ -525,11 +525,9 @@ modelbox::Status VideoDecodeFlowUnit::Process(
       MBLOG_ERROR << "Write the last frame failed";
       return modelbox::STATUS_FAULT;
     }
-
-    return modelbox::STATUS_SUCCESS;
   }
 
-  return modelbox::STATUS_CONTINUE;
+  return modelbox::STATUS_SUCCESS;
 }
 
 MODELBOX_FLOWUNIT(VideoDecodeFlowUnit, desc) {
