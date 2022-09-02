@@ -83,10 +83,9 @@ modelbox::Status VideoDecoderFlowUnit::Process(
 
   if (decode_ret == modelbox::STATUS_NODATA) {
     MBLOG_INFO << "Video decoder finish";
-    return modelbox::STATUS_SUCCESS;
   }
 
-  return modelbox::STATUS_CONTINUE;
+  return modelbox::STATUS_SUCCESS;
 }
 
 modelbox::Status VideoDecoderFlowUnit::ReadData(
