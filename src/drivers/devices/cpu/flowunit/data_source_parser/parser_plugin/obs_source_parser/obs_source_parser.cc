@@ -46,10 +46,10 @@ ObsSourceParser::~ObsSourceParser() = default;
 modelbox::Status ObsSourceParser::Init(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   retry_enabled_ = opts->GetBool("retry_enable", DATASOURCE_PARSER_RETRY_ON);
-  retry_interval_ = opts->GetInt32(
-      "retry_interval_ms", DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES);
+  retry_interval_ = opts->GetInt32("retry_interval_ms",
+                                   DATASOURCE_PARSER_DEFAULT_RETRY_INTERVAL);
   retry_max_times_ = opts->GetInt32("retry_count_limit",
-                                    DATASOURCE_PARSER_DEFAULT_RETRY_INTERVAL);
+                                    DATASOURCE_PARSER_FILE_DEFAULT_RETRY_TIMES);
 
   retry_enabled_ = opts->GetBool("obs_retry_enable", retry_enabled_);
   retry_interval_ = opts->GetInt32("obs_retry_interval_ms", retry_interval_);
@@ -66,6 +66,11 @@ modelbox::Status ObsSourceParser::Init(
   if (stream_memory_mode_ == "high") {
     max_read_size_ = OBS_STREAM_READ_SIZE_HIGH;
   }
+
+  MBLOG_INFO << "obs source parser config retry_enabled:" << retry_enabled_
+             << " retry_interval:" << retry_interval_
+             << " retry_max_times:" << retry_max_times_;
+
   return modelbox::STATUS_OK;
 }
 
