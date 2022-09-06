@@ -28,6 +28,12 @@ modelbox::Status VcnRestfulSourceParser::Init(
 
   keep_alive_interval_ =
       opts->GetInt32("vcn_keep_alive_interval_sec", keep_alive_interval_);
+
+  MBLOG_INFO << "vcn restful source parser config retry_enabled:" << retry_enabled_
+             << " retry_interval:" << retry_interval_
+             << " retry_max_times:" << retry_max_times_
+             << " keep_alive_interval:" << keep_alive_interval_;
+
   return modelbox::STATUS_OK;
 }
 

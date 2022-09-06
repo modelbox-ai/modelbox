@@ -47,6 +47,10 @@ modelbox::Status VcnSourceParser::Init(
       "retry_count_limit", DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES);
 
   ReadConfVcnCommon(opts, retry_enabled_, retry_interval_, retry_max_times_);
+
+  MBLOG_INFO << "vcn source parser config retry_enabled:" << retry_enabled_
+             << " retry_interval:" << retry_interval_
+             << " retry_max_times:" << retry_max_times_;
   return modelbox::STATUS_OK;
 }
 

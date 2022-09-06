@@ -50,6 +50,13 @@ modelbox::Status UrlSourceParser::Init(
                      retry_max_times_ == RETRY_PARAMS_NOT_SET
                          ? DATASOURCE_PARSER_STREAM_DEFAULT_RETRY_TIMES
                          : retry_max_times_);
+
+  MBLOG_INFO << "url source parser config retry_enabled:" << retry_enabled_
+             << " stream_retry_interval:" << stream_retry_interval_
+             << " file_retry_interval:" << file_retry_interval_
+             << " keep_alive_interval:" << file_retry_times_
+             << " keep_alive_interval:" << stream_retry_times_;
+
   return modelbox::STATUS_OK;
 }
 

@@ -52,6 +52,10 @@ modelbox::Status VisSourceParser::Init(
   retry_enabled_ = opts->GetBool("vis_retry_enable", retry_enabled_);
   retry_interval_ = opts->GetInt32("vis_retry_interval_ms", retry_interval_);
   retry_max_times_ = opts->GetInt32("vis_retry_count_limit", retry_max_times_);
+
+  MBLOG_INFO << "vis source parser config retry_enabled:" << retry_enabled_
+             << " retry_interval:" << retry_interval_
+             << " retry_max_times:" << retry_max_times_;
   return modelbox::STATUS_OK;
 }
 
