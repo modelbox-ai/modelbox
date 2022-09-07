@@ -43,9 +43,10 @@ jobs:
             - tensorrt
             - pytorch
             - tensorflow
+            - ubuntu
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         ref: pull/${{github.event.inputs.PullRequestId}}/head
     - name: Configure CMake
@@ -61,7 +62,10 @@ jobs:
 
     - name: Test
       working-directory: build
-      run: | 
+      run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+        dpkg -i release/*.deb
+        python3 -m pip install --no-cache-dir release/python/modelbox-*.whl --force-reinstall
         make build-test -j${{github.event.inputs.maxParallel}}
         unset LD_LIBRARY_PATH
         make unittest

@@ -152,7 +152,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -296,7 +296,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -440,7 +440,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -584,7 +584,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -702,7 +702,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -807,7 +807,10 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on -DUSE_CN_MIRROR=yes
     - name: Test
       working-directory: build
-      run: | 
+      run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+        dpkg -i /mnt/release/*.deb
+        python3 -m pip install --no-cache-dir /mnt/release/python/modelbox-*.whl --force-reinstall
         make build-test -j8
         make unittest
 
@@ -951,7 +954,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -1095,7 +1098,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -1239,7 +1242,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -1383,7 +1386,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -1501,7 +1504,7 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Test
       working-directory: build
-      run: | 
+      run: |
         make build-test -j8
         make unittest
 
@@ -1607,6 +1610,9 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on -DUSE_CN_MIRROR=yes
     - name: Test
       working-directory: build
-      run: | 
+      run: |
+        rpm -e $(rpm -qa|grep modelbox)
+        rpm -ivh /mnt/release/*.rpm --force --nodeps
+        python3 -m pip install --no-cache-dir /mnt/release/python/modelbox-*.whl --force-reinstall
         make build-test -j8
         make unittest

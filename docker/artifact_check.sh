@@ -2,11 +2,11 @@
 CODE_DIR=$(cd $(dirname $0)/..;pwd)
 release_dir=${CODE_DIR}/build/release
 ls -lh ${release_dir}
-os_name=$(sed -nr '1s/^NAME="(.*)"$/\1/gp' /etc/os-release)
-if [ "$os_name" == "Ubuntu" ];then
+osName=$(sed -nr '1s/^NAME="(.*)"$/\1/gp' /etc/os-release)
+if [ "${osName,,}" == "ubuntu" ];then
     rm -f ${release_dir}/*.rpm
     postfix="*.deb"
-elif [ "$os_name" == "openEuler" ];then
+elif [ "${osName,,}" == "openeuler" ];then
     postfix="*.rpm"
 fi
 

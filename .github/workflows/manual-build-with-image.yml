@@ -26,27 +26,37 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ${{ github.event.inputs.images_name }}
-
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
     - name: Configure CMake
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on
-
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
     - name: Build
       working-directory: build
-      run: |
-        make package -j8
-
+      run: make package -j8
     - name: Release check
       run: ./docker/artifact_check.sh
       shell: bash
-
     - name: Test
       working-directory: build
-      run: | 
+      run: |
+        osName=$(cat /etc/os-release|sed -n "/^NAME/p"|awk -F'"' '{print $2}')
+        if [ "${osName,,}" == "ubuntu" ];then
+          if [ $(dpkg -l|grep  modelbox|awk '{print $2}'|wc -l) -ne 0 ];then
+            dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+          fi
+          dpkg -i release/*.deb
+        elif [ "${osName,,}" == "openeuler" ];then
+          if [ $(rpm -qa|grep modelbox|wc -l) -ne 0 ];then
+            rpm -e $(rpm -qa|grep modelbox)
+          fi
+          rpm -ivh release/*.rpm --force --nodeps
+        fi
+        python3 -m pip install --no-cache-dir release/python/modelbox-*.whl --force-reinstall
         make build-test -j8
         unset LD_LIBRARY_PATH
         make unittest
+      shell: bash
