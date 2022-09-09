@@ -21,6 +21,7 @@ MODELBOX_USER_HOME="$HOME/modelbox-service"
 MODELBOX_SYS_FLOW_DIR="${MODELBOX_ROOT}/usr/local/etc/modelbox/graph/"
 MODELBOX_DEFAULT_PORT="1104"
 MODELBOX_BIN="${MODELBOX_ROOT}/usr/local/bin/modelbox"
+MODELBOX_TOOL_BIN="${MODELBOX_ROOT}/usr/local/bin/modelbox-tool"
 
 setup_env() {
     MODELBOX_FLOW_DIR="$MODELBOX_USER_HOME/graph"
@@ -61,7 +62,7 @@ debug_mode_info() {
 checkportbind() {
     IP=$1
     PORT=$2
-    ${MODELBOX_ROOT}/usr/local/bin/modelbox --check-port $IP:$PORT
+    ${MODELBOX_TOOL_BIN} server --check-port $IP:$PORT
     return $?
 }
 
@@ -248,8 +249,8 @@ develop_status() {
         return 1
     fi
 
-    MODELBOX_USER_SERVER_IP="`${MODELBOX_BIN} -c $MODELBOX_USER_CONF_FILE --get-conf-value server.ip`"
-    MODELBOX_USER_SERVER_PORT="`${MODELBOX_BIN} -c $MODELBOX_USER_CONF_FILE --get-conf-value server.port`"
+    MODELBOX_USER_SERVER_IP="`${MODELBOX_TOOL_BIN} server -conf $MODELBOX_USER_CONF_FILE --get-conf-value server.ip`"
+    MODELBOX_USER_SERVER_PORT="`${MODELBOX_TOOL_BIN} server -conf $MODELBOX_USER_CONF_FILE --get-conf-value server.port`"
 
     debug_mode_info
     MSG=`$MODELBOX_RUN_SCRIPT status 2>/dev/null`

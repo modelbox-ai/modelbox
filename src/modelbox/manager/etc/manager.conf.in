@@ -8,7 +8,9 @@ logfile @MODELBOX_ROOT_VAR@/var/log/modelbox/manager.log
 # watchdog-timeout 90
 
 #
-# app -name "appname" -pidfile "@MODELBOX_ROOT_VAR@/run/app.pid" -check-alive -check-alive-time [90] -heartbeat-interval [5] -- run command list here
+# app -name "appname" -pidfile "@MODELBOX_ROOT_VAR@/run/app.pid" -check-alive -check-alive-time [90] -heartbeat-interval [5] \
+# --kill-cmd "/path/to/script/to/kill" \
+# -- run command list here
 #
 app -name "modelbox" -check-alive -pidfile "@MODELBOX_ROOT_VAR@/@CMAKE_INSTALL_RUNSTATEDIR@/modelbox/modelbox.pid" -- @MODELBOX_ROOT_VAR@/etc/init.d/modelbox start
 

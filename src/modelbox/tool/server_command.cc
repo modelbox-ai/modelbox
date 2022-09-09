@@ -44,15 +44,96 @@ REG_MODELBOX_TOOL_COMMAND(ToolCommandServer)
 enum MODELBOX_TOOL_SERVER_COMMAND {
   MODELBOX_TOOL_SERVER_CONNECT,
   MODELBOX_TOOL_SERVER_INFO_FROM_CONF,
+  MODELBOX_TOOL_SERVER_CHECKPORT,
+  MODELBOX_TOOL_SERVER_GETCONF,
   MODELBOX_TOOL_SERVER_HELP,
 };
 
 static struct option server_options[] = {
     {"conn", 1, nullptr, MODELBOX_TOOL_SERVER_CONNECT},
     {"conf", 1, nullptr, MODELBOX_TOOL_SERVER_INFO_FROM_CONF},
+    {"check-port", 1, nullptr, MODELBOX_TOOL_SERVER_CHECKPORT},
+    {"get-conf-value", 1, nullptr, MODELBOX_TOOL_SERVER_GETCONF},
     {"h", 0, nullptr, MODELBOX_TOOL_SERVER_HELP},
     {nullptr, 0, nullptr, 0},
 };
+
+int CheckPort(const std::string &host) {
+  struct addrinfo hints;
+  struct addrinfo *result = nullptr;
+
+  memset_s(&hints, sizeof(hints), 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;
+
+  std::string ip;
+  std::string port;
+
+  auto ret_val = modelbox::SplitIPPort(host, ip, port);
+  if (!ret_val) {
+    std::cerr << ret_val.Errormsg() << std::endl;
+    return 1;
+  }
+
+  auto ret = getaddrinfo(ip.c_str(), port.c_str(), &hints, &result);
+  if (ret != 0) {
+    std::cerr << "check port failed, " << gai_strerror(ret) << std::endl;
+    return 1;
+  }
+
+  Defer { freeaddrinfo(result); };
+
+  int sock = socket(result->ai_family, SOCK_STREAM, 0);
+  if (sock < 0) {
+    std::cerr << "create socket failed\n";
+    return 1;
+  }
+  Defer { close(sock); };
+
+  if (bind(sock, result->ai_addr, result->ai_addrlen) != 0) {
+    if (errno == EADDRINUSE) {
+      /* in use */
+      return 2;
+    }
+
+    if (errno == EACCES) {
+      /* no permission */
+      return 3;
+    }
+
+    std::cerr << "check failed, errno is " << errno << "\n";
+    return 1;
+  }
+
+  return 0;
+}
+
+int GetConfig(const std::string &conf_file, const std::string &key) {
+  std::shared_ptr<Configuration> config;
+  std::string confile_file_path = DEFAULT_MODELBOX_CONF;
+  if (conf_file.length() > 0) {
+    confile_file_path = conf_file;
+  }
+
+  confile_file_path = modelbox_full_path(confile_file_path);
+
+  config = LoadSubConfig(confile_file_path);
+  if (config == nullptr) {
+    std::cerr << "conf file is invalid." << std::endl;
+    return modelbox::STATUS_INVALID;
+  }
+
+  auto values = config->GetStrings(key);
+  if (values.size() <= 0) {
+    fprintf(stderr, "Not found key %s\n", key.c_str());
+    return 1;
+  }
+
+  for (const auto &value : values) {
+    std::cout << value << std::endl;
+  }
+
+  return 0;
+}
 
 ToolCommandServer::ToolCommandServer() {
   char tmp_var[] = "/tmp/modelbox-tool.XXXXXXX";
@@ -76,7 +157,9 @@ std::string ToolCommandServer::GetHelp() {
   char help[] =
       "Server command option:\n"
       "  -conn\t\t\t  connect socket file, example: xxx.sock\n"
-      "  -conf\t\t\t  server conf file\n";
+      "  -conf\t\t\t  server conf file\n"
+      "  -check-port\t\t\t  check whether port can bind.\n"
+      "  -get-conf-value\t\t\t  get server conf value\n";
   return help;
 }
 
@@ -324,6 +407,7 @@ int ToolCommandServer::Run(int argc, char *argv[]) {
   int cmdtype = 0;
   std::string connect_url;
   std::string conf_file;
+  std::string get_conf_key;
 
   MODELBOX_COMMAND_GETOPT_BEGIN(cmdtype, server_options)
   switch (cmdtype) {
@@ -333,6 +417,11 @@ int ToolCommandServer::Run(int argc, char *argv[]) {
     case MODELBOX_TOOL_SERVER_INFO_FROM_CONF:
       conf_file = optarg;
       break;
+    case MODELBOX_TOOL_SERVER_CHECKPORT:
+      return CheckPort(optarg);
+    case MODELBOX_TOOL_SERVER_GETCONF:
+      get_conf_key = optarg;
+      break;
     case MODELBOX_TOOL_SERVER_HELP:
       std::cout << GetHelp();
       return 0;
@@ -340,6 +429,11 @@ int ToolCommandServer::Run(int argc, char *argv[]) {
       break;
   }
   MODELBOX_COMMAND_GETOPT_END()
+
+  if (get_conf_key.length()) {
+    return GetConfig(conf_file, get_conf_key);
+  }
+
   modelbox::Status status = GetSockFile(conf_file, connect_url);
   if (status != modelbox::STATUS_OK) {
     return 1;
