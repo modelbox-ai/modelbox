@@ -244,4 +244,39 @@ int modelbox_cpu_register_data(char *buf, int buf_size, ucontext_t *ucontext) {
   return 0;
 }
 
+Status SplitIPPort(const std::string &host, std::string &ip,
+                   std::string &port) {
+  auto pos = host.find_last_of(':');
+
+  if (pos == std::string::npos) {
+    const auto *msg = "invalid ip address, please try ip:port";
+    return {STATUS_INVALID, msg};
+  }
+
+  port = host.substr(pos + 1, host.length());
+  int n_port = atol(port.c_str());
+  if (n_port <= 0 || n_port > 65535) {
+    const auto *msg = "invalid port";
+    return {STATUS_INVALID, msg};
+  }
+
+  ip = host.substr(0, pos);
+  /* process ipv6 format */
+  pos = ip.find_first_of('[');
+  if (pos != std::string::npos) {
+    ip = ip.substr(pos + 1, ip.length());
+  }
+
+  pos = ip.find_first_of(']');
+  if (pos != std::string::npos) {
+    ip = ip.substr(0, pos);
+  }
+
+  if (ip == "") {
+    ip = "0.0.0.0";
+  };
+
+  return STATUS_OK;
+}
+
 }  // namespace modelbox

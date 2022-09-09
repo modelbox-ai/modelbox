@@ -51,22 +51,6 @@ static int g_sig_num = sizeof(g_sig_list) / sizeof(g_sig_list[0]);
 static bool kVerbose = false;
 static bool kForground = false;
 
-enum MODELBOX_SERVER_ARG {
-  MODELBOX_SERVER_ARG_CHECKPORT,
-  MODELBOX_SERVER_ARG_GETCONF,
-  MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT,
-};
-
-static int option_flag = 0;
-static struct option options[] = {
-    /* internal command for develop mode */
-    {"check-port", 1, &option_flag, MODELBOX_SERVER_ARG_CHECKPORT},
-    {"get-conf-value", 1, &option_flag, MODELBOX_SERVER_ARG_GETCONF},
-    {"get-modelbox-root", 0, &option_flag,
-     MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT},
-    {nullptr, 0, nullptr, 0},
-};
-
 static void showhelp() {
   /* clang-format off */
     char help[] = ""
@@ -253,75 +237,6 @@ int modelbox_run(const std::shared_ptr<modelbox::Server> &server) {
   return 0;
 }
 
-int GetConfig(const std::string &key) {
-  if (modelbox::LoadConfig(modelbox::kConfigPath) == false) {
-    fprintf(stderr, "can not load configuration : %s \n",
-            modelbox::kConfigPath.c_str());
-    return 1;
-  }
-
-  auto values = modelbox::kConfig->GetStrings(key);
-  if (values.size() <= 0) {
-    fprintf(stderr, "Not found key %s\n", key.c_str());
-    return 1;
-  }
-
-  for (const auto &value : values) {
-    std::cout << value << std::endl;
-  }
-
-  return 0;
-}
-
-int CheckPort(const std::string &host) {
-  struct addrinfo hints;
-  struct addrinfo *result = nullptr;
-
-  memset_s(&hints, sizeof(hints), 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;
-
-  std::string ip;
-  std::string port;
-
-  auto ret_val = modelbox::SplitIPPort(host, ip, port);
-  if (!ret_val) {
-    std::cerr << ret_val.Errormsg() << std::endl;
-    return 1;
-  }
-
-  auto ret = getaddrinfo(ip.c_str(), port.c_str(), &hints, &result);
-  if (ret != 0) {
-    std::cerr << "check port failed, " << gai_strerror(ret) << std::endl;
-    return 1;
-  }
-
-  Defer { freeaddrinfo(result); };
-
-  int sock = socket(result->ai_family, SOCK_STREAM, 0);
-  if (sock < 0) {
-    std::cerr << "create socket failed\n";
-    return 1;
-  }
-  Defer { close(sock); };
-
-  if (bind(sock, result->ai_addr, result->ai_addrlen) != 0) {
-    if (errno == EADDRINUSE) {
-      /* in use */
-      return 2;
-    }
-
-    if (errno == EACCES) {
-      /* no permission */
-      return 3;
-    }
-
-    std::cerr << "check failed, errno is " << errno << "\n";
-    return 1;
-  }
-
-  return 0;
-}
-
 static void onexit() {}
 
 #ifdef BUILD_TEST
@@ -332,55 +247,33 @@ int main(int argc, char *argv[])
 {
   std::string pidfile = MODELBOX_SERVER_PID_FILE;
   int cmdtype = 0;
-  std::string get_conf_key;
 
-  MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "hc:Vvfp:n:k:K", options)
+  MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "hc:Vvfp:n:k:K", nullptr)
   switch (cmdtype) {
-    case 0: {
-      switch (option_flag) {
-        case MODELBOX_SERVER_ARG_CHECKPORT:
-          return CheckPort(optarg);
-        case MODELBOX_SERVER_ARG_GETCONF:
-          get_conf_key = optarg;
-          break;
-        case MODELBOX_SERVER_ARG_GET_MODELBOX_ROOT:
-          printf("%s\n", modelbox::modelbox_root_dir().c_str());
-          return 0;
-          break;
-        default:
-          printf("Try %s -h for more information.\n", argv[0]);
-          return 1;
-          break;
-      }
-      case 'p':
-        pidfile = modelbox::modelbox_full_path(optarg);
-        break;
-      case 'V':
-        kVerbose = true;
-        break;
-      case 'f':
-        kForground = true;
-        break;
-      case 'h':
-        showhelp();
-        return 1;
-      case 'c':
-        modelbox::kConfigPath = modelbox::modelbox_full_path(optarg);
-        break;
-      case 'v':
-        printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
-        return 0;
-      default:
-        printf("Try %s -h for more information.\n", argv[0]);
-        return 1;
-        break;
-    }
+    case 'p':
+      pidfile = modelbox::modelbox_full_path(optarg);
+      break;
+    case 'V':
+      kVerbose = true;
+      break;
+    case 'f':
+      kForground = true;
+      break;
+    case 'h':
+      showhelp();
+      return 1;
+    case 'c':
+      modelbox::kConfigPath = modelbox::modelbox_full_path(optarg);
+      break;
+    case 'v':
+      printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
+      return 0;
+    default:
+      printf("Try %s -h for more information.\n", argv[0]);
+      return 1;
+      break;
   }
   MODELBOX_COMMAND_GETOPT_END()
-
-  if (get_conf_key.length()) {
-    return GetConfig(get_conf_key);
-  }
 
   if (modelbox::LoadConfig(modelbox::kConfigPath) == false) {
     fprintf(stderr, "can not load configuration : %s \n",

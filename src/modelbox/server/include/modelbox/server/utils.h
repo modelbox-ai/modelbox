@@ -64,8 +64,6 @@ class IPACL {
   std::vector<std::pair<uint32_t, uint32_t>> ipv4_acl_;
 };
 
-Status SplitIPPort(const std::string &host, std::string &ip, std::string &port);
-
 }  // namespace modelbox
 
 #endif  // MODELBOX_SERVER_UTILS_H_
