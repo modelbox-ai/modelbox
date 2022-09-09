@@ -28,6 +28,7 @@ char pid_file_path[PATH_MAX];
 char key_file_path[PATH_MAX];
 int conf_watchdog_timeout = DEFAULT_WATCHDOG_TIMEOUT;
 int conf_force_kill_time = DEFAULT_FORCE_KILL_TIMEOUT;
+int conf_lockpage = 1;
 
 struct conf_app conf_apps[CONF_MAX_APPS];
 int conf_apps_num;
@@ -49,12 +50,60 @@ int _manager_is_app_exists(char *name) {
   return -1;
 }
 
+int _manager_conf_process_cmds(char *cmd, int max_cmdlen, const char *argline) {
+  const char *ptr = argline;
+  const char *arg_begin_ptr = argline;
+  int cmd_len = 0;
+  char arg[PATH_MAX];
+
+  while (1) {
+    if (ptr == arg_begin_ptr) {
+      ptr++;
+      continue;
+    }
+
+    if (*ptr != ' ' && *ptr != '\0') {
+      ptr++;
+      continue;
+    }
+
+    if (ptr - 1 == arg_begin_ptr && *arg_begin_ptr == ' ') {
+      arg_begin_ptr = ptr + 1;
+      continue;
+    }
+
+    strncpy(arg, arg_begin_ptr, ptr - arg_begin_ptr);
+    arg[ptr - arg_begin_ptr] = '\0';
+
+    if (cmd_len + ptr - arg_begin_ptr + 1 > max_cmdlen - 2) {
+      manager_log(MANAGER_LOG_ERR, "cmd is too long");
+      return -1;
+    }
+
+    strncpy(cmd + cmd_len, get_modelbox_full_path(arg), ptr - arg_begin_ptr);
+    cmd_len += ptr - arg_begin_ptr;
+    arg_begin_ptr = ptr;
+    cmd[cmd_len] = '\0';
+    if (*ptr == '\0') {
+      cmd[cmd_len + 1] = '\0';
+      break;
+    }
+
+    ptr++;
+    cmd_len++;
+    arg_begin_ptr = ptr;
+  }
+
+  return 0;
+}
+
 int manager_load_app(void *item, int argc, char *argv[]) {
   static struct option options[] = {{"name", 1, 0, 'n'},
                                     {"pidfile", 1, 0, 'p'},
                                     {"check-alive", 0, 0, 'k'},
                                     {"check-alive-time", 1, 0, 't'},
                                     {"heartbeat-interval", 1, 0, 'i'},
+                                    {"kill-cmd", 1, 0, 'K'},
                                     {0, 0, 0, 0}};
 
   int cmdtype;
@@ -93,6 +142,15 @@ int manager_load_app(void *item, int argc, char *argv[]) {
         strncpy(conf_app->pidfile, get_modelbox_full_path(optarg),
                 PATH_MAX - 1);
         break;
+      case 'K': {
+        char path_buf[PATH_MAX];
+        if (_manager_conf_process_cmds(path_buf, PATH_MAX, optarg) != 0) {
+          manager_log(MANAGER_LOG_ERR, "process kill cmd failed.");
+          return -1;
+        }
+        strncpy(conf_app->killcmd, get_modelbox_full_path(path_buf),
+                PATH_MAX - 1);
+      } break;
       default:
         break;
     }
@@ -100,6 +158,13 @@ int manager_load_app(void *item, int argc, char *argv[]) {
 
   if (conf_app->heartbeat_interval <= 0) {
     conf_app->heartbeat_interval = DEFAULT_HEARTBEAT_INTERVAL;
+  }
+
+  if (conf_app->heartbeat_interval > conf_watchdog_timeout) {
+    manager_log(MANAGER_LOG_ERR,
+                "heartbeat interval is too large, watch dog timeout is %d",
+                conf_watchdog_timeout);
+    return -1;
   }
 
   if (conf_app->check_alive_time <= 0) {
@@ -132,11 +197,14 @@ static struct config_map conf_parse_map[] = {
     {CONF_WATCHDOG_TIMEOUT, conf_parse_int,
      .item =
          &(struct CONF_PARSE_INT){
-             .value = &conf_watchdog_timeout, .min = 3, .max = 60 * 5}},
+             .value = &conf_watchdog_timeout, .min = 3, .max = 600 * 5}},
     {CONF_FORCE_KILLTIME, conf_parse_int,
      .item =
          &(struct CONF_PARSE_INT){
              .value = &conf_force_kill_time, .min = 3, .max = 60 * 3}},
+    {CONF_LOCK_PAGE, conf_parse_int,
+     .item =
+         &(struct CONF_PARSE_INT){.value = &conf_lockpage, .min = 0, .max = 1}},
     {CONF_APP, manager_load_app, 0},
     {CONF_KEY_FILE, conf_parse_string,
      .item =

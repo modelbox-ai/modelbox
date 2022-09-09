@@ -104,11 +104,21 @@ static int manager_sig_register(void) {
 int manager_add_apps(void) {
   int i = 0;
   for (i = 0; i < conf_apps_num; i++) {
-    manager_log(MANAGER_LOG_INFO, "add %s, %s, %s, check alive %d\n", conf_apps[i].name,
-                conf_apps[i].cmd, conf_apps[i].pidfile, conf_apps[i].check_alive);
-    if (app_start(conf_apps[i].name, conf_apps[i].cmd, PATH_MAX, conf_apps[i].pidfile,
-                  conf_apps[i].check_alive, conf_apps[i].check_alive_time,
-                  conf_apps[i].heartbeat_interval) != 0) {
+    struct app_start_info info;
+    memset_s(&info, sizeof(info), 0, sizeof(info));
+    info.name = conf_apps[i].name;
+    info.cmdline = conf_apps[i].cmd;
+    info.cmd_max_len = sizeof(conf_apps[i].cmd);
+    info.killcmd = conf_apps[i].killcmd;
+    info.killcmd_max_len = sizeof(conf_apps[i].killcmd);
+    info.pidfile = conf_apps[i].pidfile;
+    info.check_alive = conf_apps[i].check_alive;
+    info.keepalive_time = conf_apps[i].check_alive_time;
+    info.heartbeat_interval = conf_apps[i].heartbeat_interval;
+
+    manager_log(MANAGER_LOG_INFO, "add %s, cmd: '%s', check alive %d\n",
+                conf_apps[i].name, strcmds(conf_apps[i].cmd, PATH_MAX), conf_apps[i].check_alive);
+    if (app_start(&info) != 0) {
       manager_log(MANAGER_LOG_ERR, "add app %s failed.", conf_apps[i].name);
       return -1;
     }
@@ -151,9 +161,19 @@ void manager_reload_apps(struct conf_app oldapps[CONF_MAX_APPS]) {
     }
 
     if (j == CONF_MAX_APPS) {
-      if (app_start(conf_apps[i].name, conf_apps[i].cmd, PATH_MAX, conf_apps[i].pidfile,
-                    conf_apps[i].check_alive, conf_apps[i].check_alive_time,
-                    conf_apps[i].heartbeat_interval) == 0) {
+      struct app_start_info info;
+      memset_s(&info, sizeof(info), 0, sizeof(info));
+      info.name = conf_apps[i].name;
+      info.cmdline = conf_apps[i].cmd;
+      info.cmd_max_len = sizeof(conf_apps[i].cmd);
+      info.killcmd = conf_apps[i].killcmd;
+      info.killcmd_max_len = sizeof(conf_apps[i].killcmd);
+      info.pidfile = conf_apps[i].pidfile;
+      info.check_alive = conf_apps[i].check_alive;
+      info.keepalive_time = conf_apps[i].check_alive_time;
+      info.heartbeat_interval = conf_apps[i].heartbeat_interval;
+
+      if (app_start(&info) == 0) {
         manager_log(MANAGER_LOG_INFO, "start app %s success.",
                     conf_apps[i].name);
       } else {
@@ -180,7 +200,7 @@ int manager_reload(void) {
   return 0;
 }
 
-int manager_init_server(void) {
+int manager_init_server(int lockpage) {
   /* init monitor*/
   if (manager_monitor_init() != 0) {
     manager_log(MANAGER_LOG_ERR, "init monitor failed.\n");
@@ -193,7 +213,7 @@ int manager_init_server(void) {
     return -1;
   }
 
-  if (mlockall(MCL_FUTURE) != 0) {
+  if (lockpage != 0 && mlockall(MCL_FUTURE) != 0) {
     manager_log(MANAGER_LOG_WARN, "lock memory failed.");
   }
   return 0;
@@ -287,9 +307,8 @@ static void _manager_default_conf_file(char *path, int max_len) {
   return;
 }
 
-int manager_init(const char *conf_file, char *name) {
+int manager_init(char *name) {
   char log_file[PATH_MAX];
-  char default_conf_file[PATH_MAX] = {0};
   char piddir[PATH_MAX];
 
   if (manager_sig_register()) {
@@ -341,18 +360,6 @@ int manager_init(const char *conf_file, char *name) {
   snprintf(conf_log_file, sizeof(log_file), "%s/%s.log", MANAGER_LOG_PATH,
            MANAGER_NAME);
 
-  if (conf_file == NULL) {
-    _manager_default_conf_file(default_conf_file, PATH_MAX);
-    if (default_conf_file[0]) {
-      conf_file = default_conf_file;
-    }
-  }
-
-  if (manager_load_conf(conf_file) != 0) {
-    fprintf(stderr, "load master config file %s failed.\n", conf_file);
-    return -1;
-  }
-
   if (tlog_init(get_modelbox_full_path(conf_log_file), conf_log_size,
                 conf_log_num, 0, 0) != 0) {
     fprintf(stderr, "init master log failed.\n");
@@ -365,7 +372,7 @@ int manager_init(const char *conf_file, char *name) {
   manager_log(MANAGER_LOG_INFO, "%s starting... (Build : %s %s)",
               program_invocation_short_name, __DATE__, __TIME__);
 
-  if (manager_init_server() != 0) {
+  if (manager_init_server(conf_lockpage) != 0) {
     manager_log(MANAGER_LOG_ERR, "init master server failed.");
     return -1;
   }
@@ -413,6 +420,21 @@ int main(int argc, char *argv[])
     }
   }
 
+  char default_conf_file[PATH_MAX] = {0};
+  const char *load_conf = conf_file;
+  if (conf_file == NULL) {
+    _manager_default_conf_file(default_conf_file, PATH_MAX);
+    if (default_conf_file[0]) {
+      load_conf = default_conf_file;
+    }
+  }
+
+  if (manager_load_conf(load_conf) != 0) {
+    fprintf(stderr, "load master config file %s failed.\n", load_conf);
+    return -1;
+  }
+
+
   if (is_forground == 0) {
     if (daemon(0, 0) < 0) {
       fprintf(stderr, "run daemon process failed, %s\n", strerror(errno));
@@ -425,7 +447,7 @@ int main(int argc, char *argv[])
   signal(SIGHUP, manager_sighup);
   g_reload_config = 0;
 
-  if (manager_init(conf_file, name) != 0) {
+  if (manager_init(name) != 0) {
     fprintf(stderr, "master init failed.\n");
     return 1;
   }

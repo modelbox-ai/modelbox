@@ -39,6 +39,9 @@ const char *get_modelbox_full_path(const char *path);
 /* 合并命令行为字符串,格式arg1\0arg2\0\0，非线程安全*/
 const char *strcmds(const char *cmd, int cmd_max_len);
 
+/* 复制cmd命令，格式为arg1\0arg2\0\0*/
+void copycmds(char *dest, int dest_size, const char *src, int src_size);
+
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */

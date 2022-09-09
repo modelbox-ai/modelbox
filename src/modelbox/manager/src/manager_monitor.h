@@ -17,17 +17,21 @@
 #ifndef MODELBOX_MANAGER_MONITOR_H
 #define MODELBOX_MANAGER_MONITOR_H
 
+#include <linux/limits.h>
+
 #include "manager_common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
 
+#define MAX_CMDLINE_LEN (4096 * 2)
+
 int manager_monitor_init(void);
 
 /**
  * @brief start app
- * 
+ *
  * @param name app name
  * @param cmdline command list, format arg1\0arg2\0arg3\0\0
  * @param cmd_max_len max length of cmdline string.
@@ -35,17 +39,29 @@ int manager_monitor_init(void);
  * @param check_alive whether check alive
  * @param keepalive_time keep alive time
  * @param heartbeat_interval heart beat interval
- * @return int 
+ * @return int
  */
-int app_start(const char *name, const char *cmdline, int cmd_max_len, const char *pidfile,
-              int check_alive, int keepalive_time, int heartbeat_interval);
+
+struct app_start_info {
+  const char *name;
+  const char *cmdline; /* arg1\0arg2\0arg3\0\0 */
+  int cmd_max_len;
+  const char *killcmd; /* arg1\0arg2\0arg3\0\0 */
+  int killcmd_max_len;
+  const char *pidfile;
+  int check_alive;
+  int keepalive_time;
+  int heartbeat_interval;
+};
+
+int app_start(struct app_start_info *start_info);
 
 /**
  * @brief stop app
- * 
+ *
  * @param name app name
  * @param gracefull gracefull stop
- * @return int 
+ * @return int
  */
 int app_stop(const char *name, int gracefull);
 

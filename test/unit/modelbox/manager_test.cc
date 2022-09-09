@@ -48,7 +48,7 @@ class ManagerTestServer {
   ManagerTestServer() = default;
   virtual ~ManagerTestServer() { Stop(); }
   void Start() {
-    manager_init_server();
+    manager_init_server(0);
     memset(&test_app, 0, sizeof(test_app));
     thread_ = std::thread(&ManagerTestServer::Run);
     running_ = true;
@@ -113,6 +113,7 @@ class ManagerTestApp {
 
   static int Run(struct Test_App *app, int count, const char *name) {
     auto *test_app = (ManagerTestApp *)app->arg1;
+    printf("run %d %s\n", count, name);
     if (test_app->ignore_segv_) {
       signal(SIGSEGV, SignalSegHandler);
     } else {
@@ -143,10 +144,18 @@ class ManagerTestApp {
   int pause_after_count_{0};
 };
 
-TEST_F(ManagerTest, DISABLED_Start) {
+TEST_F(ManagerTest, Start) {
   ManagerTestServer server;
   server.Start();
-  EXPECT_EQ(0, app_start("1", "sleep\0 1\0\0", PATH_MAX, nullptr, 1, 60, 5));
+  struct app_start_info info;
+  memset(&info, 0, sizeof(info));
+  info.name = "1";
+  info.cmdline = "sleep\0 1\0\0";
+  info.cmd_max_len = PATH_MAX;
+  info.check_alive = 1;
+  info.keepalive_time = 60;
+  info.heartbeat_interval = 5;
+  EXPECT_EQ(0, app_start(&info));
   sleep(1);
   int pid = app_getpid("1");
   EXPECT_GT(pid, 0);
@@ -157,21 +166,39 @@ TEST_F(ManagerTest, DISABLED_Start) {
   }
 }
 
-TEST_F(ManagerTest, DISABLED_Start_dup) {
+TEST_F(ManagerTest, Start_dup) {
   ManagerTestServer server;
   server.Start();
-  EXPECT_EQ(0, app_start("1", "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
-  EXPECT_EQ(0, app_start("2", "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
-  EXPECT_EQ(0, app_start("3", "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
-  EXPECT_NE(0, app_start("2", "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
+  struct app_start_info info;
+  memset(&info, 0, sizeof(info));
+  info.name = "1";
+  info.cmdline = "test\0\0";
+  info.cmd_max_len = PATH_MAX;
+  info.check_alive = 1;
+  info.keepalive_time = 60;
+  info.heartbeat_interval = 5;
+  EXPECT_EQ(0, app_start(&info));
+  info.name = "2";
+  EXPECT_EQ(0, app_start(&info));
+  info.name = "3";
+  EXPECT_EQ(0, app_start(&info));
+  info.name = "2";
+  EXPECT_NE(0, app_start(&info));
 }
 
-TEST_F(ManagerTest, DISABLED_Start_many) {
+TEST_F(ManagerTest, Start_many) {
   ManagerTestServer server;
   server.Start();
   for (int i = 0; i < 8; i++) {
-    EXPECT_EQ(0,
-              app_start(std::to_string(i).c_str(), "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
+    struct app_start_info info;
+    memset(&info, 0, sizeof(info));
+    info.name = std::to_string(i).c_str();
+    info.cmdline = "test\0\0";
+    info.cmd_max_len = PATH_MAX;
+    info.check_alive = 1;
+    info.keepalive_time = 60;
+    info.heartbeat_interval = 5;
+    EXPECT_EQ(0, app_start(&info));
   }
   sleep(1);
   for (int i = 0; i < 8; i++) {
@@ -179,12 +206,19 @@ TEST_F(ManagerTest, DISABLED_Start_many) {
   }
 }
 
-TEST_F(ManagerTest, DISABLED_Start_stop_half) {
+TEST_F(ManagerTest, Start_stop_half) {
   ManagerTestServer server;
   server.Start();
   for (int i = 0; i < 8; i++) {
-    EXPECT_EQ(0,
-              app_start(std::to_string(i).c_str(), "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
+    struct app_start_info info;
+    memset(&info, 0, sizeof(info));
+    info.name = std::to_string(i).c_str();
+    info.cmdline = "test\0\0";
+    info.cmd_max_len = PATH_MAX;
+    info.check_alive = 1;
+    info.keepalive_time = 60;
+    info.heartbeat_interval = 5;
+    EXPECT_EQ(0, app_start(&info));
   }
   for (int i = 0; i < 8; i++) {
     if (i % 2 == 0) {
@@ -202,12 +236,19 @@ TEST_F(ManagerTest, DISABLED_Start_stop_half) {
   }
 }
 
-TEST_F(ManagerTest, DISABLED_Start_stop_all) {
+TEST_F(ManagerTest, Start_stop_all) {
   ManagerTestServer server;
   server.Start();
   for (int i = 0; i < 8; i++) {
-    EXPECT_EQ(0,
-              app_start(std::to_string(i).c_str(), "test\0\0", PATH_MAX, nullptr, 1, 60, 5));
+    struct app_start_info info;
+    memset(&info, 0, sizeof(info));
+    info.name = std::to_string(i).c_str();
+    info.cmdline = "test\0\0";
+    info.cmd_max_len = PATH_MAX;
+    info.check_alive = 1;
+    info.keepalive_time = 60;
+    info.heartbeat_interval = 5;
+    EXPECT_EQ(0, app_start(&info));
   }
   for (int i = 0; i < 8; i++) {
     EXPECT_EQ(0, app_stop(std::to_string(i).c_str(), 0));
@@ -215,6 +256,57 @@ TEST_F(ManagerTest, DISABLED_Start_stop_all) {
   for (int i = 0; i < 8; i++) {
     EXPECT_NE(0, app_alive(std::to_string(i).c_str()));
   }
+}
+
+TEST_F(ManagerTest, monitor) {
+  ManagerTestServer server;
+  server.Start();
+  ManagerTestApp app;
+  app.SetPause(10);
+
+  struct app_start_info info;
+  memset(&info, 0, sizeof(info));
+  info.name = "monitor";
+  info.cmdline = "sleep\00900\0\0";
+  info.cmd_max_len = PATH_MAX;
+  info.check_alive = 1;
+  info.keepalive_time = 2;
+  info.heartbeat_interval = 1;
+  EXPECT_EQ(0, app_start(&info));
+  sleep(1);
+  int pid = app_getpid("monitor");
+
+  sleep(2);
+  EXPECT_NE(pid, app_getpid("monitor"));
+  EXPECT_NE(-1, app_getpid("monitor"));
+  EXPECT_EQ(0, app_alive("monitor"));
+  app_stop("monitor", 0);
+}
+
+TEST_F(ManagerTest, killcmd) {
+  ManagerTestServer server;
+  server.Start();
+  ManagerTestApp app;
+  app.SetPause(10);
+
+  unlink("/tmp/killcmd");
+  struct app_start_info info;
+  memset(&info, 0, sizeof(info));
+  info.name = "killcmd";
+  info.cmdline = "sleep\00900\0\0";
+  info.cmd_max_len = PATH_MAX;
+  info.killcmd = "touch\0/tmp/killcmd\0\0";
+  info.killcmd_max_len = PATH_MAX;
+  info.check_alive = 1;
+  info.keepalive_time = 2;
+  info.heartbeat_interval = 1;
+  EXPECT_EQ(0, app_start(&info));
+
+  sleep(2);
+  EXPECT_EQ(0, access("/tmp/killcmd", F_OK));
+  app_stop("killcmd", 0);
+  EXPECT_NE(0, app_alive("monitor"));
+  unlink("/tmp/killcmd");
 }
 
 }  // namespace modelbox

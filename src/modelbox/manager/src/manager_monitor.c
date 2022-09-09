@@ -55,10 +55,12 @@ typedef enum APP_STATUS {
 struct app_monitor {
   char name[APP_NAME_LEN];
   char cmdline[PATH_MAX];
+  char killcmd[PATH_MAX];
   char pid_file[PATH_MAX];
 
   struct hlist_node map;
   pid_t pid;
+  pid_t kill_pid;
   time_t last_alive;
   time_t dead_time;
   int check_alive;
@@ -132,11 +134,35 @@ int _app_exists(struct app_monitor *app) {
   return 0;
 }
 
-/* run shell command */
-void _app_start_exec(struct app_monitor *app) {
+void _app_do_execve(char *cmdline) {
   char *argv[APP_MAX_ARGS];
   int argc = 0;
   int i = 0;
+
+  argv[argc] = cmdline;
+  for (i = 0; i < PATH_MAX - 2 && argc < APP_MAX_ARGS - 1; i++) {
+    if (cmdline[i] != '\0') {
+      continue;
+    }
+
+    argc++;
+    argv[argc] = cmdline + i + 1;
+    if (cmdline[i + 1] == '\0') {
+      break;
+    }
+  }
+
+  argv[argc] = 0;
+
+  setpgrp();
+
+  execvp(argv[0], argv);
+  manager_log(MANAGER_LOG_ERR, "execvp %s failed: %s\n", argv[0],
+              strerror(errno));
+}
+
+/* run shell command */
+void _app_start_exec(struct app_monitor *app) {
   if (app->check_alive) {
     char keyfileenv[PATH_MAX];
     char appnameenv[PATH_MAX];
@@ -157,24 +183,16 @@ void _app_start_exec(struct app_monitor *app) {
     putenv(appnameenv);
     putenv(keepalivetime);
     putenv(intervaltime);
-  }
 
-  argv[argc] = app->cmdline;
-  for (i = 0; i < PATH_MAX - 2 && argc < APP_MAX_ARGS - 1; i++) {
-    if (app->cmdline[i] == '\0') {
-      argc++;
-      argv[argc] = app->cmdline + i + 1;
-    }
-
-    if (i > 0) {
-      if (app->cmdline[i - 1] == '\0' && app->cmdline[i] == '\0') {
-        break;
-      }
+    if (get_modelbox_root_path()[0] != '\0') {
+      char modelbox_root[PATH_MAX];
+      snprintf_s(modelbox_root, sizeof(modelbox_root), sizeof(modelbox_root),
+                 "MODELBOX_ROOT=%s", get_modelbox_root_path());
+      putenv(modelbox_root);
     }
   }
 
-  argv[argc] = 0;
-  execvp(argv[0], argv);
+  _app_do_execve(app->cmdline);
 }
 
 int app_getpid_from_pidfile(struct app_monitor *app) {
@@ -296,6 +314,14 @@ int _app_start(struct app_monitor *app) {
     putenv(appnameenv);
     putenv(keepalivetime);
     putenv(intervaltime);
+
+    if (get_modelbox_root_path()[0] != '\0') {
+      char modelbox_root[PATH_MAX];
+      snprintf_s(modelbox_root, sizeof(modelbox_root), sizeof(modelbox_root),
+                 "MODELBOX_ROOT=%s", get_modelbox_root_path());
+      putenv(modelbox_root);
+    }
+
     close_all_fd();
     app_test(app);
     _exit(1);
@@ -332,6 +358,39 @@ int _app_start(struct app_monitor *app) {
   return 0;
 }
 
+int _app_run_killcmd(struct app_monitor *app) {
+  manager_log(MANAGER_LOG_INFO, "run kill-cmd %s",
+              strcmds(app->killcmd, sizeof(app->killcmd)));
+  pid_t pid = vfork();
+  if (pid < 0) {
+    manager_log(MANAGER_LOG_ERR, "app %s kill-cmd failed, %s", app->name,
+                strerror(errno));
+    return -1;
+  } else if (pid == 0) {
+    char childpid[PATH_MAX];
+    if (get_modelbox_root_path()[0] != '\0') {
+      char modelbox_root[PATH_MAX];
+      snprintf_s(modelbox_root, sizeof(modelbox_root), sizeof(modelbox_root),
+                 "MODELBOX_ROOT=%s", get_modelbox_root_path());
+      putenv(modelbox_root);
+    }
+
+    snprintf_s(childpid, sizeof(childpid), sizeof(childpid), "APP_PID=%d",
+               app->pid);
+    putenv(childpid);
+
+    /* close all fd */
+    close_all_fd();
+    /* start process */
+    _app_do_execve(app->killcmd);
+    _exit(1);
+  }
+
+  app->kill_pid = pid;
+
+  return 0;
+}
+
 int _app_stop(struct app_monitor *app, int gracefull) {
   int status;
   int kill_mode = SIGKILL;
@@ -361,8 +420,12 @@ int _app_stop(struct app_monitor *app, int gracefull) {
    * after MANAGER_APP_DEAD_EXIT_TIME second, force kill process。
    */
   if (app->state == APP_DEAD) {
-    kill_mode = SIGSEGV;
     app->state = APP_EXITING;
+    if (app->killcmd[0] != 0 && app->kill_pid <= 0) {
+      _app_run_killcmd(app);
+      goto out;
+    }
+    kill_mode = SIGSEGV;
     time(&app->dead_time);
   } else if (app->state == APP_EXITING) {
     time_t now;
@@ -376,9 +439,12 @@ int _app_stop(struct app_monitor *app, int gracefull) {
   /* force kill process */
   manager_log(MANAGER_LOG_ERR, "app %s send signal %d, pid %d", app->name,
               kill_mode, app->pid);
-  if (kill(app->pid, kill_mode) != 0) {
-    manager_log(MANAGER_LOG_WARN, "app %s kill(%d) failed, pid %d", app->name,
-                kill_mode, app->pid);
+  if (killpg(app->pid, kill_mode) != 0) {
+    if (errno == ESRCH) {
+      goto clearout;
+    }
+    manager_log(MANAGER_LOG_WARN, "app %s kill(%d) failed, pid %d, %s",
+                app->name, kill_mode, app->pid, strerror(errno));
     return 0;
   }
 
@@ -393,6 +459,12 @@ out:
     app->pid = -1;
     app->last_alive = 0;
     app->state = APP_NOT_RUNNING;
+    if (app->kill_pid > 0) {
+      killpg(app->kill_pid, SIGKILL);
+      manager_log(MANAGER_LOG_INFO, "app %s stop kill command: %s, pid %d.",
+                  app->name, app->killcmd, app->kill_pid);
+      app->kill_pid = -1;
+    }
     return 0;
   }
 
@@ -403,26 +475,30 @@ out:
   return -1;
 }
 
-int app_start(const char *name, const char *cmdline, int cmd_max_len,
-              const char *pidfile, int check_alive, int keepalive_time,
-              int heartbeat_interval) {
+int app_start(struct app_start_info *start_info) {
   struct app_monitor *app = NULL;
   unsigned int key;
 
-  if (name == NULL || cmdline == NULL) {
-    manager_log(MANAGER_LOG_ERR, "parameter is invalid, name(%p), cmdline(%p)",
-                name, strcmds(cmdline, cmd_max_len));
+  if (start_info == NULL) {
+    manager_log(MANAGER_LOG_ERR, "parameter is invalid");
     return -1;
   }
 
-  if (cmd_max_len > PATH_MAX) {
-    manager_log(MANAGER_LOG_ERR, "command line is too long");
+  if (start_info->name == NULL || start_info->name[0] == '\0') {
+    manager_log(MANAGER_LOG_ERR, "app name is invalid");
     return -1;
   }
 
-  app = _app_find_app_byid(name);
+  if (start_info->cmdline == NULL || start_info->cmdline[0] == '\0' ||
+      start_info->cmd_max_len > MAX_CMDLINE_LEN - 2 ||
+      start_info->cmd_max_len <= 0) {
+    manager_log(MANAGER_LOG_ERR, "app cmdline is invalid");
+    return -1;
+  }
+
+  app = _app_find_app_byid(start_info->name);
   if (app) {
-    manager_log(MANAGER_LOG_WARN, "app %s exists", name);
+    manager_log(MANAGER_LOG_WARN, "app %s exists", start_info->name);
     return -1;
   }
 
@@ -431,15 +507,21 @@ int app_start(const char *name, const char *cmdline, int cmd_max_len,
     manager_log(MANAGER_LOG_ERR, "malloc for app_monitor failed.");
     goto errout;
   }
+  memset_s(app, sizeof(struct app_monitor), 0, sizeof(struct app_monitor));
 
-  strncpy(app->name, name, APP_NAME_LEN - 1);
-  strncpy(app->cmdline, cmdline, PATH_MAX - 1);
-  memcpy(app->cmdline, cmdline, cmd_max_len);
-  app->cmdline[PATH_MAX - 1] = '\0';
-  app->cmdline[PATH_MAX - 2] = '\0';
+  strncpy(app->name, start_info->name, APP_NAME_LEN - 1);
+  copycmds(app->cmdline, sizeof(app->cmdline), start_info->cmdline,
+           start_info->cmd_max_len);
+  if (start_info->killcmd && start_info->killcmd_max_len > 0 &&
+      start_info->killcmd_max_len <= MAX_CMDLINE_LEN - 2) {
+    copycmds(app->killcmd, sizeof(app->killcmd), start_info->killcmd,
+             start_info->killcmd_max_len);
+  } else {
+    app->killcmd[0] = '\0';
+  }
 
-  if (pidfile) {
-    strncpy(app->pid_file, pidfile, PATH_MAX - 1);
+  if (start_info->pidfile) {
+    strncpy(app->pid_file, start_info->pidfile, PATH_MAX - 1);
   } else {
     app->pid_file[0] = 0;
   }
@@ -448,9 +530,9 @@ int app_start(const char *name, const char *cmdline, int cmd_max_len,
   app->state = APP_NOT_RUNNING;
   app->last_alive = 0;
   app->dead_time = 0;
-  app->check_alive = (check_alive) ? 1 : 0;
-  app->check_alive_time = keepalive_time;
-  app->heartbeat_interval = heartbeat_interval;
+  app->check_alive = (start_info->check_alive) ? 1 : 0;
+  app->check_alive_time = start_info->keepalive_time;
+  app->heartbeat_interval = start_info->heartbeat_interval;
 
   if (g_manager_restarting) {
     /* if process exists, attach process*/
@@ -458,16 +540,17 @@ int app_start(const char *name, const char *cmdline, int cmd_max_len,
       time(&app->last_alive);
       app->last_alive -= app->check_alive_time + 5;
       app->state = APP_PENDING;
-      manager_log(MANAGER_LOG_INFO, "start app %s, pending \n", name);
+      manager_log(MANAGER_LOG_INFO, "start app %s, pending ", start_info->name);
     } else if (app_getpid_by_ps(app) != 0 && app->pid_file[0] == 0) {
       manager_log(MANAGER_LOG_INFO,
-                  "try start app %s, may cause duplicate process \n", name);
+                  "try start app %s, may cause duplicate process ",
+                  start_info->name);
     }
   } else {
-    manager_log(MANAGER_LOG_INFO, "start app %s\n", name);
+    manager_log(MANAGER_LOG_INFO, "start app %s", start_info->name);
   }
 
-  key = hash_string(name);
+  key = hash_string(start_info->name);
   hash_add(app_mon.app_map, &app->map, key);
 
   return 0;
@@ -487,11 +570,15 @@ int app_stop(const char *name, int gracefull) {
     return -1;
   }
 
-  manager_log(MANAGER_LOG_INFO, "stop app %s, pid %d\n", app->name, app->pid);
+  manager_log(MANAGER_LOG_INFO, "stop app %s, pid %d", app->name, app->pid);
 
   /* stop process*/
+  if (gracefull == 0) {
+    app->state = APP_FORCE_KILL;
+  }
+
   if (_app_stop(app, gracefull) != 0) {
-    manager_log(MANAGER_LOG_WARN, "stop app failed.\n");
+    manager_log(MANAGER_LOG_WARN, "stop app failed.");
   }
 
   hash_del(&app->map);
@@ -535,7 +622,7 @@ int _app_stopall(void) {
   int bucket;
 
   /* 循环停止所有进程 */
-  manager_log(MANAGER_LOG_INFO, "stop all apps.\n");
+  manager_log(MANAGER_LOG_INFO, "stop all apps.");
   hash_for_each_safe(app_mon.app_map, bucket, tmp, app, map) {
     app_stop(app->name, 1);
   }
@@ -637,7 +724,7 @@ int _app_mon_create_msg(void) {
 #endif
   g_msgkey = ftok(key_file, 1);
   if (g_msgkey < 0) {
-    manager_log(MANAGER_LOG_ERR, "get key failed.\n");
+    manager_log(MANAGER_LOG_ERR, "get key failed.");
     goto errout;
   }
 
@@ -714,7 +801,7 @@ int _app_alive(struct app_monitor *app) {
 
   if (app->pid > 0) {
     if (kill(app->pid, 0) != 0 && app->state != APP_PENDING) {
-      manager_log(MANAGER_LOG_ERR, "app %s exited, pid %d\n", app->name,
+      manager_log(MANAGER_LOG_ERR, "app %s exited, pid %d", app->name,
                   app->pid);
       app->state = APP_NOT_RUNNING;
       return -1;
@@ -730,7 +817,7 @@ int _app_alive(struct app_monitor *app) {
   }
 
   /* if no check, return */
-  if (app->check_alive == 0 && app->state  == APP_RUNNING) {
+  if (app->check_alive == 0 && app->state == APP_RUNNING) {
     return 0;
   }
 
@@ -744,7 +831,7 @@ int _app_alive(struct app_monitor *app) {
   strftime(buffer, sizeof(buffer), "%x %X", &tm_last);
   app->state = APP_DEAD;
   app->dead_time = now;
-  manager_log(MANAGER_LOG_ERR, "app %s dead, last %s(%lu:%lu) pid %d.\n",
+  manager_log(MANAGER_LOG_ERR, "app %s dead, last %s(%lu:%lu) pid %d.",
               app->name, buffer, app->last_alive, now, app->pid);
   return -1;
 }
@@ -858,7 +945,7 @@ void app_test(struct app_monitor *app) {
   while (true) {
     /* report heart beat */
     if (app_monitor_heartbeat() != 0) {
-      printf("send heartbeat message faild.\n");
+      printf("send heartbeat message faild.");
       break;
     }
 
@@ -880,7 +967,7 @@ out:
     close(pidfile);
     pidfile = 0;
   }
-  printf("app %s exit, pid %d\n", app->name, getpid());
+  printf("app %s exit, pid %d", app->name, getpid());
   return;
 }
 
@@ -890,7 +977,7 @@ void app_free_memory(void) {
   int bucket;
 
   /* stop all process */
-  manager_log(MANAGER_LOG_INFO, "force free all apps.\n");
+  manager_log(MANAGER_LOG_INFO, "force free all apps.");
   hash_for_each_safe(app_mon.app_map, bucket, tmp, app, map) {
     hash_del(&app->map);
     free(app);
