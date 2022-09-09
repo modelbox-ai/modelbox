@@ -54,6 +54,7 @@ enum MODELBOX_TOOL_COMMAND {
   MODELBOX_TOOL_COMMAND_VERBOSE,
   MODELBOX_TOOL_COMMAND_LOG_LEVEL,
   MODELBOX_TOOL_COMMAND_LOG_PATH,
+  MODELBOX_TOOL_COMMAND_GET_MODELBOX_ROOT,
   MODELBOX_TOOL_COMMAND_HELP,
   MODELBOX_TOOL_SHOW_VERSION,
 };
@@ -62,6 +63,7 @@ static struct option options[] = {
     {"verbose", 0, nullptr, MODELBOX_TOOL_COMMAND_VERBOSE},
     {"log-level", 1, nullptr, MODELBOX_TOOL_COMMAND_LOG_LEVEL},
     {"log-path", 1, nullptr, MODELBOX_TOOL_COMMAND_LOG_PATH},
+    {"get-modelbox-root", 1, nullptr, MODELBOX_TOOL_COMMAND_GET_MODELBOX_ROOT},
     {"h", 0, nullptr, MODELBOX_TOOL_COMMAND_HELP},
     {"v", 0, nullptr, MODELBOX_TOOL_SHOW_VERSION},
     {nullptr, 0, nullptr, 0},
@@ -216,6 +218,10 @@ int main(int argc, char *argv[])
       break;
     case MODELBOX_TOOL_COMMAND_LOG_PATH:
       kLogFile = modelbox::modelbox_full_path(optarg);
+      break;
+    case MODELBOX_TOOL_COMMAND_GET_MODELBOX_ROOT:
+      printf("%s\n", modelbox::modelbox_root_dir().c_str());
+      return 0;
       break;
     case MODELBOX_TOOL_COMMAND_HELP:
       showhelp();

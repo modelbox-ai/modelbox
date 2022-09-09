@@ -144,6 +144,24 @@ case $1 in
 	restart)
 		"$0" stop && sleep 1 && "$0" start
 		;;
+	reload)
+		if [ ! -f "$PIDFILE" ]; then
+			echo "modelbox-manager service is stopped."
+			exit 0
+		fi
+		PID="$(cat $PIDFILE 2>/dev/null)"
+		if [ ! -e "/proc/$PID" ] || [ -z "$PID" ]; then
+			echo "modelbox-manager service is stopped"
+			exit 0
+		fi
+
+		kill -HUP "$PID"
+		if [ $? -ne 0 ]; then
+			echo "reload modelbox-manager service failed."
+			exit 1;
+		fi
+		echo "reload modelbox-manager service success."
+		;;
 	status)
 		PID="$(cat "$PIDFILE" 2>/dev/null)"
 		if [ ! -e "/proc/$PID" ] || [ -z "$PID" ]; then

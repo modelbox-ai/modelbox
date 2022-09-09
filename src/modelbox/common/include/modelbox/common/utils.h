@@ -25,6 +25,8 @@
 #include <sstream>
 #include <string>
 
+#include "modelbox/base/status.h"
+
 namespace modelbox {
 
 constexpr const char *MODELBOX_ROOT_VAR = "${MODELBOX_ROOT}";
@@ -37,9 +39,9 @@ const std::string &modelbox_root_dir();
 
 /**
  * @brief Get modelbox full path
- * 
- * @param path 
- * @return std::string 
+ *
+ * @param path
+ * @return std::string
  */
 std::string modelbox_full_path(const std::string &path);
 
@@ -68,6 +70,15 @@ int modelbox_sig_register(const int sig_list[], int sig_num,
  * @return result.
  */
 int modelbox_cpu_register_data(char *buf, int buf_size, ucontext_t *ucontext);
+
+/**
+ * @brief Split ip address and port from string
+ * @param host host string
+ * @param ip output ip address
+ * @param port output port
+ * @return result.
+ */
+Status SplitIPPort(const std::string &host, std::string &ip, std::string &port);
 
 /**
  * @brief Custom stream
