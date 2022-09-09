@@ -38,7 +38,6 @@ endif()
 set(TEST_SOURCE 
     ${MODELBOX_SERVER_SOURCES} 
 	${MODELBOX_TOOL_SOURCES}
-	${MODELBOX_MANAGER_SOURCES}
     ${MODELBOX_SERVING_SOURCES}
 )
 
@@ -67,6 +66,7 @@ if(NOT DISABLE_MODELBOX_TEST)
 	add_subdirectory(unit)
 	add_subdirectory(drivers)
 	add_subdirectory(function)
+	add_subdirectory(manager)
 endif()
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_OLD})
 
