@@ -33,6 +33,10 @@ int manager_log_ext(MANAGER_LOG_LEVEL level, const char *file, int line,
   va_list ap;
 
   if (log_func == NULL) {
+    va_start(ap, format);
+    vprintf(format, ap);
+    va_end(ap);
+    printf("\n");
     return 0;
   }
 

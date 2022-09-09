@@ -51,7 +51,7 @@ extern "C" {
 #define MANAGER_LOG_SIZE (1024 * 1024 * 64)
 #define MANAGER_LOG_NUM (48)
 
-extern int manager_init_server(void);
+extern int manager_init_server(int lockpage);
 
 extern int manager_run(void);
 

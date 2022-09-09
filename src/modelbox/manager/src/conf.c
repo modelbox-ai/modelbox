@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "conf.h"
 
 #include <errno.h>
@@ -22,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CONF_LINE_MAX 512
+#define CONF_LINE_MAX 8192
 #define DEFAULT_LOG_NUM 48
 #define DEFAULT_LOG_SIZE (1024 * 1024 * 64)
 #define BUF_LEN_64 64
@@ -176,6 +175,10 @@ static int _parse_args(char *key, char *value, int max_argv, int *argc,
       }
     }
 
+    if (is_in_args == 0 && *value == '\t') {
+      *value = ' ';
+    }
+
     /* 如果遇到结束字符 */
     if (*value == end_char) {
       /* 如果未处理任何参数，则跳过 */
@@ -289,11 +292,15 @@ static int parse_conf(struct config_map config_map[], char *key, char *value) {
 
 static int load_conf_from_file(struct config_map config_map[],
                                const char *conf_file) {
-  char file_line[CONF_LINE_MAX];
+  char read_line[CONF_LINE_MAX];
+  char conf_line[CONF_LINE_MAX];
+  char *line = NULL;
   char conf_key[BUF_LEN_64];
   char conf_value[CONF_LINE_MAX];
   int filed_num = 0;
   int line_no = 0;
+  int line_len = 0;
+  int read_len = 0;
   FILE *fp;
 
   if (conf_file == NULL) {
@@ -304,13 +311,55 @@ static int load_conf_from_file(struct config_map config_map[],
   fp = fopen(conf_file, "r");
   if (fp == NULL) {
     manager_log(MANAGER_LOG_ERR, "open %s failed, %s", conf_file,
-               strerror(errno));
+                strerror(errno));
     return -1;
   }
 
-  while (fgets(file_line, sizeof(file_line), fp) != NULL) {
+  while (fgets(read_line, sizeof(read_line), fp) != NULL) {
     line_no++;
-    filed_num = sscanf(file_line, "%63s %1023[^\n]s", conf_key, conf_value);
+    read_len = strnlen(read_line, sizeof(read_line));
+    if (read_len == 0) {
+      continue;
+    }
+
+    if (read_line[0] == '#') {
+      continue;
+    }
+
+    if (read_line[read_len - 1] == '\\' ||
+        (read_len >= 2 && read_line[read_len - 2] == '\\')) {
+      if (line == NULL) {
+        line = conf_line;
+        line[0] = '\0';
+      }
+
+      if (line_len + read_len - 1 >= CONF_LINE_MAX) {
+        goto errout;
+      }
+
+      if (read_len >= 2 && read_line[read_len - 2] == '\\') {
+        read_len -= 1;
+      }
+
+      strncpy(line + line_len, read_line, read_len - 1);
+      line_len += read_len - 1;
+      line[line_len] = '\0';
+      continue;
+    } else if (line != NULL) {
+      if (line_len + read_len >= CONF_LINE_MAX) {
+        goto errout;
+      }
+
+      strncpy(line + line_len, read_line, sizeof(conf_line) - line_len);
+      line_len += read_len;
+      line[line_len] = '\0';
+    } else {
+      line = read_line;
+    }
+
+    filed_num = sscanf(line, "%63s %1023[^\n]s", conf_key, conf_value);
+    line = NULL;
+    line_len = 0;
     if (filed_num <= 0) {
       continue;
     }
@@ -336,7 +385,7 @@ errout:
   if (fp) {
     if (line_no > 0) {
       manager_log(MANAGER_LOG_ERR, "invalid config at line %s:%d %s", conf_file,
-                 line_no, file_line);
+                  line_no, line);
     }
     fclose(fp);
   }

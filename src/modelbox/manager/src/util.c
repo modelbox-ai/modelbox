@@ -186,3 +186,24 @@ const char *strcmds(const char *cmd, int cmd_max_len) {
 
   return full_cmd;
 }
+
+void copycmds(char *dest, int dest_size, const char *src, int src_size)
+{
+  int i = 0;
+  for (i = 0; i < dest_size && i < src_size; i++) {
+    if (i > 0) {
+      if (src[i] == '\0' && src[i - 1] == '\0') {
+        dest[i] = '\0';
+        break;
+      }
+    }
+
+    dest[i] = src[i];
+  }
+
+  if (i <= 0) {
+    i = 1;
+  }
+  dest[i - 1] = '\0';
+  dest[i] = '\0';
+}
