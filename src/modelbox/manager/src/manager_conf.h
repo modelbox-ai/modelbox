@@ -26,7 +26,7 @@ extern "C" {
 
 #define DEFAULT_WATCHDOG_TIMEOUT 90
 #define DEFAULT_HEARTBEAT_INTERVAL 30
-#define DEFAULT_FORCE_KILL_TIMEOUT 5
+#define DEFAULT_FORCE_KILL_TIMEOUT 6
 #define CONF_MAX_APPS 256
 
 #define CONF_FILE_NAME "manager.conf"
@@ -49,6 +49,7 @@ struct conf_app {
   char name[APP_NAME_LEN];
   char pidfile[PATH_MAX];
   char cmd[PATH_MAX];
+  char killcmd[PATH_MAX];
   int check_alive;
   int check_alive_time;
   int heartbeat_interval;
