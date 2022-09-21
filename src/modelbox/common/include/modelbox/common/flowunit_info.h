@@ -42,6 +42,7 @@ class FlowUnitInfo {
   std::shared_ptr<Configuration> config_;
   std::shared_ptr<DeviceManager> device_;
   std::shared_ptr<FlowUnitManager> flowunit_;
+  std::vector<std::string> flowunits_from_files_;
 };
 }  // namespace modelbox
 #endif  // MODELBOX_MODELBOX_EDITOR_FLOWUNIT_INFO_H_
