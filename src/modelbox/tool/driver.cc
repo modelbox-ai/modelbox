@@ -294,7 +294,7 @@ Status ToolCommandDriver::DisplayDriverInDetails(
       printf("name:\t\t%s\n", itr_device.first.c_str());
       printf("type:\t\t%s\n", desc->GetDeviceType().c_str());
       printf("version:\t\t%s\n", desc->GetDeviceVersion().c_str());
-      printf("descryption: %s\n", desc->GetDeviceDesc().c_str());
+      printf("description: %s\n", desc->GetDeviceDesc().c_str());
       printf("\n");
     }
   }
@@ -315,7 +315,7 @@ Status ToolCommandDriver::DisplayDriverInDetails(
     printf("device type:\t\t%s\n", desc->GetType().c_str());
     printf("version:\t\t%s\n", desc->GetVersion().c_str());
     printf("class:\t\t%s\n", desc->GetClass().c_str());
-    printf("descryption: %s\n", desc->GetDescription().c_str());
+    printf("description: %s\n", desc->GetDescription().c_str());
     printf("\n");
   }
 
@@ -394,7 +394,7 @@ void ToolCommandDriver::DisplayFlowunit(
   printf("type\t\t: %s\n", driverdesc->GetType().c_str());
   printf("driver name\t: %s\n", driverdesc->GetName().c_str());
   printf("version\t\t: %s\n", driverdesc->GetVersion().c_str());
-  printf("descryption\t: %s\n", flowunit->GetDescription().c_str());
+  printf("description\t: %s\n", flowunit->GetDescription().c_str());
   printf("group\t\t: %s\n",
          [&]() -> std::string {
            auto type = flowunit->GetGroupType();
