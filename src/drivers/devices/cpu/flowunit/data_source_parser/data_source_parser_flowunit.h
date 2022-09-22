@@ -70,6 +70,7 @@ class DataSourceParserFlowUnit : public modelbox::FlowUnit {
  private:
   std::shared_ptr<modelbox::SourceContext> Parse(
       const std::shared_ptr<modelbox::SessionContext> &session_context,
+      const std::shared_ptr<modelbox::Configuration> &session_config,
       const std::string &source_type, const std::string &data_source_cfg,
       std::shared_ptr<std::string> &uri);
 

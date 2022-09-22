@@ -63,6 +63,7 @@ modelbox::Status VisSourceParser::Deinit() { return modelbox::STATUS_OK; }
 
 modelbox::Status VisSourceParser::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
+    const std::shared_ptr<modelbox::Configuration> &session_config,
     const std::string &config, std::string &uri,
     modelbox::DestroyUriFunc &destroy_uri_func) {
   VisInputInfo input_info;

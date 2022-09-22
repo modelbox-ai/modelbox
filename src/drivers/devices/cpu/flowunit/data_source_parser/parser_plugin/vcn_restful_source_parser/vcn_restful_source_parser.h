@@ -40,6 +40,7 @@ class VcnRestfulSourceParser : public modelbox::DataSourceParserPlugin {
 
   modelbox::Status Parse(
       const std::shared_ptr<modelbox::SessionContext> &session_context,
+      const std::shared_ptr<modelbox::Configuration> &session_config,
       const std::string &config, std::string &uri,
       modelbox::DestroyUriFunc &destroy_uri_func) override;
 

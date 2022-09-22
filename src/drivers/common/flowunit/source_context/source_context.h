@@ -71,6 +71,8 @@ class SourceContext {
   void SetDataSourceCfg(std::string data_source_cfg);
   void SetSessionContext(
       const std::shared_ptr<modelbox::SessionContext>& session_context);
+  void SetSessionConfig(
+      const std::shared_ptr<modelbox::Configuration>& session_config);
 
   RetryStatus NeedRetry();
   int32_t GetRetryInterval();
@@ -79,6 +81,7 @@ class SourceContext {
 
  private:
   std::shared_ptr<modelbox::SessionContext> session_context_;
+  std::shared_ptr<modelbox::Configuration> session_config_;
   std::string data_source_cfg_;
   std::shared_ptr<DataSourceParserPlugin> plugin_;
   modelbox::Status last_status_{modelbox::STATUS_SUCCESS};

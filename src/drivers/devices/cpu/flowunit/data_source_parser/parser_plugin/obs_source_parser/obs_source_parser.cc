@@ -55,6 +55,11 @@ modelbox::Status ObsSourceParser::Init(
   retry_interval_ = opts->GetInt32("obs_retry_interval_ms", retry_interval_);
   retry_max_times_ = opts->GetInt32("obs_retry_count_limit", retry_max_times_);
   read_type_ = opts->GetString("obs_download_method", "file");
+
+  MBLOG_INFO << "obs source parser config retry_enabled:" << retry_enabled_
+             << " retry_interval:" << retry_interval_
+             << " retry_max_times:" << retry_max_times_;
+
   if (read_type_ != "stream") {
     return modelbox::STATUS_OK;
   }
@@ -67,10 +72,6 @@ modelbox::Status ObsSourceParser::Init(
     max_read_size_ = OBS_STREAM_READ_SIZE_HIGH;
   }
 
-  MBLOG_INFO << "obs source parser config retry_enabled:" << retry_enabled_
-             << " retry_interval:" << retry_interval_
-             << " retry_max_times:" << retry_max_times_;
-
   return modelbox::STATUS_OK;
 }
 
@@ -78,6 +79,7 @@ modelbox::Status ObsSourceParser::Deinit() { return modelbox::STATUS_OK; }
 
 modelbox::Status ObsSourceParser::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
+    const std::shared_ptr<modelbox::Configuration> &session_config,
     const std::string &config, std::string &uri,
     modelbox::DestroyUriFunc &destroy_uri_func) {
   OBSDownloadInfo download_info;
