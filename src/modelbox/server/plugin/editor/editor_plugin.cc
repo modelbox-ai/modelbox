@@ -431,17 +431,28 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
     nlohmann::json graph;
     for (const auto &g : graphs) {
       ret = GraphFileToJson(g, json_data);
-      graph["name"] = modelbox::GetBaseName(g);
+      if (!ret) {
+        modelbox::Status rspret = {ret, "graph toml"};
+        SetUpResponse(response, rspret);
+        return;
+      }
       graph = nlohmann::json::parse(json_data);
+      graph["name"] = modelbox::GetBaseName(g);
       json["graphs"].push_back(graph);
     }
 
     std::vector<std::string> flowunits;
     ret = modelbox::ListSubDirectoryFiles(flowunit_path, "*.toml", &flowunits);
+    if (!ret) {
+      modelbox::Status ret = {modelbox::STATUS_NOTFOUND,
+                              HTTP_RESP_ERR_CANNOT_READ};
+      SetUpResponse(response, ret);
+      return;
+    }
     for (const auto &f : flowunits) {
       ret = GraphFileToJson(f, json_data);
       if (!ret) {
-        modelbox::Status rspret = {ret, "toml"};
+        modelbox::Status rspret = {ret, "flowunit toml"};
         SetUpResponse(response, rspret);
         return;
       }
