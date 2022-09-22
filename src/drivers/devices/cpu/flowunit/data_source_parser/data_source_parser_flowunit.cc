@@ -91,8 +91,9 @@ modelbox::Status DataSourceParserFlowUnit::Process(
              << session_ctx->GetSessionId();
   std::string data_source_cfg(inbuff_data, buffer->GetBytes());
   std::shared_ptr<std::string> uri;
+  auto session_config = data_ctx->GetSessionConfig();
   std::shared_ptr<modelbox::SourceContext> source_context =
-      Parse(session_ctx, source_type, data_source_cfg, uri);
+      Parse(session_ctx, session_config, source_type, data_source_cfg, uri);
   if (source_context) {
     source_context->SetDataSourceCfg(data_source_cfg);
   } else {
@@ -111,6 +112,7 @@ modelbox::Status DataSourceParserFlowUnit::Process(
 
 std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
     const std::shared_ptr<modelbox::SessionContext> &session_context,
+    const std::shared_ptr<modelbox::Configuration> &session_config,
     const std::string &source_type, const std::string &data_source_cfg,
     std::shared_ptr<std::string> &uri) {
   auto plugin = GetPlugin(source_type);
@@ -123,9 +125,8 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
   std::string uri_str;
   modelbox::DestroyUriFunc destroy_uri_func;
   std::string stream_type;
-
-  auto ret = plugin->Parse(session_context, data_source_cfg, uri_str,
-                           destroy_uri_func);
+  auto ret = plugin->Parse(session_context, session_config, data_source_cfg,
+                           uri_str, destroy_uri_func);
   if (!ret) {
     MBLOG_ERROR << "Parse config failed, source uri is empty";
   }
@@ -138,6 +139,7 @@ std::shared_ptr<modelbox::SourceContext> DataSourceParserFlowUnit::Parse(
   plugin->GetStreamType(data_source_cfg, stream_type);
   source_context->SetStreamType(stream_type);
   source_context->SetSessionContext(session_context);
+  source_context->SetSessionConfig(session_config);
 
   uri = std::shared_ptr<std::string>(new std::string(uri_str),
                                      [destroy_uri_func](std::string *ptr) {

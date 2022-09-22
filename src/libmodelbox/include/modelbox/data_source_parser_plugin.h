@@ -44,6 +44,7 @@ class DataSourceParserPlugin : public Driver {
   virtual Status Deinit() = 0;
 
   virtual Status Parse(const std::shared_ptr<SessionContext> &session_context,
+                       const std::shared_ptr<modelbox::Configuration> &session_config, 
                        const std::string &config, std::string &uri,
                        DestroyUriFunc &destroy_uri_func) = 0;
 
