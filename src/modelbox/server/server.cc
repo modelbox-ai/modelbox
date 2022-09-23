@@ -100,6 +100,17 @@ modelbox::Status Server::Stop() {
   return modelbox::STATUS_OK;
 }
 
+modelbox::Status Server::Check() {
+  for (auto &plugin : plugins_) {
+    if (plugin->Check() != modelbox::STATUS_OK) {
+      return modelbox::STATUS_FAULT;
+    }
+  }
+
+  return modelbox::STATUS_OK;
+}
+
+
 modelbox::Status Server::GetPluginList() {
   auto plugin_path_list = config_->GetStrings("plugin.files");
   if (plugin_path_list.size() <= 0) {

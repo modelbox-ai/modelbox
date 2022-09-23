@@ -53,6 +53,10 @@ std::shared_ptr<ServerPlugin> ServerPlugin::MakePlugin(
   return std::make_shared<DlPlugin>(plugin_path);
 }
 
+Status ServerPlugin::Check() {
+  return STATUS_OK;
+}
+
 DlPlugin::DlPlugin(const std::string &plugin_path)
     : ServerPlugin(plugin_path) {}
 

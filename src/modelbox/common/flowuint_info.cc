@@ -86,7 +86,7 @@ std::shared_ptr<FlowUnitManager> FlowUnitInfo::GetFlowUnitManager() {
 
 std::shared_ptr<Drivers> FlowUnitInfo::GetDriverManager() { return drivers_; }
 
-Status GetInfoInFromTomlFile(const std::string &file, nlohmann::json &json) {
+Status GetInfoFromTomlFile(const std::string &file, nlohmann::json &json) {
   MBLOG_DEBUG << "flowunit from file: " << file;
   std::string json_data;
   std::ifstream infile(file);
@@ -267,7 +267,7 @@ Status FlowUnitInfo::GetInfoInJson(std::string *result) {
 
     for (const auto &f : flowunits_from_files_) {
       nlohmann::json json_flowunit;
-      auto ret = GetInfoInFromTomlFile(f, json_flowunit);
+      auto ret = GetInfoFromTomlFile(f, json_flowunit);
       if (!ret) {
         if (ret == STATUS_BADCONF) {
           continue;

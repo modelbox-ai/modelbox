@@ -18,9 +18,12 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <linux/capability.h>
+#include <pwd.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/prctl.h>
 #include <unistd.h>
 
 #include <mutex>
@@ -33,6 +36,11 @@ namespace modelbox {
 #define TMP_BUFF_LEN_32 32
 
 static int kPidFileFd = -1;
+
+extern "C" int capget(struct __user_cap_header_struct *header,
+                      struct __user_cap_data_struct *cap);
+extern "C" int capset(struct __user_cap_header_struct *header,
+                      struct __user_cap_data_struct *cap);
 
 std::once_flag root_dir_flag;
 
@@ -242,6 +250,90 @@ int modelbox_cpu_register_data(char *buf, int buf_size, ucontext_t *ucontext) {
   }
 
   return 0;
+}
+
+Status GetUidGid(const std::string &user, uid_t &uid, gid_t &gid) {
+  struct passwd *result = nullptr;
+  struct passwd pwd;
+  std::vector<char> buff;
+  ssize_t bufsize = 0;
+  int ret = -1;
+
+  if (user == "") {
+    return {STATUS_INVALID, "user is empty"};
+  }
+
+  bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+  if (bufsize == -1) {
+    bufsize = 1024 * 16;
+  }
+
+  buff.reserve(bufsize);
+  ret = getpwnam_r(user.c_str(), &pwd, buff.data(), bufsize, &result);
+  if (ret != 0) {
+    return {STATUS_FAULT, "get user " + user + " failed: " + StrError(errno)};
+  }
+
+  if (result == nullptr) {
+    return {STATUS_NOTFOUND, "user " + user + " not found"};
+  }
+
+  uid = result->pw_uid;
+  gid = result->pw_gid;
+
+  return STATUS_OK;
+}
+
+Status ChownToUser(const std::string &user, const std::string &path) {
+  uid_t uid = 0;
+  gid_t gid = 0;
+  int unused __attribute__((unused)) = 0;
+
+  auto ret = GetUidGid(user, uid, gid);
+  if (ret != STATUS_OK) {
+    return ret;
+  }
+
+  if (chown(path.c_str(), uid, gid) != 0) {
+    return {STATUS_INVALID, "chown " + path + " failed: " + StrError(errno)};
+  }
+
+  return STATUS_OK;
+}
+
+Status RunAsUser(const std::string &user) {
+  struct __user_cap_data_struct cap;
+  struct __user_cap_header_struct header;
+  header.version = _LINUX_CAPABILITY_VERSION;
+  header.pid = 0;
+  uid_t uid = 0;
+  gid_t gid = 0;
+  int unused __attribute__((unused)) = 0;
+
+  auto ret = GetUidGid(user, uid, gid);
+  if (ret != STATUS_OK) {
+    return ret;
+  }
+
+  if (getuid() == uid) {
+    return STATUS_OK;
+  }
+
+  if (capget(&header, &cap) < 0) {
+    return {STATUS_INVALID, "capget failed: " + StrError(errno)};
+  }
+
+  prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0);
+  cap.effective |= (1 << CAP_NET_RAW | 1 << CAP_NET_ADMIN);
+  cap.permitted |= (1 << CAP_NET_RAW | 1 << CAP_NET_ADMIN);
+  unused = setgid(gid);
+  unused = setuid(uid);
+  if (capset(&header, &cap) < 0) {
+    return {STATUS_INVALID, "capset failed: " + StrError(errno)};
+  }
+
+  prctl(PR_SET_KEEPCAPS, 0, 0, 0, 0);
+  return STATUS_OK;
 }
 
 Status SplitIPPort(const std::string &host, std::string &ip,
