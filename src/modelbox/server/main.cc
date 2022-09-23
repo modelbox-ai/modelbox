@@ -40,6 +40,7 @@
 
 #define MODELBOX_SERVER_LOG_PATH "/var/log/modelbox/modelbox.log"
 #define MODELBOX_SERVER_PID_FILE "/var/run/modelbox.pid"
+#define MODELBOX_MAX_INIT_TIME (60 * 10)
 
 static int g_sig_list[] = {
     SIGIO,   SIGPWR,    SIGSTKFLT, SIGPROF, SIGINT,  SIGTERM,
@@ -59,6 +60,7 @@ static void showhelp() {
         "  -c            configuration file.\n"
         "  -f            run forground.\n"
         "  -p            pid file.\n"
+        "  -u [user]     run as user.\n"
         "  -V            output log to screen.\n"
         "  -v            show server version.\n"
         "  -h            show this help message.\n"
@@ -115,7 +117,7 @@ static int modelbox_reg_signal() {
   return 0;
 }
 
-int modelbox_init_log() {
+int modelbox_init_log(std::vector<std::string> &path_list) {
   std::shared_ptr<modelbox::ModelboxServerLogger> logger =
       std::make_shared<modelbox::ModelboxServerLogger>();
 
@@ -140,16 +142,20 @@ int modelbox_init_log() {
   ModelBoxLogger.SetLogger(logger);
   logger->SetLogLevel(modelbox::LogLevelStrToLevel(log_level));
 
+  modelbox::CreateDirectory(modelbox::GetDirName(log_path), 0750);
+  path_list.push_back(modelbox::GetDirName(log_path));
+  path_list.push_back(log_path);
+
   return 0;
 }
 
-int modelbox_init() {
+int modelbox_init(std::vector<std::string> &path_list) {
   if (modelbox_reg_signal() != 0) {
     fprintf(stderr, "register signal failed.\n");
     return 1;
   }
 
-  if (modelbox_init_log()) {
+  if (modelbox_init_log(path_list)) {
     return 1;
   }
 
@@ -169,7 +175,7 @@ int modelbox_init() {
   return 0;
 }
 
-void modelbox_hung_check() {
+void modelbox_hung_check(const std::shared_ptr<modelbox::Server> &server) {
   int is_status_ok = 1;
   auto root = modelbox::Statistics::GetGlobalItem();
 
@@ -195,6 +201,10 @@ void modelbox_hung_check() {
     is_status_ok = 0;
   }
 
+  if (server->Check() != modelbox::STATUS_OK) {
+    is_status_ok = 0;
+  }
+
   if (is_status_ok == 0) {
     return;
   }
@@ -203,6 +213,42 @@ void modelbox_hung_check() {
 }
 
 int modelbox_run(const std::shared_ptr<modelbox::Server> &server) {
+  bool is_server_init = true;
+  std::shared_ptr<modelbox::TimerTask> heart_beattask =
+      std::make_shared<modelbox::TimerTask>();
+  heart_beattask->Callback(modelbox_hung_check, server);
+
+  auto future = std::async(
+      std::launch::async, [heart_beattask, &is_server_init, server]() {
+        if (app_monitor_init(nullptr, nullptr) != 0) {
+          return;
+        }
+
+        int count = 0;
+        while (is_server_init == true) {  // NOLINT
+          sleep(1);
+          if (count >= MODELBOX_MAX_INIT_TIME) {
+            MBLOG_WARN << "exceed max init time, " << MODELBOX_MAX_INIT_TIME
+                       << " seconds";
+            break;
+          }
+
+          count++;
+          
+          if (count % app_monitor_heartbeat_interval() != 0) {
+            continue;
+          }
+
+          modelbox_hung_check(server);
+        }
+
+        sleep(1);
+
+        MBLOG_INFO << "start manager heartbeat";
+        modelbox::kServerTimer->Schedule(
+            heart_beattask, 0, 1000 * app_monitor_heartbeat_interval(), true);
+      });
+
   auto ret = server->Init();
   if (!ret) {
     MBLOG_ERROR << "server init failed !";
@@ -215,20 +261,8 @@ int modelbox_run(const std::shared_ptr<modelbox::Server> &server) {
     return 1;
   }
 
-  std::shared_ptr<modelbox::TimerTask> heart_beattask =
-      std::make_shared<modelbox::TimerTask>();
-  heart_beattask->Callback(modelbox_hung_check);
-
-  auto future = std::async(std::launch::async, [heart_beattask]() {
-    if (app_monitor_init(nullptr, nullptr) != 0) {
-      return;
-    }
-
-    sleep(1);
-    MBLOG_INFO << "start manager heartbeat";
-    modelbox::kServerTimer->Schedule(
-        heart_beattask, 0, 1000 * app_monitor_heartbeat_interval(), true);
-  });
+  is_server_init = false;
+  future.get();
 
   // run timer loop.
   modelbox::kServerTimer->Run();
@@ -239,6 +273,33 @@ int modelbox_run(const std::shared_ptr<modelbox::Server> &server) {
 
 static void onexit() {}
 
+int modelbox_change_user(const std::string &user_from_cmd,
+                         const std::vector<std::string> &path_list) {
+  /* run as user */
+  auto user = modelbox::kConfig->GetString("server.user", "");
+  if (user_from_cmd.length() > 0) {
+    user = user_from_cmd;
+  }
+
+  if (user.length() == 0) {
+    return 0;
+  }
+
+  for (const auto &path : path_list) {
+    modelbox::ChownToUser(user, path);
+  }
+
+  auto ret = modelbox::RunAsUser(user);
+  if (ret != modelbox::STATUS_OK) {
+    fprintf(stderr, "run as user %s failed, %s\n", user.c_str(),
+            ret.WrapErrormsgs().c_str());
+    return 1;
+  }
+
+  MBLOG_INFO << "run as user: " << user;
+  return 0;
+}
+
 #ifdef BUILD_TEST
 int modelbox_server_main(int argc, char *argv[])
 #else
@@ -247,8 +308,10 @@ int main(int argc, char *argv[])
 {
   std::string pidfile = MODELBOX_SERVER_PID_FILE;
   int cmdtype = 0;
+  std::vector<std::string> path_list;
+  std::string user_from_cmd;
 
-  MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "hc:Vvfp:n:k:K", nullptr)
+  MODELBOX_COMMAND_GETOPT_SHORT_BEGIN(cmdtype, "hc:Vvfp:n:k:Ku:", nullptr)
   switch (cmdtype) {
     case 'p':
       pidfile = modelbox::modelbox_full_path(optarg);
@@ -268,6 +331,9 @@ int main(int argc, char *argv[])
     case 'v':
       printf("modelbox-server %s\n", modelbox::GetModelBoxVersion());
       return 0;
+    case 'u':
+      user_from_cmd = optarg;
+      break;
     default:
       printf("Try %s -h for more information.\n", argv[0]);
       return 1;
@@ -294,13 +360,23 @@ int main(int argc, char *argv[])
   /* 忽略SIGPIPE，避免发送缓冲区慢导致的进程退出 */
   signal(SIGPIPE, SIG_IGN);
 
-  if (modelbox::modelbox_create_pid(pidfile.c_str()) != 0) {
-    fprintf(stderr, "create pid file failed.\n");
+  if (pidfile != "-") {
+    modelbox::CreateDirectory(modelbox::GetDirName(pidfile), 0755);
+    path_list.push_back(modelbox::GetDirName(pidfile));
+    if (modelbox::modelbox_create_pid(pidfile.c_str()) != 0) {
+      fprintf(stderr, "create pid file failed.\n");
+      return 1;
+    }
+    path_list.push_back(pidfile);
+  }
+
+  if (modelbox_init(path_list) != 0) {
+    fprintf(stderr, "init failed.\n");
     return 1;
   }
 
-  if (modelbox_init() != 0) {
-    fprintf(stderr, "init failed.\n");
+  if (modelbox_change_user(user_from_cmd, path_list) != 0) {
+    fprintf(stderr, "change user failed.\n");
     return 1;
   }
 

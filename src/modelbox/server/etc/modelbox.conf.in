@@ -4,6 +4,9 @@ port = "1104"
 flow_path = "@MODELBOX_ROOT_VAR@@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/graph"
 application_root = "@MODELBOX_ROOT_VAR@/opt/modelbox/application"
 
+# run as user
+# user = "modelbox"
+
 # [acl]
 # allow = [
 #     "127.0.0.1/8"

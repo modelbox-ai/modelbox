@@ -185,7 +185,7 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
   return STATUS_OK;
 }
 
-Status CreateDirectory(const std::string &path) {
+Status CreateDirectory(const std::string &path, mode_t mode) {
   std::string directory_path = path + "/";
   uint32_t dir_path_len = directory_path.length();
   if (dir_path_len > PATH_MAX) {
@@ -203,7 +203,7 @@ Status CreateDirectory(const std::string &path) {
       continue;
     }
 
-    int32_t ret = mkdir(dir_path, 0700);
+    int32_t ret = mkdir(dir_path, mode);
     if (ret != 0) {
       return {STATUS_FAULT, StrError(errno)};
     }

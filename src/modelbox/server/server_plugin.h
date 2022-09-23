@@ -37,6 +37,7 @@ class ServerPlugin {
       std::shared_ptr<modelbox::Configuration> config) = 0;
   virtual modelbox::Status Start() = 0;
   virtual modelbox::Status Stop() = 0;
+  virtual modelbox::Status Check();
 
   inline std::string PluginFile() { return plugin_path_; };
 

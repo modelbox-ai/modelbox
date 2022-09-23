@@ -21,4 +21,4 @@ fi
 # custom env variable here
 
 # modelbox server opts
-MODELBOX_OPTS="-c ${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox.conf"
+MODELBOX_OPTS="$MODELBOX_OPTS -c ${MODELBOX_ROOT}@CMAKE_INSTALL_FULL_SYSCONFDIR@/modelbox/modelbox.conf"

@@ -277,9 +277,10 @@ Status ListSubDirectoryFiles(const std::string &path, const std::string &filter,
 /**
  * @brief Create directory recursively
  * @param path path to directory
+ * @param mode directory mode
  * @return create result
  */
-Status CreateDirectory(const std::string &path);
+Status CreateDirectory(const std::string &path, mode_t mode = 0700);
 
 /**
  * @brief Revmoe directory recursively

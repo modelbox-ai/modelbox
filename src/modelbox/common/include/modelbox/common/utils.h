@@ -81,6 +81,29 @@ int modelbox_cpu_register_data(char *buf, int buf_size, ucontext_t *ucontext);
 Status SplitIPPort(const std::string &host, std::string &ip, std::string &port);
 
 /**
+ * @brief Get user id and gid by username
+ * @param user username
+ * @param uid user id
+ * @param gid group id
+ * @return result.
+ */
+Status GetUidGid(const std::string &user, uid_t &uid, gid_t &gid);
+
+/**
+ * @brief change user and group of path
+ * @param user username
+ * @param path path to change
+ * @return result.
+ */
+Status ChownToUser(const std::string &user, const std::string &path);
+
+/**
+ * @brief run as user
+ * @return result.
+ */
+Status RunAsUser(const std::string &user);
+
+/**
  * @brief Custom stream
  */
 class OutStream {

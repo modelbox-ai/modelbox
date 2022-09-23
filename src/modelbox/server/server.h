@@ -37,6 +37,7 @@ class Server {
   modelbox::Status Init();
   modelbox::Status Start();
   modelbox::Status Stop();
+  modelbox::Status Check();
 
  private:
   modelbox::Status GetPluginList();

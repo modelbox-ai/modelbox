@@ -316,8 +316,6 @@ int manager_init(char *name) {
     return -1;
   }
 
-  mkdir(MANAGER_PID_PATH, 0750);
-
   manager_log_callback_reg(manager_tlog);
 
   if (strnlen(pid_file_path, sizeof(pid_file_path)) <= 0) {
@@ -332,6 +330,7 @@ int manager_init(char *name) {
 
   strncpy_s(piddir, sizeof(piddir), pid_file_path, sizeof(pid_file_path));
   dirname(piddir);
+  mkdir(piddir, 0750);
 
   /* create key */
   if (strnlen(key_file_path, sizeof(key_file_path)) <= 0) {
