@@ -36,23 +36,29 @@ class Plugin {
   virtual ~Plugin() = default;
 
   /**
-   * @brief Server init
-   * @param config server configuration
+   * @brief plugin init
+   * @param config plugin configuration
    * @return init result
    */
   virtual bool Init(std::shared_ptr<modelbox::Configuration> config) = 0;
 
   /**
-   * @brief Start server
+   * @brief Start plugin
    * @return start result
    */
   virtual bool Start() = 0;
 
   /**
-   * @brief Stop server
+   * @brief Stop plugin
    * @return stop result
    */
   virtual bool Stop() = 0;
+
+  /**
+   * @brief Check plugin  status
+   * @return check result
+   */
+  virtual bool Check() { return true; }
 };
 
 using PluginRecvMsgFunc = std::function<void(
@@ -102,10 +108,9 @@ class PluginMsgRouter {
   modelbox::ThreadPool thread_pool_{2, -1, 100};
 };
 
-
 }  // namespace modelbox
 
-extern "C"  {
+extern "C" {
 
 #if defined(__clang__)
 #pragma clang diagnostic push

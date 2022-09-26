@@ -70,6 +70,7 @@ modelbox::Status Server::Start() {
         MBLOG_ERROR << "Plugin, start failed, " << plugin->PluginFile();
         return modelbox::STATUS_FAULT;
       }
+      plugin->SetInit(true);
       last_plugin = plugin;
     }
   } catch (const std::exception &e) {
@@ -90,6 +91,9 @@ modelbox::Status Server::Start() {
 modelbox::Status Server::Stop() {
   MBLOG_INFO << "app server stop";
   for (auto &plugin : plugins_) {
+    if (plugin->IsInit() == false) {
+      continue;
+    }
     plugin->Stop();
   }
 

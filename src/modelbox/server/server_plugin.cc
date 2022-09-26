@@ -53,9 +53,13 @@ std::shared_ptr<ServerPlugin> ServerPlugin::MakePlugin(
   return std::make_shared<DlPlugin>(plugin_path);
 }
 
-Status ServerPlugin::Check() {
-  return STATUS_OK;
-}
+modelbox::Status ServerPlugin::Check() { return modelbox::STATUS_OK; }
+
+std::string ServerPlugin::PluginFile() { return plugin_path_; }
+
+bool ServerPlugin::IsInit() { return is_init_; }
+
+void ServerPlugin::SetInit(bool init) { is_init_ = init; }
 
 DlPlugin::DlPlugin(const std::string &plugin_path)
     : ServerPlugin(plugin_path) {}
@@ -106,24 +110,49 @@ modelbox::Status DlPlugin::Init(
     return {modelbox::STATUS_FAULT, errmsg};
   }
 
-  plugin_ = create_plugin_func();
-  if (plugin_ == nullptr) {
+  auto plugin = create_plugin_func();
+  if (plugin == nullptr) {
     MBLOG_ERROR << "create plugin failed";
     return modelbox::STATUS_FAULT;
   }
 
-  if (!plugin_->Init(config)) {
-    MBLOG_ERROR << "init plugin " << plugin_path_ << " failed";
+  if (!plugin->Init(config)) {
     return modelbox::STATUS_FAULT;
   }
 
+  plugin_ = plugin;
   ret = modelbox::STATUS_OK;
 
   return ret;
 }
 
-modelbox::Status DlPlugin::Start() { return plugin_->Start(); }
+modelbox::Status DlPlugin::Start() {
+  if (plugin_ == nullptr) {
+    MBLOG_ERROR << "plugin is null";
+    return modelbox::STATUS_FAULT;
+  }
 
-modelbox::Status DlPlugin::Stop() { return plugin_->Stop(); }
+  return plugin_->Start();
+}
+
+modelbox::Status DlPlugin::Stop() {
+  if (plugin_ == nullptr) {
+    return modelbox::STATUS_FAULT;
+  }
+
+  return plugin_->Stop();
+}
+
+modelbox::Status DlPlugin::Check() {
+  if (plugin_ == nullptr) {
+    return modelbox::STATUS_FAULT;
+  }
+
+  if (plugin_->Check() == false) {
+    return STATUS_FAULT;
+  }
+
+  return STATUS_OK;
+}
 
 }  // namespace modelbox
