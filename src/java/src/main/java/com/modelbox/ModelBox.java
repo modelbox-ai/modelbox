@@ -21,12 +21,14 @@ package com.modelbox;
 /**
  * modelbox defulat JNI
  */
-public class ModelBoxJni {
+public class ModelBox {
   static {
     System.loadLibrary("modelbox-jni");
   }
 
   // CHECKSTYLE:OFF
+  public static native void SetDefaultScanPath(String path);
 
+  public static native void SetDefaultInfoPath(String path);
   // CHECKSTYLE:ON
 }

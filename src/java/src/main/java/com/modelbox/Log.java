@@ -21,7 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Log extends NativeObject {
-  enum LogLevel {
+  public enum LogLevel {
     LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARN, LOG_ERROR, LOG_FATAL, LOG_OFF
   }
 
