@@ -68,7 +68,8 @@ RUN apt update && \
         libcudnn${dnn_ver%=*}-dev=${dnn_ver#*=} && \
     if [ -n "${TF_VERSION}" ]; then \
         curl -LO https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz && \
-        tar zxf libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz -C /usr/local/ && \
+        tar zxf libtensorflow-gpu-linux-x86_64-2.6.0.tar.gz && \
+        cp -af lib include /usr/local/ && \
         python3 -m pip install --no-cache-dir tensorflow-gpu==2.6.0; \
     elif [ -n "${TORCH_VERSION}" ]; then \
         curl -LO https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-abi-shared-with-deps-1.9.1%2Bcu102.zip && \

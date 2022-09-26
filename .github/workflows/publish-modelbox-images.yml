@@ -153,6 +153,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
         make build-test -j8
         make unittest
 
@@ -297,6 +298,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
         make build-test -j8
         make unittest
 
@@ -441,6 +443,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
         make build-test -j8
         make unittest
 
@@ -585,6 +588,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
         make build-test -j8
         make unittest
 
@@ -703,6 +707,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
         make build-test -j8
         make unittest
 
@@ -809,8 +814,6 @@ jobs:
       working-directory: build
       run: |
         dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
-        dpkg -i /mnt/release/*.deb
-        python3 -m pip install --no-cache-dir /mnt/release/python/modelbox-*.whl --force-reinstall
         make build-test -j8
         make unittest
 
@@ -955,6 +958,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        rpm -e $(rpm -qa|grep modelbox)
         make build-test -j8
         make unittest
 
@@ -1036,7 +1040,7 @@ jobs:
           file: docker/Dockerfile.cuda.develop.openeuler
           build-args: |
             CUDA_VER=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_VER }}
-            CUDA_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.TF_VERSION }}
+            TF_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.TF_VERSION }}
             CUDA_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_VERSION }}
             CUDA_CUDART_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.CUDA_CUDART_VERSION }}
             NVIDIA_CUDA_VERSION=${{ needs.compile_cuda112_tf_openeuler.outputs.NVIDIA_CUDA_VERSION }}
@@ -1099,6 +1103,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        rpm -e $(rpm -qa|grep modelbox)
         make build-test -j8
         make unittest
 
@@ -1243,6 +1248,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        rpm -e $(rpm -qa|grep modelbox)
         make build-test -j8
         make unittest
 
@@ -1387,6 +1393,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        rpm -e $(rpm -qa|grep modelbox)
         make build-test -j8
         make unittest
 
@@ -1505,6 +1512,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
+        rpm -e $(rpm -qa|grep modelbox)
         make build-test -j8
         make unittest
 
@@ -1612,7 +1620,5 @@ jobs:
       working-directory: build
       run: |
         rpm -e $(rpm -qa|grep modelbox)
-        rpm -ivh /mnt/release/*.rpm --force --nodeps
-        python3 -m pip install --no-cache-dir /mnt/release/python/modelbox-*.whl --force-reinstall
         make build-test -j8
         make unittest
