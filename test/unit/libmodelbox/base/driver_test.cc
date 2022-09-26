@@ -676,8 +676,7 @@ TEST_F(VirtualDriverTest, VirtualDriver) {
   result = drivers->Add(PYTHON_PATH);
   EXPECT_TRUE(result);
   if (access(INFERENCE_PATH, R_OK) == 0) {
-    result = drivers->Add(INFERENCE_PATH);
-    EXPECT_TRUE(result);
+    drivers->Add(INFERENCE_PATH);
   }
   
   result = drivers->Scan(TEST_LIB_DIR, "libmodelbox-virtualdriver-*.so");

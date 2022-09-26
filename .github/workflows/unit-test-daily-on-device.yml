@@ -37,9 +37,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
-        dpkg -i release/*.deb
-        python3 -m pip install --no-cache-dir release/python/modelbox-*.whl --force-reinstall
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}') || true
         make build-test -j4
         unset LD_LIBRARY_PATH
         make unittest
