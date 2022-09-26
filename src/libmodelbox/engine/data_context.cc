@@ -418,6 +418,11 @@ const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
 }
 
 const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
+    &FlowUnitDataContext::GetErrorInputs() const {
+  return cur_input_error_;
+}
+
+const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
     &FlowUnitDataContext::GetExternals() const {
   return cur_input_valid_data_;
 }

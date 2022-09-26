@@ -734,13 +734,31 @@ Status Node::Run(RunType type) {
     return ret;
   }
 
-  ret = Send(data_ctx_list);
-  if (!ret) {
-    return ret;
+  if (!GetOutputNames().empty()) {
+    ret = Send(data_ctx_list);
+    if (!ret) {
+      return ret;
+    }
+  } else {
+    SetLastError(data_ctx_list);
   }
 
   Clean(data_ctx_list);
   return STATUS_SUCCESS;
+}
+
+void Node::SetLastError(
+    std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list) {
+  for (auto& data_ctx : data_ctx_list) {
+    auto sess = data_ctx->GetSession();
+    for (const auto &input_map : data_ctx->GetErrorInputs()) {
+      auto error_buffer_list = input_map.second;
+      if (!error_buffer_list.empty()) {
+        sess->SetError(std::make_shared<FlowUnitError>(
+            error_buffer_list[0]->GetErrorMsg()));
+      }
+    }
+  }
 }
 
 Status Node::GenInputMatchStreamData(

@@ -183,6 +183,9 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
       &GetInputs() const;
 
+  const std::unordered_map<std::string, std::vector<std::shared_ptr<Buffer>>>
+      &GetErrorInputs() const;
+
   const std::unordered_map<std::string, std::shared_ptr<BufferList>>
       &GetOutputs() const;
 
