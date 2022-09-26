@@ -17,7 +17,11 @@
 
 #include "modelbox_jni.h"
 
+#include "com_modelbox_ModelBox.h"
+#include "modelbox/base/driver.h"
+#include "modelbox/base/status.h"
 #include "scoped_jvm.h"
+#include "throw.h"
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
   JNIEnv *env;
@@ -32,4 +36,38 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
   modelbox::ScopedJvm::SetJavaVM(nullptr);
+}
+
+/*
+ * Class:     com_modelbox_ModelBox
+ * Method:    SetDefaultScanPath
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_ModelBox_SetDefaultScanPath(
+    JNIEnv *env, jclass j_class, jstring j_path) {
+  const char *path = env->GetStringUTFChars(j_path, nullptr);
+  if (path == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID, "invalid path");
+    return;
+  }
+
+  modelbox::Drivers::SetDefaultScanPath(path);
+  env->ReleaseStringUTFChars(j_path, path);
+}
+
+/*
+ * Class:     com_modelbox_ModelBox
+ * Method:    SetDefaultInfoPath
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_ModelBox_SetDefaultInfoPath(
+    JNIEnv *env, jclass j_class, jstring j_path) {
+  const char *path = env->GetStringUTFChars(j_path, nullptr);
+  if (path == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID, "invalid path");
+    return;
+  }
+
+  modelbox::Drivers::SetDefaultInfoPath(path);
+  env->ReleaseStringUTFChars(j_path, path);
 }

@@ -20,11 +20,9 @@ package com.modelbox;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -32,15 +30,12 @@ public class ModelBoxFlowTest {
   @BeforeClass
   public static void setUpTest() {
     Log.unRegLog();
+    ModelBox.SetDefaultScanPath(TestConfig.TEST_DRIVER_DIR);
   }
 
   @Test(expected = ModelBoxException.Badconf.class)
   public void testFlowNotExist() throws Exception {
-    String driverDir = TestConfig.TEST_DRIVER_DIR;
-    String txt = "[driver]\n";
-    txt += "dir=[\"" + driverDir + "\"]\n";
-    txt += "skip-default=true\n";
-    txt += "[log]\n";
+    String txt = "[log]\n";
     txt += "level=\"INFO\"\n";
     txt += "[graph]\n";
     txt += "graphconf = '''digraph demo {{ \n";
@@ -56,12 +51,8 @@ public class ModelBoxFlowTest {
 
   @Test
   public void testFlowProcessData() throws Exception {
-    String driverDir = TestConfig.TEST_DRIVER_DIR;
     boolean get_result = false;
-    String txt = "[driver]\n";
-    txt += "dir=[\"" + driverDir + "\"]\n";
-    txt += "skip-default=true\n";
-    txt += "[log]\n";
+    String txt = "[log]\n";
     txt += "level=\"INFO\"\n";
     txt += "[graph]\n";
     txt += "graphconf = '''digraph demo {{ \n";
@@ -139,12 +130,8 @@ public class ModelBoxFlowTest {
 
   @Test
   public void testFlowStreamIO() throws Exception {
-    String driverDir = TestConfig.TEST_DRIVER_DIR;
     boolean get_result = false;
-    String txt = "[driver]\n";
-    txt += "dir=[\"" + driverDir + "\"]\n";
-    txt += "skip-default=true\n";
-    txt += "[log]\n";
+    String txt = "[log]\n";
     txt += "level=\"INFO\"\n";
     txt += "[graph]\n";
     txt += "graphconf = '''digraph demo {{ \n";
