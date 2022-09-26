@@ -52,7 +52,7 @@ class NodeBase : public std::enable_shared_from_this<NodeBase> {
 
   virtual Status Init(const std::set<std::string>& input_port_names,
                       const std::set<std::string>& output_port_names,
-                      const std::shared_ptr<Configuration> &config);
+                      const std::shared_ptr<Configuration>& config);
 
   virtual Status Run(RunType type) = 0;
 
@@ -153,7 +153,7 @@ class Node : public NodeBase {
    */
   Status Init(const std::set<std::string>& input_port_names,
               const std::set<std::string>& output_port_names,
-              const std::shared_ptr<Configuration> &config) override;
+              const std::shared_ptr<Configuration>& config) override;
 
   void SetFlowUnitInfo(const std::string& flowunit_name,
                        const std::string& flowunit_type,
@@ -276,6 +276,9 @@ class Node : public NodeBase {
       std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list);
 
   Status Send(std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list);
+
+  void SetLastError(
+      std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list);
 
   void Clean(std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list);
 
