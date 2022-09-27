@@ -56,6 +56,9 @@ class RegisterFlowUnitFactory : public FlowUnitFactory {
   std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe() override;
 
   std::string GetFlowUnitFactoryType() override;
+
+  std::string GetFlowUnitFactoryName() override;
+
   std::shared_ptr<FlowUnit> CreateFlowUnit(
       const std::string &name, const std::string &unit_type) override;
 

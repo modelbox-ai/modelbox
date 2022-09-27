@@ -71,6 +71,10 @@ std::string RegisterFlowUnitFactory::GetFlowUnitFactoryType() {
   return FLOWUNIT_TYPE;
 }
 
+std::string RegisterFlowUnitFactory::GetFlowUnitFactoryName() {
+  return unit_name_;
+}
+
 std::shared_ptr<FlowUnit> RegisterFlowUnitFactory::CreateFlowUnit(
     const std::string &name, const std::string &unit_type) {
   auto register_flowunit = std::make_shared<RegisterFlowUnit>(name);

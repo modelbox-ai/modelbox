@@ -25,40 +25,64 @@ class FlowGraphDescTest : public testing::Test {};
 
 TEST_F(FlowGraphDescTest, AddInputOutput) {
   auto flow_graph_desc = std::make_shared<FlowGraphDesc>();
-  flow_graph_desc->Init();
   auto input1 = flow_graph_desc->AddInput("input1");
+  ASSERT_NE(input1, nullptr);
+  EXPECT_EQ(input1->GetNodeName(), "input1");
   flow_graph_desc->AddOutput("output1", input1);
-  EXPECT_EQ(flow_graph_desc->GetStatus(), STATUS_SUCCESS);
   auto input_exist = flow_graph_desc->AddInput("input1");
   EXPECT_EQ(input_exist, nullptr);
-  EXPECT_NE(flow_graph_desc->GetStatus(), STATUS_OK);
 }
 
 TEST_F(FlowGraphDescTest, AddNode) {
-  auto flow_cfg = std::make_shared<FlowConfig>();
-  flow_cfg->SetBatchSize(8);
-  flow_cfg->SetQueueSize(32);
-
   auto flow_graph_desc = std::make_shared<FlowGraphDesc>();
-  flow_graph_desc->Init(flow_cfg);
+  flow_graph_desc->SetBatchSize(8);
+  flow_graph_desc->SetQueueSize(32);
+  flow_graph_desc->SetSkipDefaultDrivers(true);
+  flow_graph_desc->SetDriversDir({"/test/"});
+
   auto input1 = flow_graph_desc->AddInput("input1");
-  auto not_exist = flow_graph_desc->AddNode(
-      "not_exist", "cpu", {"image_width=100", "image_height=100"}, input1);
-  EXPECT_EQ(not_exist, nullptr);
-  flow_graph_desc->AddOutput("output1", not_exist);
-  EXPECT_EQ(flow_graph_desc->GetStatus(), STATUS_FAULT);
+  ASSERT_NE(input1, nullptr);
+
+  auto node1 = flow_graph_desc->AddNode(
+      "fu", "cpu", {"image_width=100", "image_height=100"}, input1);
+  ASSERT_NE(node1, nullptr);
+  EXPECT_EQ(node1->GetNodeName(), "fu");
+
+  auto node1_port1 = (*node1)[1];
+  ASSERT_NE(node1_port1, nullptr);
+  EXPECT_EQ(node1_port1->GetNodeName(), "fu");
+  EXPECT_FALSE(node1_port1->IsDescribeInName());
+  EXPECT_EQ(node1_port1->GetPortIdx(), 1);
+
+  auto node1_portx = (*node1)["x"];
+  ASSERT_NE(node1_portx, nullptr);
+  EXPECT_EQ(node1_portx->GetNodeName(), "fu");
+  EXPECT_TRUE(node1_portx->IsDescribeInName());
+  EXPECT_EQ(node1_portx->GetPortName(), "x");
+
+  auto node2 = flow_graph_desc->AddNode(
+      "fu", "cpu", {"image_width=100", "image_height=100"}, node1);
+  ASSERT_NE(node2, nullptr);
+  EXPECT_EQ(node2->GetNodeName(), "fu2");
+  node2->SetNodeName("custom_fu");
+  EXPECT_EQ(node2->GetNodeName(), "custom_fu");
+
+  auto node3 = flow_graph_desc->AddNode(
+      "fu", "cpu", {"image_width=100", "image_height=100"},
+      {{"in1", (*node1)[0]}, {"in2", (*node2)["x"]}});
+  ASSERT_NE(node3, nullptr);
+
+  flow_graph_desc->AddOutput("output1", node3);
 }
 
 TEST_F(FlowGraphDescTest, AddFunction) {
   auto flow_graph_desc = std::make_shared<FlowGraphDesc>();
-  flow_graph_desc->Init();
   auto func_node = flow_graph_desc->AddFunction(
       [](const std::shared_ptr<DataContext>& data_ctx) -> Status {
         return STATUS_OK;
       },
       {"in1", "in2"}, {"out"}, nullptr);
   EXPECT_EQ(func_node, nullptr);
-  EXPECT_EQ(flow_graph_desc->GetStatus(), STATUS_FAULT);
 
   func_node = flow_graph_desc->AddFunction(
       [](const std::shared_ptr<DataContext>& data_ctx) -> Status {
@@ -69,33 +93,22 @@ TEST_F(FlowGraphDescTest, AddFunction) {
   func_node->SetNodeName("my_function");
   auto port0 = (*func_node)[0];
   ASSERT_NE(port0, nullptr);
+  EXPECT_FALSE(port0->IsDescribeInName());
   EXPECT_EQ(port0->GetNodeName(), "my_function");
-  EXPECT_EQ(port0->GetPortName(), "out");
-  EXPECT_EQ((*func_node)[1], nullptr);
+  EXPECT_EQ(port0->GetPortIdx(), 0);
+
   port0 = (*func_node)["out"];
   ASSERT_NE(port0, nullptr);
+  EXPECT_TRUE(port0->IsDescribeInName());
   EXPECT_EQ(port0->GetNodeName(), "my_function");
   EXPECT_EQ(port0->GetPortName(), "out");
-  EXPECT_EQ((*func_node)["out2"], nullptr);
-  EXPECT_EQ(flow_graph_desc->GetStatus(), STATUS_FAULT);
 
   func_node = flow_graph_desc->AddFunction(
       [](const std::shared_ptr<DataContext>& data_ctx) -> Status {
         return STATUS_OK;
       },
       {"in1"}, {"out"}, {{"in2", nullptr}});
-  EXPECT_EQ(func_node, nullptr);
-  EXPECT_EQ(flow_graph_desc->GetStatus(), STATUS_FAULT);
-}
-
-TEST_F(FlowGraphDescTest, NotInit) {
-  auto graph_desc = std::make_shared<FlowGraphDesc>();
-  auto input = graph_desc->AddInput("123");
-  EXPECT_EQ(input, nullptr);
-  auto node = graph_desc->AddNode("flowunit", "cpu");
-  EXPECT_EQ(node, nullptr);
-  graph_desc->AddOutput("321", input);
-  EXPECT_EQ(graph_desc->GetStatus(), STATUS_FAULT);
+  EXPECT_NE(func_node, nullptr);
 }
 
 }  // namespace modelbox

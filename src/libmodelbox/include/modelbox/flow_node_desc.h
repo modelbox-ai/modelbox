@@ -38,7 +38,15 @@ class FlowPortDesc {
   friend class FlowGraphDesc;
 
  public:
-  FlowPortDesc(std::string node_name, std::string port_name);
+  FlowPortDesc(std::shared_ptr<FlowNodeDesc> node, std::string port_name);
+
+  FlowPortDesc(std::shared_ptr<FlowNodeDesc> node, size_t port_idx);
+
+  /**
+   * @brief get node
+   * @return node
+   **/
+  std::shared_ptr<FlowNodeDesc> GetNode();
 
   /**
    * @brief get node name
@@ -47,14 +55,28 @@ class FlowPortDesc {
   std::string GetNodeName();
 
   /**
+   * @brief describe port in name or idx
+   **/
+  bool IsDescribeInName();
+
+  /**
    * @brief get port name
    * @return port name
    **/
   std::string GetPortName();
 
+  /**
+   * @brief get port index
+   * @return port index
+   **/
+  size_t GetPortIdx();
+
  private:
-  std::string node_name_;
+  std::shared_ptr<FlowNodeDesc> node_;
+
+  bool is_in_name_;
   std::string port_name_;
+  size_t port_idx_{0};
 };
 
 class FlowNodeDesc : public std::enable_shared_from_this<FlowNodeDesc> {
@@ -94,14 +116,13 @@ class FlowNodeDesc : public std::enable_shared_from_this<FlowNodeDesc> {
 
   void SetFlowUnitName(const std::string &flowunit_name);
 
+  std::string GetFlowUnitName();
+
   void SetDevice(const std::string &device);
 
   void SetConfig(const std::vector<std::string> &config);
 
   std::vector<std::string> GetNodeConfig();
-
-  void SetOutputPortNames(
-      const std::vector<std::string> &output_port_name_list);
 
   void SetInputLinks(
       const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
@@ -117,7 +138,6 @@ class FlowNodeDesc : public std::enable_shared_from_this<FlowNodeDesc> {
   std::string type_;
   std::string device_;
   std::vector<std::string> config_;
-  std::vector<std::string> output_port_name_list_;
   std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
       source_node_ports_;
 };

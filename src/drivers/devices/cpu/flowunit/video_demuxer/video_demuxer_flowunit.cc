@@ -109,6 +109,11 @@ modelbox::Status VideoDemuxerFlowUnit::WriteData(
     std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::shared_ptr<AVPacket> &pkt,
     const std::shared_ptr<FfmpegVideoDemuxer> &video_demuxer) {
+  if (pkt == nullptr) {
+    // no data to send
+    return modelbox::STATUS_OK;
+  }
+
   auto video_packet_output = data_ctx->Output(VIDEO_PACKET_OUTPUT);
   std::vector<size_t> shape(1, (size_t)pkt->size);
   if (pkt->size == 0) {
@@ -340,8 +345,9 @@ DemuxerWorker::DemuxerWorker(bool is_async, size_t cache_size,
     : is_async_(is_async),
       cache_size_(cache_size),
       demuxer_(std::move(demuxer)) {
-  if (cache_size_ < 2) {
-    cache_size_ = 2;
+  const size_t min_cache_size = 32;
+  if (cache_size_ < min_cache_size) {
+    cache_size_ = min_cache_size;
   }
 }
 
@@ -379,8 +385,9 @@ modelbox::Status DemuxerWorker::ReadPacket(
     return demuxer_->Demux(av_packet);
   }
 
-  PopCache(av_packet);
-  if (av_packet == nullptr) {
+  auto ret = PopCache(av_packet);
+  if (ret != modelbox::STATUS_OK) {
+    // demuxer read end
     return last_demux_status_;
   }
 
@@ -395,6 +402,10 @@ void DemuxerWorker::Process() {
   if (last_demux_status_ != modelbox::STATUS_OK) {
     demux_thread_running_ = false;
     av_packet = nullptr;
+    std::unique_lock<std::mutex> lock(packet_cache_lock_);
+    packet_cache_.push_back(av_packet);
+    packet_cache_not_empty_.notify_all();
+    return;
   }
 
   PushCache(av_packet);
@@ -405,6 +416,7 @@ void DemuxerWorker::PushCache(const std::shared_ptr<AVPacket> &av_packet) {
   if (missing_pre_packet_) {
     if (!IsKeyFrame(av_packet)) {
       // not key frame, continue drop this packet
+      ++packet_drop_count_;
       return;
     }
 
@@ -430,6 +442,7 @@ void DemuxerWorker::PushCache(const std::shared_ptr<AVPacket> &av_packet) {
         // not key frame, drop this packet too
         // set flag to wait next key frame
         missing_pre_packet_ = true;
+        ++packet_drop_count_;
         return;
       }
 
@@ -445,16 +458,25 @@ void DemuxerWorker::PushCache(const std::shared_ptr<AVPacket> &av_packet) {
   packet_cache_not_empty_.notify_all();
 }
 
-void DemuxerWorker::PopCache(std::shared_ptr<AVPacket> &av_packet) {
+modelbox::Status DemuxerWorker::PopCache(std::shared_ptr<AVPacket> &av_packet) {
   std::unique_lock<std::mutex> lock(packet_cache_lock_);
-  packet_cache_not_empty_.wait(lock, [&]() { return !packet_cache_.empty(); });
+  packet_cache_not_empty_.wait_for(lock, std::chrono::milliseconds(20),
+                                   [&]() { return !packet_cache_.empty(); });
+  if (packet_cache_.empty()) {
+    // avoid to stuck other stream in node::run, we need return when
+    // packet_cache has no data
+    av_packet = nullptr;
+    return modelbox::STATUS_OK;
+  }
+
   av_packet = packet_cache_.front();
   if (av_packet == nullptr) {
     // stream end, keep nullptr in cache
-    return;
+    return modelbox::STATUS_NODATA;
   }
 
   packet_cache_.pop_front();
+  return modelbox::STATUS_OK;
 }
 
 bool DemuxerWorker::IsKeyFrame(const std::shared_ptr<AVPacket> &av_packet) {

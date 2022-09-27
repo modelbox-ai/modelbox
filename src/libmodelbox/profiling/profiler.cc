@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/profiler.h"
 
 #include <sys/stat.h>
@@ -121,22 +120,22 @@ Profiler::~Profiler() {
 }
 
 Status Profiler::OnInit() {
-  bool profile_enable = false;
+  bool performance_enable = false;
   bool trace_enable = false;
   bool session_enable = false;
 
-  profile_enable = config_->GetBool("profile.profile");
+  performance_enable = config_->GetBool("profile.performance");
   trace_enable = config_->GetBool("profile.trace");
   session_enable = config_->GetBool("profile.session");
 
-  if (profile_enable || trace_enable) {
+  if (performance_enable || trace_enable) {
     auto ret = InitProfilerDir();
     if (ret != STATUS_OK) {
       return STATUS_FAULT;
     }
   }
 
-  if (profile_enable) {
+  if (performance_enable) {
     perf_ = std::make_shared<Performance>(device_mgr_, output_dir_path_);
     perf_->Init();
   }

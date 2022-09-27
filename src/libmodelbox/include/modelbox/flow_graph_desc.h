@@ -29,14 +29,38 @@
 
 namespace modelbox {
 
+class FlowGraphFunctionInfo {
+ public:
+  FlowGraphFunctionInfo(
+      std::string name, std::vector<std::string> input_name_list,
+      std::vector<std::string> output_name_list,
+      std::function<Status(std::shared_ptr<DataContext>)> func);
+
+  std::string GetName();
+
+  std::vector<std::string> GetInputNameList();
+
+  std::vector<std::string> GetOutputNameList();
+
+  std::function<Status(std::shared_ptr<DataContext>)> GetFunc();
+
+ private:
+  std::string name_;
+  std::vector<std::string> input_name_list_;
+  std::vector<std::string> output_name_list_;
+  std::function<Status(std::shared_ptr<DataContext>)> func_;
+};
+
 /**
- * @brief Flow configuration
+ * @brief To describe a graph in api mode
  **/
-class FlowConfig {
-  friend class FlowGraphDesc;
+class FlowGraphDesc {
+  friend class Flow;
 
  public:
-  FlowConfig();
+  FlowGraphDesc();
+
+  virtual ~FlowGraphDesc();
 
   /**
    * @brief set graph scope queue size
@@ -62,40 +86,17 @@ class FlowConfig {
    **/
   void SetSkipDefaultDrivers(bool is_skip);
 
- private:
-  std::shared_ptr<Configuration> content_;
-};
-
-/**
- * @brief To describe a graph in api mode
- **/
-class FlowGraphDesc {
-  friend class Flow;
-
- public:
-  FlowGraphDesc();
-
-  virtual ~FlowGraphDesc();
+  /**
+   * @brief set directory to save profile info
+   * @param profile_dir directory to write profile info
+   **/
+  void SetProfileDir(const std::string &profile_dir);
 
   /**
-   * @brief call first, will load drivers to complete graph
-   * @return Status
+   * @brief set profile trace on or off
+   * @param profile_trace_enable true to enable profile trace
    **/
-  Status Init();
-
-  /**
-   * @brief call first, will load drivers to complete graph
-   * @param config for flow init
-   * @return Status
-   **/
-  Status Init(const std::shared_ptr<FlowConfig> &config);
-
-  /**
-   * @brief add flowunit to graph
-   * @param flow_unit_desc flowunit description
-   * @return
-   **/
-  void AddFlowUnit(std::shared_ptr<FlowUnitDesc> flow_unit_desc);
+  void SetProfileTraceEnable(bool profile_trace_enable);
 
   /**
    * @brief add input port for flow
@@ -210,55 +211,45 @@ class FlowGraphDesc {
       const std::vector<std::string> &output_name_list,
       const std::shared_ptr<FlowNodeDesc> &source_node);
 
-  /**
-   * @brief get graph build status
-   * @return Status of graph build
-   **/
-  Status GetStatus();
-
  private:
-  bool is_init_{false};
   std::unordered_map<std::string, size_t> node_name_idx_map_;
   size_t function_node_idx_{0};
-  std::unordered_map<std::string, size_t> model_node_idx_map_;
+
+  std::shared_ptr<Configuration> config_;
+  std::list<std::shared_ptr<FlowGraphFunctionInfo>> function_list_;
   std::list<std::shared_ptr<FlowNodeDesc>> node_desc_list_;
-  Status build_status_{STATUS_FAULT};
 
   std::shared_ptr<Configuration> GetConfig();
 
-  std::shared_ptr<GCGraph> GetGCGraph();
+  void GetFuncFactoryList(
+      std::list<std::shared_ptr<FlowUnitFactory>> &factory_list);
 
-  std::shared_ptr<Drivers> GetDrivers();
-
-  std::shared_ptr<DeviceManager> GetDeviceManager();
-
-  std::shared_ptr<FlowUnitManager> GetFlowUnitManager();
-
-  std::shared_ptr<Configuration> config_;
-  std::shared_ptr<Drivers> drivers_;
-  std::shared_ptr<DeviceManager> device_mgr_;
-  std::shared_ptr<FlowUnitManager> flowunit_mgr_;
-  std::vector<std::shared_ptr<FlowUnitDesc>> flowunit_factory_;
+  std::shared_ptr<GCGraph> GenGCGraph(
+      const std::shared_ptr<modelbox::FlowUnitManager> &flowunit_mgr);
 
   void AddOutput(const std::string &output_name, const std::string &device,
                  const std::shared_ptr<FlowPortDesc> &source_node_port);
 
-  bool FormatInputLinks(
-      const std::string &flowunit_name,
-      const std::shared_ptr<FlowUnitDesc> &flowunit_desc,
-      const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
-          &origin_source_node_ports,
+  Status GenGCNodes(const std::shared_ptr<GCGraph> &gcgraph);
+
+  Status GenGCEdges(
+      const std::shared_ptr<GCGraph> &gcgraph,
+      const std::shared_ptr<modelbox::FlowUnitManager> &flowunit_mgr);
+
+  Status GetInputLinks(
+      const std::shared_ptr<FlowNodeDesc> &dest_node_desc,
+      const std::shared_ptr<FlowUnitManager> &flowunit_mgr,
       std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
-          &format_source_node_ports);
-
-  void GenGCNodes(const std::shared_ptr<GCGraph> &gcgraph);
-
-  void GenGCEdges(const std::shared_ptr<GCGraph> &gcgraph);
-
-  bool CheckInputLinks(
-      const std::vector<std::string> &defined_ports,
-      const std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
           &input_links);
+
+  Status FormatInputLinks(
+      const std::shared_ptr<FlowUnitManager> &flowunit_mgr,
+      std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>>
+          &input_links);
+
+  std::shared_ptr<FlowUnitDesc> GetFlowUnitDesc(
+      const std::shared_ptr<FlowNodeDesc> &node_desc,
+      const std::shared_ptr<FlowUnitManager> &flowunit_mgr);
 };
 
 }  // namespace modelbox

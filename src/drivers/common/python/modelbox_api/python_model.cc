@@ -43,14 +43,8 @@ PythonModel::~PythonModel() {
 void PythonModel::AddPath(const std::string &path) { path_.emplace_back(path); }
 
 modelbox::Status PythonModel::Start() {
-  auto flow_config = std::make_shared<modelbox::FlowConfig>();
-  flow_config->SetDriversDir(path_);
   flow_graph_desc_ = std::make_shared<modelbox::FlowGraphDesc>();
-  auto status = flow_graph_desc_->Init(flow_config);
-  if (status != STATUS_OK) {
-    MBLOG_ERROR << "init flow desc failed, " << status;
-    return status;
-  }
+  flow_graph_desc_->SetDriversDir(path_);
 
   std::unordered_map<std::string, std::shared_ptr<FlowPortDesc>> source_ports;
   for (const auto &in_name : in_names_) {
@@ -68,7 +62,7 @@ modelbox::Status PythonModel::Start() {
   }
 
   auto flow = std::make_shared<modelbox::Flow>();
-  status = flow->Init(flow_graph_desc_);
+  auto status = flow->Init(flow_graph_desc_);
   if (status != STATUS_OK) {
     MBLOG_ERROR << "init flow failed, " << status;
     return status;

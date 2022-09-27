@@ -52,6 +52,71 @@ Flow::Flow() = default;
 
 Flow::~Flow() { Clear(); };
 
+void Flow::RegisterFlowUnit(
+    const std::shared_ptr<modelbox::FlowUnitBuilder>& flowunit_builder) {
+  auto flowunit_factory =
+      std::make_shared<RegFlowUnitFactory>(flowunit_builder);
+  auto driver_desc = std::make_shared<DriverDesc>();
+  driver_desc->SetClass(DRIVER_CLASS_FLOWUNIT);
+  driver_desc->SetType(flowunit_factory->GetFlowUnitFactoryType());
+  driver_desc->SetName(flowunit_factory->GetFlowUnitFactoryName());
+  auto driver = std::make_shared<Driver>();
+  driver->SetDriverDesc(driver_desc);
+  flowunit_factory->SetDriver(driver);
+  flowunit_factory_list_.emplace_back(std::move(flowunit_factory));
+}
+
+Status Flow::InitComponent() {
+  auto ret = drivers_->Initialize(config_->GetSubConfig("driver"));
+  if (!ret) {
+    MBLOG_ERROR << "init driver failed, err " << ret;
+    return ret;
+  }
+
+  Defer {
+    if (ret == STATUS_OK) {
+      return;
+    }
+
+    Clear();
+  };
+
+  ret = drivers_->Scan();
+  if (!ret) {
+    MBLOG_ERROR << "driver scan failed, err " << ret;
+    return ret;
+  }
+
+  TimerGlobal::Start();
+  timer_run_ = true;
+
+  ret = device_mgr_->Initialize(drivers_, config_);
+  if (!ret) {
+    MBLOG_ERROR << "Inital device failed, " << ret.WrapErrormsgs();
+    return {ret, "Inital device failed."};
+  }
+
+  ret = flowunit_mgr_->Initialize(drivers_, device_mgr_, config_);
+  if (!ret) {
+    MBLOG_ERROR << "Initial flowunit manager failed, " << ret.WrapErrormsgs();
+    return {ret, "Initial flowunit manager failed."};
+  }
+
+  ret = profiler_->Init();
+  if (!ret) {
+    MBLOG_ERROR << "Initial profiler failed, " << ret.WrapErrormsgs();
+    return {ret, "Initial profiler failed."};
+  }
+
+  ret = graph_->Initialize(flowunit_mgr_, device_mgr_, profiler_, config_);
+  if (!ret) {
+    MBLOG_ERROR << "Initial graph failed, " << ret.WrapErrormsgs();
+    return {ret, "Initial graph failed."};
+  }
+
+  return STATUS_OK;
+}
+
 void Flow::Clear() {
   if (graph_) {
     graph_->Shutdown();
@@ -131,30 +196,29 @@ Status Flow::InitByName(
 }
 
 Status Flow::Init(const std::shared_ptr<FlowGraphDesc>& flow_graph_desc) {
-  auto status = flow_graph_desc->GetStatus();
-  if (status != STATUS_OK) {
-    MBLOG_ERROR << "graph desc has error, ret " << status;
-    return status;
-  }
-
-  graph_ = std::make_shared<Graph>();
   config_ = flow_graph_desc->GetConfig();
+  drivers_ = std::make_shared<Drivers>();
+  device_mgr_ = std::make_shared<DeviceManager>();
+  flowunit_mgr_ = std::make_shared<FlowUnitManager>();
   profiler_ = std::make_shared<Profiler>(device_mgr_, config_);
+  graph_ = std::make_shared<Graph>();
 
-  device_mgr_ = flow_graph_desc->GetDeviceManager();
-  flowunit_mgr_ = flow_graph_desc->GetFlowUnitManager();
-  gcgraph_ = flow_graph_desc->GetGCGraph();
+  auto factory_list = flowunit_factory_list_;
+  flow_graph_desc->GetFuncFactoryList(factory_list);
 
-  auto ret = profiler_->Init();
-  if (!ret) {
-    MBLOG_ERROR << "Initial profiler failed, " << ret.WrapErrormsgs();
-    return {ret, "Initial profiler failed."};
+  for (auto& fu_factory : factory_list) {
+    flowunit_mgr_->Register(fu_factory);
   }
 
-  ret = graph_->Initialize(flowunit_mgr_, device_mgr_, profiler_, config_);
-  if (!ret) {
-    MBLOG_ERROR << "Initial graph failed, " << ret.WrapErrormsgs();
-    return {ret, "Initial graph failed."};
+  auto ret = InitComponent();
+  if (ret != STATUS_OK) {
+    return ret;
+  }
+
+  gcgraph_ = flow_graph_desc->GenGCGraph(flowunit_mgr_);
+  if (gcgraph_ == nullptr) {
+    MBLOG_ERROR << "generate graph failed";
+    return StatusError;
   }
 
   return STATUS_OK;
@@ -194,28 +258,14 @@ Status Flow::Init(std::shared_ptr<Configuration> config) {
 
   FlowSetupLog(config_);
 
-  auto ret = drivers_->Initialize(config_->GetSubConfig("driver"));
-  if (!ret) {
-    MBLOG_ERROR << "driver init failed, " << ret.WrapErrormsgs();
-    return {ret, "driver init failed."};
+  for (auto& fu_factory : flowunit_factory_list_) {
+    flowunit_mgr_->Register(fu_factory);
   }
 
-  Defer {
-    if (ret == STATUS_OK) {
-      return;
-    }
-
-    Clear();
-  };
-
-  ret = drivers_->Scan();
+  auto ret = InitComponent();
   if (!ret) {
-    MBLOG_ERROR << "Scan driver failed, " << ret.WrapErrormsgs();
-    return {ret, "Scan driver failed."};
+    return ret;
   }
-
-  TimerGlobal::Start();
-  timer_run_ = true;
 
   ret = graphconf_mgr_->Initialize(drivers_, config_);
   if (!ret) {
@@ -227,30 +277,6 @@ Status Flow::Init(std::shared_ptr<Configuration> config) {
   if (graphconfig_ == nullptr) {
     MBLOG_ERROR << "Load graph config failed";
     return {StatusError, "load graph failed."};
-  }
-
-  ret = device_mgr_->Initialize(drivers_, config_);
-  if (!ret) {
-    MBLOG_ERROR << "Inital device failed, " << ret.WrapErrormsgs();
-    return {ret, "Inital device failed."};
-  }
-
-  ret = flowunit_mgr_->Initialize(drivers_, device_mgr_, config_);
-  if (!ret) {
-    MBLOG_ERROR << "Initial flowunit manager failed, " << ret.WrapErrormsgs();
-    return {ret, "Initial flowunit manager failed."};
-  }
-
-  ret = profiler_->Init();
-  if (!ret) {
-    MBLOG_ERROR << "Initial profiler failed, " << ret.WrapErrormsgs();
-    return {ret, "Initial profiler failed."};
-  }
-
-  ret = graph_->Initialize(flowunit_mgr_, device_mgr_, profiler_, config_);
-  if (!ret) {
-    MBLOG_ERROR << "Initial graph failed, " << ret.WrapErrormsgs();
-    return {ret, "Initial graph failed."};
   }
 
   return STATUS_OK;

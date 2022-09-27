@@ -41,13 +41,11 @@ def callback_func(ctx):
 
 class TestAPIMode(unittest.TestCase):
     def setUp(self):
-        flow_cfg = modelbox.FlowConfig()
-        flow_cfg.set_queue_size(32)
-        flow_cfg.set_batch_size(8)
-        flow_cfg.set_skip_default_drivers(True)
-        flow_cfg.set_drivers_dir([test_config.TEST_DRIVER_DIR])
         self.graph_desc = modelbox.FlowGraphDesc()
-        self.graph_desc.init(flow_cfg)
+        self.graph_desc.set_queue_size(32)
+        self.graph_desc.set_batch_size(8)
+        self.graph_desc.set_skip_default_drivers(True)
+        self.graph_desc.set_drivers_dir([test_config.TEST_DRIVER_DIR])
 
     def tearDown(self):
         pass
