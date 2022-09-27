@@ -40,7 +40,7 @@
 
 #define MODELBOX_SERVER_LOG_PATH "/var/log/modelbox/modelbox.log"
 #define MODELBOX_SERVER_PID_FILE "/var/run/modelbox.pid"
-#define MODELBOX_MAX_INIT_TIME (60 * 10)
+#define MODELBOX_MAX_INIT_TIME (60 * 12)
 
 static int g_sig_list[] = {
     SIGIO,   SIGPWR,    SIGSTKFLT, SIGPROF, SIGINT,  SIGTERM,
@@ -213,62 +213,62 @@ void modelbox_hung_check(const std::shared_ptr<modelbox::Server> &server) {
 }
 
 int modelbox_run(const std::shared_ptr<modelbox::Server> &server) {
-  bool is_server_init = true;
-  std::shared_ptr<modelbox::TimerTask> heart_beattask =
-      std::make_shared<modelbox::TimerTask>();
-  heart_beattask->Callback(modelbox_hung_check, server);
+  int retval = 0;
+  auto server_init_timer = std::make_shared<modelbox::TimerTask>([]() {
+    MBLOG_INFO << "server init timeout, you may change the init timeout "
+                  "value by setting the init_timeout in modelbox.conf";
+    modelbox::kServerTimer->Stop();
+    modelbox::Abort("server init timeout");
+  });
 
-  auto future = std::async(
-      std::launch::async, [heart_beattask, &is_server_init, server]() {
-        if (app_monitor_init(nullptr, nullptr) != 0) {
-          return;
+  auto future =
+      std::async(std::launch::async, [server, &retval, &server_init_timer]() {
+        modelbox::Status ret;
+        Defer {
+          if (!ret) {
+            modelbox::kServerTimer->Stop();
+            retval = 1;
+          }
+        };
+
+        ret = server->Init();
+        if (!ret) {
+          MBLOG_ERROR << "server init failed !";
+          return 1;
         }
 
-        int count = 0;
-        while (is_server_init == true) {  // NOLINT
-          sleep(1);
-          if (count >= MODELBOX_MAX_INIT_TIME) {
-            MBLOG_WARN << "exceed max init time, " << MODELBOX_MAX_INIT_TIME
-                       << " seconds";
-            break;
-          }
-
-          count++;
-          
-          if (count % app_monitor_heartbeat_interval() != 0) {
-            continue;
-          }
-
-          modelbox_hung_check(server);
+        ret = server->Start();
+        if (!ret) {
+          MBLOG_ERROR << "server start failed !";
+          return 1;
         }
 
-        sleep(1);
+        server_init_timer->Stop();
+        server_init_timer = nullptr;
 
-        MBLOG_INFO << "start manager heartbeat";
-        modelbox::kServerTimer->Schedule(
-            heart_beattask, 0, 1000 * app_monitor_heartbeat_interval(), true);
+        return 0;
       });
 
-  auto ret = server->Init();
-  if (!ret) {
-    MBLOG_ERROR << "server init failed !";
-    return 1;
+  if (app_monitor_init(nullptr, nullptr) == 0) {
+    MBLOG_INFO << "start manager heartbeat";
+    std::shared_ptr<modelbox::TimerTask> heart_beattask =
+        std::make_shared<modelbox::TimerTask>();
+    heart_beattask->Callback(modelbox_hung_check, server);
+    modelbox::kServerTimer->Schedule(
+        heart_beattask, 0, 1000 * app_monitor_heartbeat_interval(), true);
   }
 
-  ret = server->Start();
-  if (!ret) {
-    MBLOG_ERROR << "server start failed !";
-    return 1;
-  }
-
-  is_server_init = false;
-  future.get();
+  auto init_timeout = modelbox::kConfig->GetUint32("server.init_timeout",
+                                                   MODELBOX_MAX_INIT_TIME);
+  modelbox::kServerTimer->Schedule(server_init_timer, 1000 * init_timeout, 0,
+                                   false);
 
   // run timer loop.
   modelbox::kServerTimer->Run();
 
+  future.get();
   server->Stop();
-  return 0;
+  return retval;
 }
 
 static void onexit() {}

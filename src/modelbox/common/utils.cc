@@ -304,7 +304,11 @@ Status ChownToUser(const std::string &user, const std::string &path) {
 Status RunAsUser(const std::string &user) {
   struct __user_cap_data_struct cap;
   struct __user_cap_header_struct header;
+#ifdef _LINUX_CAPABILITY_VERSION_3
+  header.version = _LINUX_CAPABILITY_VERSION_3;
+#else
   header.version = _LINUX_CAPABILITY_VERSION;
+#endif
   header.pid = 0;
   uid_t uid = 0;
   gid_t gid = 0;

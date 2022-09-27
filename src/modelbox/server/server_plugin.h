@@ -39,13 +39,19 @@ class ServerPlugin {
   virtual modelbox::Status Stop() = 0;
   virtual modelbox::Status Check();
 
-  inline std::string PluginFile() { return plugin_path_; };
-
   static std::shared_ptr<ServerPlugin> MakePlugin(
       const std::string &plugin_path);
 
+  std::string PluginFile();
+
  protected:
   std::string plugin_path_;
+
+ private:
+  friend class Server;
+  bool IsInit();
+  void SetInit(bool init);
+  bool is_init_{false};
 };
 
 /**
@@ -60,6 +66,7 @@ class DlPlugin : public ServerPlugin {
       std::shared_ptr<modelbox::Configuration> config) override;
   modelbox::Status Start() override;
   modelbox::Status Stop() override;
+  modelbox::Status Check() override;
 
  private:
   std::shared_ptr<Plugin> plugin_;
