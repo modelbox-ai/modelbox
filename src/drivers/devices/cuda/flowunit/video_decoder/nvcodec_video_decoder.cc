@@ -23,6 +23,39 @@
 
 #define MIN_ALLOWABLE_DECODE_SURFACE_NUM 1
 
+NvcodecConcurrencyLimiter *NvcodecConcurrencyLimiter::GetInstance() {
+  static NvcodecConcurrencyLimiter limiter;
+  return &limiter;
+}
+
+void NvcodecConcurrencyLimiter::Init(uint32_t limit) {
+  if (limit == 0) {
+    limited_ = false;
+  }
+
+  count_ = limit;
+}
+
+void NvcodecConcurrencyLimiter::Acquire() {
+  if (!limited_) {
+    return;
+  }
+
+  std::unique_lock<std::mutex> lock(count_lock_);
+  count_cv_.wait(lock, [=] { return count_ > 0; });
+  --count_;
+}
+
+void NvcodecConcurrencyLimiter::Release() {
+  if (!limited_) {
+    return;
+  }
+
+  std::unique_lock<std::mutex> lock(count_lock_);
+  ++count_;
+  count_cv_.notify_one();
+}
+
 #define NVDEC_THROW_ERROR(err_str, err_code)                                \
   throw NVDECException::MakeNVDECException(err_str, err_code, __FUNCTION__, \
                                            __FILE__, __LINE__);
@@ -87,7 +120,7 @@ NvcodecVideoDecoder::~NvcodecVideoDecoder() {
 modelbox::Status NvcodecVideoDecoder::Init(const std::string &device_id,
                                            AVCodecID codec_id,
                                            std::string &file_url,
-                                           bool skip_err_frame) {
+                                           bool skip_err_frame, bool no_delay) {
   gpu_id_ = std::stoi(device_id);
   MBLOG_INFO << "Init decode in gpu " << gpu_id_;
   // Use cuda runtime CUContext on same device in whole modelbox process to
@@ -122,8 +155,8 @@ modelbox::Status NvcodecVideoDecoder::Init(const std::string &device_id,
   videoParserParams.CodecType = codec_id_;
   videoParserParams.ulMaxNumDecodeSurfaces = 1;
   videoParserParams.ulMaxDisplayDelay =
-      2;  // setting ulMaxDisplayDelay to 2 achieves max decoding rate, based on
-          // several tests.
+      no_delay ? 0 : 2;  // setting ulMaxDisplayDelay to 2 achieves max decoding
+                         // rate, based on several tests.
   videoParserParams.pUserData = (void *)this;
   videoParserParams.pfnSequenceCallback = HandleVideoSequenceProc;
   videoParserParams.pfnDecodePicture = HandlePictureDecodeProc;
@@ -170,7 +203,14 @@ modelbox::Status NvcodecVideoDecoder::Decode(
     return modelbox::STATUS_FAULT;
   }
 
+  NvcodecConcurrencyLimiter::GetInstance()->Acquire();
+  is_limiter_released_ = false;
   CUDA_API_CALL(cuvidParseVideoData(video_parser_, &packet));
+  if (!is_limiter_released_) {
+    // might release when handle display
+    NvcodecConcurrencyLimiter::GetInstance()->Release();
+    is_limiter_released_ = true;
+  }
 
   for (size_t i = 0; i < frame_count_in_one_decode_; ++i) {
     auto frame = std::make_shared<NvcodecFrame>();
@@ -388,6 +428,9 @@ int32_t NvcodecVideoDecoder::HandlePictureDisplay(
     CUDA_API_CALL(cuvidUnmapVideoFrame(video_decoder_, src_frame_ptr));
     return 1;
   }
+
+  NvcodecConcurrencyLimiter::GetInstance()->Release();
+  is_limiter_released_ = true;
 
   ++frame_count_in_one_decode_;
   SaveFrame(src_frame_ptr, src_pitch);

@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_NVCODEC_VIDEO_DECODER_H_
 #define MODELBOX_FLOWUNIT_NVCODEC_VIDEO_DECODER_H_
 
-#include <modelbox/base/status.h>
 #include <cuda.h>
 #include <libavformat/avformat.h>
+#include <modelbox/base/status.h>
 #include <nvcuvid.h>
 
+#include <condition_variable>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -30,6 +30,25 @@
 #include <sstream>
 #include <utility>
 #include <vector>
+
+class NvcodecConcurrencyLimiter {
+ public:
+  static NvcodecConcurrencyLimiter *GetInstance();
+
+  void Init(uint32_t limit);
+
+  void Acquire();
+
+  void Release();
+
+ private:
+  NvcodecConcurrencyLimiter() = default;
+
+  std::mutex count_lock_;
+  std::condition_variable count_cv_;
+  uint32_t count_{0};
+  bool limited_{false};
+};
 
 class NVDECException : public std::exception {
  public:
@@ -98,7 +117,8 @@ class NvcodecVideoDecoder {
   virtual ~NvcodecVideoDecoder();
 
   modelbox::Status Init(const std::string &device_id, AVCodecID codec_id,
-                      std::string &file_url, bool skip_err_frame);
+                        std::string &file_url, bool skip_err_frame,
+                        bool no_delay);
 
   modelbox::Status Decode(
       const std::shared_ptr<NvcodecPacket> &pkt,
@@ -115,7 +135,7 @@ class NvcodecVideoDecoder {
   modelbox::Status InitCuCtx(const std::string &device_id);
 
   modelbox::Status GetCudaVideoCodec(AVCodecID codec_id,
-                                   cudaVideoCodec &cuda_codec_id);
+                                     cudaVideoCodec &cuda_codec_id);
 
   std::string GetVideoCodecString(cudaVideoCodec cuda_codec_id);
 
@@ -193,6 +213,8 @@ class NvcodecVideoDecoder {
   bool skip_err_frame_{false};
   int64_t latest_pts_{0};
   int32_t gpu_id_{0};
+
+  bool is_limiter_released_{false};
 };
 
 #endif  // MODELBOX_FLOWUNIT_NVCODEC_VIDEO_DECODER_H_

@@ -35,6 +35,8 @@ modelbox::Status VideoDecoderFlowUnit::Open(
   }
 
   skip_err_frame_ = opts->GetBool("skip_error_frame", false);
+  concurrency_limit_ = opts->GetUint32("concurrency_limit", 0);
+  NvcodecConcurrencyLimiter::GetInstance()->Init(concurrency_limit_);
   return modelbox::STATUS_OK;
 }
 
@@ -146,11 +148,11 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
     std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<std::shared_ptr<NvcodecFrame>> &frame_list, bool eos,
     const std::string &file_url) {
-  auto last_frame =
-      std::static_pointer_cast<modelbox::Buffer>(data_ctx->GetPrivate(LAST_FRAME));
+  auto last_frame = std::static_pointer_cast<modelbox::Buffer>(
+      data_ctx->GetPrivate(LAST_FRAME));
   data_ctx->SetPrivate(LAST_FRAME, nullptr);
-  auto color_cvt =
-      std::static_pointer_cast<NppiColorConverter>(data_ctx->GetPrivate(CVT_CTX));
+  auto color_cvt = std::static_pointer_cast<NppiColorConverter>(
+      data_ctx->GetPrivate(CVT_CTX));
   auto frame_buff_list = data_ctx->Output(FRAME_INFO_OUTPUT);
   if (last_frame != nullptr) {
     frame_buff_list->PushBack(last_frame);  // Send last frame in cache
@@ -263,8 +265,10 @@ modelbox::Status VideoDecoderFlowUnit::DataPre(
   }
 
   auto video_decoder = std::make_shared<NvcodecVideoDecoder>();
+  // when concurrency limit set, no delay must be true to avoid gpu cache
+  auto no_delay = concurrency_limit_ != 0;
   auto ret = video_decoder->Init(GetBindDevice()->GetDeviceID(), *codec_id,
-                                 *source_url, skip_err_frame_);
+                                 *source_url, skip_err_frame_, no_delay);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Video decoder init failed";
     return modelbox::STATUS_FAULT;
@@ -311,6 +315,9 @@ MODELBOX_FLOWUNIT(VideoDecoderFlowUnit, desc) {
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "skip_error_frame", "bool", true, "false",
       "whether the video decoder skip the error frame"));
+  desc.AddFlowUnitOption(modelbox::FlowUnitOption(
+      "concurrency_limit", "int", false, "0",
+      "limit gpu decode concurrency to avoid decode stuck"));
 }
 
 MODELBOX_DRIVER_FLOWUNIT(desc) {
