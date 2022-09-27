@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_VIDEO_DECODER_CPU_H_
 #define MODELBOX_FLOWUNIT_VIDEO_DECODER_CPU_H_
 
@@ -58,7 +57,8 @@ constexpr const char *FLOWUNIT_DESC =
     "\t\tField Name: shape,         Type: vector<size_t>\n"
     "\t\tField Name: type,          Type: ModelBoxDataType::MODELBOX_UINT8\n"
     "\t@Constraint: The flowuint 'video_decoder' must be used pair "
-    "with 'video_demuxer. the output buffer meta fields 'pix_fmt' is 'brg_packed' or 'rgb_packed', 'layout' is 'hcw'.";
+    "with 'video_demuxer. the output buffer meta fields 'pix_fmt' is "
+    "'brg_packed' or 'rgb_packed', 'layout' is 'hcw'.";
 constexpr const char *CODEC_META = "codec_meta";
 constexpr const char *DECODER_CTX = "decoder_ctx";
 constexpr const char *CVT_CTX = "converter_ctx";
@@ -113,6 +113,8 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
   std::string out_pix_fmt_str_;
   bool skip_err_frame_{false};
   std::string device_id_;
+  // limit decode concurrency to avoid decoder stuck bug in gpu driver
+  uint32_t concurrency_limit_{0};
 };
 
 #endif  // MODELBOX_FLOWUNIT_VIDEO_DECODER_CPU_H_
