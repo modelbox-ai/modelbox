@@ -402,22 +402,45 @@ void DemuxerWorker::Process() {
 
 void DemuxerWorker::PushCache(const std::shared_ptr<AVPacket> &av_packet) {
   std::unique_lock<std::mutex> lock(packet_cache_lock_);
-  while (packet_cache_.size() >= cache_size_) {
-    ++packet_drop_count_;
-    // drop packet, cache_size >= 2
-    auto iter = packet_cache_.begin();
-    auto first_iter = iter;
-    auto second_iter = ++iter;
-    if (IsKeyFrame(*first_iter) && !IsKeyFrame(*second_iter)) {
-      // we need drop the frame rely on key frame first to avoid invalid picture
-      packet_cache_.erase(second_iter);
-      continue;
+  if (missing_pre_packet_) {
+    if (!IsKeyFrame(av_packet)) {
+      // not key frame, continue drop this packet
+      return;
     }
 
-    // no more frame rely on front frame, just drop front
-    packet_cache_.pop_front();
+    // this packet is key frame, push to cache, continue decode
+    missing_pre_packet_ = false;
+    packet_cache_.push_back(av_packet);
+    packet_cache_not_empty_.notify_all();
+    return;
   }
 
+  if (packet_cache_.size() >= cache_size_) {
+    // need drop packet in cache
+    do {
+      // drop front until key frame
+      packet_cache_.pop_front();
+      ++packet_drop_count_;
+      if (!packet_cache_.empty()) {
+        continue;
+      }
+
+      // all cache dropped
+      if (!IsKeyFrame(av_packet)) {
+        // not key frame, drop this packet too
+        // set flag to wait next key frame
+        missing_pre_packet_ = true;
+        return;
+      }
+
+      // this is key frame, push to cache
+      break;
+    } while (!IsKeyFrame(packet_cache_.front()));
+
+    // find key frame, push this packet to cache
+  }
+
+  // push this packet to cache
   packet_cache_.push_back(av_packet);
   packet_cache_not_empty_.notify_all();
 }
