@@ -148,6 +148,7 @@ class DemuxerWorker {
   std::list<std::shared_ptr<AVPacket>> packet_cache_;
   modelbox::Status last_demux_status_;
   size_t packet_drop_count_{0};
+  bool missing_pre_packet_{false};
 };
 
 #endif  // MODELBOX_FLOWUNIT_VIDEO_DEMUXER_CPU_H_
