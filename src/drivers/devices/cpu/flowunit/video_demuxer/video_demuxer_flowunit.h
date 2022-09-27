@@ -132,7 +132,7 @@ class DemuxerWorker {
  private:
   void PushCache(const std::shared_ptr<AVPacket> &av_packet);
 
-  void PopCache(std::shared_ptr<AVPacket> &av_packet);
+  modelbox::Status PopCache(std::shared_ptr<AVPacket> &av_packet);
 
   bool IsKeyFrame(const std::shared_ptr<AVPacket> &av_packet);
 

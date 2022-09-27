@@ -213,7 +213,6 @@ PYBIND11_MODULE(_modelbox, m) {
   ModelboxPyApiSetUpGeneric(m);
   ModelboxPyApiSetUpEngine(m);
   ModelboxPyApiSetUpDataHandler(m);
-  ModelboxPyApiSetUpFlowConfig(m);
   ModelboxPyApiSetUpFlowGraphDesc(m);
   ModelboxPyApiSetUpFlowNodeDesc(m);
   ModelboxPyApiSetUpFlowPortDesc(m);

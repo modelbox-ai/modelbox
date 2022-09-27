@@ -20,12 +20,24 @@
 
 namespace modelbox {
 
-FlowPortDesc::FlowPortDesc(std::string node_name, std::string port_name)
-    : node_name_(std::move(node_name)), port_name_(std::move(port_name)) {}
+FlowPortDesc::FlowPortDesc(std::shared_ptr<FlowNodeDesc> node,
+                           std::string port_name)
+    : node_(std::move(node)),
+      is_in_name_{true},
+      port_name_(std::move(port_name)) {}
 
-std::string FlowPortDesc::GetNodeName() { return node_name_; }
+FlowPortDesc::FlowPortDesc(std::shared_ptr<FlowNodeDesc> node, size_t port_idx)
+    : node_(std::move(node)), is_in_name_{false}, port_idx_(port_idx) {}
+
+std::shared_ptr<FlowNodeDesc> FlowPortDesc::GetNode() { return node_; }
+
+std::string FlowPortDesc::GetNodeName() { return node_->GetNodeName(); }
+
+bool FlowPortDesc::IsDescribeInName() { return is_in_name_; }
 
 std::string FlowPortDesc::GetPortName() { return port_name_; }
+
+size_t FlowPortDesc::GetPortIdx() { return port_idx_; }
 
 FlowNodeDesc::FlowNodeDesc(std::string node_name)
     : node_name_(std::move(node_name)) {}
@@ -40,27 +52,19 @@ std::string FlowNodeDesc::GetNodeName() { return node_name_; }
 
 std::shared_ptr<FlowPortDesc> FlowNodeDesc::operator[](
     const std::string &output_name) {
-  for (auto &port_name : output_port_name_list_) {
-    if (port_name == output_name) {
-      return std::make_shared<FlowPortDesc>(node_name_, output_name);
-    }
+  if (type_ == GRAPH_NODE_INPUT) {
+    return std::make_shared<FlowPortDesc>(shared_from_this(), output_name);
   }
 
-  MBLOG_ERROR << "node " << node_name_ << " does not have output port "
-              << output_name;
-  return nullptr;
+  return std::make_shared<FlowPortDesc>(shared_from_this(), output_name);
 }
 
 std::shared_ptr<FlowPortDesc> FlowNodeDesc::operator[](size_t port_idx) {
-  if (output_port_name_list_.size() <= port_idx) {
-    MBLOG_ERROR << "node " << node_name_ << " output number is "
-                << output_port_name_list_.size() << ",  index " << port_idx
-                << " is out of range";
-    return nullptr;
+  if (type_ == GRAPH_NODE_INPUT) {
+    return std::make_shared<FlowPortDesc>(shared_from_this(), node_name_);
   }
 
-  return std::make_shared<FlowPortDesc>(node_name_,
-                                        output_port_name_list_[port_idx]);
+  return std::make_shared<FlowPortDesc>(shared_from_this(), port_idx);
 }
 
 void FlowNodeDesc::SetNodeType(const std::string &type) { type_ = type; }
@@ -68,6 +72,8 @@ void FlowNodeDesc::SetNodeType(const std::string &type) { type_ = type; }
 void FlowNodeDesc::SetFlowUnitName(const std::string &flowunit_name) {
   flowunit_name_ = flowunit_name;
 }
+
+std::string FlowNodeDesc::GetFlowUnitName() { return flowunit_name_; }
 
 void FlowNodeDesc::SetDevice(const std::string &device) { device_ = device; }
 
@@ -83,11 +89,6 @@ std::vector<std::string> FlowNodeDesc::GetNodeConfig() {
   }
   node_config.push_back("device=" + device_);
   return node_config;
-}
-
-void FlowNodeDesc::SetOutputPortNames(
-    const std::vector<std::string> &output_port_name_list) {
-  output_port_name_list_ = output_port_name_list;
 }
 
 void FlowNodeDesc::SetInputLinks(

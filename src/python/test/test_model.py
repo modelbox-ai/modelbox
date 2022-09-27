@@ -24,7 +24,8 @@ class TestPyModel(unittest.TestCase):
     def setUp(self):
         self.model = modelbox.Model(test_config.TEST_DATA_DIR + "/python_op", "python_brightness", ['brightness_in'], ['brightness_out'], 1, "cpu", "0")
         self.model.add_path(test_config.TEST_DRIVER_DIR)
-        self.model.start()
+        ret = self.model.start()
+        self.assertEqual(ret.code(), modelbox.Status.StatusCode.STATUS_SUCCESS)
 
     def tearDown(self):
         self.model.stop()

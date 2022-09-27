@@ -688,11 +688,6 @@ TEST_F(FlowTest, DISABLED_InlineFlowUnit) {
   auto ret = flow->Init("graph", toml_content);
   ASSERT_EQ(ret, STATUS_OK);
 
-  FlowGraphDesc graph_desc;
-
-  auto test_flowunit_desc = std::make_shared<FlowUnitDesc>();
-  graph_desc.AddFlowUnit(test_flowunit_desc);
-
   ret = flow->Build();
   ASSERT_EQ(ret, STATUS_OK);
 

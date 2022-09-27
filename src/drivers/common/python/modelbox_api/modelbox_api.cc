@@ -1191,30 +1191,18 @@ void ModelboxPyApiSetUpDataHandler(pybind11::module &m) {
            py::call_guard<py::gil_scoped_release>());
 }
 
-void ModelboxPyApiSetUpFlowConfig(pybind11::module &m) {
-  py::class_<modelbox::FlowConfig, std::shared_ptr<modelbox::FlowConfig>>(
-      m, "FlowConfig")
-      .def(py::init<>())
-      .def("set_queue_size", &modelbox::FlowConfig::SetQueueSize)
-      .def("set_batch_size", &modelbox::FlowConfig::SetBatchSize)
-      .def("set_drivers_dir", &modelbox::FlowConfig::SetDriversDir)
-      .def("set_skip_default_drivers",
-           &modelbox::FlowConfig::SetSkipDefaultDrivers);
-}
-
 void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
   py::class_<modelbox::FlowGraphDesc, std::shared_ptr<modelbox::FlowGraphDesc>>(
       m, "FlowGraphDesc")
       .def(py::init<>())
-      .def(
-          "init", [](FlowGraphDesc &self) { return self.Init(); },
-          py::call_guard<py::gil_scoped_release>())
-      .def(
-          "init",
-          [](FlowGraphDesc &self, std::shared_ptr<FlowConfig> &config) {
-            return self.Init(config);
-          },
-          py::call_guard<py::gil_scoped_release>())
+      .def("set_queue_size", &modelbox::FlowGraphDesc::SetQueueSize)
+      .def("set_batch_size", &modelbox::FlowGraphDesc::SetBatchSize)
+      .def("set_drivers_dir", &modelbox::FlowGraphDesc::SetDriversDir)
+      .def("set_skip_default_drivers",
+           &modelbox::FlowGraphDesc::SetSkipDefaultDrivers)
+      .def("set_profile_dir", &modelbox::FlowGraphDesc::SetProfileDir)
+      .def("set_profile_trace_enable",
+           &modelbox::FlowGraphDesc::SetProfileTraceEnable)
       .def("add_input", &modelbox::FlowGraphDesc::AddInput,
            py::call_guard<py::gil_scoped_release>())
       .def(
@@ -1301,8 +1289,7 @@ void ModelboxPyApiSetUpFlowGraphDesc(pybind11::module &m) {
             return self.AddFunction(func, input_name_list, output_name_list,
                                     source_node);
           },
-          py::call_guard<py::gil_scoped_release>())
-      .def("get_status", &modelbox::FlowGraphDesc::GetStatus);
+          py::call_guard<py::gil_scoped_release>());
 }
 
 void ModelboxPyApiSetUpFlowNodeDesc(pybind11::module &m) {
@@ -1326,7 +1313,7 @@ void ModelboxPyApiSetUpFlowNodeDesc(pybind11::module &m) {
 void ModelboxPyApiSetUpFlowPortDesc(pybind11::module &m) {
   py::class_<modelbox::FlowPortDesc, std::shared_ptr<modelbox::FlowPortDesc>>(
       m, "FlowPortDesc")
-      .def(py::init<const std::string &, const std::string &>())
+      .def(py::init<std::shared_ptr<FlowNodeDesc>, const std::string &>())
       .def("get_node_name", &modelbox::FlowPortDesc::GetNodeName)
       .def("get_port_name", &modelbox::FlowPortDesc::GetPortName);
 }

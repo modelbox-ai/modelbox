@@ -23,6 +23,7 @@
 #include <modelbox/flow_graph_desc.h>
 #include <modelbox/flow_stream_io.h>
 #include <modelbox/flowunit.h>
+#include <modelbox/flowunit_builder.h>
 #include <modelbox/graph.h>
 #include <modelbox/profiler.h>
 
@@ -51,6 +52,14 @@ class Flow {
 
   Flow();
   virtual ~Flow();
+
+  /**
+   * @brief register flow unit to flow
+   * @param flowunit_builder flow unit builder
+   * @return
+   **/
+  void RegisterFlowUnit(
+      const std::shared_ptr<modelbox::FlowUnitBuilder>& flowunit_builder);
 
   /**
    * @brief Init flow from file
@@ -172,7 +181,10 @@ class Flow {
   std::string GetGraphName() const;
 
  private:
+  Status InitComponent();
+
   void Clear();
+
   Status ConfigFileRead(const std::string& configfile, Format format,
                         std::istringstream* ifs);
 
@@ -190,6 +202,8 @@ class Flow {
 
   Status GuessConfFormat(const std::string& configfile, const std::string& data,
                          enum Format* format);
+
+  std::list<std::shared_ptr<FlowUnitFactory>> flowunit_factory_list_;
 
   std::shared_ptr<Drivers> drivers_;
   std::shared_ptr<DeviceManager> device_mgr_;

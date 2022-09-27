@@ -29,13 +29,11 @@ namespace modelbox {
 class FlowGraphTest : public testing::Test {
  protected:
   void SetUp() override {
-    auto flow_cfg = std::make_shared<FlowConfig>();
-    flow_cfg->SetQueueSize(32);
-    flow_cfg->SetBatchSize(8);
-    flow_cfg->SetSkipDefaultDrivers(true);
-    flow_cfg->SetDriversDir({TEST_DRIVER_DIR});
     graph_desc_ = std::make_shared<FlowGraphDesc>();
-    graph_desc_->Init(flow_cfg);
+    graph_desc_->SetQueueSize(32);
+    graph_desc_->SetBatchSize(8);
+    graph_desc_->SetSkipDefaultDrivers(true);
+    graph_desc_->SetDriversDir({TEST_DRIVER_DIR});
   }
 
   std::shared_ptr<FlowGraphDesc> graph_desc_;
@@ -50,9 +48,10 @@ TEST_F(FlowGraphTest, AddNodeTest) {
   graph_desc_->AddOutput("output1", video_demuxer);
 
   auto flow = std::make_shared<Flow>();
-  flow->Init(graph_desc_);
-  flow->StartRun();
+  auto ret = flow->Init(graph_desc_);
+  ASSERT_EQ(ret, STATUS_OK);
 
+  flow->StartRun();
   auto data_map = flow->CreateExternalDataMap();
   auto data_simple = std::make_shared<ExternalDataSimple>(data_map);
   data_simple->PushData("input1", source_url.data(), source_url.size());
@@ -86,9 +85,10 @@ TEST_F(FlowGraphTest, AddFuncTest) {
   graph_desc_->AddOutput("output1", func_node);
 
   auto flow = std::make_shared<Flow>();
-  flow->Init(graph_desc_);
-  flow->StartRun();
+  auto ret = flow->Init(graph_desc_);
+  ASSERT_EQ(ret, STATUS_OK);
 
+  flow->StartRun();
   auto stream_io = flow->CreateStreamIO();
   auto buffer = stream_io->CreateBuffer();
   buffer->Build(10);
@@ -107,6 +107,62 @@ TEST_F(FlowGraphTest, AddFuncTest) {
   for (uint8_t i = 0; i < 10; ++i) {
     EXPECT_EQ(data[i], i + 1);
   }
+}
+
+class CustomFlowUnit : public FlowUnit {
+ public:
+  Status Process(std::shared_ptr<DataContext> data_ctx) override {
+    auto in = data_ctx->Input("in1");
+    EXPECT_EQ(in->Size(), 1);
+    auto in_buffer = in->Front();
+    auto out = data_ctx->Output("out1");
+    out->Build({1});
+    (*((uint8_t *)out->MutableData())) =
+        (*((const uint8_t *)in_buffer->ConstData()));
+    return STATUS_OK;
+  }
+};
+
+class CustomFlowUnitBuilder : public FlowUnitBuilder {
+ public:
+  void Probe(std::string &unit_type,
+             std::shared_ptr<FlowUnitDesc> &desc) override {
+    unit_type = "cpu";
+
+    desc->SetFlowUnitName("custom_flowunit");
+    desc->AddFlowUnitInput({"in1"});
+    desc->AddFlowUnitOutput({"out1"});
+  }
+
+  std::shared_ptr<FlowUnit> Build() override {
+    return std::make_shared<CustomFlowUnit>();
+  }
+};
+
+TEST_F(FlowGraphTest, RegisterFlowUnitTest) {
+  auto input1 = graph_desc_->AddInput("input1");
+  auto node1 = graph_desc_->AddNode("custom_flowunit", "cpu", input1);
+  graph_desc_->AddOutput("output1", node1);
+
+  auto flow = std::make_shared<Flow>();
+  flow->RegisterFlowUnit(std::make_shared<CustomFlowUnitBuilder>());
+  auto ret = flow->Init(graph_desc_);
+  ASSERT_EQ(ret, STATUS_OK);
+
+  ret = flow->StartRun();
+  ASSERT_EQ(ret, STATUS_OK);
+
+  auto stream_io = flow->CreateStreamIO();
+  auto buffer = stream_io->CreateBuffer();
+  buffer->Build(1);
+  auto *buffer_ptr = (uint8_t *)(buffer->MutableData());
+  (*buffer_ptr) = 123;
+  stream_io->Send("input1", buffer);
+
+  auto out_buffer = stream_io->Recv("output1", 0);
+  ASSERT_NE(out_buffer, nullptr);
+  const auto *ptr = (const uint8_t *)out_buffer->ConstData();
+  EXPECT_EQ((*ptr), 123);
 }
 
 }  // namespace modelbox
