@@ -28,7 +28,7 @@
 constexpr const char *FLOWUNIT_NAME = "video_decoder";
 constexpr const char *FLOWUNIT_TYPE = "cuda";
 constexpr const char *FLOWUNIT_DESC =
-    "\n\t@Brief: A resize flowunit on cpu. \n"
+    "\n\t@Brief: A video decoder flowunit on cpu. \n"
     "\t@Port parameter: The input port buffer type is video_packet, the output "
     "port buffer type is video_frame.\n"
     "\t  The video_packet buffer contain the following meta fields:\n"
