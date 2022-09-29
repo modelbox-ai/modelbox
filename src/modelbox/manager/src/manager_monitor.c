@@ -57,15 +57,20 @@ struct app_monitor {
   char cmdline[PATH_MAX];
   char killcmd[PATH_MAX];
   char pid_file[PATH_MAX];
+  int start_limit_interval;
+  int start_limit_burst;
 
   struct hlist_node map;
   pid_t pid;
   pid_t kill_pid;
   time_t last_alive;
+  time_t last_start;
   time_t dead_time;
   int check_alive;
   int check_alive_time;
   int heartbeat_interval;
+  int start_limit_count;
+  int start_limit_log;
   APP_STATUS state;
 };
 
@@ -283,9 +288,28 @@ errout:
 int _app_start(struct app_monitor *app) {
   int pid = -1;
   int unused __attribute__((unused));
+  time_t now;
 
   if (app->pid > 0) {
     return 0;
+  }
+
+  time(&now);
+  if (now - app->last_start < app->start_limit_interval) {
+    app->start_limit_count++;
+    if (app->start_limit_count > app->start_limit_burst) {
+      if (app->start_limit_log == 0) {
+        manager_log(MANAGER_LOG_ERR,
+                    "app %s start limit burst %d, interval %d, skip start",
+                    app->name, app->start_limit_burst,
+                    app->start_limit_interval);
+        app->start_limit_log = 1;
+      }
+      return 0;
+    }
+  } else {
+    app->start_limit_count = 0;
+    app->start_limit_log = 0;
   }
 
 #ifdef BUILD_TEST
@@ -351,6 +375,7 @@ int _app_start(struct app_monitor *app) {
   app->pid = pid;
   app->dead_time = 0;
   time(&app->last_alive);
+  time(&app->last_start);
 
   manager_log(MANAGER_LOG_INFO, "app %s start success, pid %d ", app->name,
               app->pid);
@@ -530,6 +555,8 @@ int app_start(struct app_start_info *start_info) {
   app->state = APP_NOT_RUNNING;
   app->last_alive = 0;
   app->dead_time = 0;
+  app->start_limit_interval = start_info->keepalive_time * 2;
+  app->start_limit_burst = 3;
   app->check_alive = (start_info->check_alive) ? 1 : 0;
   app->check_alive_time = start_info->keepalive_time;
   app->heartbeat_interval = start_info->heartbeat_interval;
@@ -688,9 +715,17 @@ int _app_heartbeat_process(struct heartbeat_msg *msg) {
 
   /* if pid not match, output err message*/
   if (app->pid != msg->pid) {
-    if (_app_exists(app) != 0) {
+    if (_app_pid_exists(msg->pid) != 0) {
+      return 0;
+    }
+
+    if (_app_exists(app) == 0) {
       manager_log(MANAGER_LOG_ERR, "app %s, pid is not match %d:%d", app->name,
                   app->pid, msg->pid);
+      int sig = SIGKILL;
+      manager_log(MANAGER_LOG_ERR, "force kill unknown app %s, pid: %d",
+                  msg->name, msg->pid);
+      killpg(msg->pid, sig);
       return -1;
     }
     /* if pid not exists, update infomation*/

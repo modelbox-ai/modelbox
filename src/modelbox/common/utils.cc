@@ -300,7 +300,8 @@ Status ChownToUser(const std::string &user, const std::string &path) {
 
   return STATUS_OK;
 }
-
+#include <sys/stat.h>
+#include <sys/types.h>
 Status RunAsUser(const std::string &user) {
   struct __user_cap_data_struct cap;
   struct __user_cap_header_struct header;
@@ -328,15 +329,22 @@ Status RunAsUser(const std::string &user) {
   }
 
   prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0);
-  cap.effective |= (1 << CAP_NET_RAW | 1 << CAP_NET_ADMIN);
-  cap.permitted |= (1 << CAP_NET_RAW | 1 << CAP_NET_ADMIN);
+  Defer { prctl(PR_SET_KEEPCAPS, 0, 0, 0, 0); };
+  cap.effective = 1 << CAP_NET_ADMIN;
+  cap.permitted = 1 << CAP_NET_ADMIN;
+  cap.inheritable = 0;
   unused = setgid(gid);
   unused = setuid(uid);
   if (capset(&header, &cap) < 0) {
-    return {STATUS_INVALID, "capset failed: " + StrError(errno)};
+    if (errno == EPERM) {
+      return {STATUS_PERMIT, "capset failed: " + StrError(errno)};
+    }
   }
 
-  prctl(PR_SET_KEEPCAPS, 0, 0, 0, 0);
+  if (getuid() != uid) {
+    return {STATUS_INVALID, "change user failed. " + StrError(errno)};
+  }
+
   return STATUS_OK;
 }
 
