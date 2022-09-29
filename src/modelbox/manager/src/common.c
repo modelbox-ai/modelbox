@@ -82,7 +82,7 @@ pid_t get_pid_from_pidfile(char *pid_file, int *is_locked) {
 
   fd = open(pid_file, O_RDONLY, S_IRUSR | S_IWUSR);
   if (fd == -1) {
-    fprintf(stderr, "open pid file failed, %s\n", strerror(errno));
+    fprintf(stderr, "open pid file %s failed, %s\n", pid_file, strerror(errno));
     return -1;
   }
 
@@ -94,7 +94,7 @@ pid_t get_pid_from_pidfile(char *pid_file, int *is_locked) {
 
   buff[0] = 0;
   if (read(fd, buff, BUF_LEN_32) < 0) {
-    fprintf(stderr, "read pid from file failed, %s.\n", strerror(errno));
+    fprintf(stderr, "read pid from file %s failed, %s.\n", pid_file, strerror(errno));
     goto errout;
   }
 

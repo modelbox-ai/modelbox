@@ -641,7 +641,7 @@ Status Drivers::WriteScanInfo(const std::string &scan_info_path,
                               const std::string &check_code) {
   std::ofstream scan_info_file(scan_info_path);
   if (!scan_info_file.is_open()) {
-    return {STATUS_FAULT, "Open file " + scan_info_path + " for write failed"};
+    return {STATUS_FAULT, "Open file " + scan_info_path + " failed, " + StrError(errno)};
   }
 
   nlohmann::json dump_json;

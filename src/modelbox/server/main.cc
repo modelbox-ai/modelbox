@@ -290,9 +290,11 @@ int modelbox_change_user(const std::string &user_from_cmd,
   }
 
   auto ret = modelbox::RunAsUser(user);
-  if (ret != modelbox::STATUS_OK) {
-    fprintf(stderr, "run as user %s failed, %s\n", user.c_str(),
-            ret.WrapErrormsgs().c_str());
+  if (ret == modelbox::STATUS_PERMIT) {
+    MBLOG_WARN << "change user may fail, " << user << ", " << ret.WrapErrormsgs();
+  } else if (ret != modelbox::STATUS_OK) {
+    MBLOG_ERROR << "run as user " << user << " failed, %s"
+               << ret.WrapErrormsgs();
     return 1;
   }
 
