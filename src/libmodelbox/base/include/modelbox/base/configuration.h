@@ -55,9 +55,12 @@ class ConfigStore {
 
   void Copy(const ConfigStore &store, const std::string &key);
 
+  void SetExpandEnv(bool expand_env) { expand_env_ = expand_env; }
+
  private:
   std::map<std::string, std::string> properties_;
   std::map<std::string, std::set<std::string>> sub_key_index_;
+  bool expand_env_{false};
 
   void AddSubConfig(const std::string &prefix_key, ConfigStore *store,
                     size_t key_offset) const;
@@ -348,11 +351,12 @@ class ConfigurationBuilder {
   std::shared_ptr<Configuration> Build();
 
   std::shared_ptr<Configuration> Build(
-      const std::string &file, const ConfigType &type = ConfigType::TOML);
+      const std::string &file, const ConfigType &type = ConfigType::TOML,
+      bool expand_env = false);
 
   std::shared_ptr<Configuration> Build(
       std::istream &is, const std::string &fname = "unknown file",
-      const ConfigType &type = ConfigType::TOML);
+      const ConfigType &type = ConfigType::TOML, bool expand_env = false);
 
  private:
   std::shared_ptr<ConfigParser> CreateParser(

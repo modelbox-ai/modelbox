@@ -44,7 +44,7 @@ std::shared_ptr<modelbox::Configuration> LoadSubConfig(
     const std::string &file) {
   modelbox::ConfigurationBuilder config_builder;
 
-  auto curr_config = config_builder.Build(file);
+  auto curr_config = config_builder.Build(file, ConfigType::TOML, true);
   if (curr_config == nullptr) {
     MBLOG_ERROR << "Load config file " << file
                 << " failed, detail: " << modelbox::StatusError.Errormsg();

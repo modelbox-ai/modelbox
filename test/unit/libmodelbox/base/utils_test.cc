@@ -427,4 +427,18 @@ TEST_F(BaseUtilsTest, StrError) {
   EXPECT_EQ(modelbox::StrError(err), strerror(err));
 }
 
+TEST_F(BaseUtilsTest, ExpandEnvironmentVariables) {
+  EXPECT_EQ("test", ExpandEnvironmentVariables("test"));
+  setenv("BUTEST", "butest", true);
+  EXPECT_EQ("butest", ExpandEnvironmentVariables("${BUTEST}"));
+  EXPECT_EQ("testbutest", ExpandEnvironmentVariables("test${BUTEST}"));
+  EXPECT_EQ("butesttest", ExpandEnvironmentVariables("${BUTEST}test"));
+  EXPECT_EQ("testbutesttest", ExpandEnvironmentVariables("test${BUTEST}test"));
+  setenv("BUINNER", "TES", true);
+  EXPECT_EQ("testbutesttest",
+            ExpandEnvironmentVariables("test${BU${BUINNER}T}test"));
+  unsetenv("BUINNER");
+  unsetenv("BUTEST");
+}
+
 }  // namespace modelbox

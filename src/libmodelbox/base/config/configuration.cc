@@ -36,7 +36,8 @@ class TomlConfigParser : public ConfigParser {
 
 void ConfigStore::WriteProperty(const std::string &key,
                                 const std::string &property) {
-  properties_[key] = property;
+  properties_[key] =
+      expand_env_ ? ExpandEnvironmentVariables(property) : property;
 
   auto prefix_key = key;
   auto period_pos = prefix_key.find_last_of('.');
@@ -691,7 +692,7 @@ std::shared_ptr<Configuration> ConfigurationBuilder::Build() {
 }
 
 std::shared_ptr<Configuration> ConfigurationBuilder::Build(
-    const std::string &file, const ConfigType &type) {
+    const std::string &file, const ConfigType &type, bool expand_env) {
   std::ifstream ifs(file.c_str());
   if (!ifs.good()) {
     auto msg = "file open " + file + " error: " + StrError(errno);
@@ -700,17 +701,19 @@ std::shared_ptr<Configuration> ConfigurationBuilder::Build(
     return nullptr;
   }
 
-  return Build(ifs, file, type);
+  return Build(ifs, file, type, expand_env);
 }
 
 std::shared_ptr<Configuration> ConfigurationBuilder::Build(
-    std::istream &is, const std::string &fname, const ConfigType &type) {
+    std::istream &is, const std::string &fname, const ConfigType &type,
+    bool expand_env) {
   auto parser = CreateParser(type);
   if (parser == nullptr) {
     return nullptr;
   }
 
   store_.reset(new ConfigStore());
+  store_->SetExpandEnv(expand_env);
   std::shared_ptr<Configuration> config(new Configuration(store_));
   auto ret = parser->Parse(config, is, fname);
   if (ret != STATUS_SUCCESS) {
