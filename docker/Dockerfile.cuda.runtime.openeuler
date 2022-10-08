@@ -3,7 +3,6 @@ FROM ${BASE_IMAGE} as base
 
 COPY release /opt/release
 COPY docker/repo/*.repo /etc/yum.repos.d/
-
 ADD *.tar.gz /usr/local/
 
 ARG CUDA_VER
@@ -21,7 +20,7 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shang
     dnf update -y --nogpgcheck && \
     dnf install -y --nogpgcheck curl boost libnsl libssh2 libatomic mesa-libGL graphviz protobuf-c \
         systemd fuse libxml2 openssl bc && \
-    ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python && \
+    ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python3 && \
     dnf clean all && rm -rf /var/cache/dnf/*
 
 RUN mkdir -p /root/.pip && \
@@ -30,7 +29,7 @@ RUN mkdir -p /root/.pip && \
     echo "trusted-host = pypi.python.org" >>/root/.pip/pip.conf && \
     echo "timeout = 120" >>/root/.pip/pip.conf && \
     python3 -m pip install --upgrade pip && \
-    python3 -m pip install --no-cache-dir wheel numpy pyyaml requests opencv-python==4.5.5.64 pillow && \
+    python3 -m pip install --no-cache-dir psutil pillow wheel numpy pyyaml requests opencv-python==4.5.5.64 && \
     NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
     echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict - && \
@@ -86,17 +85,17 @@ RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && 
     echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
     echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf && \
     echo "export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig" > /etc/profile.d/pkgconfig.sh && \
-    ldconfig -v 2>/dev/null && systemctl enable modelbox
+    echo "ldconfig &>/dev/null" >> /etc/bashrc && systemctl enable modelbox
 
 VOLUME ["/sys/fs/cgroup", "/tmp", "/run", "/run/lock"]
 STOPSIGNAL SIGRTMIN+3
 
 LABEL com.nvidia.volumes.needed="nvidia_driver" com.nvidia.cuda.verison="${NVIDIA_CUDA_VERSION}"
 
-ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin${PATH:+:${PATH}}
-ENV LD_LIBRARY_PATH=/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES video,compute,utility
-ENV NVIDIA_REQUIRE_CUDA "${NVIDIA_REQUIRE_CUDA}"
+ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin${PATH:+:${PATH}}
+ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=video,compute,utility
+ENV NVIDIA_REQUIRE_CUDA="${NVIDIA_REQUIRE_CUDA}"
 
 CMD ["/usr/sbin/init", "--log-target=journal"]

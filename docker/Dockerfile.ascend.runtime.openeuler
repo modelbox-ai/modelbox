@@ -3,7 +3,7 @@ FROM openeuler/openeuler:20.03-lts-sp3
 
 COPY release /opt/release
 COPY --from=0 /usr/local/Ascend_run /usr/local/Ascend
-
+COPY --from=0 /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi
 ADD *.tar.gz /usr/local/
 
 ARG ASCEND_PATH=/usr/local/Ascend
@@ -23,7 +23,7 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shang
     dnf update -y --nogpgcheck && \
     dnf install -y --nogpgcheck curl boost libnsl libssh2 libatomic mesa-libGL graphviz protobuf-c \
         systemd openblas gcc python3-devel lapack python3-perf fuse libxml2 openssl bc && \
-    ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python && \
+    ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python3 && \
     dnf clean all && rm -rf /var/cache/dnf/*
 
 RUN mkdir -p /root/.pip && \
@@ -59,7 +59,7 @@ RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && 
     rm -f /lib/systemd/system/basic.target.wants/*; \
     rm -f /lib/systemd/system/anaconda.target.wants/*; \
     sed -i 's/^SystemMaxUse=.*/SystemMaxUse=16M/g' /etc/systemd/journald.conf && \
-    ldconfig -v 2>/dev/null|grep "libascend_hal.so" && systemctl enable modelbox
+    echo "ldconfig &>/dev/null" >> /etc/bashrc && systemctl enable modelbox
 
 VOLUME ["/sys/fs/cgroup", "/tmp", "/run", "/run/lock"]
 STOPSIGNAL SIGRTMIN+3

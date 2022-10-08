@@ -3,7 +3,6 @@ FROM ${BASE_IMAGE} as base
 
 COPY release /opt/release
 COPY docker/repo/*.repo /etc/yum.repos.d/
-
 ADD *.tar.gz /usr/local/
 
 ARG CUDA_VER
@@ -24,7 +23,7 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shang
         rpm-build gcc-gfortran alsa-lib nss-devel fuse-devel gdbm-devel krb5-devel expat-devel curl-devel bzip2-devel bc \
         boost-devel ncurses-devel libxml2-devel libssh2-devel openssh-server python3-devel glibc-debuginfo libatomic systemd \
         git clang xauth graphviz-devel sqlite-devel openssl-devel readline-devel mesa-libGL-devel protobuf-c-devel passwd && \
-    ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python && \
+    ln -sf pip3.7 /usr/bin/pip && ln -sf python3.7 /usr/bin/python3 && \
     ln -sf opencv4/opencv2 /usr/local/include/opencv2 && \
     dnf clean all && rm -rf /var/cache/dnf/*
 
@@ -34,7 +33,7 @@ RUN mkdir -p /root/.pip && \
     echo "trusted-host = pypi.python.org" >>/root/.pip/pip.conf && \
     echo "timeout = 120" >>/root/.pip/pip.conf && \
     python3 -m pip install --upgrade pip && \
-    python3 -m pip install --no-cache-dir wheel numpy pyyaml requests opencv-python==4.5.5.64 pillow && \
+    python3 -m pip install --no-cache-dir psutil pillow wheel numpy pyyaml requests opencv-python==4.5.5.64 && \
     NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
     echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict - && \
@@ -105,7 +104,7 @@ RUN python3 -m pip install --no-cache-dir /opt/release/python/modelbox-*.whl && 
     echo "export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig" > /etc/profile.d/pkgconfig.sh && \
     echo '[ -n "${SSH_TTY}" ] && export $(cat /proc/1/environ|tr "\\0" "\\n"|xargs)' >> /etc/bashrc && \
     echo 'export PS1="\[\e[35;1m\][\u@\h \W]$ \[\e[0m\]"' >> /etc/bashrc && \
-    ldconfig -v 2>/dev/null && systemctl enable sshd
+    echo "ldconfig &>/dev/null" >> /etc/bashrc && systemctl enable sshd
 
 VOLUME ["/sys/fs/cgroup", "/tmp", "/run", "/run/lock"]
 STOPSIGNAL SIGRTMIN+3
@@ -113,7 +112,7 @@ STOPSIGNAL SIGRTMIN+3
 LABEL com.nvidia.volumes.needed="nvidia_driver" com.nvidia.cuda.verison="${NVIDIA_CUDA_VERSION}"
 
 ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin${PATH:+:${PATH}}
-ENV LD_LIBRARY_PATH=/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES video,compute,utility
 ENV NVIDIA_REQUIRE_CUDA "${NVIDIA_REQUIRE_CUDA}"
