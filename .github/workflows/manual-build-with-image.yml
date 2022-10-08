@@ -48,4 +48,3 @@ jobs:
         make build-test -j8
         unset LD_LIBRARY_PATH
         make unittest
-      shell: bash

@@ -37,7 +37,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -56,26 +56,26 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_cuda112_trt_ubuntu
         path: artifact
 
   build_cuda112_trt_ubuntu_develop_image:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: compile_cuda112_trt_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda112_trt_ubuntu
           path: .
@@ -83,7 +83,7 @@ jobs:
         run: ./docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -100,20 +100,20 @@ jobs:
             ${{ needs.compile_cuda112_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
 
   build_cuda112_trt_ubuntu_runtime_image:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: compile_cuda112_trt_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda112_trt_ubuntu
           path: .
@@ -121,7 +121,7 @@ jobs:
         run: ./docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -144,7 +144,7 @@ jobs:
       image: ${{ needs.compile_cuda112_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -182,7 +182,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -201,26 +201,26 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_cuda112_tf_ubuntu
         path: artifact
           
   build_cuda112_tf_ubuntu_develop_image:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: compile_cuda112_tf_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda112_tf_ubuntu
           path: .
@@ -228,7 +228,7 @@ jobs:
         run: ./docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -245,20 +245,20 @@ jobs:
             ${{ needs.compile_cuda112_tf_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
 
   build_cuda112_tf_ubuntu_runtime_image:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: compile_cuda112_tf_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda112_tf_ubuntu
           path: .
@@ -266,7 +266,7 @@ jobs:
         run: ./docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -289,7 +289,7 @@ jobs:
       image: ${{ needs.compile_cuda112_tf_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -327,7 +327,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_7.1.3-cuda_10.2-ubuntu-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_7.1.3-cuda_10.2-ubuntu-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -346,7 +346,7 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_cuda102_trt_ubuntu
         path: artifact
@@ -356,29 +356,33 @@ jobs:
     needs: compile_cuda102_trt_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda102_trt_ubuntu
           path: .
       - name: Download for dev package
-        run: ./docker/prepare_for_dev.sh
+        run: |
+          sed -i 's/python3.9/python3.7/g' docker/Dockerfile.cuda.develop.ubuntu
+          sed -i 's/ubuntu2004/ubuntu1804/g' docker/Dockerfile.cuda.develop.ubuntu
+          bash docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
           file: docker/Dockerfile.cuda.develop.ubuntu
           build-args: |
+            BASE_IMAGE=ubuntu:18.04
             CUDA_VER=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_VER }}
             CUDA_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_VERSION }}
             TRT_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.TRT_VERSION }}
@@ -394,29 +398,34 @@ jobs:
     needs: compile_cuda102_trt_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda102_trt_ubuntu
           path: .
       - name: Download for run package
-        run: ./docker/prepare_for_run.sh
+        run: |
+          sed -i 's/python3.9/python3.7/g' docker/Dockerfile.cuda.runtime.ubuntu
+          sed -i 's/libduktape205/libduktape202/g' docker/Dockerfile.cuda.runtime.ubuntu
+          sed -i 's/ubuntu2004/ubuntu1804/g' docker/Dockerfile.cuda.runtime.ubuntu
+          bash docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
           file: docker/Dockerfile.cuda.runtime.ubuntu
           build-args: |
+            BASE_IMAGE=ubuntu:18.04
             CUDA_VER=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_VER }}
             CUDA_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.CUDA_VERSION }}
             TRT_VERSION=${{ needs.compile_cuda102_trt_ubuntu.outputs.TRT_VERSION }}
@@ -434,7 +443,7 @@ jobs:
       image: ${{ needs.compile_cuda102_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -472,7 +481,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-libtorch_1.9.1-cuda_10.2-ubuntu-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-libtorch_1.9.1-cuda_10.2-ubuntu-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -491,7 +500,7 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_cuda102_torch_ubuntu
         path: artifact
@@ -501,29 +510,33 @@ jobs:
     needs: compile_cuda102_torch_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda102_torch_ubuntu
           path: .
       - name: Download for dev package
-        run: ./docker/prepare_for_dev.sh
+        run: |
+          sed -i 's/python3.9/python3.7/g' docker/Dockerfile.cuda.develop.ubuntu
+          sed -i 's/ubuntu2004/ubuntu1804/g' docker/Dockerfile.cuda.develop.ubuntu
+          bash docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
           file: docker/Dockerfile.cuda.develop.ubuntu
           build-args: |
+            BASE_IMAGE=ubuntu:18.04
             CUDA_VER=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_VER }}
             CUDA_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_VERSION }}
             TORCH_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.TORCH_VERSION }}
@@ -539,29 +552,34 @@ jobs:
     needs: compile_cuda102_torch_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda102_torch_ubuntu
           path: .
       - name: Download for run package
-        run: ./docker/prepare_for_run.sh
+        run: |
+          sed -i 's/python3.9/python3.7/g' docker/Dockerfile.cuda.runtime.ubuntu
+          sed -i 's/libduktape205/libduktape202/g' docker/Dockerfile.cuda.runtime.ubuntu
+          sed -i 's/ubuntu2004/ubuntu1804/g' docker/Dockerfile.cuda.runtime.ubuntu
+          bash docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
           file: docker/Dockerfile.cuda.runtime.ubuntu
           build-args: |
+            BASE_IMAGE=ubuntu:18.04
             CUDA_VER=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_VER }}
             CUDA_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.CUDA_VERSION }}
             TORCH_VERSION=${{ needs.compile_cuda102_torch_ubuntu.outputs.TORCH_VERSION }}
@@ -579,7 +597,7 @@ jobs:
       image: ${{ needs.compile_cuda102_torch_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -605,7 +623,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-ubuntu-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-mindspore_1.6.1-cann_5.0.4-ubuntu-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -624,26 +642,26 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_x86d_ubuntu
         path: artifact
 
   build_x86d_ubuntu_develop_image:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: compile_x86d_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_x86d_ubuntu
           path: .
@@ -651,7 +669,7 @@ jobs:
         run: ./docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -661,20 +679,20 @@ jobs:
             ${{ needs.compile_x86d_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
 
   build_x86d_ubuntu_runtime_image:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: compile_x86d_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_x86d_ubuntu
           path: .
@@ -682,7 +700,7 @@ jobs:
         run: ./docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -698,7 +716,7 @@ jobs:
       image: ${{ needs.compile_x86d_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -723,7 +741,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-ubuntu-aarch64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-mindspore_1.6.1-cann_5.0.4-ubuntu-aarch64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -748,11 +766,11 @@ jobs:
     needs: compile_armd_ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -762,7 +780,7 @@ jobs:
         run: ./docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -776,11 +794,11 @@ jobs:
     needs: [compile_armd_ubuntu,build_armd_ubuntu_develop_image]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -790,7 +808,7 @@ jobs:
         run: ./docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -804,7 +822,7 @@ jobs:
     needs: build_armd_ubuntu_develop_image
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -813,7 +831,8 @@ jobs:
     - name: Test
       working-directory: build
       run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}') || true
+        export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
         make build-test -j8
         make unittest
 
@@ -842,7 +861,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -861,7 +880,7 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_cuda112_trt_openeuler
         path: artifact
@@ -871,24 +890,26 @@ jobs:
     needs: compile_cuda112_trt_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda112_trt_openeuler
           path: .
       - name: Download for dev package
-        run: ./docker/prepare_for_dev.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_dev.sh
+          bash docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -909,24 +930,26 @@ jobs:
     needs: compile_cuda112_trt_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda112_trt_openeuler
           path: .
       - name: Download for run package
-        run: ./docker/prepare_for_run.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_run.sh
+          bash docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -949,7 +972,7 @@ jobs:
       image: ${{ needs.compile_cuda112_trt_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -987,7 +1010,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1006,7 +1029,7 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_cuda112_tf_openeuler
         path: artifact
@@ -1016,24 +1039,26 @@ jobs:
     needs: compile_cuda112_tf_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda112_tf_openeuler
           path: .
       - name: Download for dev package
-        run: ./docker/prepare_for_dev.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_dev.sh
+          bash docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1054,24 +1079,26 @@ jobs:
     needs: compile_cuda112_tf_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda112_tf_openeuler
           path: .
       - name: Download for run package
-        run: ./docker/prepare_for_run.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_run.sh
+          bash docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1094,7 +1121,7 @@ jobs:
       image: ${{ needs.compile_cuda112_tf_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1132,7 +1159,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-tensorrt_7.1.3-cuda_10.2-openeuler-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-tensorrt_7.1.3-cuda_10.2-openeuler-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1151,7 +1178,7 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_cuda102_trt_openeuler
         path: artifact
@@ -1161,24 +1188,26 @@ jobs:
     needs: compile_cuda102_trt_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda102_trt_openeuler
           path: .
       - name: Download for dev package
-        run: ./docker/prepare_for_dev.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_dev.sh
+          bash docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1199,24 +1228,26 @@ jobs:
     needs: compile_cuda102_trt_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda102_trt_openeuler
           path: .
       - name: Download for run package
-        run: ./docker/prepare_for_run.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_run.sh
+          bash docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1239,7 +1270,7 @@ jobs:
       image: ${{ needs.compile_cuda102_trt_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1277,7 +1308,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-libtorch_1.9.1-cuda_10.2-openeuler-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-libtorch_1.9.1-cuda_10.2-openeuler-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1296,7 +1327,7 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_cuda102_torch_openeuler
         path: artifact
@@ -1306,24 +1337,26 @@ jobs:
     needs: compile_cuda102_torch_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda102_torch_openeuler
           path: .
       - name: Download for dev package
-        run: ./docker/prepare_for_dev.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_dev.sh
+          bash docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1344,24 +1377,26 @@ jobs:
     needs: compile_cuda102_torch_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_cuda102_torch_openeuler
           path: .
       - name: Download for run package
-        run: ./docker/prepare_for_run.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_run.sh
+          bash docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1384,7 +1419,7 @@ jobs:
       image: ${{ needs.compile_cuda102_torch_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1410,7 +1445,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-openeuler-x86_64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-mindspore_1.6.1-cann_5.0.4-openeuler-x86_64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1429,7 +1464,7 @@ jobs:
         cp -af build/release artifact/
         ls -lh artifact
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: modelbox_x86d_openeuler
         path: artifact
@@ -1439,24 +1474,26 @@ jobs:
     needs: compile_x86d_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_x86d_openeuler
           path: .
       - name: Download for dev package
-        run: ./docker/prepare_for_dev.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_dev.sh
+          bash docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1470,24 +1507,26 @@ jobs:
     needs: compile_x86d_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.0.0
         with:
           name: modelbox_x86d_openeuler
           path: .
       - name: Download for run package
-        run: ./docker/prepare_for_run.sh
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_run.sh
+          bash docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1503,7 +1542,7 @@ jobs:
       image: ${{ needs.compile_x86d_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1529,7 +1568,7 @@ jobs:
         echo "::set-output name=IMAGE_NAME_DEV::modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-openeuler-aarch64"
         echo "::set-output name=IMAGE_NAME_RUN::modelbox/modelbox-runtime-mindspore_1.6.1-cann_5.0.4-openeuler-aarch64"
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1554,11 +1593,11 @@ jobs:
     needs: compile_armd_openeuler
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -1568,7 +1607,7 @@ jobs:
         run: ./docker/prepare_for_dev.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1582,11 +1621,11 @@ jobs:
     needs: [compile_armd_openeuler,build_armd_openeuler_develop_image]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -1596,7 +1635,7 @@ jobs:
         run: ./docker/prepare_for_run.sh
         shell: bash
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3.1.1
         with:
           push: true
           context: .
@@ -1610,7 +1649,7 @@ jobs:
     needs: build_armd_openeuler_develop_image
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
     - name: CMake
       run: |
         mkdir build
@@ -1619,6 +1658,6 @@ jobs:
     - name: Test
       working-directory: build
       run: |
-        rpm -e $(rpm -qa|grep modelbox)
+        rpm -e $(rpm -qa|grep modelbox) || true
         make build-test -j8
         make unittest

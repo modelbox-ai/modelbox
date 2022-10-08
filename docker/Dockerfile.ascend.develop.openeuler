@@ -4,7 +4,6 @@ FROM openeuler/openeuler:20.03-lts-sp3
 COPY release /opt/release
 COPY --from=0 /usr/local/Ascend_dev /usr/local/Ascend
 COPY --from=0 /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi
-
 ADD *.tar.gz /usr/local/
 
 ARG ASCEND_PATH=/usr/local/Ascend
@@ -89,7 +88,7 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; \
     echo 'export HISTSIZE=1000' >> /etc/bashrc && \
     echo '[ -n "${SSH_TTY}" ] && export $(cat /proc/1/environ|tr "\\0" "\\n"|xargs)' >> /etc/bashrc && \
     echo 'export PS1="\[\e[35;1m\][\u@\h \W]$ \[\e[0m\]"' >> /etc/bashrc && \
-    ldconfig -v 2>/dev/null|grep "libascend_hal.so" && systemctl enable sshd
+    echo "ldconfig &>/dev/null" >> /etc/bashrc && systemctl enable sshd
 
 VOLUME ["/sys/fs/cgroup", "/tmp", "/run", "/run/lock"]
 STOPSIGNAL SIGRTMIN+3
