@@ -48,7 +48,8 @@ const char Separator = '\\';
 const char Separator = '/';
 #endif
 
-DeferGuard::DeferGuard(DeferGuard &&other) noexcept : fn_(std::move(other.fn_)) {
+DeferGuard::DeferGuard(DeferGuard &&other) noexcept
+    : fn_(std::move(other.fn_)) {
   other.fn_ = nullptr;
 }
 
@@ -600,6 +601,24 @@ const char *GetModelBoxVersion() {
              MODELBOX_VERSION_PATCH, tm.tm_year + 1900, tm.tm_mon + 1,
              tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
   return str_ver;
+}
+
+std::string ExpandEnvironmentVariables(const std::string &text) {
+  std::string text_copies = text;
+  static std::regex env(R"(((?!(\\)).|^)(\$\{([a-zA-Z0-9_]+)\}))");
+  static std::regex escape(R"((\\\$)\{([a-zA-Z0-9_]+)\})");
+  std::smatch match;
+  while (std::regex_search(text_copies, match, env)) {
+    const char *env_value = std::getenv(match[4].str().c_str());
+    const std::string var(env_value == nullptr ? "" : env_value);
+    text_copies.replace(match[3].first, match[3].second, var);
+  }
+
+  while (std::regex_search(text_copies, match, escape)) {
+    text_copies.replace(match[1].first, match[1].second, "$");
+  }
+
+  return std::move(text_copies);
 }
 
 }  // namespace modelbox

@@ -484,5 +484,11 @@ std::string StrError(int errnum);
  */
 const char *GetModelBoxVersion();
 
+/**
+ * @brief expand environment variable
+ * @return expand env text
+ */
+std::string ExpandEnvironmentVariables(const std::string &text);
+
 }  // namespace modelbox
 #endif  // MODELBOX_UTILS_H_
