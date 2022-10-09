@@ -585,7 +585,7 @@ Status TomlConfigParser::Visit(
     for (const auto &v : array) {
       if (index > 0) {
         ss << LIST_DELIMITER;
-      };
+      }
       ss << v.as_string().str;
       index++;
     }

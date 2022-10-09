@@ -29,7 +29,8 @@
 #include "modelbox/base/status.h"
 
 namespace modelbox {
-constexpr const char *LIST_DELIMITER = "~";
+// ETX (end of text) is used as a separator between values
+constexpr const char *LIST_DELIMITER = "\003";
 constexpr const uint32_t VALID_RANGE_OF_DOUBLE = 15;
 
 class ConfigStore {
