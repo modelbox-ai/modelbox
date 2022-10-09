@@ -267,11 +267,11 @@ TEST_F(FlowUnitTest, CreateFlowUnitFail) {
   EXPECT_EQ(flowunit.size(), 0);
   flowunit = flowunit_mgr->CreateFlowUnit("httpserver", "cpu:0,1");
   EXPECT_EQ(flowunit.size(), 1);
-  flowunit = flowunit_mgr->CreateFlowUnit("httpserver", "cpu:0~1");
+  flowunit = flowunit_mgr->CreateFlowUnit("httpserver", "cpu:0" + std::string(LIST_DELIMITER) + "1");
   EXPECT_EQ(flowunit.size(), 1);
   flowunit = flowunit_mgr->CreateFlowUnit("httpserver", "cpu:0,1;cuda");
   EXPECT_EQ(flowunit.size(), 1);
-  flowunit = flowunit_mgr->CreateFlowUnit("httpserver", "cpu:0~1;cuda");
+  flowunit = flowunit_mgr->CreateFlowUnit("httpserver", "cpu:0" + std::string(LIST_DELIMITER) + "1;cuda");
   EXPECT_EQ(flowunit.size(), 1);
   flowunit = flowunit_mgr->CreateFlowUnit("httpserver", "cpu:0:1;cuda");
   EXPECT_EQ(flowunit.size(), 0);

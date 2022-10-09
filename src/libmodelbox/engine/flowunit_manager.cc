@@ -240,8 +240,8 @@ Status FlowUnitManager::ParseUserDeviceConf(const std::string &unit_type,
    * what we get from configuration will be: unit_type = "cuda:0~1;cpu"
    **/
   auto unit_type_formatted = unit_type;
-  std::replace(unit_type_formatted.begin(), unit_type_formatted.end(), '~',
-               ',');
+  std::replace(unit_type_formatted.begin(), unit_type_formatted.end(),
+               LIST_DELIMITER[0], ',');
   auto device_list = StringSplit(unit_type_formatted, ';');
   for (auto &device_info : device_list) {
     auto data = StringSplit(device_info, ':');

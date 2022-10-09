@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/base/configuration.h"
 
 #include <fstream>
@@ -207,13 +206,23 @@ TEST_F(ConfigurationTest, GetFloatTest) {
 
 TEST_F(ConfigurationTest, GetVectorTest) {
   ConfigurationBuilder builder;
-  builder.AddProperty("1", "1~0~true~false");
-  builder.AddProperty("2", "1~0~true~false~g");
-  builder.AddProperty("3", "1~0~-3~5~-9");
+  builder.AddProperty("1", std::string("1") + LIST_DELIMITER + "0" +
+                               LIST_DELIMITER + "true" + LIST_DELIMITER +
+                               "false");
+  builder.AddProperty("2", std::string("1") + LIST_DELIMITER + "0" +
+                               LIST_DELIMITER + "true" + LIST_DELIMITER +
+                               "false" + LIST_DELIMITER + "g");
+  builder.AddProperty("3", std::string("1") + LIST_DELIMITER + "0" +
+                               LIST_DELIMITER + "-3" + LIST_DELIMITER + "5" +
+                               LIST_DELIMITER + "-9");
   std::vector<int8_t> int_result = {1, 0, -3, 5, -9};
-  builder.AddProperty("4", "1~0~3~5~22");
+  builder.AddProperty("4", std::string("1") + LIST_DELIMITER + "0" +
+                               LIST_DELIMITER + "3" + LIST_DELIMITER + "5" +
+                               LIST_DELIMITER + "22");
   std::vector<uint8_t> uint_result = {1, 0, 3, 5, 22};
-  builder.AddProperty("5", "1.0~0.0~3.45645641~551631.13124~-22e+10");
+  builder.AddProperty("5", std::string("1.0") + LIST_DELIMITER + "0.0" +
+                               LIST_DELIMITER + "3.45645641" + LIST_DELIMITER +
+                               "551631.13124" + LIST_DELIMITER + "-22e+10");
   std::vector<float> float_result = {1.0, 0, 3.45645641, 551631.13124, -22e+10};
   std::vector<double> double_result = {1.0, 0, 3.45645641, 551631.13124,
                                        -22e+10};
@@ -301,7 +310,8 @@ TEST_F(ConfigurationTest, SetPropertyTest) {
   auto float_list = std::vector<float>{1.1F, 2.2F, 3.3F};
   config->SetProperty("6", float_list);
 
-  EXPECT_EQ(config->GetString("5"), "1~2~3");
+  EXPECT_EQ(config->GetString("5"),
+            std::string("1") + LIST_DELIMITER + "2" + LIST_DELIMITER + "3");
   auto res = config->GetFloats("6");
   EXPECT_EQ(res.size(), float_list.size());
   for (size_t i = 0; i < float_list.size(); ++i) {
