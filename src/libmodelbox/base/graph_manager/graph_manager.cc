@@ -20,6 +20,48 @@
 
 namespace modelbox {
 
+std::vector<std::string> SplitByCommaIgnoreQuotes(const std::string &str) {
+  std::string value;
+  std::vector<std::string> values;
+  char quoteChar = 0;
+
+  for (char ch : str) {
+    if (quoteChar == '\\') {
+      value.push_back(ch);
+      quoteChar = 0;
+      continue;
+    }
+
+    if (quoteChar && ch != quoteChar) {
+      value.push_back(ch);
+      continue;
+    }
+
+    switch (ch) {
+      case '\'':
+      case '\"':
+      case '\\':
+        quoteChar = quoteChar ? 0 : ch;
+        break;
+      case ',':
+        if (!value.empty()) {
+          values.push_back(value);
+          value.clear();
+        }
+        break;
+      default:
+        value.push_back(ch);
+        break;
+    }
+  }
+
+  if (!value.empty()) {
+    values.push_back(value);
+  }
+
+  return values;
+}
+
 GCNode::GCNode() = default;
 
 GCNode::~GCNode() = default;
@@ -62,8 +104,7 @@ void GCNode::SetNodeType(std::string type) { type_ = std::move(type); }
 
 void GCNode::SetConfiguration(const std::string &key,
                               const std::string &value) {
-  std::vector<std::string> sub_str_list;
-  Configuration::StringSplit(value, ",", sub_str_list);
+  auto sub_str_list = SplitByCommaIgnoreQuotes(value);
   for (auto &str : sub_str_list) {
     Configuration::Trim(&str);
   }
@@ -137,8 +178,7 @@ Status GCEdge::SetTailPort(std::string port) {
 
 void GCEdge::SetConfiguration(const std::string &key,
                               const std::string &value) {
-  std::vector<std::string> sub_str_list;
-  Configuration::StringSplit(value, ",", sub_str_list);
+  auto sub_str_list = SplitByCommaIgnoreQuotes(value);
   for (auto &str : sub_str_list) {
     Configuration::Trim(&str);
   }
@@ -268,8 +308,7 @@ std::shared_ptr<Configuration> GCGraph::GetConfiguration() const {
 
 void GCGraph::SetConfiguration(const std::string &key,
                                const std::string &value) {
-  std::vector<std::string> sub_str_list;
-  Configuration::StringSplit(value, ",", sub_str_list);
+  auto sub_str_list = SplitByCommaIgnoreQuotes(value);
   for (auto &str : sub_str_list) {
     Configuration::Trim(&str);
   }

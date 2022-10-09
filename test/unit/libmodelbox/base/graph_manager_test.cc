@@ -77,16 +77,15 @@ class GraphManagerTest : public testing::Test {
     ConfigurationBuilder builder;
     config_ = builder.Build();
 
-    conf_file_value_ =
-        "digraph demo {                               \
-          bgcolor=\"beige\"                           \
-          node [shape=\"record\", height=.1]          \
-          node0[label=\"<f0> | <f1> G | <f2>\"]       \
-          node1[label=\"<f0> | <f1> E | <f2>\"]       \
-          node2[label=\"<f0> | <f1> B | <f2>\"]       \
-          node0:f0 -> node1:f1                        \
-          node0:f2 -> node2:f1                        \
-      }";
+    conf_file_value_ =R"(digraph demo { 
+          bgcolor="beige"                    
+          node [shape="record", height=.1]   
+          node0[label="<f0> | <f1> G | <f2>" A="1,2,3"]
+          node1[label="<f0> | <f1> E | <f2>" A="\"1,2,3\""]
+          node2[label="<f0> | <f1> B | <f2>" A="1,2\,3"]
+          node0:f0 -> node1:f1                 
+          node0:f2 -> node2:f1                 
+      })";
 
     conf_file_name_ = std::string(TEST_DATA_DIR) + "/test_graph.gv";
     SaveConfigFile(conf_file_name_, conf_file_value_);
@@ -260,11 +259,27 @@ TEST_F(GraphManagerTest, NodeFile) {
   auto node0 = gcgraph->GetNode("node0");
   EXPECT_NE(node0, nullptr);
 
+  auto node0_config = node0->GetConfiguration();
+  auto values = node0_config->GetStrings("A");
+  ASSERT_EQ(values.size(), 3);
+  EXPECT_EQ(values[0], "1");
+  EXPECT_EQ(values[1], "2");
+  EXPECT_EQ(values[2], "3");
+
   auto node1 = gcgraph->GetNode("node1");
-  EXPECT_NE(node1, nullptr);
+  ASSERT_NE(node1, nullptr);
+  auto node1_config = node1->GetConfiguration();
+  values = node1_config->GetStrings("A");
+  ASSERT_EQ(values.size(), 1);
+  EXPECT_EQ(values[0], "1,2,3");
 
   auto node2 = gcgraph->GetNode("node2");
   EXPECT_NE(node2, nullptr);
+  auto node2_config = node2->GetConfiguration();
+  values = node2_config->GetStrings("A");
+  ASSERT_EQ(values.size(), 2);
+  EXPECT_EQ(values[0], "1");
+  EXPECT_EQ(values[1], "2,3");
 
   auto err_node = gcgraph->GetNode("err_node");
   EXPECT_EQ(err_node, nullptr);
