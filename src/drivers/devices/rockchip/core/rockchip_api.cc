@@ -163,12 +163,17 @@ Status GetRGAFromImgBuffer(std::shared_ptr<Buffer> &in_img, RgaSURF_FORMAT fmt,
     in_hstride = in_height;
   }
 
-  if (in_wstride % MPP_ALIGN_WIDTH != 0 || in_hstride % MPP_ALIGN_HEIGHT != 0) {
+  if (in_img->GetDeviceMemory()->IsHost()) {
     rgb_buf = wrapbuffer_virtualaddr(
         mpp_buffer_get_ptr((MppBuffer)(in_img->ConstData())), in_width,
         in_height, fmt, in_wstride, in_hstride);
-
   } else {
+    if (in_wstride % MPP_ALIGN_WIDTH != 0 ||
+        in_hstride % MPP_ALIGN_HEIGHT != 0) {
+      MBLOG_ERROR << "mpp buffer not align";
+      return {STATUS_FAULT, "mpp buffer not align"};
+    }
+
     rgb_buf = wrapbuffer_fd(mpp_buffer_get_fd((MppBuffer)(in_img->ConstData())),
                             in_width, in_height, fmt, in_wstride, in_hstride);
   }
@@ -463,11 +468,13 @@ Status MppJpegDecode::DecPkt(MppPacket &packet, int w, int h) {
   MppTask task = nullptr;
   if (packet == nullptr) {
     auto msg = std::string("packet is null");
+    MBLOG_ERROR << msg;
     return {STATUS_FAULT, msg};
   }
 
   if (codec_ctx_ == nullptr) {
     auto msg = std::string("codec ctx is null,please call init");
+    MBLOG_ERROR << msg;
     return {STATUS_FAULT, msg};
   }
 
@@ -596,8 +603,10 @@ MppPacket MppJpegDecode::SendBuf(MppBuffer &in_buf, int &w, int &h) {
     return nullptr;
   }
 
-  if (STATUS_OK != DecPkt(packet, w, h)) {
+  auto ret_dec = DecPkt(packet, w, h);
+  if (STATUS_OK != ret_dec) {
     mpp_packet_deinit(&packet);
+    MBLOG_ERROR << "failed to decpkt reason: " << ret_dec.Errormsg();
     packet = nullptr;
   }
 
@@ -656,6 +665,7 @@ MppFrame MppJpegDecode::Decode(void *in_buf, int buf_len, int &w, int &h) {
   std::lock_guard<std::mutex> lk(jpeg_mtx_);
   MppPacket packet = SendBuf(in_buf, buf_len, w, h);
   if (packet == nullptr) {
+    MBLOG_ERROR << "failed to decode jpg reason: sendbuf fail";
     return nullptr;
   }
 
@@ -663,6 +673,7 @@ MppFrame MppJpegDecode::Decode(void *in_buf, int buf_len, int &w, int &h) {
   auto ret = ReceiveFrame(out_frame);
   if (STATUS_OK != ret) {
     mpp_packet_deinit(&packet);
+    MBLOG_ERROR << "failed to decode jpg reason: ReceiveFrame fail";
     return nullptr;
   }
 

@@ -28,11 +28,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${LIBMODELBOX_BASE_INCLUDE})
 include_directories(${LIBMODELBOX_DEVICE_ROCKCHIP_INCLUDE})
-include_directories(${LIBMODELBOX_DEVICE_ROCKCHIP_RKNPUINCLUDE})
-include_directories(${LIBMODELBOX_DEVICE_ROCKCHIP_RKNPU3RDINCLUDE})
-include_directories(${RKMPP_INCLUDE_DIR})
+include_directories(${ROCKCHIP_MPP_INCLUDE})
 include_directories(${RKNN_INCLUDE_DIR})
-include_directories(${RKRGA_INCLUDE_DIR})
+include_directories(${ROCKCHIP_RGA_INCLUDE})
 
 set(HEADER
     ${LIBMODELBOX_DEVICE_ROCKCHIP_INCLUDE}/modelbox

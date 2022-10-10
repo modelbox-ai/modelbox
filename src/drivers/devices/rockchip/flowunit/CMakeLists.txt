@@ -15,7 +15,9 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(modelbox-drivers-rockchip)
+project(modelbox-drivers-rockchip-flowunit)
+
+add_definitions(-DMODELBOX_VERSION_STR_MACRO="${MODELBOX_VERSION_STRING}")
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
@@ -23,8 +25,6 @@ endif()
 
 subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
 
-include_directories(${HUAWEI_SECURE_C_INCLUDE_DIR})
-include_directories(${ROCKCHIP_INCLUDE_DIR})
-
-add_subdirectory(core)
-add_subdirectory(flowunit)
+foreach(subdir ${SUBDIRS})
+    add_subdirectory(${subdir})
+endforeach()
