@@ -82,6 +82,10 @@ RockChipFactory::ProbeRKNNDevice() {
   typedef int (*find_device_func)(rknn_devices_id *);
   auto find_device =
       reinterpret_cast<find_device_func>(dlsym(handler, "rknn_find_devices"));
+  if (find_device == nullptr) {
+    MBLOG_ERROR << "find device is nullptr";
+    return device_desc_map;
+  }
 
   if (find_device(dev_ids.get()) != RKNN_SUCC || dev_ids->n_devices == 0) {
     MBLOG_ERROR << "find none rknn device";
