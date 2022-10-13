@@ -33,6 +33,7 @@ include_directories(${LIBMODELBOX_INCLUDE})
 include_directories(${INCLUDE})
 include_directories(${HUAWEI_SECURE_C_INCLUDE_DIR})
 include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(${TOML_INCLUDE_DIR})
 include_directories(${PYBIND11_INCLUDE_DIRS})
 
 set(LIBRARY modelbox-common-modelbox-api-object)

@@ -1429,8 +1429,7 @@ void ModelBoxPyApiSetUpExternalDataMapSimple(pybind11::module &m) {
 void ModelboxPyApiSetUpModel(pybind11::module &m) {
   py::class_<PythonModel, std::shared_ptr<PythonModel>>(m, "Model",
                                                         py::module_local())
-      .def(py::init<std::string, std::string, std::vector<std::string>,
-                    std::vector<std::string>, size_t, std::string,
+      .def(py::init<std::string, std::string, size_t, std::string,
                     std::string>())
       .def("add_path", &PythonModel::AddPath,
            py::call_guard<py::gil_scoped_release>())
