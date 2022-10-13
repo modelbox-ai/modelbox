@@ -27,9 +27,7 @@ namespace modelbox {
 
 class PythonModel {
  public:
-  PythonModel(std::string path, std::string name,
-              std::vector<std::string> in_names,
-              std::vector<std::string> out_names, size_t max_batch_size,
+  PythonModel(std::string path, std::string name, size_t max_batch_size,
               std::string device, std::string device_id);
 
   virtual ~PythonModel();
@@ -47,13 +45,17 @@ class PythonModel {
       const std::vector<std::vector<py::buffer>> &data_list);
 
  private:
+  modelbox::Status ReadModelIO(std::vector<std::string> &in_names,
+                               std::vector<std::string> &out_names);
+
   std::vector<std::string> path_;
   std::string name_;
-  std::vector<std::string> in_names_;
-  std::vector<std::string> out_names_;
   std::string max_batch_size_;
   std::string device_;
   std::string device_id_;
+
+  std::vector<std::string> in_names_;
+  std::vector<std::string> out_names_;
 
   std::shared_ptr<modelbox::FlowGraphDesc> flow_graph_desc_;
   std::shared_ptr<modelbox::Flow> flow_;

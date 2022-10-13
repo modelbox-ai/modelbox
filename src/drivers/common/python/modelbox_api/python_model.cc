@@ -16,18 +16,19 @@
 
 #include "python_model.h"
 
+#include <modelbox/base/utils.h>
+
+#include <regex>
+#include <toml.hpp>
+
 #include "python_common.h"
 
 namespace modelbox {
 
 PythonModel::PythonModel(std::string path, std::string name,
-                         std::vector<std::string> in_names,
-                         std::vector<std::string> out_names,
                          size_t max_batch_size, std::string device,
                          std::string device_id)
     : name_(std::move(name)),
-      in_names_(std::move(in_names)),
-      out_names_(std::move(out_names)),
       max_batch_size_(std::to_string(max_batch_size)),
       device_(std::move(device)),
       device_id_(std::move(device_id)) {
@@ -43,6 +44,12 @@ PythonModel::~PythonModel() {
 void PythonModel::AddPath(const std::string &path) { path_.emplace_back(path); }
 
 modelbox::Status PythonModel::Start() {
+  auto ret = ReadModelIO(in_names_, out_names_);
+  if (!ret) {
+    MBLOG_ERROR << "read model io failed";
+    return ret;
+  }
+
   flow_graph_desc_ = std::make_shared<modelbox::FlowGraphDesc>();
   flow_graph_desc_->SetDriversDir(path_);
 
@@ -166,6 +173,89 @@ std::vector<std::vector<std::shared_ptr<Buffer>>> PythonModel::InferBatch(
   }
 
   return result_list;
+}
+
+modelbox::Status PythonModel::ReadModelIO(std::vector<std::string> &in_names,
+                                          std::vector<std::string> &out_names) {
+  std::vector<std::string> files;
+  auto ret = modelbox::ListSubDirectoryFiles(path_.front(), "*.toml", &files);
+  if (!ret) {
+    MBLOG_ERROR << "list file in path " << path_.front() << " failed, error "
+                << ret;
+    return ret;
+  }
+
+  if (files.empty()) {
+    MBLOG_ERROR << "no valid model conf in path " << path_.front();
+    return STATUS_BADCONF;
+  }
+
+  std::stringstream err_msg_cache;
+  for (auto &file : files) {
+    try {
+      auto fu_config = toml::parse(file);
+      auto name = toml::find<std::string>(fu_config, "base", "name");
+      if (name != name_) {
+        continue;
+      }
+
+      std::ifstream ifs(file);
+      if (!ifs.good()) {
+        err_msg_cache << "[" << file << "] read failed" << std::endl;
+        continue;
+      }
+
+      Defer { ifs.close(); };
+
+      // try to keep input and output order in config file
+      std::string content((std::istreambuf_iterator<char>(ifs)),
+                          std::istreambuf_iterator<char>());
+      std::smatch search_result;
+
+      auto search_text = content;
+      std::regex input_regex(R"(\[input\.(.*?)\])");
+      std::vector<std::string> input_key_list;
+      while (std::regex_search(search_text, search_result, input_regex)) {
+        input_key_list.push_back(search_result[1]);
+        search_text = search_result.suffix();
+      }
+
+      search_text = content;
+      std::regex output_regex(R"(\[output\.(.*?)\])");
+      std::vector<std::string> output_key_list;
+      while (std::regex_search(search_text, search_result, output_regex)) {
+        output_key_list.push_back(search_result[1]);
+        search_text = search_result.suffix();
+      }
+
+      for (const auto &input_key : input_key_list) {
+        auto input_name =
+            toml::find<std::string>(fu_config, "input", input_key, "name");
+        in_names.push_back(input_name);
+      }
+
+      for (const auto &output_key : output_key_list) {
+        auto output_name =
+            toml::find<std::string>(fu_config, "output", output_key, "name");
+        out_names.push_back(output_name);
+      }
+
+      return STATUS_OK;
+    } catch (std::exception &e) {
+      err_msg_cache << "[" << file << "] parse toml failed, err: " << e.what()
+                    << std::endl;
+      continue;
+    }
+  }
+
+  auto err_msg = err_msg_cache.str();
+  if (err_msg.empty()) {
+    err_msg = " target model not found";
+  }
+
+  MBLOG_ERROR << "can not load IO info for modle " << name_ << " in path "
+              << path_.front() << ", detail: " << err_msg;
+  return modelbox::STATUS_BADCONF;
 }
 
 }  // namespace modelbox
