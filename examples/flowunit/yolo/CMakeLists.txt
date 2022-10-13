@@ -20,9 +20,9 @@ set(UNIT_NAME "example")
 file(GLOB_RECURSE UNIT_SRC *.*)
 file(GLOB_RECURSE CMAKELISTS_FILE "CMakeLists.txt")
 list(REMOVE_ITEM UNIT_SRC ${CMAKELISTS_FILE})
-group_files(UNIT_SRC UNIT_CONF .*.toml ${UNIT_SRC})
+group_files(UNIT_SRC UNIT_CONF .*.toml "${UNIT_SRC}")
 list(APPEND UNIT_TOML_JSON ${UNIT_CONF})
-group_files(UNIT_SRC UNIT_CONF .*.json ${UNIT_SRC})
+group_files(UNIT_SRC UNIT_CONF .*.json "${UNIT_SRC}")
 list(APPEND UNIT_TOML_JSON ${UNIT_CONF})
 
 install(FILES ${UNIT_SRC}
