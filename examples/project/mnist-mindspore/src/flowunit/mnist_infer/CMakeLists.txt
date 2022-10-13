@@ -21,9 +21,9 @@ file(GLOB_RECURSE UNIT_SRC *.*)
 exclude_files_from_dir_in_list(UNIT_SRC "${UNIT_SRC}" "${CMAKE_CURRENT_LIST_DIR}/mnist-train/")
 file(GLOB_RECURSE CMAKELISTS_FILE "CMakeLists.txt")
 list(REMOVE_ITEM UNIT_SRC ${CMAKELISTS_FILE})
-group_files(UNIT_SRC UNIT_CONF .*.toml ${UNIT_SRC})
+group_files(UNIT_SRC UNIT_CONF .*.toml "${UNIT_SRC}")
 list(APPEND UNIT_TOML_JSON ${UNIT_CONF})
-group_files(UNIT_SRC UNIT_CONF .*.json ${UNIT_SRC})
+group_files(UNIT_SRC UNIT_CONF .*.json "${UNIT_SRC}")
 list(APPEND UNIT_TOML_JSON ${UNIT_CONF})
 
 install(FILES ${UNIT_SRC}
