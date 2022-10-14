@@ -751,6 +751,13 @@ void Node::SetLastError(
     std::list<std::shared_ptr<FlowUnitDataContext>>& data_ctx_list) {
   for (auto& data_ctx : data_ctx_list) {
     auto sess = data_ctx->GetSession();
+    auto last_status = data_ctx->GetLastStatus();
+    if (last_status != modelbox::STATUS_OK &&
+        last_status != modelbox::STATUS_CONTINUE) {
+      sess->SetError(std::make_shared<FlowUnitError>(last_status.Errormsg()));
+      continue;
+    }
+
     for (const auto &input_map : data_ctx->GetErrorInputs()) {
       auto error_buffer_list = input_map.second;
       if (!error_buffer_list.empty()) {
