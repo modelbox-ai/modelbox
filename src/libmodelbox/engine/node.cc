@@ -718,6 +718,7 @@ void Node::CleanDataContext() {
                  << ", data ctx finished";
     }
 
+    data_ctx->Dispose();
     data_ctx_iter = data_ctx_map_.erase(data_ctx_iter);
   }
 }

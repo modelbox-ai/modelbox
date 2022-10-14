@@ -167,6 +167,8 @@ class FlowUnitExecDataMapper {
 
   Status SaveDataToExecCtx();
 
+  void Clear();
+
  private:
   enum MapType { DIRECT_MAP, RESHAPE_NORMAL, RESHAPE_STREAM };
 
@@ -242,6 +244,8 @@ class FlowUnitExecDataView {
   Status SetupUserOutput(bool one_to_one, bool data_in_one_port);
 
   Status SaveOutputToExecCtx();
+
+  void Clear();
 
  private:
   Status DevideExecCtxByFlowunit();

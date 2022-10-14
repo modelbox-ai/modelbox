@@ -480,6 +480,13 @@ void FlowUnitDataContext::ClearData() {
   is_skippable_ = false;
 }
 
+void FlowUnitDataContext::Dispose() {
+  // release ref to session
+  session_ = nullptr;
+  last_input_valid_data_.clear();
+  cur_event_input_data_.clear();
+}
+
 bool FlowUnitDataContext::IsSkippable() { return is_skippable_; }
 void FlowUnitDataContext::SetSkippable(bool skippable) {
   is_skippable_ = skippable;
@@ -1027,6 +1034,8 @@ std::shared_ptr<StatisticsItem> ExecutorDataContext::GetStatistics(
     DataContextStatsType type) {
   return origin_ctx_->GetStatistics(type);
 }
+
+void ExecutorDataContext::Clear() { data_ = nullptr; }
 
 NormalFlowUnitDataContext::NormalFlowUnitDataContext(
     Node *node, MatchKey *data_ctx_match_key,
