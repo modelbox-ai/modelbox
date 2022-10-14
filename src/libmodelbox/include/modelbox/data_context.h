@@ -250,6 +250,8 @@ class FlowUnitDataContext : public DataContext, public SessionStateListener {
   virtual void UpdateProcessState();
   virtual void ClearData();
 
+  void Dispose();
+
  protected:
   virtual void UpdateBufferIndexInfo(
       const std::shared_ptr<BufferIndexInfo> &cur_buffer,
@@ -605,6 +607,8 @@ class ExecutorDataContext : public DataContext {
 
   std::shared_ptr<StatisticsItem> GetStatistics(
       DataContextStatsType type) override;
+
+  void Clear();
 
  private:
   std::shared_ptr<FlowUnitDataContext> origin_ctx_;

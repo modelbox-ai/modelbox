@@ -675,6 +675,15 @@ Status FlowUnitExecDataMapper::SaveDataToExecCtx() {
   return FillExecCtxOutput();
 }
 
+void FlowUnitExecDataMapper::Clear() {
+  // release processing data
+  for (auto &batched_data_ctx : mapped_exec_data_ctx_list_) {
+    for (auto &data_ctx : batched_data_ctx) {
+      data_ctx->Clear();
+    }
+  }
+}
+
 Status FlowUnitExecDataMapper::WriteBackStream() {
   auto ctx_count = mapped_data_list_.size();
   for (size_t ctx_idx = 0; ctx_idx < ctx_count; ++ctx_idx) {
@@ -1110,6 +1119,13 @@ Status FlowUnitExecDataView::SaveOutputToExecCtx() {
   return STATUS_SUCCESS;
 }
 
+void FlowUnitExecDataView::Clear() {
+  // release processing data
+  for (auto &mapper : mapper_of_flowunit_) {
+    mapper.second->Clear();
+  }
+}
+
 Status FlowUnitExecDataView::PackSaveTasks(
     std::vector<std::shared_ptr<Executor>> &executors,
     std::vector<std::function<Status()>> &tasks) {
@@ -1337,6 +1353,9 @@ Status FlowUnitDataExecutor::SaveExecuteOutput(
     MBLOG_ERROR << "setup failed, err " << ret;
     return ret;
   }
+
+  // release processing data
+  exec_view.Clear();
 
   return STATUS_OK;
 }
