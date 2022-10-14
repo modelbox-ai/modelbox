@@ -276,8 +276,10 @@ Status FlowUnitExecData::CheckStatus(bool one_to_one, bool data_in_one_port) {
     out_count = 1;
   }
 
-  FillErrorOutput(out_count, data_in_one_port);
-  status_ = STATUS_OK;
+  if (!out_data_->empty()) {
+    FillErrorOutput(out_count, data_in_one_port);
+    status_ = STATUS_OK;
+  }
 
   return STATUS_OK;
 }
