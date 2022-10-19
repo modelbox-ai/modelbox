@@ -189,7 +189,7 @@ class Collection {
     if (!CanConvert(typeid(T).hash_code(), entrys_[key].type().hash_code())) {
       // always a bad condition
       MBLOG_ERROR << "Get value for " << key
-                  << "failed, type mismatch, param type " << typeid(T).name()
+                  << " failed, type mismatch, param type " << typeid(T).name()
                   << ", stored value type " << entrys_[key].type().name();
       return false;
     }

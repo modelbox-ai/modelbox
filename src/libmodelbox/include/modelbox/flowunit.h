@@ -221,6 +221,8 @@ class FlowUnitDesc {
 
   std::string GetFlowUnitName();
 
+  std::string GetFlowUnitType();
+
   std::string GetFlowUnitAliasName();
 
   std::string GetFlowUnitArgument();
@@ -264,6 +266,8 @@ class FlowUnitDesc {
   std::string GetVirtualType();
 
   void SetFlowUnitName(const std::string &flowunit_name);
+
+  void SetFlowUnitType(const std::string &flowunit_type);
 
   Status AddFlowUnitInput(const FlowUnitInput &flowunit_input);
 
@@ -318,6 +322,7 @@ class FlowUnitDesc {
   bool is_collapse_all_{true};
   bool is_exception_visible_{false};
   std::string flowunit_name_;
+  std::string flowunit_type_;
   std::string group_type_;
   std::string alias_name_;
   std::string argument_;

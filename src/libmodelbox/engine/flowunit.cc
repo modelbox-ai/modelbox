@@ -244,6 +244,8 @@ std::shared_ptr<FlowUnitDesc> FlowUnit::GetFlowUnitDesc() {
 
 std::string FlowUnitDesc::GetFlowUnitName() { return flowunit_name_; };
 
+std::string FlowUnitDesc::GetFlowUnitType() { return flowunit_type_; };
+
 std::string FlowUnitDesc::GetFlowUnitAliasName() { return alias_name_; };
 
 std::string FlowUnitDesc::GetFlowUnitArgument() { return argument_; };
@@ -257,14 +259,14 @@ bool FlowUnitDesc::IsCollapseAll() {
   }
 
   return true;
-};
+}
 
 bool FlowUnitDesc::IsStreamSameCount() {
   if (flow_type_ == NORMAL) {
     return true;
   }
   return is_stream_same_count_;
-};
+}
 
 bool FlowUnitDesc::IsInputContiguous() const { return is_input_contiguous_; }
 
@@ -329,6 +331,10 @@ std::string FlowUnitDesc::GetVirtualType() { return virtual_type_; }
 
 void FlowUnitDesc::SetFlowUnitName(const std::string &flowunit_name) {
   flowunit_name_ = flowunit_name;
+}
+
+void FlowUnitDesc::SetFlowUnitType(const std::string &flowunit_type) {
+  flowunit_type_ = flowunit_type;
 }
 
 void FlowUnitDesc::SetFlowUnitGroupType(const std::string &group_type) {

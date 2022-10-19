@@ -23,7 +23,8 @@ namespace modelbox {
 RegFlowUnitFactory::RegFlowUnitFactory(std::shared_ptr<FlowUnitBuilder> builder)
     : builder_(std::move(builder)) {
   auto desc = std::make_shared<FlowUnitDesc>();
-  builder_->Probe(unit_type_, desc);
+  builder_->Probe(desc);
+  unit_type_ = desc->GetFlowUnitType();
   unit_name_ = desc->GetFlowUnitName();
 }
 
@@ -31,8 +32,7 @@ std::map<std::string, std::shared_ptr<FlowUnitDesc>>
 RegFlowUnitFactory::FlowUnitProbe() {
   std::map<std::string, std::shared_ptr<FlowUnitDesc>> flowunit_desc_map;
   auto desc = std::make_shared<FlowUnitDesc>();
-  std::string unit_type;
-  builder_->Probe(unit_type, desc);
+  builder_->Probe(desc);
   flowunit_desc_map[unit_name_] = desc;
   return flowunit_desc_map;
 }

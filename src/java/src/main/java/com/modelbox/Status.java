@@ -28,6 +28,15 @@ public class Status extends NativeObject {
   /**
    * constructor of status
    * @param code status code
+   */
+  public Status(StatusCode code) {
+    setNativeHandle(StatusNew());
+    StatusSetCode(code.ordinal());
+  }
+
+  /**
+   * constructor of status
+   * @param code status code
    * @param msg  status message
    */
   public Status(StatusCode code, String msg) {
@@ -92,6 +101,30 @@ public class Status extends NativeObject {
    */
   public String WrapErrormsgs() {
     return StatusWrapErrormsgs();
+  }
+
+  /**
+   * return success.
+   * @return return success
+   */
+  public static Status OK() {
+    return new Status(StatusCode.STATUS_SUCCESS);
+  }
+
+  /**
+   * return error with message.
+   * @return return error
+   */
+  public static Status Fail(String msg) {
+    return new Status(StatusCode.STATUS_FAULT, msg);
+  }
+
+  /**
+   * return error with message and code.
+   * @return return error
+   */
+  public static Status Fail(StatusCode code, String msg) {
+    return new Status(code, msg);
   }
 
   private native long StatusNew();

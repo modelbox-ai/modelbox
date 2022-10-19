@@ -45,7 +45,7 @@ class TestLog(unittest.TestCase):
 
         self._msg = msg
         self.assertEqual(file, os.path.basename(info.filename))
-        self.assertEqual(lineno, info.lineno)
+        self.assertTrue(lineno - info.lineno >= -2 and lineno - info.lineno <= 2)
         self.assertEqual(func, info.function)
 
     def test_LogPrint(self):

@@ -47,7 +47,7 @@ JNIEXPORT jobject JNICALL Java_com_modelbox_DataContext_DataContext_1Input(
 
   auto n_buffer_list =
       n_data_ctx->Input(modelbox::jstring2string(env, j_portname));
-  if (n_buffer_list) {
+  if (n_buffer_list == nullptr) {
     modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
                                "input port not exists");
     return nullptr;
@@ -86,7 +86,7 @@ JNIEXPORT jobject JNICALL Java_com_modelbox_DataContext_DataContext_1Output(
 
   auto n_buffer_list =
       n_data_ctx->Output(modelbox::jstring2string(env, j_portname));
-  if (n_buffer_list) {
+  if (n_buffer_list == nullptr) {
     modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
                                "output port not exists");
     return nullptr;

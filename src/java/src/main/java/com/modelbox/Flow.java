@@ -75,6 +75,15 @@ public class Flow extends NativeObject {
   }
 
   /**
+   * Register flowunit
+   * @param flowunit_builder flowunit builder
+   * @throws ModelBoxException
+   */
+  public void RegisterFlowUnit(FlowUnitBuilder flowunit_builder) throws ModelBoxException {
+    FlowRegisterFlowUnit(flowunit_builder);
+  }
+
+  /**
    * Start run flow
    * @throws ModelBoxException
    */
@@ -151,6 +160,8 @@ public class Flow extends NativeObject {
   private native void FlowInitByName(String name, Configuration args, String flowDir);
 
   private native void FlowInitByName(String name, Configuration args);
+
+  private native void FlowRegisterFlowUnit(FlowUnitBuilder flowunit_builder);
 
   private native void FlowStop();
 
