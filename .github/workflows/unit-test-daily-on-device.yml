@@ -38,7 +38,8 @@ jobs:
       working-directory: build
       run: |
         dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}') || true
-        export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
+        [ "$(arch)" == "aarch64" ] && export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
         make build-test -j4
         unset LD_LIBRARY_PATH
         make unittest
+      shell: bash
