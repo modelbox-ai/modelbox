@@ -27,6 +27,45 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ModelBoxFlowTest {
+
+  public static class FlowUnitPassThrough extends FlowUnit {
+    public static class Builder extends FlowUnitBuilder {
+      @Override
+      public void probe(FlowUnitDesc desc) throws ModelBoxException {
+        desc.SetFlowUnitType("cpu");
+        desc.SetFlowUnitName("javapassthrouth");
+        desc.SetInputContiguous(false);
+        desc.SetFlowType(FlowUnitDesc.FlowType.NORMAL);
+        desc.AddFlowUnitInput(new FlowUnitInput("in"));
+        desc.AddFlowUnitOutput(new FlowUnitOutput("out"));
+      }
+
+      @Override
+      public FlowUnit build() throws ModelBoxException {
+        return new FlowUnitPassThrough();
+      }
+    }
+
+    public FlowUnitPassThrough() {}
+
+    @Override
+    public void open(Configuration opts) throws ModelBoxException {
+      assertEquals(opts.getString("opt", ""), "value");
+    }
+
+    @Override
+    public Status process(DataContext data_ctx) throws ModelBoxException {
+      BufferList in = data_ctx.input("in");
+      BufferList out = data_ctx.output("out");
+
+      for (int i = 0; i < in.size(); i++) {
+        out.pushBack(in.at(i));
+      }
+
+      return Status.OK();
+    }
+  }
+
   @BeforeClass
   public static void setUpTest() {
     Log.unRegLog();
@@ -147,6 +186,57 @@ public class ModelBoxFlowTest {
 
     System.out.println(txt);
     Flow flow = new Flow();
+    flow.init("Process", txt);
+    flow.startRun();
+    FlowStreamIO streamio = flow.CreateStreamIO();
+    Buffer data = streamio.createBuffer();
+    assertEquals(data.getDevice().getType(), "cpu");
+    String msg = "Hello world";
+    data.build(msg.getBytes());
+    streamio.send("input", data);
+    streamio.send("input", msg.getBytes());
+    streamio.closeInput();
+    int count = 0;
+    
+    while (true) {
+      Buffer outdata = streamio.recv("output", 1000 * 10);
+      if (outdata == null) {
+        break;
+      }
+      
+      String str = new String(outdata.getData());
+      assertEquals(msg, str);
+      Log.info("Message is: " + str);
+      get_result = true;
+      count++;
+    }
+    
+    assertEquals(count, 2);
+    assertTrue(get_result);
+    flow = null;
+    System.gc();
+  }
+
+  @Test
+  public void testFlowRegister() throws Exception {
+    boolean get_result = false;
+    String txt = "[log]\n";
+    txt += "level=\"INFO\"\n";
+    txt += "[graph]\n";
+    txt += "graphconf = '''digraph demo {{ \n";
+    txt += "  input[type=input] \n";
+    txt += "  process[flowunit=javapassthrouth, device=cpu, opt=value]\n";
+    txt += "  output[type=output]\n";
+    txt += "\n";
+    txt += " input->process:in";
+    txt += " process:out -> output\n";
+    txt += "}}'''\n";
+    txt += "format = \"graphviz\"\n";
+    
+
+    System.out.println(txt);
+    Flow flow = new Flow();
+    flow.RegisterFlowUnit(new FlowUnitPassThrough.Builder());
     flow.init("Process", txt);
     flow.startRun();
     FlowStreamIO streamio = flow.CreateStreamIO();

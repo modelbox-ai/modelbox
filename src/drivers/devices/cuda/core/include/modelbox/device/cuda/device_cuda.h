@@ -31,7 +31,7 @@
   std::ostringstream error_log;                         \
   error_log << #api << ", return code : " << (err_code) \
             << ", error : " << err_name;                \
-  auto(err_str) = error_log.str();
+  auto err_str = error_log.str();
 
 #define CUDA_API_CALL(api)                                      \
   do {                                                          \

@@ -390,6 +390,10 @@ std::shared_ptr<FlowUnit> FlowUnitManager::CreateSingleFlowUnit(
   }
 
   auto flowunit_desc = item->second;
+  if (flowunit_desc->GetFlowUnitType() == "") {
+    flowunit_desc->SetFlowUnitType(unit_type);
+  }
+
   auto driver_desc = factory->GetDriver()->GetDriverDesc();
   flowunit_desc->SetDriverDesc(driver_desc);
   factory->SetVirtualType(flowunit_desc->GetVirtualType());

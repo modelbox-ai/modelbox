@@ -30,8 +30,8 @@ class MemoryPoolBase : public MemoryAllocFree,
  public:
   /**
    * @brief Initialize slab cache.
-   * @param low, low bit 2^low
-   * @param high, high bit 2^high
+   * @param low low bit 2^low
+   * @param high high bit 2^high
    * @return result.
    */
   Status InitSlabCache(int low = 5, int high = 27);

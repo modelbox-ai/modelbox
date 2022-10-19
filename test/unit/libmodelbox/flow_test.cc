@@ -665,7 +665,35 @@ TEST_F(FlowTest, NormalError) {
   flow->Stop();
 }
 
-TEST_F(FlowTest, DISABLED_InlineFlowUnit) {
+class InlineFlowUnit : public FlowUnit {
+ public:
+  Status Process(std::shared_ptr<DataContext> data_ctx) override {
+    auto indata = data_ctx->Input("in");
+    auto output = data_ctx->Output("out");
+
+    for (const auto& buff : *indata) {
+      output->PushBack(buff);
+    }
+
+    return modelbox::STATUS_OK;
+  }
+
+  class Builder : public FlowUnitBuilder {
+   public:
+    void Probe(std::shared_ptr<FlowUnitDesc>& desc) override {
+      desc->SetFlowUnitType("cpu");
+      desc->SetFlowUnitName("inlineflowunit");
+      desc->AddFlowUnitInput({"in"});
+      desc->AddFlowUnitOutput({"out"});
+    }
+
+    std::shared_ptr<FlowUnit> Build() override {
+      return std::make_shared<InlineFlowUnit>();
+    }
+  };
+};
+
+TEST_F(FlowTest, InlineFlowUnit) {
   const std::string test_lib_dir = TEST_LIB_DIR;
   const std::string test_driver_dir = TEST_DRIVER_DIR;
   std::string toml_content = R"(
@@ -676,7 +704,7 @@ TEST_F(FlowTest, DISABLED_InlineFlowUnit) {
                              R"([graph]
     graphconf = '''digraph demo {                                                                            
           input[type=input]             
-          process[flowunit=passthrouth, device=cpu] 
+          process[flowunit=inlineflowunit, device=cpu] 
           output[type=output]                                
           input -> process:in
           process:out -> output                                                                     
@@ -685,6 +713,7 @@ TEST_F(FlowTest, DISABLED_InlineFlowUnit) {
   )";
 
   auto flow = std::make_shared<Flow>();
+  flow->RegisterFlowUnit(std::make_shared<InlineFlowUnit::Builder>());
   auto ret = flow->Init("graph", toml_content);
   ASSERT_EQ(ret, STATUS_OK);
 
@@ -696,12 +725,26 @@ TEST_F(FlowTest, DISABLED_InlineFlowUnit) {
   auto streamio = flow->CreateStreamIO();
   std::string msg = "hello";
   streamio->Send("input", (char*)msg.c_str(), msg.size());
+  streamio->Send("input", (char*)msg.c_str(), msg.size());
+  streamio->CloseInput();
 
-  auto retbuf = streamio->Recv("output", 10 * 1000);
-  ASSERT_NE(retbuf, nullptr);
+  int count = 0;
+  bool get_result = false;
 
-  std::string retmsg((const char*)retbuf->ConstData(), retbuf->GetBytes());
-  EXPECT_STREQ(msg.c_str(), retmsg.c_str());
+  while (true) {
+    auto retbuf = streamio->Recv("output", 1000 * 10);
+    if (retbuf == nullptr) {
+      break;
+    }
+
+    std::string retmsg((const char*)retbuf->ConstData(), retbuf->GetBytes());
+    EXPECT_STREQ(msg.c_str(), retmsg.c_str());
+    get_result = true;
+    count++;
+  }
+
+  EXPECT_EQ(count, 2);
+  EXPECT_TRUE(get_result);
 }
 
 }  // namespace modelbox

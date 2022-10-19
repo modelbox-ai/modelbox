@@ -222,6 +222,356 @@ Java_com_modelbox_Buffer_BufferGetBytes(JNIEnv *env, jobject j_this) {
 
 /*
  * Class:     com_modelbox_Buffer
+ * Method:    BufferSetMetaLong
+ * Signature: (Ljava/lang/String;J)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_Buffer_BufferSetMetaLong(
+    JNIEnv *env, jobject j_this, jstring j_key, jlong j_value) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return;
+  }
+
+  auto n_value = (int64_t)j_value;
+
+  n_buffer->Set(modelbox::jstring2string(env, j_key), n_value);
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferSetMetaInt
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_Buffer_BufferSetMetaInt(JNIEnv *env,
+                                                                 jobject j_this,
+                                                                 jstring j_key,
+                                                                 jint j_value) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return;
+  }
+
+  auto n_value = (int32_t)j_value;
+
+  n_buffer->Set(modelbox::jstring2string(env, j_key), n_value);
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferSetMetaString
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_Buffer_BufferSetMetaString(
+    JNIEnv *env, jobject j_this, jstring j_key, jstring j_value) {
+  if (j_key == nullptr || j_value == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return;
+  }
+
+  auto n_value = modelbox::jstring2string(env, j_value);
+
+  n_buffer->Set(modelbox::jstring2string(env, j_key), n_value);
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferSetMetaDouble
+ * Signature: (Ljava/lang/String;D)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_Buffer_BufferSetMetaDouble(
+    JNIEnv *env, jobject j_this, jstring j_key, jdouble j_value) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return;
+  }
+
+  auto n_value = (double)j_value;
+
+  n_buffer->Set(modelbox::jstring2string(env, j_key), n_value);
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferSetMetaFloat
+ * Signature: (Ljava/lang/String;F)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_Buffer_BufferSetMetaFloat(
+    JNIEnv *env, jobject j_this, jstring j_key, jfloat j_value) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return;
+  }
+
+  auto n_value = (float)j_value;
+
+  n_buffer->Set(modelbox::jstring2string(env, j_key), n_value);
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferSetMetaBool
+ * Signature: (Ljava/lang/String;Z)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_Buffer_BufferSetMetaBool(
+    JNIEnv *env, jobject j_this, jstring j_key, jboolean j_value) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return;
+  }
+
+  auto n_value = (bool)j_value;
+
+  n_buffer->Set(modelbox::jstring2string(env, j_key), n_value);
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferGetMetaLong
+ * Signature: (Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_modelbox_Buffer_BufferGetMetaLong(
+    JNIEnv *env, jobject j_this, jstring j_key) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return 0;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return 0;
+  }
+
+  int64_t n_value = 0;
+  if (n_buffer->Get(modelbox::jstring2string(env, j_key), n_value) == false) {
+    modelbox::ModelBoxJNIThrow(
+        env, modelbox::STATUS_INVALID,
+        "key not found in meta or value type is invalid.");
+    return 0;
+  }
+
+  return (jlong)n_value;
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferGetMetaInt
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_com_modelbox_Buffer_BufferGetMetaInt(
+    JNIEnv *env, jobject j_this, jstring j_key) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return 0;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return 0;
+  }
+
+  int32_t n_value = 0;
+  if (n_buffer->Get(modelbox::jstring2string(env, j_key), n_value) == false) {
+    modelbox::ModelBoxJNIThrow(
+        env, modelbox::STATUS_INVALID,
+        "key not found in meta or value type is invalid.");
+    return 0;
+  }
+
+  return (jint)n_value;
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferGetMetaString
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_modelbox_Buffer_BufferGetMetaString(
+    JNIEnv *env, jobject j_this, jstring j_key) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return nullptr;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return nullptr;
+  }
+
+  std::string n_value;
+  if (n_buffer->Get(modelbox::jstring2string(env, j_key), n_value) == false) {
+    modelbox::ModelBoxJNIThrow(
+        env, modelbox::STATUS_INVALID,
+        "key not found in meta or value type is invalid.");
+    return nullptr;
+  }
+
+  return env->NewStringUTF(n_value.c_str());
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferGetMetaDouble
+ * Signature: (Ljava/lang/String;)D
+ */
+JNIEXPORT jdouble JNICALL Java_com_modelbox_Buffer_BufferGetMetaDouble(
+    JNIEnv *env, jobject j_this, jstring j_key) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return 0;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return 0;
+  }
+
+  double n_value = 0;
+  if (n_buffer->Get(modelbox::jstring2string(env, j_key), n_value) == false) {
+    modelbox::ModelBoxJNIThrow(
+        env, modelbox::STATUS_INVALID,
+        "key not found in meta or value type is invalid.");
+    return 0;
+  }
+
+  return (jdouble)n_value;
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferGetMetaFloat
+ * Signature: (Ljava/lang/String;)F
+ */
+JNIEXPORT jfloat JNICALL Java_com_modelbox_Buffer_BufferGetMetaFloat(
+    JNIEnv *env, jobject j_this, jstring j_key) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return 0;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return 0;
+  }
+
+  float n_value = 0;
+  if (n_buffer->Get(modelbox::jstring2string(env, j_key), n_value) == false) {
+    modelbox::ModelBoxJNIThrow(
+        env, modelbox::STATUS_INVALID,
+        "key not found in meta or value type is invalid.");
+    return 0;
+  }
+
+  return (jfloat)n_value;
+}
+
+/*
+ * Class:     com_modelbox_Buffer
+ * Method:    BufferGetMetaBool
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_modelbox_Buffer_BufferGetMetaBool(
+    JNIEnv *env, jobject j_this, jstring j_key) {
+  if (j_key == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return false;
+  }
+
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return false;
+  }
+
+  bool n_value = false;
+  if (n_buffer->Get(modelbox::jstring2string(env, j_key), n_value) == false) {
+    modelbox::ModelBoxJNIThrow(
+        env, modelbox::STATUS_INVALID,
+        "key not found in meta or value type is invalid.");
+    return false;
+  }
+
+  return (jboolean)n_value;
+}
+
+/*
+ * Class:     com_modelbox_Buffer
  * Method:    BufferCopyMeta
  * Signature: (Lcom/modelbox/Buffer;Z)V
  */

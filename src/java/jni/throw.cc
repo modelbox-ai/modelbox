@@ -21,6 +21,7 @@
 #include "modelbox/base/log.h"
 #include "modelbox/base/status.h"
 #include "modelbox_jni.h"
+#include "utils.h"
 
 namespace modelbox {
 
@@ -102,14 +103,155 @@ void ModelBoxJNIThrow(JNIEnv *env, const char *runtime_exception,
   do_jni_throw(env, runtime_exception, errmsg);
 }
 
-std::string ModelboxExceptionMsg(JNIEnv *env) {
+std::shared_ptr<Status> ModelboxJNICatchException(JNIEnv *env) {
+  auto status = std::make_shared<Status>();
+  if (env->ExceptionCheck() == JNI_FALSE) {
+    return status;
+  }
+
+  auto *j_throw = env->ExceptionOccurred();
+  if (j_throw == nullptr) {
+    return nullptr;
+  }
+  Defer { env->DeleteLocalRef(j_throw); };
+
+  jclass throwable_class = env->FindClass("java/lang/Throwable");
+  if (throwable_class == nullptr) {
+    return nullptr;
+  }
+  Defer { env->DeleteLocalRef(throwable_class); };
+
+  for (size_t i = 0; i < sizeof(kModelBoxExceptionCodeMap) / sizeof(char *);
+       i++) {
+    auto *j_cls = env->FindClass(kModelBoxExceptionCodeMap[i]);
+    if (j_cls == nullptr) {
+      continue;
+    }
+    Defer { env->DeleteLocalRef(j_cls); };
+
+    if (env->IsInstanceOf(j_throw, j_cls)) {
+      jmethodID get_message = env->GetMethodID(throwable_class, "getMessage",
+                                               "()Ljava/lang/String;");
+      if (get_message == nullptr) {
+        return nullptr;
+      }
+
+      auto *j_message = (jstring)env->CallObjectMethod(j_throw, get_message);
+      if (j_message == nullptr) {
+        return nullptr;
+      }
+      Defer { env->DeleteLocalRef(j_message); };
+      auto msg = modelbox::jstring2string(env, j_message);
+      *status = {static_cast<StatusCode>(i), msg};
+      env->ExceptionClear();
+      return status;
+    }
+  }
+
+  return nullptr;
+}
+
+std::string ModelboxExceptionMsg(JNIEnv *env, std::string *stack) {
+  std::string msg;
   auto *j_throw = env->ExceptionOccurred();
   if (j_throw == nullptr) {
     return "";
   }
+  Defer { env->DeleteLocalRef(j_throw); };
+  env->ExceptionClear();
 
-  // TODO
-  return "";
+  jclass throwable_class = env->FindClass("java/lang/Throwable");
+  if (throwable_class == nullptr) {
+    return "";
+  }
+  Defer { env->DeleteLocalRef(throwable_class); };
+
+  jmethodID get_message =
+      env->GetMethodID(throwable_class, "getMessage", "()Ljava/lang/String;");
+  if (get_message == nullptr) {
+    return "";
+  }
+
+  auto *j_message = (jstring)env->CallObjectMethod(j_throw, get_message);
+  if (j_message == nullptr) {
+    return "";
+  }
+  Defer { env->DeleteLocalRef(j_message); };
+  msg = modelbox::jstring2string(env, j_message);
+
+  if (stack == nullptr) {
+    return msg;
+  }
+
+  /**
+   * get stack
+   */
+  jmethodID get_stack = env->GetMethodID(throwable_class, "getStackTrace",
+                                         "()[Ljava/lang/StackTraceElement;");
+  if (get_stack == nullptr) {
+    return msg;
+  }
+
+  auto *j_stack = (jobjectArray)env->CallObjectMethod(j_throw, get_stack);
+  if (j_stack == nullptr) {
+    return msg;
+  }
+  Defer { env->DeleteLocalRef(j_stack); };
+
+  jclass stack_element_class = env->FindClass("java/lang/StackTraceElement");
+  if (stack_element_class == nullptr) {
+    return msg;
+  }
+  Defer { env->DeleteLocalRef(stack_element_class); };
+
+  jmethodID get_class_name = env->GetMethodID(
+      stack_element_class, "getClassName", "()Ljava/lang/String;");
+  jmethodID get_method_name = env->GetMethodID(
+      stack_element_class, "getMethodName", "()Ljava/lang/String;");
+  jmethodID get_file_name = env->GetMethodID(stack_element_class, "getFileName",
+                                             "()Ljava/lang/String;");
+  jmethodID get_line_number =
+      env->GetMethodID(stack_element_class, "getLineNumber", "()I");
+  if (get_class_name == nullptr || get_method_name == nullptr ||
+      get_file_name == nullptr || get_line_number == nullptr) {
+    return msg;
+  }
+
+  jsize len = env->GetArrayLength(j_stack);
+  for (int i = 0; i < len; i++) {
+    auto *j_element = env->GetObjectArrayElement(j_stack, i);
+    if (j_element == nullptr) {
+      continue;
+    }
+    Defer { env->DeleteLocalRef(j_element); };
+
+    auto *j_class_name =
+        (jstring)env->CallObjectMethod(j_element, get_class_name);
+    auto *j_method_name =
+        (jstring)env->CallObjectMethod(j_element, get_method_name);
+    auto *j_file_name =
+        (jstring)env->CallObjectMethod(j_element, get_file_name);
+    int j_line_number = (jlong)env->CallIntMethod(j_element, get_line_number);
+    if (j_class_name == nullptr || j_method_name == nullptr ||
+        j_file_name == nullptr) {
+      continue;
+    }
+
+    *stack += modelbox::jstring2string(env, j_class_name) + "." +
+              modelbox::jstring2string(env, j_method_name) + "(" +
+              modelbox::jstring2string(env, j_file_name) + ":";
+    if (j_line_number < 0) {
+      *stack += "jni";
+    } else {
+      *stack += std::to_string(j_line_number);
+    }
+    *stack += ")\n";
+    env->DeleteLocalRef(j_class_name);
+    env->DeleteLocalRef(j_method_name);
+    env->DeleteLocalRef(j_file_name);
+  }
+
+  return msg;
 }
 
 }  // namespace modelbox

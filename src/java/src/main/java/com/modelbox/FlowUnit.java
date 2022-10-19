@@ -17,37 +17,43 @@
 package com.modelbox;
 
 abstract public class FlowUnit extends NativeObject {
+  public FlowUnit() {
+    setNativeHandle(FlowUnit_New());
+  }
+
   /**
    * Flowunit Open 
    * @param opts
    * @return 
    */
-  abstract public Status open(Configuration opts);
+  public void open(Configuration opts) throws ModelBoxException {}
 
   /**
    * Flowunit Close
    * @return
    */
-  abstract public Status close();
-  
+  public void close() throws ModelBoxException {}
+
   /**
    * FlowUnit data process
    * @param data_ctx
    * @return
    */
-  abstract public Status process(DataContext data_ctx);
-  
+  abstract public Status process(DataContext data_ctx) throws ModelBoxException;
+
   /**
    * Flowunit data pre
    * @param data_ctx
    * @return
    */
-  abstract public Status dataPre(DataContext data_ctx);
+  public void dataPre(DataContext data_ctx) throws ModelBoxException {}
 
   /**
    * FlowUnit data Post;
    * @param data_ctx
    * @return
    */
-  abstract public Status dataPost(DataContext data_ctx);
+  public void dataPost(DataContext data_ctx) throws ModelBoxException {}
+
+  private native long FlowUnit_New();
 }

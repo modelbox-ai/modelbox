@@ -174,6 +174,22 @@ void JNINativeObject::DeleteJObject(JNIEnv *env, jobject object,
   if (native_object == nullptr) {
     return;
   }
+  
+  jclass cls = env->GetObjectClass(object);
+  if (cls == nullptr) {
+    std::string errmsg = "get object class failed.";
+    StatusError = {STATUS_INVALID, errmsg};
+    return;
+  }
+  Defer { env->DeleteLocalRef(cls); };
+
+  jfieldID ptrField = env->GetFieldID(cls, member, "J");
+  if (ptrField == nullptr) {
+    std::string errmsg = "not a modelbox object, not extends from NativeObject";
+    StatusError = {STATUS_INVALID, errmsg};
+    return;
+  }
+  env->SetLongField(object, ptrField, 0);
 
   delete native_object;
 }

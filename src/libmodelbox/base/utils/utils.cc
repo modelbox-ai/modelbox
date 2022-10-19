@@ -618,7 +618,7 @@ std::string ExpandEnvironmentVariables(const std::string &text) {
     text_copies.replace(match[1].first, match[1].second, "$");
   }
 
-  return std::move(text_copies);
+  return text_copies;
 }
 
 }  // namespace modelbox

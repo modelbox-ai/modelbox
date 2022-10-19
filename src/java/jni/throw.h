@@ -37,7 +37,9 @@ void ModelBoxJNIThrow(JNIEnv *env, Status &status);
 void ModelBoxJNIThrow(JNIEnv *env, const char *runtime_exception,
                       const char *errmsg);
 
-std::string ModelboxExceptionMsg(JNIEnv *env);
+std::shared_ptr<Status> ModelboxJNICatchException(JNIEnv *env);
+
+std::string ModelboxExceptionMsg(JNIEnv *env, std::string *stack = nullptr);
 
 }  // namespace modelbox
 

@@ -38,6 +38,7 @@ public class NativeObject {
    * Free native jni handle
    */
   @Override
+  @SuppressWarnings("deprecation")
   protected void finalize() {
     try {
       delete_handle(native_handle);

@@ -24,8 +24,7 @@
 namespace modelbox {
 class FlowUnitBuilder {
  public:
-  virtual void Probe(std::string &unit_type,
-                     std::shared_ptr<FlowUnitDesc> &desc) = 0;
+  virtual void Probe(std::shared_ptr<FlowUnitDesc> &desc) = 0;
 
   virtual std::shared_ptr<FlowUnit> Build() = 0;
 };

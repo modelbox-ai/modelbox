@@ -107,6 +107,198 @@ public class Buffer extends NativeObject {
   }
 
   /**
+   * Set long to meta data
+   * @key meta key
+   * @value meta value
+   */ 
+  public void setMetaLong(String key, long value) throws ModelBoxException {
+    BufferSetMetaLong(key, value);
+  }
+
+  /**
+   * Set int to meta data
+   * @key meta key
+   * @value meta value
+   */
+  public void setMetaInt(String key, int value) throws ModelBoxException {
+    BufferSetMetaInt(key, value);
+  }
+
+  /**
+   * Set String to meta data
+   * @key meta key
+   * @value meta value
+   */
+  public void setMetaString(String key, String value) throws ModelBoxException {
+    BufferSetMetaString(key, value);
+  }
+
+  /**
+   * Get double from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public void setMetaDouble(String key, double value) throws ModelBoxException {
+    BufferSetMetaDouble(key, value);
+  }
+
+  /**
+   * Get float from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public void setMetaFloat(String key, float value) throws ModelBoxException {
+    BufferSetMetaFloat(key, value);
+  }
+
+  /**
+   * Get boolean from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public void setMetaBoolean(String key, boolean value) throws ModelBoxException {
+    BufferSetMetaBoolean(key, value);
+  }
+
+  /**
+   * Get long from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public long getMetaLong(String key) throws ModelBoxException {
+    return BufferGetMetaLong(key);
+  }
+
+  /**
+   * Get int from meta data
+   * @key meta key
+   * @default default value
+   * @return meta value
+   */
+  public long getMetaLong(String key, long defaultValue) {
+    try {
+      return getMetaLong(key);
+    } catch (ModelBoxException e) {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Get int from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public int getMetaInt(String key) throws ModelBoxException {
+    return BufferGetMetaInt(key);
+  }
+
+  /**
+   * Get int from meta data
+   * @key meta key
+   * @default default value
+   * @return meta value
+   */
+  public int getMetaInt(String key, int defaultValue) {
+    try {
+      return getMetaInt(key);
+    } catch (ModelBoxException e) {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Get String from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public String getMetaString(String key) throws ModelBoxException {
+    return BufferGetMetaString(key);
+  }
+
+  /**
+   * Get String from meta data
+   * @key meta key
+   * @default default value
+   * @return meta value
+   */
+  public String getMetaString(String key, String defaultValue) {
+    try {
+      return getMetaString(key);
+    } catch (ModelBoxException e) {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Get double from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public double getMetaDouble(String key) throws ModelBoxException {
+    return BufferGetMetaDouble(key);
+  }
+
+  /**
+   * Get double from meta data
+   * @key meta key
+   * @default default value
+   * @return meta value
+   */
+  public double getMetaDouble(String key, double defaultValue) {
+    try {
+      return getMetaDouble(key);
+    } catch (ModelBoxException e) {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Get double from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public float getMetaFloat(String key) throws ModelBoxException {
+    return BufferGetMetaFloat(key);
+  }
+
+  /**
+   * Get float from meta data
+   * @key meta key
+   * @default default value
+   * @return meta value
+   */
+  public float getMetaFloat(String key, float defaultValue) {
+    try {
+      return getMetaFloat(key);
+    } catch (ModelBoxException e) {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Get boolean from meta data
+   * @key meta key
+   * @return meta value
+   */
+  public boolean getMetaBool(String key) throws ModelBoxException {
+    return BufferGetMetaBool(key);
+  }
+
+  /**
+   * Get boolean from meta data
+   * @key meta key
+   * @default default value
+   * @return meta value
+   */
+  public boolean getMetaBool(String key, boolean defaultValue) {
+    try {
+      return getMetaBool(key);
+    } catch (ModelBoxException e) {
+      return defaultValue;
+    }
+  }
+
+  /**
    * Get buffer device
    * @return
    */
@@ -129,6 +321,30 @@ public class Buffer extends NativeObject {
   private native String BufferGetErrorMsg();
 
   private native long BufferGetBytes();
+
+  private native void BufferSetMetaLong(String key, long value);
+
+  private native void BufferSetMetaInt(String key, int value);
+
+  private native void BufferSetMetaString(String key, String value);
+
+  private native void BufferSetMetaDouble(String key, double value);
+
+  private native void BufferSetMetaFloat(String key, float value);
+
+  private native void BufferSetMetaBoolean(String key, boolean value);
+
+  private native long BufferGetMetaLong(String key);
+
+  private native int BufferGetMetaInt(String key);
+
+  private native String BufferGetMetaString(String key);
+
+  private native double BufferGetMetaDouble(String key);
+
+  private native float BufferGetMetaFloat(String key);
+
+  private native boolean BufferGetMetaBool(String key);
 
   private native void BufferCopyMeta(Buffer buffer, boolean isOverWrite);
 

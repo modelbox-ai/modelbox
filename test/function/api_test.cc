@@ -125,10 +125,8 @@ class CustomFlowUnit : public FlowUnit {
 
 class CustomFlowUnitBuilder : public FlowUnitBuilder {
  public:
-  void Probe(std::string &unit_type,
-             std::shared_ptr<FlowUnitDesc> &desc) override {
-    unit_type = "cpu";
-
+  void Probe(std::shared_ptr<FlowUnitDesc> &desc) override {
+    desc->SetFlowUnitType("cpu");
     desc->SetFlowUnitName("custom_flowunit");
     desc->AddFlowUnitInput({"in1"});
     desc->AddFlowUnitOutput({"out1"});

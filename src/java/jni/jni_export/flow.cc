@@ -182,7 +182,7 @@ Java_com_modelbox_Flow_FlowInitByName__Ljava_lang_String_2Lcom_modelbox_Configur
   }
 
   auto ret = n_flow->InitByName(modelbox::jstring2string(env, j_name), m_args,
-                     modelbox::jstring2string(env, j_flowdir));
+                                modelbox::jstring2string(env, j_flowdir));
   modelbox::ModelBoxJNIThrow(env, ret);
 }
 
@@ -223,6 +223,38 @@ Java_com_modelbox_Flow_FlowInitByName__Ljava_lang_String_2Lcom_modelbox_Configur
 
   auto ret = n_flow->InitByName(modelbox::jstring2string(env, j_name), m_args);
   modelbox::ModelBoxJNIThrow(env, ret);
+}
+
+/*
+ * Class:     com_modelbox_Flow
+ * Method:    FlowRegisterFlowUnit
+ * Signature: (Lcom/modelbox/FlowUnitBuilder;)V
+ */
+JNIEXPORT void JNICALL Java_com_modelbox_Flow_FlowRegisterFlowUnit(
+    JNIEnv *env, jobject j_this, jobject j_builder) {
+
+  auto n_flow = modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Flow>(
+      env, j_this);
+  if (n_flow == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return;
+  }
+
+  if (j_builder == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_INVALID,
+                               "input argument is null");
+    return;
+  }
+
+  auto n_builder =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::FlowUnitBuilder>(
+          env, j_builder);
+  if (n_builder == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return;
+  }
+
+  n_flow->RegisterFlowUnit(n_builder);
 }
 
 /*
