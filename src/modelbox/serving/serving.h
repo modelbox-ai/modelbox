@@ -42,7 +42,7 @@ class ModelServingConfig {
   std::string GetModelEntry() { return model_entry_; }
   std::string GetModelEngine() { return model_engine_; }
   int64_t GetMaxBatchSize() { return max_batch_size_; }
-  std::vector<std::string> GetDevices() { return devices_; }
+  std::string GetDevices() { return devices_; }
   std::string GetMode() { return mode_; }
   std::vector<std::string> GetInputNames() { return input_names_; }
   std::vector<std::string> GetOutputNames() { return output_names_; }
@@ -61,13 +61,9 @@ class ModelServingConfig {
     max_batch_size_ = max_batch_size;
   }
 
-  void SetDevices(const std::vector<std::string> &devices) {
-    devices_ = devices;
-  }
+  void SetDevices(const std::string &devices) { devices_ = devices; }
 
-  void SetMode(const std::string &mode) {
-    mode_ = mode;
-  }
+  void SetMode(const std::string &mode) { mode_ = mode; }
 
   void SetInputNames(const std::vector<std::string> &input_names) {
     input_names_ = input_names;
@@ -88,7 +84,7 @@ class ModelServingConfig {
   std::string model_entry_;
   std::string model_engine_;
   int64_t max_batch_size_;
-  std::vector<std::string> devices_;
+  std::string devices_;
   std::string mode_;
 
   std::vector<std::string> input_names_, output_names_;
@@ -108,7 +104,7 @@ class ModelServing {
   modelbox::Status ParseModelToml();
   modelbox::Status FillModelItem(const std::string &type);
 
-  std::string GetDeviceType(const std::string &model_engine);
+  modelbox::Status GetDeviceType(std::string &device_type);
   modelbox::Status GenerateModelServingTemplate(const std::string &model_name,
                                                 int port);
   modelbox::Status GenerateDefaultGraphConfig(const std::string &model_name,

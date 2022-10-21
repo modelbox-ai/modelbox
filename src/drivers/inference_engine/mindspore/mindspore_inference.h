@@ -34,11 +34,12 @@ class MindSporeInference {
   MindSporeInference() = default;
   virtual ~MindSporeInference();
 
-  modelbox::Status Init(const std::shared_ptr<mindspore::Context> &mindspore_context,
-                        const std::string &model_entry,
-                        std::shared_ptr<modelbox::Configuration> &config,
-                        struct MindSporeIOList &io_list,
-                        const std::shared_ptr<modelbox::Drivers> &drivers_ptr);
+  modelbox::Status Init(
+      const std::shared_ptr<mindspore::Context> &mindspore_context,
+      const std::string &model_entry,
+      std::shared_ptr<modelbox::Configuration> &config,
+      struct MindSporeIOList &io_list,
+      const std::shared_ptr<modelbox::Drivers> &drivers_ptr);
   modelbox::Status Infer(
       const std::shared_ptr<modelbox::DataContext> &data_ctx);
   int64_t GetBatchSize() { return batch_size_; };
@@ -48,8 +49,7 @@ class MindSporeInference {
                                 mindspore::ModelType &model_type);
   modelbox::Status CheckMindSporeInfo(
       const std::vector<mindspore::MSTensor> &tensor_list,
-      const std::vector<std::string> &name_list,
-      const std::vector<std::string> &type_list);
+      const std::vector<std::string> &name_list);
   modelbox::Status CheckMindSporeIO(struct MindSporeIOList &io_list);
   std::shared_ptr<mindspore::Model> model_{nullptr};
   std::shared_ptr<mindspore::Context> context_{nullptr};

@@ -573,4 +573,6 @@ void FlowUnitFactory::SetFlowUnitFactory(
     const std::vector<std::shared_ptr<DriverFactory>>
         &bind_flowunit_factory_list){};
 
+std::string FlowUnitFactory::GetFlowUnitInputDeviceType() { return ""; };
+
 }  // namespace modelbox

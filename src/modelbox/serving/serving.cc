@@ -62,6 +62,24 @@ const std::string template_content = R"(
         return modelbox.Status()
 )";
 
+static std::map<std::string, std::string> configtype_nptype_map = {
+    {"FLOAT", "np.float32"},
+    {"DOUBLE", "np.float64"},
+    {"INT", "np.int32"},
+    {"UINT8", "np.uint8"},
+    {"LONG", "np.int64"}};
+
+std::string GetNumpyType(std::string type) {
+  std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+  auto iter = configtype_nptype_map.find(type);
+  if (iter == configtype_nptype_map.end()) {
+    auto err_msg = "get numpy type failde, unspported type: " + type;
+    fprintf(stderr, "%s\n", err_msg.c_str());
+    return "";
+  }
+  return iter->second;
+}
+
 modelbox::Status ModelServing::GenerateTemplate(const std::string &model_name,
                                                 const std::string &model_path,
                                                 int port) {
@@ -217,7 +235,6 @@ modelbox::Status ModelServing::FillModelItem(const std::string &type) {
           return modelbox::STATUS_BADCONF;
         }
 
-        item_names.emplace_back(item_name);
         continue;
       }
 
@@ -228,10 +245,11 @@ modelbox::Status ModelServing::FillModelItem(const std::string &type) {
           return modelbox::STATUS_BADCONF;
         }
 
-        item_types.emplace_back(item_type);
         continue;
       }
     }
+    item_names.emplace_back(item_name);
+    item_types.emplace_back(item_type);
   }
 
   if (type == "input") {
@@ -258,7 +276,7 @@ modelbox::Status ModelServing::ParseModelToml() {
   model_serving_config_.SetModelEntry(base_config->GetString("entry", ""));
   model_serving_config_.SetMaxBatchSize(
       base_config->GetInt64("max_batch_size", 1));
-  model_serving_config_.SetDevices(base_config->GetStrings("device", {"cpu"}));
+  model_serving_config_.SetDevices(base_config->GetString("device", {"cpu"}));
   model_serving_config_.SetModelEngine(
       base_config->GetString("engine", "tensorflow"));
   model_serving_config_.SetMode(base_config->GetString("mode", "model"));
@@ -329,30 +347,20 @@ modelbox::Status ModelServing::GenerateModelServingTemplate(
   return modelbox::STATUS_OK;
 }
 
-std::string ModelServing::GetDeviceType(const std::string &model_engine) {
-  std::string device{"cpu"};
-  if (model_engine == "tensorrt") {
-    device = "cuda";
-  } else if (model_engine == "mindspore") {
-    device = "ascend";
-  } else if (model_engine == "acl") {
-    device = "ascend";
+modelbox::Status ModelServing::GetDeviceType(std::string &device_type) {
+  auto devices = model_serving_config_.GetDevices();
+  if (devices.compare(0, 4, "cuda") == 0) {
+    device_type = "cuda";
+  } else if (devices.compare(0, 3, "cpu") == 0) {
+    device_type = "cpu";
+  } else if (devices.compare(0, 5, "ascend") == 0) {
+    device_type = "ascend";
   } else {
-    auto devices = model_serving_config_.GetDevices();
-    for (auto &device : devices) {
-      if (device.size() < 4) {
-        continue;
-      }
-
-      auto sub = device.substr(0, 4);
-      if (sub == "cuda") {
-        device = "cuda";
-        break;
-      }
-    }
+    auto err_msg = "base.device is not corret in toml config: " + devices;
+    return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  return device;
+  return modelbox::STATUS_OK;
 }
 
 modelbox::Status ModelServing::GenerateInferConfig(
@@ -376,11 +384,18 @@ modelbox::Status ModelServing::GenerateInferConfig(
 
   Defer { file.close(); };
 
-  std::string device = GetDeviceType(model_serving_config_.GetModelEngine());
+  std::string device_type;
+  status = GetDeviceType(device_type);
+  if (status != modelbox::STATUS_OK) {
+    auto err_msg = "get device type failed  " + status.WrapErrormsgs();
+    fprintf(stderr, "%s\n", err_msg.c_str());
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+
   std::stringstream ss;
   std::string base_content = R"([base]
 name = ")" + model_name + R"("
-device = ")" + device + R"("
+device = ")" + device_type + R"("
 version = "1.0.0"
 description = "model-serving template description."
 entry = ")" + model_serving_config_.GetModelEntry() +
@@ -604,10 +619,10 @@ modelbox::Status ModelServing::GeneratePrePostFlowUnit(
     for (size_t i = 0; i < input_names.size(); ++i) {
       ss << "                        data_" << input_names[i]
          << " = np.asarray(result[\"" << input_names[i] << "\"])";
-      if (input_types[i] == "float") {
-        ss << ".astype(np.float32)\n";
-      } else if (input_types[i] == "double") {
-        ss << ".astype(np.float64)\n";
+      if (input_types[i].empty()) {
+        ss << "\n";
+      } else {
+        ss << ".astype(" << GetNumpyType(input_types[i]) << ")\n";
       }
       ss << "                        add_buffer_" << input_names[i]
          << " = self.create_buffer(data_" << input_names[i] << ")\n";
@@ -711,10 +726,10 @@ modelbox::Status ModelServing::GenerateDefaultPrePostFlowUnit(
       ss << "            if request_body.get(\"" << input_names[i] << "\"):\n";
       ss << "                data = np.asarray(request_body[\""
          << input_names[i] << "\"])";
-      if (input_types[i] == "float") {
-        ss << ".astype(np.float32)\n";
-      } else if (input_types[i] == "double") {
-        ss << ".astypd(np.float64)\n";
+      if (input_types[i].empty()) {
+        ss << "\n";
+      } else {
+        ss << ".astype(" << GetNumpyType(input_types[i]) << ")\n";
       }
       ss << "                add_buffer = self.create_buffer(data)\n";
       ss << "                " << input_names[i] << ".push_back(add_buffer)\n";

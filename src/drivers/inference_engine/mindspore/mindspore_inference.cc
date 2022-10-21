@@ -88,28 +88,13 @@ modelbox::Status MindSporeInference::GetModelType(
 
 modelbox::Status MindSporeInference::CheckMindSporeInfo(
     const std::vector<mindspore::MSTensor> &tensor_list,
-    const std::vector<std::string> &name_list,
-    const std::vector<std::string> &type_list) {
-  if (tensor_list.size() != name_list.size() ||
-      tensor_list.size() != type_list.size()) {
+    const std::vector<std::string> &name_list) {
+  if (tensor_list.size() != name_list.size()) {
     auto err_msg = "model port size " + std::to_string(tensor_list.size()) +
-                   " does not match for config file port name or type size " +
+                   " does not match for config file port name size " +
                    std::to_string(name_list.size());
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_BADCONF, err_msg};
-  }
-
-  for (size_t i = 0; i < tensor_list.size(); ++i) {
-    MBLOG_INFO << "node port name: " << name_list[i]
-               << ", model port name: " << tensor_list[i].Name();
-    auto type = tensor_list[i].DataType();
-    if (data_type_map[type] != type_list[i]) {
-      auto err_msg = "model port name " + data_type_map[type] +
-                     " does not match for config file port name " +
-                     type_list[i];
-      MBLOG_ERROR << err_msg;
-      return {modelbox::STATUS_BADCONF, err_msg};
-    }
   }
 
   return modelbox::STATUS_OK;
@@ -118,8 +103,7 @@ modelbox::Status MindSporeInference::CheckMindSporeInfo(
 modelbox::Status MindSporeInference::CheckMindSporeIO(
     struct MindSporeIOList &io_list) {
   auto input_tensor = model_->GetInputs();
-  auto ret = CheckMindSporeInfo(input_tensor, io_list.input_name_list,
-                                io_list.input_type_list);
+  auto ret = CheckMindSporeInfo(input_tensor, io_list.input_name_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms input failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
@@ -127,8 +111,7 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
   }
 
   auto output_tensor = model_->GetOutputs();
-  ret = CheckMindSporeInfo(output_tensor, io_list.output_name_list,
-                           io_list.output_type_list);
+  ret = CheckMindSporeInfo(output_tensor, io_list.output_name_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms output failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;

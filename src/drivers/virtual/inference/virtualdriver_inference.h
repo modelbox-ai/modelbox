@@ -101,6 +101,8 @@ class VirtualInferenceFlowUnitFactory : public modelbox::FlowUnitFactory {
   void FillFlowUnitType(
       std::shared_ptr<modelbox::Configuration> &config,
       std::shared_ptr<VirtualInferenceFlowUnitDesc> &flowunit_desc);
+  std::string GetInferenceFlowUintInputDeviceType(
+      const std::string &unit_type, const std::string &virtual_type);
   std::shared_ptr<modelbox::Driver> driver_;
   std::vector<std::shared_ptr<modelbox::DriverFactory>>
       bind_flowunit_factory_list_;

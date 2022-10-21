@@ -32,6 +32,46 @@
 #endif
 #include "virtualdriver_inference.h"
 
+static std::map<nvinfer1::DataType, modelbox::ModelBoxDataType>
+    trttype_mbtype_map = {
+        {nvinfer1::DataType::kFLOAT, modelbox::MODELBOX_FLOAT},
+        {nvinfer1::DataType::kINT8, modelbox::MODELBOX_INT8},
+        {nvinfer1::DataType::kINT32, modelbox::MODELBOX_INT32},
+        {nvinfer1::DataType::kHALF, modelbox::MODELBOX_HALF},
+        {nvinfer1::DataType::kBOOL, modelbox::MODELBOX_BOOL}};
+
+static std::map<modelbox::ModelBoxDataType, nvinfer1::DataType>
+    mbtype_trttype_map = {
+        {modelbox::MODELBOX_FLOAT, nvinfer1::DataType::kFLOAT},
+        {modelbox::MODELBOX_INT8, nvinfer1::DataType::kINT8},
+        {modelbox::MODELBOX_INT32, nvinfer1::DataType::kINT32},
+        {modelbox::MODELBOX_HALF, nvinfer1::DataType::kHALF},
+        {modelbox::MODELBOX_BOOL, nvinfer1::DataType::kBOOL}};
+
+modelbox::Status ConvertTrtTypeToModelBoxType(
+    nvinfer1::DataType trt_type, modelbox::ModelBoxDataType& modelbox_type) {
+  auto iter = trttype_mbtype_map.find(trt_type);
+  if (iter == trttype_mbtype_map.end()) {
+    return {modelbox::STATUS_NOTSUPPORT,
+            "covert TensorRT Type to ModelBoxType failed, unsupport type " +
+                std::to_string(static_cast<int>(trt_type))};
+  }
+  modelbox_type = iter->second;
+  return modelbox::STATUS_SUCCESS;
+}
+
+modelbox::Status ConvertModelBoxTypeToTorchType(
+    modelbox::ModelBoxDataType modelbox_type, nvinfer1::DataType& trt_type) {
+  auto iter = mbtype_trttype_map.find(modelbox_type);
+  if (iter == mbtype_trttype_map.end()) {
+    return {modelbox::STATUS_NOTSUPPORT,
+            "covert ModelBoxType to TensorRT Type failed, unsupport type " +
+                std::to_string(modelbox_type)};
+  }
+  trt_type = iter->second;
+  return modelbox::STATUS_SUCCESS;
+}
+
 TensorRTInferenceFlowUnit::TensorRTInferenceFlowUnit() = default;
 TensorRTInferenceFlowUnit::~TensorRTInferenceFlowUnit() {
   context_ = nullptr;
@@ -982,8 +1022,7 @@ modelbox::Status TensorRTInferenceFlowUnit::BindMemory(
 
 modelbox::Status TensorRTInferenceFlowUnit::CreateMemory(
     std::vector<void*>& buffers, const std::string& name,
-    const std::string& type, std::shared_ptr<modelbox::BufferList>& output_buf,
-    size_t size) {
+    std::shared_ptr<modelbox::BufferList>& output_buf, size_t size) {
   int data_type_size = 0;
   modelbox::Status status;
 
@@ -1027,20 +1066,15 @@ modelbox::Status TensorRTInferenceFlowUnit::CreateMemory(
   }
   std::vector<size_t> shape_vector(size, single_bytes);
   status = output_buf->Build(shape_vector);
-  if (type == "float") {
-    output_buf->Set("type", modelbox::MODELBOX_FLOAT);
-  } else if (type == "double") {
-    output_buf->Set("type", modelbox::MODELBOX_DOUBLE);
-  } else if (type == "int") {
-    output_buf->Set("type", modelbox::MODELBOX_INT32);
-  } else if (type == "uint8") {
-    output_buf->Set("type", modelbox::MODELBOX_UINT8);
-  } else if (type == "long") {
-    output_buf->Set("type", modelbox::MODELBOX_INT16);
-  } else {
-    return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
-  }
 
+  modelbox::ModelBoxDataType modelbox_type = modelbox::MODELBOX_TYPE_INVALID;
+  status = ConvertTrtTypeToModelBoxType(data_type, modelbox_type);
+  if (!status) {
+    auto err_msg =
+        "output type convert failed ,error: " + status.WrapErrormsgs();
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+  output_buf->Set("type", modelbox_type);
   output_buf->Set("shape", output_shape);
   buffers[binding_index] = output_buf->MutableData();
   return modelbox::STATUS_OK;
@@ -1067,13 +1101,10 @@ modelbox::Status TensorRTInferenceFlowUnit::PrePareInput(
 modelbox::Status TensorRTInferenceFlowUnit::PrePareOutput(
     std::shared_ptr<modelbox::DataContext>& data_ctx,
     std::vector<void*>& memory) {
-  int index = 0;
   size_t size = data_ctx->Input(params_.inputs_name_list[0])->Size();
   for (const auto& output_name : params_.outputs_name_list) {
     auto output_buf = data_ctx->Output(output_name);
-    auto output_type = params_.outputs_type_list[index++];
-    auto status =
-        CreateMemory(memory, output_name, output_type, output_buf, size);
+    auto status = CreateMemory(memory, output_name, output_buf, size);
     if (status != modelbox::STATUS_OK) {
       auto err_msg =
           "createMemory " + output_name + " failed." + status.WrapErrormsgs();

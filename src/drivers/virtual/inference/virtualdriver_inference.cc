@@ -183,6 +183,25 @@ modelbox::Status InferenceVirtualDriverManager::BindBaseDriver(
   return modelbox::STATUS_OK;
 }
 
+std::string
+VirtualInferenceFlowUnitFactory::GetInferenceFlowUintInputDeviceType(
+    const std::string &unit_type, const std::string &virtual_type) {
+  for (auto &flowunit_factory : bind_flowunit_factory_list_) {
+    if (std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
+            ->GetFlowUnitFactoryType() != unit_type) {
+      continue;
+    }
+
+    if (std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
+            ->GetVirtualType() != virtual_type) {
+      continue;
+    }
+
+    return std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
+        ->GetFlowUnitInputDeviceType();
+  }
+}
+
 modelbox::Status VirtualInferenceFlowUnitFactory::FillItem(
     std::shared_ptr<modelbox::Configuration> &config,
     std::shared_ptr<VirtualInferenceFlowUnitDesc> &flowunit_desc,
@@ -194,7 +213,7 @@ modelbox::Status VirtualInferenceFlowUnitFactory::FillItem(
   }
 
   for (unsigned int i = 1; i <= item.size(); ++i) {
-    std::string item_device;
+    std::string item_device = device;
     std::string item_name;
     std::string item_type;
     auto key = type;
@@ -220,18 +239,17 @@ modelbox::Status VirtualInferenceFlowUnitFactory::FillItem(
       }
 
       if (inner_item == "type") {
-        item_type = config->GetString(item_index);
-        if (item_type.empty()) {
-          MBLOG_ERROR << "the key " << key << " should have key type.";
-          return modelbox::STATUS_BADCONF;
+        auto config_type = config->GetString(item_index);
+        if (!config_type.empty()) {
+          item_type = config_type;
         }
         continue;
       }
 
       if (inner_item == "device") {
-        item_device = config->GetString(item_index);
-        if (item_device.empty()) {
-          item_device = device;
+        auto config_device = config->GetString(item_index);
+        if (!config_device.empty()) {
+          item_device = config_device;
         }
         continue;
       }
@@ -240,6 +258,10 @@ modelbox::Status VirtualInferenceFlowUnitFactory::FillItem(
     }
 
     if (type == "input") {
+      auto device_type = GetInferenceFlowUintInputDeviceType(
+          GetDriver()->GetDriverDesc()->GetType(),
+          flowunit_desc->GetVirtualType());
+      item_device = device_type.empty() ? item_device : device_type;
       flowunit_desc->AddFlowUnitInput(
           modelbox::FlowUnitInput(item_name, item_device, item_type, ext_map));
     } else {
