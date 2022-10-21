@@ -555,6 +555,8 @@ class FlowUnitFactory : public DriverFactory {
 
   virtual void SetVirtualType(const std::string &virtual_type);
 
+  virtual std::string GetFlowUnitInputDeviceType();
+
   virtual std::shared_ptr<FlowUnit> CreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type);
 

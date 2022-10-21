@@ -28,6 +28,45 @@ static std::map<std::string, TF_DataType> type_map = {
     {"FLOAT", TF_FLOAT}, {"DOUBLE", TF_DOUBLE}, {"INT", TF_INT32},
     {"UINT8", TF_UINT8}, {"LONG", TF_INT64},    {"STRING", TF_STRING}};
 
+static std::map<TF_DataType, modelbox::ModelBoxDataType> tftype_mbtype_map = {
+    {TF_FLOAT, modelbox::MODELBOX_FLOAT},
+    {TF_DOUBLE, modelbox::MODELBOX_DOUBLE},
+    {TF_INT32, modelbox::MODELBOX_INT32},
+    {TF_UINT8, modelbox::MODELBOX_UINT8},
+    {TF_INT64, modelbox::MODELBOX_INT64},
+    {TF_STRING, modelbox::MODELBOX_STRING}};
+
+static std::map<modelbox::ModelBoxDataType, TF_DataType> mbtype_tftype_map = {
+    {modelbox::MODELBOX_FLOAT, TF_FLOAT},
+    {modelbox::MODELBOX_DOUBLE, TF_DOUBLE},
+    {modelbox::MODELBOX_INT32, TF_INT32},
+    {modelbox::MODELBOX_UINT8, TF_UINT8},
+    {modelbox::MODELBOX_INT64, TF_INT64},
+    {modelbox::MODELBOX_STRING, TF_STRING}};
+
+modelbox::Status ConvertTFTypeToModelBoxType(
+    TF_DataType tf_type, modelbox::ModelBoxDataType &modelbox_type) {
+  auto iter = tftype_mbtype_map.find(tf_type);
+  if (iter == tftype_mbtype_map.end()) {
+    return {modelbox::STATUS_NOTSUPPORT,
+            "covert Tensorflow Type to ModelBox Type failed, unsupport type "};
+  }
+  modelbox_type = iter->second;
+  return modelbox::STATUS_SUCCESS;
+}
+
+modelbox::Status ConvertModelBoxTypeToTFType(
+    modelbox::ModelBoxDataType modelbox_type, TF_DataType &tf_type) {
+  auto iter = mbtype_tftype_map.find(modelbox_type);
+  if (iter == mbtype_tftype_map.end()) {
+    return {modelbox::STATUS_NOTSUPPORT,
+            "covert ModelBox Type to Tensorflow Type failed, unsupport type " +
+                std::to_string(modelbox_type)};
+  }
+  tf_type = iter->second;
+  return modelbox::STATUS_SUCCESS;
+}
+
 void DeleteTensor(TF_Tensor *tensor) {
   if (tensor == nullptr) {
     return;
@@ -449,11 +488,31 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
     const auto input_buf = data_ctx->Input(input_name);
 
     std::string type = params_.input_type_list_[index++];
-    std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+
     TF_DataType tf_type;
-    status = ConvertType(type, tf_type);
-    if (status != modelbox::STATUS_OK) {
-      return {status, "input type convert failed."};
+    if (type.empty()) {
+      // Get type form buffer meta when model input type is not set
+      modelbox::ModelBoxDataType buffer_type;
+      status = input_buf->At(0)->Get("type", buffer_type);
+      if (!status) {
+        auto err_msg =
+            "input type is not set ,please set it in inference toml file or "
+            "buffer meta . error: " +
+            status.WrapErrormsgs();
+        return {modelbox::STATUS_FAULT, err_msg};
+      }
+      status = ConvertModelBoxTypeToTFType(buffer_type, tf_type);
+      if (!status) {
+        auto err_msg =
+            "input type convert failed, error: " + status.WrapErrormsgs();
+        return {modelbox::STATUS_FAULT, err_msg};
+      }
+    } else {
+      std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+      status = ConvertType(type, tf_type);
+      if (status != modelbox::STATUS_OK) {
+        return {status, "input type convert failed."};
+      }
     }
 
     std::vector<size_t> buffer_shape;
@@ -504,6 +563,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PostProcess(
   for (const auto &output_name : params_.output_name_list_) {
     auto tensor_byte = TF_TensorByteSize(output_tf_tensor_list[index]);
     auto *tensor_data = TF_TensorData(output_tf_tensor_list[index]);
+    auto tensor_type = TF_TensorType(output_tf_tensor_list[index]);
     std::vector<size_t> output_shape;
 
     int64_t num_dims = TF_NumDims(output_tf_tensor_list[index]);
@@ -526,7 +586,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PostProcess(
     auto single_bytes = tensor_byte / num;
     std::vector<size_t> shape_vector(num, single_bytes);
     auto status = CreateOutputBufferList(output_buf, shape_vector, tensor_data,
-                                         tensor_byte, index);
+                                         tensor_byte, tensor_type, index);
     if (status != modelbox::STATUS_OK) {
       auto err_msg = "postProcess failed." + status.WrapErrormsgs();
       MBLOG_ERROR << err_msg;
@@ -647,29 +707,22 @@ modelbox::Status InferenceTensorflowFlowUnit::Process(
 modelbox::Status InferenceTensorflowFlowUnit::CreateOutputBufferList(
     std::shared_ptr<modelbox::BufferList> &output_buffer_list,
     const std::vector<size_t> &shape_vector, void *tensor_data,
-    size_t tensor_byte, int index) {
-  auto type_output_temp = params_.output_type_list_[index];
+    size_t tensor_byte, TF_DataType tensor_type, int index) {
   auto status =
       output_buffer_list->BuildFromHost(shape_vector, tensor_data, tensor_byte);
-  if (type_output_temp == "float") {
-    output_buffer_list->Set("type", modelbox::MODELBOX_FLOAT);
-  } else if (type_output_temp == "double") {
-    output_buffer_list->Set("type", modelbox::MODELBOX_DOUBLE);
-  } else if (type_output_temp == "int") {
-    output_buffer_list->Set("type", modelbox::MODELBOX_INT32);
-  } else if (type_output_temp == "uint8") {
-    output_buffer_list->Set("type", modelbox::MODELBOX_UINT8);
-  } else if (type_output_temp == "long") {
-    output_buffer_list->Set("type", modelbox::MODELBOX_INT64);
-  } else {
-    return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
-  }
-
-  if (status != modelbox::STATUS_OK) {
+  if (!status) {
     auto err_msg = "output buffer list builds error: " + status.WrapErrormsgs();
-    MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
+
+  modelbox::ModelBoxDataType modelbox_type = modelbox::MODELBOX_TYPE_INVALID;
+  status = ConvertTFTypeToModelBoxType(tensor_type, modelbox_type);
+  if (!status) {
+    auto err_msg =
+        "output type convert failed ,error: " + status.WrapErrormsgs();
+    return {modelbox::STATUS_FAULT, err_msg};
+  }
+  output_buffer_list->Set("type", modelbox_type);
   return modelbox::STATUS_OK;
 }
 

@@ -16,15 +16,10 @@ passwd = "NKEIuLCjW9UiZAtKa54PMPvWwdDV50kXePvixFJ8iKCW1QxEHswasfEHJ3NW79XG6aUlIk
 [input]
 [input.input1]
 name = "x_"
-type = "float"
-device = "cpu"
 
 [input.input2]
 name = "y_"
-type = "float"
-device = "cpu"
 
 [output]
 [output.output1]
 name = "output_0_trans_Cast_2_0"
-type = "float"

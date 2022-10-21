@@ -35,16 +35,48 @@ static std::map<std::string, c10::ScalarType> type_map = {
     {"LONG", torch::kInt64},     {"INT64", torch::kInt64},
     {"FLOAT16", torch::kFloat16}};
 
-static std::map<c10::ScalarType, modelbox::ModelBoxDataType> t2a_map = {
-    {torch::kFloat32, modelbox::MODELBOX_FLOAT},
-    {torch::kFloat64, modelbox::MODELBOX_DOUBLE},
-    {torch::kInt32, modelbox::MODELBOX_INT32},
-    {torch::kUInt8, modelbox::MODELBOX_UINT8},
-    {torch::kInt64, modelbox::MODELBOX_INT64},
-    {torch::kFloat16, modelbox::MODELBOX_HALF}};
+static std::map<c10::ScalarType, modelbox::ModelBoxDataType> torch_mbtype_map =
+    {{torch::kFloat32, modelbox::MODELBOX_FLOAT},
+     {torch::kFloat64, modelbox::MODELBOX_DOUBLE},
+     {torch::kInt32, modelbox::MODELBOX_INT32},
+     {torch::kUInt8, modelbox::MODELBOX_UINT8},
+     {torch::kInt64, modelbox::MODELBOX_INT64},
+     {torch::kFloat16, modelbox::MODELBOX_HALF}};
+
+static std::map<modelbox::ModelBoxDataType, c10::ScalarType> mbtype_torch_map =
+    {{modelbox::MODELBOX_FLOAT, torch::kFloat32},
+     {modelbox::MODELBOX_DOUBLE, torch::kFloat64},
+     {modelbox::MODELBOX_INT32, torch::kInt32},
+     {modelbox::MODELBOX_UINT8, torch::kUInt8},
+     {modelbox::MODELBOX_INT64, torch::kInt64},
+     {modelbox::MODELBOX_HALF, torch::kFloat16}};
 
 TorchInferenceFlowUnit::TorchInferenceFlowUnit() = default;
 TorchInferenceFlowUnit::~TorchInferenceFlowUnit() = default;
+
+modelbox::Status ConvertTorchTypeToModelBoxType(
+    c10::ScalarType torch_type, modelbox::ModelBoxDataType &modelbox_type) {
+  auto iter = torch_mbtype_map.find(torch_type);
+  if (iter == torch_mbtype_map.end()) {
+    return {modelbox::STATUS_NOTSUPPORT,
+            "covert TorchType to ModelBoxType failed, unsupport type " +
+                std::to_string(static_cast<int>(torch_type))};
+  }
+  modelbox_type = iter->second;
+  return modelbox::STATUS_SUCCESS;
+}
+
+modelbox::Status ConvertModelBoxTypeToTorchType(
+    modelbox::ModelBoxDataType modelbox_type, c10::ScalarType &torch_type) {
+  auto iter = mbtype_torch_map.find(modelbox_type);
+  if (iter == mbtype_torch_map.end()) {
+    return {modelbox::STATUS_NOTSUPPORT,
+            "covert ModelBoxType to TorchType failed, unsupport type " +
+                std::to_string(modelbox_type)};
+  }
+  torch_type = iter->second;
+  return modelbox::STATUS_SUCCESS;
+}
 
 void TorchInferenceFlowUnit::FillInput(
     const std::vector<modelbox::FlowUnitInput> &flowunit_input_list) {
@@ -260,11 +292,31 @@ modelbox::Status TorchInferenceFlowUnit::PreProcess(
     std::string type = params_.input_type_list_[index];
     std::string torch_set_type =
         params_.input_list_[index++].GetProperity("torch_type");
-    std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+
     c10::ScalarType torch_type;
-    status = ConvertType(type, torch_type);
-    if (status != modelbox::STATUS_OK) {
-      return {status, "input type convert failed."};
+    if (type.empty()) {
+      // Get type form buffer meta when model input type is not set
+      modelbox::ModelBoxDataType buffer_type;
+      status = input_buf->At(0)->Get("type", buffer_type);
+      if (!status) {
+        auto err_msg =
+            "input type is not set ,please set it in inference toml file or "
+            "buffer meta . error: " +
+            status.WrapErrormsgs();
+        return {modelbox::STATUS_FAULT, err_msg};
+      }
+      status = ConvertModelBoxTypeToTorchType(buffer_type, torch_type);
+      if (!status) {
+        auto err_msg =
+            "input type convert failed, error: " + status.WrapErrormsgs();
+        return {modelbox::STATUS_FAULT, err_msg};
+      }
+    } else {
+      std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+      status = ConvertType(type, torch_type);
+      if (status != modelbox::STATUS_OK) {
+        return {status, "input type convert failed."};
+      }
     }
 
     torch::TensorOptions option = torch::TensorOptions()
@@ -411,13 +463,14 @@ modelbox::Status TorchInferenceFlowUnit::SetOutputBufferListMeta(
     std::shared_ptr<modelbox::BufferList> &output_buf) {
   modelbox::ModelBoxDataType modelbox_type = modelbox::MODELBOX_TYPE_INVALID;
   std::vector<std::vector<size_t>> output_shape_vec;
+  modelbox::Status status;
   for (auto &item : output) {
-    auto torch_type = item.scalar_type();
-    auto iter = t2a_map.find(torch_type);
-    if (iter == t2a_map.end()) {
-      return {modelbox::STATUS_NOTSUPPORT, "unsupport output type."};
+    status = ConvertTorchTypeToModelBoxType(item.scalar_type(), modelbox_type);
+    if (!status) {
+      auto err_msg =
+          "output type convert failed, error: " + status.WrapErrormsgs();
+      return {modelbox::STATUS_FAULT, err_msg};
     }
-    modelbox_type = t2a_map[torch_type];
 
     auto sizes = item.sizes();
     std::vector<size_t> output_shape;

@@ -40,6 +40,7 @@ class InferenceTensorflowGpuFlowUnitFactory : public modelbox::FlowUnitFactory {
 
   std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
   std::string GetVirtualType() override { return INFERENCE_TYPE; };
+  std::string GetFlowUnitInputDeviceType() override { return "cpu"; };
 
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
       override {

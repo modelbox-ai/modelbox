@@ -99,13 +99,6 @@ modelbox::Status MindSporeInferenceFlowUnit::GetFlowUnitIO(
     return modelbox::STATUS_BADCONF;
   }
 
-  if (io_list.input_type_list.empty() || io_list.output_type_list.empty()) {
-    MBLOG_ERROR << "Wrong input type [" << io_list.input_type_list.size()
-                << "] or output type [" << io_list.output_type_list.size()
-                << "] number";
-    return modelbox::STATUS_BADCONF;
-  }
-
   return modelbox::STATUS_OK;
 }
 

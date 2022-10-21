@@ -145,7 +145,6 @@ class TensorRTInferenceFlowUnit : public modelbox::CudaFlowUnit {
       const std::shared_ptr<modelbox::DataContext>& data_ctx);
   modelbox::Status CreateMemory(
       std::vector<void*>& buffers, const std::string& name,
-      const std::string& type,
       std::shared_ptr<modelbox::BufferList>& output_buf, size_t size);
   modelbox::Status BindMemory(std::vector<void*>& buffers,
                               const std::string& name, const void* mem,

@@ -2,7 +2,7 @@
 entry = "@CMAKE_SOURCE_DIR@/test/assets/tensorflow/TF_VERSION/tensorflow_pb/frozen_model.pb"
 engine = "tensorflow"
 max_batch_size = 32
-device = ["cuda:0,1", "cpu"]
+device = "cuda:0,1"
 mode = "model"
 
 [input]
@@ -13,4 +13,3 @@ type = "float"
 [output]
 [output.output1]
 name = "output"
-type = "float"

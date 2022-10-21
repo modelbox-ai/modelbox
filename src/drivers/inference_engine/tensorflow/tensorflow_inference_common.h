@@ -114,7 +114,7 @@ class InferenceTensorflowFlowUnit : public modelbox::FlowUnit {
   modelbox::Status CreateOutputBufferList(
       std::shared_ptr<modelbox::BufferList> &output_buffer_list,
       const std::vector<size_t> &shape_vector, void *tensor_data,
-      size_t tensor_byte, int index);
+      size_t tensor_byte, TF_DataType tensor_type, int index);
   modelbox::Status GetTFOperation(const std::string &name, TF_Output &op);
   modelbox::Status FillInput(
       const std::vector<modelbox::FlowUnitInput> &flowunit_input_list);
