@@ -410,8 +410,10 @@ VirtualPythonFlowUnitFactory::CreateFlowUnit(const std::string &unit_name,
     return std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
         ->CreateFlowUnit(unit_name, unit_type);
   }
+  modelbox::StatusError = {modelbox::STATUS_NOTFOUND,
+                           "not found flowunit " + std::string(unit_name)};
   return nullptr;
-};
+}
 
 std::string VirtualPythonFlowUnitDesc::GetPythonEntry() {
   return python_entry_;
