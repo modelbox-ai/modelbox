@@ -27,8 +27,8 @@
 constexpr const char *FLOWUNIT_NAME = "python";
 constexpr const char *FLOWUNIT_DESC = "A python flowunit";
 
-std::mutex kPythonInitLock;
-std::shared_ptr<PythonInterpreter> kpythonInterpreter = nullptr;
+MODELBOX_DLL_LOCAL std::mutex kPythonInitLock;
+MODELBOX_DLL_LOCAL std::shared_ptr<PythonInterpreter> kpythonInterpreter = nullptr;
 
 std::shared_ptr<modelbox::DriverFactory> CreateDriverFactory() {
   std::shared_ptr<modelbox::DriverFactory> factory =

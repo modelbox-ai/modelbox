@@ -23,7 +23,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ubuntu-latest
+          key: ubuntu-latest-arm64
           max-size: 1024M
 
       - name: Configure CMake
