@@ -1,0 +1,69 @@
+FROM ubuntu:20.04
+
+ADD rockchip/* /usr/local/rockchip
+
+WORKDIR /root
+
+ENV DEBIAN_FRONTEND="noninteractive"
+ENV ROCKCHIP_PATH=/usr/local/rockchip
+
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
+    if [ "$(arch)" = "aarch64" ];then sed -i 's@ports.ubuntu.com@mirrors.ustc.edu.cn@g' /etc/apt/sources.list;fi && \
+    apt update && apt upgrade -y && \
+    apt install -y python3.8-dev python3-pip python3-apt python3-setuptools apt-utils && \
+    apt install -y \
+        dbus systemd systemd-cron iproute2 gnupg2 curl libcurl4-openssl-dev ca-certificates \
+        build-essential unzip ffmpeg sudo bash vim gdb git doxygen autoconf cmake gettext openssh-server \
+        python3-wheel python3-numpy python3-opencv libopencv-dev pkg-config kmod net-tools pciutils \
+        libssl-dev libcpprest-dev libswscale-dev libavformat-dev graphviz libgraphviz-dev libfuse-dev \
+        libprotobuf-c-dev protobuf-c-compiler duktape-dev libopenblas-dev netcat && \
+    rm -f /usr/bin/python3 /usr/bin/python && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.8 100 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 100 && \
+    update-alternatives --config python3 && \
+    rm -rf /var/lib/apt/lists/* /root/*
+
+RUN mkdir -p /root/.pip && \
+    echo "[global]" > /root/.pip/pip.conf && \
+    echo "index-url = https://pypi.python.org/simple" >>/root/.pip/pip.conf && \
+    echo "trusted-host = pypi.python.org" >>/root/.pip/pip.conf && \
+    echo "timeout = 120" >>/root/.pip/pip.conf && \
+    if [ "$(arch)" = "aarch64" ];then sed -i 's@python.org@douban.com@g' /root/.pip/pip.conf;fi && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir wheel attrs psutil decorator protobuf scipy sympy cffi grpcio grpcio-tools requests pillow pyyaml opencv-python && \
+    echo "/usr/local/lib" >>  /etc/ld.so.conf
+
+RUN if [ "$(arch)" = "aarch64" ];then node_arch="arm64";else node_arch="x64";fi && \
+    curl https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-${node_arch}.tar.xz|tar -xJ && \
+    cp -af node-v16.13.2-linux-${node_arch}/* /usr/local/ && \
+    if [ "$(arch)" = "aarch64" ];then npm config set registry https://registry.npm.taobao.org/;fi && \
+    npm install -g npm@latest && npm -v && node -v && \
+    npm install -g @angular/cli && \
+    npm cache clean --force && rm -rf /root/*
+
+RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; \
+    do [ $i = systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+    rm -f /lib/systemd/system/multi-user.target.wants/*; \
+    rm -f /etc/systemd/system/*.wants/*; \
+    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+    rm -f /lib/systemd/system/basic.target.wants/*; \
+    rm -f /lib/systemd/system/anaconda.target.wants/*; \
+    sed -i "32aPermitRootLogin yes" /etc/ssh/sshd_config && \
+    sed -i 's/^SystemMaxUse=.*/SystemMaxUse=16M/g' /etc/systemd/journald.conf && \
+    echo 'export TMOUT=0' >> ~/.bashrc && \
+    echo 'export HISTSIZE=1000' >> ~/.bashrc && \
+    echo '[ -n "${SSH_TTY}" ] && export $(cat /proc/1/environ|tr "\\0" "\\n"|xargs)' >> /etc/bash.bashrc && \
+    echo 'export PS1="\[\e[35;1m\][\u@\h \W]$ \[\e[0m\]"' >> ~/.bashrc && \
+    systemctl enable ssh
+
+RUN echo "/usr/local/rockchip/rga/libs/Linux/gcc-aarch64" >> /etc/ld.so.conf.d/rockchip.conf && \
+    echo "/usr/local/rockchip/rknpu/rknn/rknn_api/librknn_api/lib64" >> /etc/ld.so.conf.d/rockchip.conf && \
+    if [ -d /usr/local/rockchip/rknpu2/runtime/RK356X ]; then echo "/usr/local/rockchip/rknpu2/runtime/RK356X/Linux/librknn_api/aarch64" >> /etc/ld.so.conf.d/rockchip.conf; elif [ -d /usr/local/rockchip/rknpu2/runtime/RK3588 ]; then echo "/usr/local/rockchip/rknpu2/runtime/RK3588/Linux/librknn_api/aarch64" >> /etc/ld.so.conf.d/rockchip.conf; fi && \
+    echo "/usr/local/rockchip/rkmpp/lib" >> /etc/ld.so.conf.d/rockchip.conf
+
+VOLUME ["/sys/fs/cgroup", "/tmp", "/run", "/run/lock"]
+STOPSIGNAL SIGRTMIN+3
+
+CMD ["/sbin/init", "--log-target=journal"]
