@@ -67,6 +67,3 @@ endif(OS_LINUX)
 
 set(CUDA_NVCC_FLAGS "-Xcompiler -Wall,-fno-strict-aliasing,${CMAKE_CXX_FLAGS_DEBUG}" CACHE INTERNAL "") 
 set(CUDA_PROPAGATE_HOST_FLAGS OFF CACHE INTERNAL "")
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DBASE_FILE_NAME='\"$(notdir $<)\"'")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBASE_FILE_NAME='\"$(notdir $<)\"'")

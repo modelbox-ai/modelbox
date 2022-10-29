@@ -242,7 +242,8 @@ modelbox::Status InferenceTensorflowFlowUnit::GetTFOperation(
   op = TF_Output{TF_GraphOperationByName(params_.graph, port_info[0].c_str()),
                  index};
   if (nullptr == op.oper) {
-    auto err_msg = "can't init op " + name + ":" + std::to_string(index);
+    auto err_msg = "model port " + name + ":" + std::to_string(index) +
+                   " not exists, please check if port name is correct.";
     return {modelbox::STATUS_FAULT, err_msg};
   }
 

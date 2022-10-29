@@ -200,6 +200,8 @@ VirtualInferenceFlowUnitFactory::GetInferenceFlowUintInputDeviceType(
     return std::dynamic_pointer_cast<FlowUnitFactory>(flowunit_factory)
         ->GetFlowUnitInputDeviceType();
   }
+
+  return "";
 }
 
 modelbox::Status VirtualInferenceFlowUnitFactory::FillItem(

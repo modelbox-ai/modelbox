@@ -32,9 +32,9 @@ foreach(subdir ${SUBDIRS})
     add_subdirectory(${subdir})
 endforeach()
 
-install(DIRECTORY ${HEADER} 
+install(DIRECTORY ${HEADER}/modelbox
     DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR} 
-    COMPONENT cpu-device-flowunit
+    COMPONENT cpu-device-flowunit-devel
     )
 
 set(LIBMODELBOX_DRIVER_COMMON_LIB_INCLUDE ${HEADER} CACHE INTERNAL "")
