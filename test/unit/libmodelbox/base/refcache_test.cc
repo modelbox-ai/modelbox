@@ -20,6 +20,7 @@
 #include <modelbox/base/utils.h>
 
 #include <future>
+#include <thread>
 
 #include "gtest/gtest.h"
 #include "test_config.h"
