@@ -18,6 +18,7 @@
 #include <modelbox/base/popen.h>
 #include <pwd.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include <fstream>
@@ -45,7 +46,7 @@ const std::string UI_url = "/";
 const std::string flowunit_info_url = "/editor/flow-info";
 const std::string basic_info = "/editor/basic-info";
 const std::string demo_url = "/editor/demo";
-const std::string save_graph_url = "/editor/graph";
+const std::string graph_url = "/editor/graph";
 const std::string flowunit_create_url = "/editor/flowunit/create";
 const std::string project_url = "/editor/project";
 const std::string project_template_url = "/editor/project/template";
@@ -153,8 +154,10 @@ void ModelboxEditorPlugin::RegistHandlers() {
        &ModelboxEditorPlugin::HandlerProjectCreate},
       {flowunit_create_url, modelbox::HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerFlowUnitCreate},
-      {save_graph_url, modelbox::HttpMethods::PUT,
+      {graph_url, modelbox::HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerSaveGraph},
+      {graph_url, modelbox::HttpMethods::GET,
+       &ModelboxEditorPlugin::HandlerGraphModifyTime},
       {pass_encode_url, modelbox::HttpMethods::PUT,
        &ModelboxEditorPlugin::HandlerPassEncode},
       {postman_url, modelbox::HttpMethods::POST,
@@ -429,7 +432,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
 
     std::string json_data;
     nlohmann::json graph;
-    for (const auto &g : graphs) {
+    for (const auto& g : graphs) {
       ret = GraphFileToJson(g, json_data);
       if (!ret) {
         modelbox::Status rspret = {ret, "graph toml"};
@@ -449,7 +452,7 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
       SetUpResponse(response, ret);
       return;
     }
-    for (const auto &f : flowunits) {
+    for (const auto& f : flowunits) {
       ret = GraphFileToJson(f, json_data);
       if (!ret) {
         modelbox::Status rspret = {ret, "flowunit toml"};
@@ -471,6 +474,56 @@ void ModelboxEditorPlugin::HandlerProjectGet(const httplib::Request& request,
   }
 
   response.status = modelbox::HttpStatusCodes::OK;
+}
+
+void ModelboxEditorPlugin::HandlerGraphModifyTime(
+    const httplib::Request& request, httplib::Response& response) {
+  nlohmann::json response_json;
+  modelbox::Status rspret;
+
+  Defer {
+    if (!rspret) {
+      SetUpResponse(response, rspret);
+    }
+  };
+
+  try {
+    if (request.has_param("graph_path") == false) {
+      rspret = {modelbox::STATUS_INVALID, "argument graph path is not set."};
+      SetUpResponse(response, rspret);
+      return;
+    }
+
+    std::string graph_path;
+    struct stat result;
+    graph_path = request.params.find("graph_path")->second;
+    MBLOG_DEBUG << "graph path: " << graph_path;
+
+    auto root_path = graph_path.substr(0, graph_path.rfind("/src/graph"));
+    MBLOG_DEBUG << "root path: " << root_path;
+
+    if (IsModelboxProjectDir(root_path) == false) {
+      rspret = {modelbox::STATUS_INVALID, "path is not a modelbox project"};
+      SetUpResponse(response, rspret);
+      return;
+    }
+
+    if (stat(graph_path.c_str(), &result) == 0) {
+      response_json["modify_time"] = result.st_mtime;
+      response.status = modelbox::HttpStatusCodes::OK;
+    } else {
+      response.status = modelbox::HttpStatusCodes::NOT_FOUND;
+    }
+  } catch (const std::exception& e) {
+    std::string errmsg = "internal error when searching path, ";
+    errmsg += e.what();
+    MBLOG_ERROR << errmsg;
+    rspret = {modelbox::STATUS_FAULT, errmsg};
+    return;
+  }
+
+  modelbox::AddSafeHeader(response);
+  response.set_content(response_json.dump(), modelbox::JSON);
 }
 
 modelbox::Status ModelboxEditorPlugin::GenerateCommandFromJson(

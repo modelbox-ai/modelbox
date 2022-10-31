@@ -67,6 +67,8 @@ class ModelboxEditorPlugin : public modelbox::Plugin {
                              httplib::Response &response);
   void HandlerSaveGraph(const httplib::Request &request,
                         httplib::Response &response);
+  void HandlerGraphModifyTime(const httplib::Request& request,
+                        httplib::Response& response);
   void HandlerPostman(const httplib::Request &request,
                       httplib::Response &response);
   bool GetHtmlFile(const std::string &in_file, std::string *out_file,
