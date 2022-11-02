@@ -36,6 +36,12 @@ class RockChip : public Device {
   ~RockChip() override = default;
   std::string GetType() const override;
 
+  /**
+   * @brief when make mem contiguous, need test whether the device supports
+   * @return whether specify device supports mem contiguous
+   **/
+  bool SupportMemContiguous() const override;
+
   Status DeviceExecute(const DevExecuteCallBack &rkfun, int32_t priority,
                        size_t rkcount) override;
   bool NeedResourceNice() override;

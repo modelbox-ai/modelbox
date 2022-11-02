@@ -492,7 +492,7 @@ Status FlowUnitExecDataMapper::MoveDataToTargetDevice(
     std::shared_ptr<BufferListMap> &data, bool need_contiguous) {
   for (auto &item : *data) {
     auto &buffer_list = item.second;
-    if (need_contiguous) {
+    if (need_contiguous && buffer_list->SupportMemContiguous()) {
       if (!buffer_list->MakeContiguous()) {
         return {STATUS_FAULT, "make contiguous failed, port:" + item.first};
       }

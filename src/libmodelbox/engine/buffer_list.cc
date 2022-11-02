@@ -292,6 +292,10 @@ Status BufferList::GenerateDeviceMemory(
 }
 
 Status BufferList::MakeContiguous() {
+  if (!SupportMemContiguous()) {
+    return {STATUS_NOTSUPPORT, "not support mem contiguous"};
+  }
+
   std::vector<std::shared_ptr<DeviceMemory>> buffer_dev_mems;
   for (auto& buffer : buffer_list_) {
     if (buffer->HasError() || nullptr == buffer->dev_mem_) {
@@ -391,8 +395,9 @@ Status BufferList::Build(const std::vector<size_t>& data_size_list,
   }
 
   buffer_list_.clear();
-  return contiguous ? BuildContiguous(device, data_size_list)
-                    : BuildSeparate(device, data_size_list);
+  return contiguous && SupportMemContiguous()
+             ? BuildContiguous(device, data_size_list)
+             : BuildSeparate(device, data_size_list);
 }
 
 Status BufferList::BuildFromHost(const std::vector<size_t>& data_size_list,
@@ -577,6 +582,15 @@ std::shared_ptr<Buffer> BufferList::Back() {
   }
 
   return buffer_list_.back();
+}
+
+bool BufferList::SupportMemContiguous() {
+  auto dev = GetDevice();
+  if (dev == nullptr) {
+    return false;
+  }
+
+  return dev->SupportMemContiguous();
 }
 
 }  // namespace modelbox
