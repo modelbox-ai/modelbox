@@ -371,7 +371,7 @@ jobs:
           path: .
       - name: Download for dev package
         run: |
-          sed -i 's/python3.9/python3.7/g' docker/Dockerfile.cuda.develop.ubuntu
+          sed -i 's/python3.8/python3.7/g' docker/Dockerfile.cuda.develop.ubuntu
           sed -i 's/ubuntu2004/ubuntu1804/g' docker/Dockerfile.cuda.develop.ubuntu
           bash docker/prepare_for_dev.sh
         shell: bash
@@ -413,7 +413,7 @@ jobs:
           path: .
       - name: Download for run package
         run: |
-          sed -i 's/python3.9/python3.7/g' docker/Dockerfile.cuda.runtime.ubuntu
+          sed -i 's/python3.8/python3.7/g' docker/Dockerfile.cuda.runtime.ubuntu
           sed -i 's/libduktape205/libduktape202/g' docker/Dockerfile.cuda.runtime.ubuntu
           sed -i 's/ubuntu2004/ubuntu1804/g' docker/Dockerfile.cuda.runtime.ubuntu
           bash docker/prepare_for_run.sh
@@ -525,7 +525,7 @@ jobs:
           path: .
       - name: Download for dev package
         run: |
-          sed -i 's/python3.9/python3.7/g' docker/Dockerfile.cuda.develop.ubuntu
+          sed -i 's/python3.8/python3.7/g' docker/Dockerfile.cuda.develop.ubuntu
           sed -i 's/ubuntu2004/ubuntu1804/g' docker/Dockerfile.cuda.develop.ubuntu
           bash docker/prepare_for_dev.sh
         shell: bash
@@ -567,7 +567,7 @@ jobs:
           path: .
       - name: Download for run package
         run: |
-          sed -i 's/python3.9/python3.7/g' docker/Dockerfile.cuda.runtime.ubuntu
+          sed -i 's/python3.8/python3.7/g' docker/Dockerfile.cuda.runtime.ubuntu
           sed -i 's/libduktape205/libduktape202/g' docker/Dockerfile.cuda.runtime.ubuntu
           sed -i 's/ubuntu2004/ubuntu1804/g' docker/Dockerfile.cuda.runtime.ubuntu
           bash docker/prepare_for_run.sh
