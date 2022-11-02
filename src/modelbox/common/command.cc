@@ -14,12 +14,32 @@
  * limitations under the License.
  */
 
-
 #include "modelbox/common/command.h"
 
 namespace modelbox {
 
 std::recursive_mutex ToolCommandGetOptLock;
+
+StdOutStream::StdOutStream() = default;
+StdOutStream::~StdOutStream() = default;
+
+void StdOutStream::ProcessStream(OStream *st) { std::cout << st; }
+
+StdErrStream::StdErrStream() = default;
+
+StdErrStream::~StdErrStream() = default;
+
+void StdErrStream::ProcessStream(OStream *st) { std::cerr << st; }
+
+ToolCommand::ToolCommand() = default;
+
+ToolCommand::~ToolCommand() = default;
+
+void ToolCommand::SetUp(std::shared_ptr<OutStream> cout,
+                        std::shared_ptr<OutStream> cerr) {
+  out_cout_ = std::move(cout);
+  out_cerr_ = std::move(cerr);
+}
 
 ToolCommandList::ToolCommandList() = default;
 
@@ -53,9 +73,7 @@ void ToolCommandList::RmvCommand(const std::string &name) {
   }
 }
 
-void ToolCommandList::Reset() {
-  commands_.clear();
-}
+void ToolCommandList::Reset() { commands_.clear(); }
 
 std::shared_ptr<ToolCommand> ToolCommandList::GetCommand(
     const std::string &name) {

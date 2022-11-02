@@ -95,25 +95,25 @@ CreateExternalDataFunc FlowUnit::GetCreateExternalDataFunc() {
   return create_ext_data_func_;
 }
 
-FlowUnitPort::FlowUnitPort(std::string name) : port_name_(std::move(name)){};
+FlowUnitPort::FlowUnitPort(std::string name) : port_name_(std::move(name)) {}
 
 FlowUnitPort::FlowUnitPort(std::string name, std::string device_type)
-    : port_name_(std::move(name)), device_type_(std::move(device_type)){};
+    : port_name_(std::move(name)), device_type_(std::move(device_type)) {}
 
 FlowUnitPort::FlowUnitPort(std::string name, uint32_t device_mem_flags)
-    : port_name_(std::move(name)), device_mem_flags_(device_mem_flags){};
+    : port_name_(std::move(name)), device_mem_flags_(device_mem_flags) {}
 
 FlowUnitPort::FlowUnitPort(std::string name, std::string device_type,
                            uint32_t device_mem_flags)
     : port_name_(std::move(name)),
       device_type_(std::move(device_type)),
-      device_mem_flags_(device_mem_flags){};
+      device_mem_flags_(device_mem_flags) {}
 
 FlowUnitPort::FlowUnitPort(std::string name, std::string device_type,
                            std::string type)
     : port_name_(std::move(name)),
       device_type_(std::move(device_type)),
-      port_type_(std::move(type)){};
+      port_type_(std::move(type)) {}
 
 FlowUnitPort::FlowUnitPort(std::string name, std::string device_type,
                            std::string type,
@@ -121,21 +121,21 @@ FlowUnitPort::FlowUnitPort(std::string name, std::string device_type,
     : port_name_(std::move(name)),
       device_type_(std::move(device_type)),
       port_type_(std::move(type)),
-      ext_(std::move(ext)){};
+      ext_(std::move(ext)) {}
 
 FlowUnitPort::~FlowUnitPort() = default;
 
 void FlowUnitPort::SetDeviceType(const std::string &device_type) {
   device_type_ = device_type;
-};
+}
 
 void FlowUnitPort::SetPortName(const std::string &port_name) {
   port_name_ = port_name;
-};
+}
 
 void FlowUnitPort::SetPortType(const std::string &port_type) {
   port_type_ = port_type;
-};
+}
 
 void FlowUnitPort::SetDevice(std::shared_ptr<Device> device) {
   device_ = std::move(device);
@@ -146,11 +146,11 @@ void FlowUnitPort::SetProperity(const std::string &key,
   ext_[key] = value;
 }
 
-std::string FlowUnitPort::GetDeviceType() const { return device_type_; };
+std::string FlowUnitPort::GetDeviceType() const { return device_type_; }
 
-std::string FlowUnitPort::GetPortName() const { return port_name_; };
+std::string FlowUnitPort::GetPortName() const { return port_name_; }
 
-std::string FlowUnitPort::GetPortType() const { return port_type_; };
+std::string FlowUnitPort::GetPortType() const { return port_type_; }
 
 std::shared_ptr<Device> FlowUnitPort::GetDevice() const { return device_; }
 
@@ -164,13 +164,63 @@ std::string FlowUnitPort::GetProperity(const std::string &key) {
   return ext_[key];
 }
 
+FlowUnitInput::FlowUnitInput(const std::string &name) : FlowUnitPort(name){};
+FlowUnitInput::FlowUnitInput(const std::string &name,
+                             const std::string &device_type)
+    : FlowUnitPort(name, device_type){};
+FlowUnitInput::FlowUnitInput(const std::string &name, uint32_t device_mem_flags)
+    : FlowUnitPort(name, device_mem_flags){};
+
+FlowUnitInput::FlowUnitInput(const std::string &name,
+                             const std::string &device_type,
+                             uint32_t device_mem_flags)
+    : FlowUnitPort(name, device_type, device_mem_flags){};
+FlowUnitInput::FlowUnitInput(const std::string &name,
+                             const std::string &device_type,
+                             const std::string &type)
+    : FlowUnitPort(name, device_type, type){};
+FlowUnitInput::FlowUnitInput(const std::string &name,
+                             const std::string &device_type,
+                             const std::string &type,
+                             const std::map<std::string, std::string> &ext)
+    : FlowUnitPort(name, device_type, type, ext){};
+FlowUnitInput::~FlowUnitInput() = default;
+
+FlowUnitOutput::FlowUnitOutput(const std::string &name) : FlowUnitPort(name){};
+
+FlowUnitOutput::FlowUnitOutput(const std::string &name,
+                               uint32_t device_mem_flags)
+    : FlowUnitPort(name, device_mem_flags){};
+
+FlowUnitOutput::FlowUnitOutput(const std::string &name,
+                               const std::string &device_type)
+    : FlowUnitPort(name, device_type){};
+
+FlowUnitOutput::FlowUnitOutput(const std::string &name,
+                               const std::string &device_type,
+                               uint32_t device_mem_flags)
+    : FlowUnitPort(name, device_type, device_mem_flags){};
+
+FlowUnitOutput::FlowUnitOutput(const std::string &name,
+                               const std::string &device_type,
+                               const std::string &type)
+    : FlowUnitPort(name, device_type, type){};
+
+FlowUnitOutput::FlowUnitOutput(const std::string &name,
+                               const std::string &device_type,
+                               const std::string &type,
+                               const std::map<std::string, std::string> &ext)
+    : FlowUnitPort(name, device_type, type, ext){};
+
+FlowUnitOutput::~FlowUnitOutput() = default;
+
 FlowUnitOption::FlowUnitOption(std::string name, std::string type)
-    : option_name_(std::move(name)), option_type_(std::move(type)){};
+    : option_name_(std::move(name)), option_type_(std::move(type)) {}
 
 FlowUnitOption::FlowUnitOption(std::string name, std::string type, bool require)
     : option_name_(std::move(name)),
       option_type_(std::move(type)),
-      option_require_{require} {};
+      option_require_{require} {}
 
 FlowUnitOption::FlowUnitOption(std::string name, std::string type, bool require,
                                std::string default_value, std::string desc,
@@ -180,7 +230,7 @@ FlowUnitOption::FlowUnitOption(std::string name, std::string type, bool require,
       option_require_(require),
       option_default_(std::move(default_value)),
       option_desc_(std::move(desc)),
-      option_values_(std::move(values)){};
+      option_values_(std::move(values)) {}
 
 FlowUnitOption::FlowUnitOption(std::string name, std::string type, bool require,
                                std::string default_value, std::string desc)
@@ -188,7 +238,7 @@ FlowUnitOption::FlowUnitOption(std::string name, std::string type, bool require,
       option_type_(std::move(type)),
       option_require_(require),
       option_default_(std::move(default_value)),
-      option_desc_(std::move(desc)){};
+      option_desc_(std::move(desc)) {}
 
 FlowUnitOption::~FlowUnitOption() { option_values_.clear(); }
 
@@ -242,13 +292,17 @@ std::shared_ptr<FlowUnitDesc> FlowUnit::GetFlowUnitDesc() {
   return flowunit_desc_;
 }
 
-std::string FlowUnitDesc::GetFlowUnitName() { return flowunit_name_; };
+FlowUnitDesc::FlowUnitDesc() = default;
 
-std::string FlowUnitDesc::GetFlowUnitType() { return flowunit_type_; };
+FlowUnitDesc::~FlowUnitDesc() = default;
 
-std::string FlowUnitDesc::GetFlowUnitAliasName() { return alias_name_; };
+std::string FlowUnitDesc::GetFlowUnitName() { return flowunit_name_; }
 
-std::string FlowUnitDesc::GetFlowUnitArgument() { return argument_; };
+std::string FlowUnitDesc::GetFlowUnitType() { return flowunit_type_; }
+
+std::string FlowUnitDesc::GetFlowUnitAliasName() { return alias_name_; }
+
+std::string FlowUnitDesc::GetFlowUnitArgument() { return argument_; }
 
 bool FlowUnitDesc::IsCollapseAll() {
   if (loop_type_ != LOOP) {
@@ -272,19 +326,19 @@ bool FlowUnitDesc::IsInputContiguous() const { return is_input_contiguous_; }
 
 bool FlowUnitDesc::IsResourceNice() const { return is_resource_nice_; }
 
-bool FlowUnitDesc::IsExceptionVisible() { return is_exception_visible_; };
+bool FlowUnitDesc::IsExceptionVisible() { return is_exception_visible_; }
 
-ConditionType FlowUnitDesc::GetConditionType() { return condition_type_; };
+ConditionType FlowUnitDesc::GetConditionType() { return condition_type_; }
 
-FlowOutputType FlowUnitDesc::GetOutputType() { return output_type_; };
+FlowOutputType FlowUnitDesc::GetOutputType() { return output_type_; }
 
 bool FlowUnitDesc::IsUserSetFlowType() { return is_user_set_flow_type_; }
 
-FlowType FlowUnitDesc::GetFlowType() { return flow_type_; };
+FlowType FlowUnitDesc::GetFlowType() { return flow_type_; }
 
-LoopType FlowUnitDesc::GetLoopType() { return loop_type_; };
+LoopType FlowUnitDesc::GetLoopType() { return loop_type_; }
 
-std::string FlowUnitDesc::GetGroupType() { return group_type_; };
+std::string FlowUnitDesc::GetGroupType() { return group_type_; }
 
 uint32_t FlowUnitDesc::GetMaxBatchSize() {
   if (max_batch_size_ != 0) {
@@ -296,7 +350,7 @@ uint32_t FlowUnitDesc::GetMaxBatchSize() {
     return STREAM_MAX_BATCH_SIZE;
   }
   return NORMAL_MAX_BATCH_SIZE;
-};
+}
 
 uint32_t FlowUnitDesc::GetDefaultBatchSize() {
   if (default_batch_size_ != 0) {
@@ -308,14 +362,14 @@ uint32_t FlowUnitDesc::GetDefaultBatchSize() {
     return STREAM_DEFAULT_BATCH_SIZE;
   }
   return NORMAL_DEFAULT_BATCH_SIZE;
-};
+}
 
 std::vector<FlowUnitInput> &FlowUnitDesc::GetFlowUnitInput() {
   return flowunit_input_list_;
-};
+}
 const std::vector<FlowUnitOutput> &FlowUnitDesc::GetFlowUnitOutput() {
   return flowunit_output_list_;
-};
+}
 
 std::vector<FlowUnitOption> &FlowUnitDesc::GetFlowUnitOption() {
   return flowunit_option_list_;
@@ -346,7 +400,7 @@ void FlowUnitDesc::SetFlowUnitGroupType(const std::string &group_type) {
   }
 
   group_type_ = group_type;
-};
+}
 
 void FlowUnitDesc::SetDriverDesc(std::shared_ptr<DriverDesc> driver_desc) {
   driver_desc_ = std::move(driver_desc);
@@ -354,11 +408,11 @@ void FlowUnitDesc::SetDriverDesc(std::shared_ptr<DriverDesc> driver_desc) {
 
 void FlowUnitDesc::SetFlowUnitAliasName(const std::string &alias_name) {
   alias_name_ = alias_name;
-};
+}
 
 void FlowUnitDesc::SetFlowUnitArgument(const std::string &argument) {
   argument_ = argument;
-};
+}
 
 void FlowUnitDesc::SetConditionType(ConditionType condition_type) {
   condition_type_ = condition_type;
@@ -379,7 +433,7 @@ void FlowUnitDesc::SetStreamSameCount(bool is_stream_same_count) {
   if (flow_type_ == STREAM) {
     is_stream_same_count_ = is_stream_same_count;
   }
-};
+}
 
 void FlowUnitDesc::SetInputContiguous(bool is_input_contiguous) {
   is_input_contiguous_ = is_input_contiguous;
@@ -393,11 +447,11 @@ void FlowUnitDesc::SetCollapseAll(bool is_collapse_all) {
   if (output_type_ == COLLAPSE) {
     is_collapse_all_ = is_collapse_all;
   }
-};
+}
 
 void FlowUnitDesc::SetExceptionVisible(bool is_exception_visible) {
   is_exception_visible_ = is_exception_visible;
-};
+}
 
 void FlowUnitDesc::SetVirtualType(const std::string &virtual_type) {
   virtual_type_ = virtual_type;
@@ -540,17 +594,17 @@ void FlowUnitFactory::SetDriver(const std::shared_ptr<Driver> &driver) {
 
 std::shared_ptr<Driver> FlowUnitFactory::GetDriver() { return driver_; }
 
-std::string FlowUnitFactory::GetFlowUnitFactoryType() { return ""; };
+std::string FlowUnitFactory::GetFlowUnitFactoryType() { return ""; }
 
-std::string FlowUnitFactory::GetFlowUnitFactoryName() { return ""; };
+std::string FlowUnitFactory::GetFlowUnitFactoryName() { return ""; }
 
 std::vector<std::string> FlowUnitFactory::GetFlowUnitNames() {
   return std::vector<std::string>();
-};
+}
 
-std::string FlowUnitFactory::GetVirtualType() { return ""; };
+std::string FlowUnitFactory::GetVirtualType() { return ""; }
 
-void FlowUnitFactory::SetVirtualType(const std::string &virtual_type){};
+void FlowUnitFactory::SetVirtualType(const std::string &virtual_type) {}
 
 std::shared_ptr<FlowUnit> FlowUnitFactory::CreateFlowUnit(
     const std::string &unit_name, const std::string &unit_type) {
@@ -560,7 +614,7 @@ std::shared_ptr<FlowUnit> FlowUnitFactory::CreateFlowUnit(
   }
 
   return VirtualCreateFlowUnit(unit_name, unit_type, GetVirtualType());
-};
+}
 
 std::shared_ptr<FlowUnit> FlowUnitFactory::VirtualCreateFlowUnit(
     const std::string &unit_name, const std::string &unit_type,
@@ -571,7 +625,7 @@ std::shared_ptr<FlowUnit> FlowUnitFactory::VirtualCreateFlowUnit(
 
 void FlowUnitFactory::SetFlowUnitFactory(
     const std::vector<std::shared_ptr<DriverFactory>>
-        &bind_flowunit_factory_list){};
+        &bind_flowunit_factory_list) {}
 
 std::string FlowUnitFactory::GetFlowUnitInputDeviceType() { return ""; };
 

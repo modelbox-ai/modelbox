@@ -30,6 +30,10 @@ std::ostream& operator<<(std::ostream& os, const FlowUnitBalanceStrategy& s) {
   return os;
 }
 
+FlowUnitBalancer::FlowUnitBalancer() = default;
+
+FlowUnitBalancer::~FlowUnitBalancer() = default;
+
 Status FlowUnitBalancer::Init(
     const std::vector<std::shared_ptr<FlowUnit>>& flowunits) {
   if (flowunits.empty()) {
@@ -39,6 +43,8 @@ Status FlowUnitBalancer::Init(
   flowunits_ = flowunits;
   return OnInit();
 }
+
+Status FlowUnitBalancer::OnInit() { return STATUS_OK; }
 
 std::shared_ptr<FlowUnit> FlowUnitBalancer::GetFlowUnit(
     const std::shared_ptr<FlowUnitDataContext>& data_ctx) {
@@ -81,6 +87,10 @@ void FlowUnitBalancer::UnbindFlowUnit(const FlowUnitDataContext* data_ctx_ptr) {
   std::lock_guard<std::mutex> lock(ctx_to_flowunit_map_lock_);
   ctx_to_flowunit_map_.erase(data_ctx_ptr);
 }
+
+FlowUnitBalancerFactory::FlowUnitBalancerFactory() = default;
+
+FlowUnitBalancerFactory::~FlowUnitBalancerFactory() = default;
 
 FlowUnitBalancerFactory& FlowUnitBalancerFactory::GetInstance() {
   static FlowUnitBalancerFactory factory;

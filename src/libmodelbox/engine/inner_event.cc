@@ -40,6 +40,10 @@ std::shared_ptr<void> FlowUnitEvent::GetPrivate(const std::string &key) {
   return private_map_[key];
 }
 
+FlowUnitInnerEvent::FlowUnitInnerEvent(EventCode code) : code_(code), match_key_(nullptr){};
+
+FlowUnitInnerEvent::~FlowUnitInnerEvent() = default;
+
 int FlowUnitInnerEvent::GetPriority() { return priority_; }
 
 void FlowUnitInnerEvent::SetDataCtxMatchKey(MatchKey *match_key) {

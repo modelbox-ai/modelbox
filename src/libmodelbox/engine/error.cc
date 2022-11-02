@@ -43,6 +43,8 @@ DataError::DataError(const std::string& error_code,
   new_error_ = true;
 }
 
+DataError::~DataError() = default;
+
 std::string DataError::GetErrorCode() { return error_code_; }
 
 std::string DataError::GetErrorMsg() { return error_msg_; }

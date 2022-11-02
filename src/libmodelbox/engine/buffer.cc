@@ -77,6 +77,8 @@ Buffer::Buffer(const Buffer& other) : Buffer() {
   data_error_ = other.data_error_;
 }
 
+Buffer::~Buffer() = default;
+
 Status Buffer::Build(size_t size) {
   if (!dev_mem_) {
     return {STATUS_INVALID, "Can't get device!"};

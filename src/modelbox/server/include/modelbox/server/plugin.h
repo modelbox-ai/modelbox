@@ -31,9 +31,9 @@ class Plugin {
   /**
    * @brief Server plugin
    */
-  Plugin() = default;
+  Plugin();
 
-  virtual ~Plugin() = default;
+  virtual ~Plugin();
 
   /**
    * @brief plugin init
@@ -58,7 +58,7 @@ class Plugin {
    * @brief Check plugin  status
    * @return check result
    */
-  virtual bool Check() { return true; }
+  virtual bool Check();
 };
 
 using PluginRecvMsgFunc = std::function<void(

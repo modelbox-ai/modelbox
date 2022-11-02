@@ -35,7 +35,7 @@ constexpr const uint32_t VALID_RANGE_OF_DOUBLE = 15;
 
 class ConfigStore {
  public:
-  virtual ~ConfigStore() = default;
+  virtual ~ConfigStore();
 
   void WriteProperty(const std::string &key, const std::string &property);
 
@@ -56,7 +56,7 @@ class ConfigStore {
 
   void Copy(const ConfigStore &store, const std::string &key);
 
-  void SetExpandEnv(bool expand_env) { expand_env_ = expand_env; }
+  void SetExpandEnv(bool expand_env);
 
  private:
   std::map<std::string, std::string> properties_;
@@ -79,18 +79,16 @@ class Configuration {
   Configuration(const Configuration &&config) = delete;
   Configuration &operator=(const Configuration &&config) = delete;
 
-  virtual ~Configuration() = default;
+  virtual ~Configuration();
 
   static void Trim(std::string *value);
 
   static void StringSplit(const std::string &str, const std::string &delimiter,
                           std::vector<std::string> &sub_str_list);
 
-  void Add(const Configuration &config) { store_->Add(*(config.store_)); }
+  void Add(const Configuration &config);
 
-  void Copy(const Configuration &config, const std::string &key) {
-    store_->Copy(*(config.store_), key);
-  }
+  void Copy(const Configuration &config, const std::string &key);
 
   size_t Size() const;
 
@@ -340,7 +338,7 @@ class ConfigurationBuilder {
  public:
   ConfigurationBuilder();
 
-  virtual ~ConfigurationBuilder() = default;
+  virtual ~ConfigurationBuilder();
 
   void AddProperty(const std::string &key, const std::string &property);
 

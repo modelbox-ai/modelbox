@@ -41,7 +41,7 @@ class CpuMemory : public DeviceMemory {
             const std::shared_ptr<DeviceMemoryManager> &mem_mgr,
             const std::shared_ptr<void> &device_mem_ptr, size_t size);
 
-  ~CpuMemory() override = default;
+  ~CpuMemory() override;
   /**
    * @brief Read data from other device memory
    * @param src_memory Memory read from

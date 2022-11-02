@@ -50,8 +50,8 @@ class DriverFactory {
 
 class DriverDesc {
  public:
-  DriverDesc() = default;
-  virtual ~DriverDesc() = default;
+  DriverDesc();
+  virtual ~DriverDesc();
   std::string GetClass();
   std::string GetType();
   std::string GetName();
@@ -89,11 +89,11 @@ class DriverDesc {
 
 class DriverHandlerInfo {
  public:
-  DriverHandlerInfo() = default;
-  virtual ~DriverHandlerInfo() = default;
+  DriverHandlerInfo();
+  virtual ~DriverHandlerInfo();
 
-  int IncHanderRefcnt() { return ++handler_count_; }
-  int DecHanderRefcnt() { return --handler_count_; }
+  int IncHanderRefcnt();
+  int DecHanderRefcnt();
 
   int initialize_count_{0};
   int handler_count_{0};
@@ -143,8 +143,8 @@ class Driver : public std::enable_shared_from_this<Driver> {
 
 class VirtualDriverDesc : public DriverDesc {
  public:
-  VirtualDriverDesc() = default;
-  ~VirtualDriverDesc() override = default;
+  VirtualDriverDesc();
+  ~VirtualDriverDesc() override;
 };
 
 class VirtualDriver : public Driver {

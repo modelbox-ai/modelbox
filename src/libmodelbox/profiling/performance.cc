@@ -324,6 +324,8 @@ FlowUnitPerfCtx::FlowUnitPerfCtx(const std::string& flow_unit_name) {
   process_latency_count_ = 0;
 };
 
+FlowUnitPerfCtx::~FlowUnitPerfCtx() = default;
+
 void FlowUnitPerfCtx::UpdateProcessLatency(int32_t process_latency) {
   std::lock_guard<std::mutex> lock(latency_mutex_);
   double total_latency = process_latency_ * process_latency_count_;

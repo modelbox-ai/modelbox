@@ -47,6 +47,8 @@ ExternalDataMapImpl::ExternalDataMapImpl(
   graph_output_cache_ = std::make_shared<BlockingQueue<OutputBufferList>>();
 }
 
+ExternalDataMapImpl::~ExternalDataMapImpl() = default;
+
 std::shared_ptr<BufferList> ExternalDataMapImpl::CreateBufferList() {
   if (!graph_input_node_device_) {
     MBLOG_ERROR << "device_ must not be nullptr";
@@ -351,6 +353,10 @@ void ExternalDataMapImpl::SessionEnd(std::shared_ptr<FlowUnitError> error) {
     selector->NotifySelect();
   }
 }
+
+ExternalDataMap::ExternalDataMap() = default;
+
+ExternalDataMap::~ExternalDataMap() = default;
 
 ExternalDataSelect::ExternalDataSelect() = default;
 

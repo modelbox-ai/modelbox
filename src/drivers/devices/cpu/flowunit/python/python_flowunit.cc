@@ -263,8 +263,31 @@ std::shared_ptr<modelbox::FlowUnitDesc> PythonFlowUnit::GetFlowUnitDesc() {
   return python_desc_;
 }
 
+PythonFlowUnitDesc::PythonFlowUnitDesc() = default;
+
+PythonFlowUnitDesc::~PythonFlowUnitDesc() = default;
+
 void PythonFlowUnitDesc::SetPythonEntry(const std::string& python_entry) {
   python_entry_ = python_entry;
 }
 
 std::string PythonFlowUnitDesc::GetPythonEntry() { return python_entry_; }
+
+PythonFlowUnitFactory::PythonFlowUnitFactory() = default;
+
+PythonFlowUnitFactory::~PythonFlowUnitFactory() = default;
+
+std::shared_ptr<modelbox::FlowUnit> PythonFlowUnitFactory::CreateFlowUnit(
+    const std::string& unit_name, const std::string& unit_type) {
+  auto python_flowunit = std::make_shared<PythonFlowUnit>();
+  return python_flowunit;
+}
+
+std::string PythonFlowUnitFactory::GetFlowUnitFactoryType() {
+  return FLOWUNIT_TYPE;
+}
+
+std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
+PythonFlowUnitFactory::FlowUnitProbe() {
+  return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
+}

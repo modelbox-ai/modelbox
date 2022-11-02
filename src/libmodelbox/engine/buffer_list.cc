@@ -56,6 +56,8 @@ BufferList::BufferList(const BufferList& other) {
   }
 }
 
+BufferList::~BufferList() = default;
+
 void BufferList::Copy(
     const std::vector<std::shared_ptr<Buffer>>& buffer_vector) {
   buffer_list_.assign(buffer_vector.begin(), buffer_vector.end());

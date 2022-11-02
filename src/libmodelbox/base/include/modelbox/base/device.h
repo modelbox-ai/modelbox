@@ -59,8 +59,8 @@ class CircleQueue {
 
 class DeviceDesc {
  public:
-  DeviceDesc() = default;
-  virtual ~DeviceDesc() = default;
+  DeviceDesc();
+  virtual ~DeviceDesc();
 
   virtual std::string GetDeviceId();
   virtual std::string GetDeviceType();
@@ -86,10 +86,10 @@ using DevExecuteCallBack = std::function<Status(size_t idx)>;
 
 class Device : public std::enable_shared_from_this<Device> {
  public:
-  Device() = default;
+  Device();
   Device(std::shared_ptr<DeviceMemoryManager> mem_mgr);
   Device(size_t thread_count, std::shared_ptr<DeviceMemoryManager> mem_mgr);
-  virtual ~Device() = default;
+  virtual ~Device();
 
   virtual std::string GetDeviceID() const;
 
@@ -120,23 +120,19 @@ class Device : public std::enable_shared_from_this<Device> {
    * @brief Set allocatable memory limit
    * @param mem_quota quota memory size
    **/
-  inline void SetMemQuota(size_t mem_quota) {
-    memory_manager_->SetMemQuota(mem_quota);
-  };
+  void SetMemQuota(size_t mem_quota);
 
   /**
    * @brief Get allocatable memory limit
    * @return Memory limit
    **/
-  inline size_t GetMemQuota() const { return memory_manager_->GetMemQuota(); };
+  size_t GetMemQuota() const;
 
   /**
    * @brief Get allocated memory size
    * @return Memory allocated
    **/
-  inline size_t GetAllocatedMemSize() const {
-    return memory_manager_->GetAllocatedMemSize();
-  };
+  size_t GetAllocatedMemSize() const;
 
   /**
    * @brief Malloc device memory, memory size = 0 is ok
@@ -300,7 +296,7 @@ class DeviceManager : public std::enable_shared_from_this<DeviceManager> {
    * @brief Return host device
    * @return Host device
    **/
-  std::shared_ptr<Device> GetHostDevice() { return nullptr; }
+  std::shared_ptr<Device> GetHostDevice();
   void Clear();
 
   /**

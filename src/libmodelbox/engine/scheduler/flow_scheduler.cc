@@ -23,6 +23,18 @@ namespace modelbox {
 constexpr const char* TASK_FLOW_SCHEDUER_NAME = "Flow-Scheduler";
 constexpr const char* TASK_FLOW_POOL_NAME = "Flow-Workers";
 
+SchedulerCommand::SchedulerCommand(SchedulerCommandType type,
+                                   std::shared_ptr<PriorityPort> port)
+    : type_(type), port_(std::move(port)) {}
+
+SchedulerCommand::~SchedulerCommand() = default;
+
+SchedulerCommandType SchedulerCommand::GetType() { return type_; }
+
+std::shared_ptr<PriorityPort> SchedulerCommand::GetPort() { return port_; }
+
+int SchedulerCommand::GetPriority() { return 0; }
+
 SchedulerPort::SchedulerPort(const std::string& name)
     : SchedulerPort(name, SIZE_MAX) {}
 
@@ -30,6 +42,10 @@ SchedulerPort::SchedulerPort(const std::string& name, size_t event_capacity)
     : NotifyPort(name, nullptr, 0, event_capacity) {
   queue_ = std::make_shared<SchedulerQueue>(event_capacity);
 }
+
+SchedulerPort::~SchedulerPort() = default;
+
+Status SchedulerPort::Init() { return STATUS_OK; };
 
 FlowScheduler::FlowScheduler() = default;
 

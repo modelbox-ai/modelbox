@@ -57,7 +57,7 @@ class FlowUnitExecData {
 
   FlowUnitExecData(const std::shared_ptr<FlowUnit> &fu);
 
-  virtual ~FlowUnitExecData() = default;
+  virtual ~FlowUnitExecData();
 
   void ReserveCache(size_t buffer_count, DataType type = IN_DATA);
 
@@ -228,7 +228,7 @@ class FlowUnitExecDataView {
  public:
   FlowUnitExecDataView(FUExecContextList exec_ctx_list);
 
-  virtual ~FlowUnitExecDataView() = default;
+  virtual ~FlowUnitExecDataView();
 
   Status LoadInputFromExecCtx(bool need_reshape, bool is_stream,
                               size_t batch_size, bool need_contiguous);
@@ -292,7 +292,7 @@ class FlowUnitDataExecutor {
  public:
   FlowUnitDataExecutor(std::weak_ptr<Node> node_ref, size_t batch_size);
 
-  virtual ~FlowUnitDataExecutor() = default;
+  virtual ~FlowUnitDataExecutor();
 
   virtual Status Process(const FUExecContextList &exec_ctx_list);
 

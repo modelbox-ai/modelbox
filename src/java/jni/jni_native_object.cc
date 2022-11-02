@@ -27,6 +27,8 @@ JNINativeObject::JNINativeObject(jobject jni_object,
     : jni_object_(jni_object),
       native_shared_ptr_(std::move(native_shared_ptr)){};
 
+JNINativeObject::JNINativeObject() = default;
+
 JNINativeObject::~JNINativeObject() = default;
 
 jobject JNINativeObject::GetJObject() { return jni_object_; }

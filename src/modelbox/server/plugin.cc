@@ -18,6 +18,12 @@
 
 namespace modelbox {
 
+Plugin::Plugin() = default;
+
+Plugin::~Plugin() = default;
+
+bool Plugin::Check() { return true; }
+
 modelbox::Status PluginMsgRouter::RegisterRecvFunc(
     const std::string &topic_name, const PluginRecvMsgFunc &func) {
   std::lock_guard<std::mutex> lock(receivers_lock_);

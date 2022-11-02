@@ -117,7 +117,7 @@ class ObsClient {
   static std::mutex obs_client_lock_;
 
  private:
-  ObsClient() = default;
+  ObsClient();
 
   /**
    * @brief   Initialize the OBS SDK.

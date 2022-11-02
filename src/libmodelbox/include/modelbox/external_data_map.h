@@ -32,7 +32,8 @@ class ExternalDataSelect;
 
 class ExternalDataMap : public SessionIO {
  public:
-  ~ExternalDataMap() override = default;
+  ExternalDataMap();
+  ~ExternalDataMap() override;
   virtual std::shared_ptr<BufferList> CreateBufferList() = 0;
   Status SetOutputMeta(const std::string& port_name,
                        std::shared_ptr<DataMeta> meta) override = 0;
@@ -63,7 +64,7 @@ class ExternalDataMapImpl
   ExternalDataMapImpl(const std::shared_ptr<Node>& input_node,
                       const std::shared_ptr<Stream>& init_stream);
 
-  ~ExternalDataMapImpl() override = default;
+  ~ExternalDataMapImpl() override;
 
   std::shared_ptr<BufferList> CreateBufferList() override;
 

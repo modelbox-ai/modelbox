@@ -119,54 +119,44 @@ class FlowUnitPort {
 
 class FlowUnitInput : public FlowUnitPort {
  public:
-  FlowUnitInput(const std::string &name) : FlowUnitPort(name){};
-  FlowUnitInput(const std::string &name, const std::string &device_type)
-      : FlowUnitPort(name, device_type){};
-  FlowUnitInput(const std::string &name, uint32_t device_mem_flags)
-      : FlowUnitPort(name, device_mem_flags){};
+  FlowUnitInput(const std::string &name);
+  FlowUnitInput(const std::string &name, const std::string &device_type);
+  FlowUnitInput(const std::string &name, uint32_t device_mem_flags);
   FlowUnitInput(const std::string &name, const std::string &device_type,
-                uint32_t device_mem_flags)
-      : FlowUnitPort(name, device_type, device_mem_flags){};
+                uint32_t device_mem_flags);
   FlowUnitInput(const std::string &name, const std::string &device_type,
-                const std::string &type)
-      : FlowUnitPort(name, device_type, type){};
+                const std::string &type);
   FlowUnitInput(const std::string &name, const std::string &device_type,
                 const std::string &type,
-                const std::map<std::string, std::string> &ext)
-      : FlowUnitPort(name, device_type, type, ext){};
-  ~FlowUnitInput() override = default;
+                const std::map<std::string, std::string> &ext);
+  ~FlowUnitInput() override;
 };
 
 class FlowUnitOutput : public FlowUnitPort {
  public:
-  FlowUnitOutput(const std::string &name) : FlowUnitPort(name){};
-  FlowUnitOutput(const std::string &name, uint32_t device_mem_flags)
-      : FlowUnitPort(name, device_mem_flags){};
+  FlowUnitOutput(const std::string &name);
+  FlowUnitOutput(const std::string &name, uint32_t device_mem_flags);
   /**
    * @deprecated
    **/
-  FlowUnitOutput(const std::string &name, const std::string &device_type)
-      : FlowUnitPort(name, device_type){};
-  /**
-   * @deprecated
-   **/
-  FlowUnitOutput(const std::string &name, const std::string &device_type,
-                 uint32_t device_mem_flags)
-      : FlowUnitPort(name, device_type, device_mem_flags){};
+  FlowUnitOutput(const std::string &name, const std::string &device_type);
   /**
    * @deprecated
    **/
   FlowUnitOutput(const std::string &name, const std::string &device_type,
-                 const std::string &type)
-      : FlowUnitPort(name, device_type, type){};
+                 uint32_t device_mem_flags);
+  /**
+   * @deprecated
+   **/
+  FlowUnitOutput(const std::string &name, const std::string &device_type,
+                 const std::string &type);
   /**
    * @deprecated
    **/
   FlowUnitOutput(const std::string &name, const std::string &device_type,
                  const std::string &type,
-                 const std::map<std::string, std::string> &ext)
-      : FlowUnitPort(name, device_type, type, ext){};
-  ~FlowUnitOutput() override = default;
+                 const std::map<std::string, std::string> &ext);
+  ~FlowUnitOutput() override;
 };
 
 class FlowUnitOption {
@@ -216,8 +206,8 @@ class FlowUnitOption {
 
 class FlowUnitDesc {
  public:
-  FlowUnitDesc() = default;
-  virtual ~FlowUnitDesc() = default;
+  FlowUnitDesc();
+  virtual ~FlowUnitDesc();
 
   std::string GetFlowUnitName();
 

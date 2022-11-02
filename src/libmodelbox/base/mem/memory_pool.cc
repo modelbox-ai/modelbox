@@ -114,6 +114,8 @@ void MemoryPoolBase::DestroySlabCache() { slab_caches_.clear(); }
 MemoryPoolBase::MemoryPoolBase(std::string name)
     : pool_name_(std::move(name)) {}
 
+MemoryPoolBase::MemoryPoolBase() = default;
+
 MemoryPoolBase::~MemoryPoolBase() {
   std::lock_guard<std::mutex> lock(pool_list_lock_);
   pool_list_.erase(this);

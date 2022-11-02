@@ -67,6 +67,8 @@ std::shared_ptr<DeviceManager> DeviceManager::GetInstance() {
   return device_mgr;
 }
 
+std::shared_ptr<Device> DeviceManager::GetHostDevice() { return nullptr; }
+
 void DeviceManager::Clear() {
   device_list_.clear();
   device_desc_list_.clear();

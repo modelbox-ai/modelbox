@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+#include "modelbox/context.h"
+
 #include <utility>
 
-#include "modelbox/context.h"
 #include "modelbox/data_handler.h"
 #include "modelbox/modelbox_engine.h"
 
@@ -25,6 +26,8 @@ namespace modelbox {
 HandlerContext::HandlerContext(std::weak_ptr<ModelBoxEngine> &env) {
   env_ = env;
 }
+
+HandlerContext::~HandlerContext() = default;
 
 void HandlerContext::SetMeta(const std::string &key, const std::string &value) {
   meta_.emplace(key, value);
@@ -53,6 +56,8 @@ void HandlerContext::SetFlowUnitDesc(
 void HandlerContext::SetGraphState(const std::shared_ptr<GraphState> &state) {
   graph_state_ = state;
 }
+
+void HandlerContext::Close(){};
 
 InputContext::InputContext(std::weak_ptr<ModelBoxEngine> env)
     : HandlerContext(env) {}

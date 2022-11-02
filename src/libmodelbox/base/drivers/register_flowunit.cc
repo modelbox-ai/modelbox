@@ -49,6 +49,10 @@ Status RegisterFlowUnit::Process(std::shared_ptr<DataContext> data_context) {
   return STATUS_INVALID;
 }
 
+RegisterFlowUnitFactory::RegisterFlowUnitFactory() = default;
+
+RegisterFlowUnitFactory::~RegisterFlowUnitFactory() = default;
+
 RegisterFlowUnitFactory::RegisterFlowUnitFactory(
     std::string unit_name, std::vector<std::string> inputs,
     std::vector<std::string> outputs,

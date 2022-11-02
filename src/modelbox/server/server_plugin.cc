@@ -39,6 +39,8 @@ std::map<std::string, std::function<std::shared_ptr<ServerPlugin>(
 ServerPlugin::ServerPlugin(std::string plugin_path)
     : plugin_path_(std::move(plugin_path)) {}
 
+ServerPlugin::~ServerPlugin() = default;
+
 std::shared_ptr<ServerPlugin> ServerPlugin::MakePlugin(
     const std::string &plugin_path) {
   auto suffix_pos = plugin_path.find_last_of('.');

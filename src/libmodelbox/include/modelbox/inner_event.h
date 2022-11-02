@@ -49,8 +49,8 @@ class FlowUnitInnerEvent {
     EXPAND_NEXT_STREAM,
     COLLAPSE_NEXT_STREAM
   };
-  FlowUnitInnerEvent(EventCode code) : code_(code), match_key_(nullptr){};
-  virtual ~FlowUnitInnerEvent() = default;
+  FlowUnitInnerEvent(EventCode code);
+  virtual ~FlowUnitInnerEvent();
   void SetDataCtxMatchKey(MatchKey *match_key);
   MatchKey *GetDataCtxMatchKey();
   std::shared_ptr<FlowUnitEvent> GetUserEvent();

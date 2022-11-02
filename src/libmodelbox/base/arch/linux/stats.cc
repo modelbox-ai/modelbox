@@ -39,6 +39,15 @@ namespace modelbox {
 
 OSInfo *os = &LinuxOSInfo::GetInstance();
 
+OSProcess::OSProcess() = default;
+OSProcess::~OSProcess() = default;
+
+OSThread::OSThread() = default;
+OSThread::~OSThread() = default;
+
+OSInfo::OSInfo() = default;
+OSInfo::~OSInfo() = default;
+
 // OSProcess
 LinuxOSProcess::LinuxOSProcess() = default;
 

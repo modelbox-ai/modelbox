@@ -355,6 +355,9 @@ std::shared_ptr<GCNode> ModelBoxEngine::ProcessVirtualHandler(
   }
   return gcnode;
 }
+
+std::shared_ptr<ErrorInfo> ModelBoxEngine::GetErrorInfo() { return error_info_; }
+
 std::shared_ptr<GCNode> ModelBoxEngine::CreateDynamicGCGraph(
     const std::string &name, const std::map<std::string, std::string> &config,
     const std::shared_ptr<DataHandler> &data_handler) {

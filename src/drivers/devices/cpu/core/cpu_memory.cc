@@ -30,6 +30,8 @@ CpuMemory::CpuMemory(const std::shared_ptr<Device> &device,
                      const std::shared_ptr<void> &device_mem_ptr, size_t size)
     : DeviceMemory(device, mem_mgr, device_mem_ptr, size, true) {}
 
+CpuMemory::~CpuMemory() = default;
+
 Status CpuMemory::ReadFrom(
     const std::shared_ptr<const DeviceMemory> &src_memory, size_t src_offset,
     size_t src_size, size_t dest_offset) {

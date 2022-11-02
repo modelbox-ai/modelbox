@@ -58,7 +58,7 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
   DeviceMemory(const DeviceMemory &&deviceMemory) = delete;
   DeviceMemory &operator=(const DeviceMemory &&deviceMemory) = delete;
 
-  virtual ~DeviceMemory() = default;
+  virtual ~DeviceMemory();
 
   /**
    * @brief Get memory pointer to access data, memory must be mutable
@@ -90,7 +90,7 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
    * @brief Mutable if memory content can be modified
    * @return Mutable
    */
-  bool IsContentMutable() const { return is_content_mutable_; };
+  bool IsContentMutable() const;
 
   /**
    * @brief Mutable if memory content can be modified
@@ -307,7 +307,7 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
                const std::shared_ptr<void> &device_mem_ptr, size_t size,
                bool is_host_mem = false);
 
-  void SetMemFlags(uint32_t mem_flags) { mem_flags_ = mem_flags; }
+  void SetMemFlags(uint32_t mem_flags);
 
   /**
    * @brief Check param for readFrom function
@@ -321,14 +321,10 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
                           size_t src_offset, size_t src_size,
                           size_t dest_offset);
 
-  virtual Status CopyExtraMetaTo(std::shared_ptr<DeviceMemory> &device_mem) {
-    return STATUS_SUCCESS;
-  };
+  virtual Status CopyExtraMetaTo(std::shared_ptr<DeviceMemory> &device_mem);
 
   virtual Status CombineExtraMeta(
-      const std::vector<std::shared_ptr<DeviceMemory>> &mem_list) {
-    return STATUS_SUCCESS;
-  }
+      const std::vector<std::shared_ptr<DeviceMemory>> &mem_list);
 
  private:
   void UpdateMemID(void *device_mem_ptr);
@@ -383,28 +379,27 @@ class DeviceMemory : public std::enable_shared_from_this<DeviceMemory> {
 class DeviceMemoryManager
     : public std::enable_shared_from_this<DeviceMemoryManager> {
  public:
-  DeviceMemoryManager(std::string device_id)
-      : device_id_(std::move(device_id)) {}
+  DeviceMemoryManager(std::string device_id);
 
-  virtual ~DeviceMemoryManager() = default;
+  virtual ~DeviceMemoryManager();
 
   /**
    * @brief Set allocatable memory limit
    * @param mem_quota quota memory size
    */
-  inline void SetMemQuota(size_t mem_quota) { mem_quota_ = mem_quota; };
+  void SetMemQuota(size_t mem_quota);
 
   /**
    * @brief Get allocatable memory limit
    * @return Memory limit
    */
-  inline size_t GetMemQuota() const { return mem_quota_; };
+  size_t GetMemQuota() const;
 
   /**
    * @brief Get allocated memory size
    * @return Allocated memory size
    */
-  size_t GetAllocatedMemSize() const { return mem_allocated_; };
+  size_t GetAllocatedMemSize() const;
 
   /**
    * @brief Preservce memory alloc

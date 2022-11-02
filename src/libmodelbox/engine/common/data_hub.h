@@ -36,7 +36,7 @@ class PriorityPort {
  public:
   PriorityPort(const std::shared_ptr<IPort>& port);
 
-  virtual ~PriorityPort() = default;
+  virtual ~PriorityPort();
 
   const std::shared_ptr<IPort>& GetPort() const;
   std::shared_ptr<IPort> GetPort();
@@ -77,7 +77,8 @@ class PriorityPort {
  */
 class DataHub {
  public:
-  virtual ~DataHub() = default;
+  DataHub();
+  virtual ~DataHub();
 
   virtual Status AddPort(const std::shared_ptr<PriorityPort>& port) = 0;
   virtual Status SelectActivePort(std::shared_ptr<PriorityPort>* active_port,

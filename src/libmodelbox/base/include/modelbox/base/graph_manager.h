@@ -103,7 +103,7 @@ class GCGraph {
 
   Status Init(const std::shared_ptr<GCGraph> &root_graph);
 
-  inline void SetGraphName(const std::string &name) { name_ = name; };
+  void SetGraphName(const std::string &name);
   const std::string &GetGraphName() const;
   std::shared_ptr<GCGraph> GetRootGraph() const;
 
@@ -140,16 +140,16 @@ class GCGraph {
 
 class GraphConfig {
  public:
-  GraphConfig() = default;
-  virtual ~GraphConfig() = default;
+  GraphConfig();
+  virtual ~GraphConfig();
 
   virtual std::shared_ptr<GCGraph> Resolve() = 0;
 };
 
 class GraphConfigFactory : public DriverFactory {
  public:
-  GraphConfigFactory() = default;
-  ~GraphConfigFactory() override = default;
+  GraphConfigFactory();
+  ~GraphConfigFactory() override;
   virtual std::shared_ptr<GraphConfig> CreateGraphConfigFromStr(
       const std::string &graph_config) = 0;
   virtual std::shared_ptr<GraphConfig> CreateGraphConfigFromFile(

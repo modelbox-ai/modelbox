@@ -88,7 +88,7 @@ class JNINativeObject {
       const char *member = NATIVE_HANDLER_MEMBER_NAME);
 
  private:
-  JNINativeObject() = default;
+  JNINativeObject();
   void SetNativeSharedPtr(std::shared_ptr<void> native_shared_ptr);
 
   static JNINativeObject *FromHandle(jlong handle);

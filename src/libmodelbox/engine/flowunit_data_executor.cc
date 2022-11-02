@@ -22,6 +22,18 @@
 
 namespace modelbox {
 
+Executor::Executor() {
+  thread_pool_ = std::make_shared<ThreadPool>();
+  thread_pool_->SetName("Executor");
+}
+
+Executor::Executor(int thread_count) {
+  thread_pool_ = std::make_shared<ThreadPool>(thread_count);
+  thread_pool_->SetName("Executor");
+}
+
+Executor::~Executor() { thread_pool_ = nullptr; }
+
 FlowUnitExecContext::FlowUnitExecContext(
     std::shared_ptr<FlowUnitDataContext> data_ctx)
     : data_ctx_(std::move(data_ctx)) {}
@@ -66,6 +78,8 @@ FlowUnitExecData::FlowUnitExecData(const std::shared_ptr<FlowUnit> &fu)
                        std::make_shared<BufferList>(device));
   }
 }
+
+FlowUnitExecData::~FlowUnitExecData() = default;
 
 void FlowUnitExecData::ReserveCache(size_t buffer_count, DataType type) {
   auto data = in_data_;
@@ -948,6 +962,8 @@ void FlowUnitExecDataMapper::FillMappedDataStream(size_t batch_size) {
 FlowUnitExecDataView::FlowUnitExecDataView(FUExecContextList exec_ctx_list)
     : exec_ctx_list_(std::move(exec_ctx_list)) {}
 
+FlowUnitExecDataView::~FlowUnitExecDataView() = default;
+
 Status FlowUnitExecDataView::LoadInputFromExecCtx(bool need_reshape,
                                                   bool is_stream,
                                                   size_t batch_size,
@@ -1176,6 +1192,8 @@ Status FlowUnitExecDataView::DevideExecCtxByFlowunit() {
 FlowUnitDataExecutor::FlowUnitDataExecutor(std::weak_ptr<Node> node_ref,
                                            size_t batch_size)
     : node_ref_(std::move(node_ref)), batch_size_(batch_size) {}
+
+FlowUnitDataExecutor::~FlowUnitDataExecutor() = default;
 
 Status FlowUnitDataExecutor::DataCtxExecuteFunc(
     FlowUnit *flowunit, const BatchedFUExecDataCtxList &process_data,

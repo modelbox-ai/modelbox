@@ -122,10 +122,9 @@ enum class StatisticsNotifyType : uint32_t {
 class StatisticsNotifyMsg {
  public:
   StatisticsNotifyMsg(std::string path, std::shared_ptr<StatisticsValue> value,
-                      StatisticsNotifyType type)
-      : path_{std::move(path)}, value_{std::move(value)}, type_{type} {}
+                      StatisticsNotifyType type);
 
-  virtual ~StatisticsNotifyMsg() = default;
+  virtual ~StatisticsNotifyMsg();
   std::string path_;
   std::shared_ptr<StatisticsValue> value_;
   StatisticsNotifyType type_;

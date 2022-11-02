@@ -40,7 +40,7 @@ class HandlerContext {
  public:
   friend class ModelBoxEngine;
   HandlerContext(std::weak_ptr<ModelBoxEngine> &env);
-  virtual ~HandlerContext() = default;
+  virtual ~HandlerContext();
 
   virtual Status PushData(const std::string &key,
                           const std::shared_ptr<BufferList> &bufferlist) = 0;
@@ -57,7 +57,7 @@ class HandlerContext {
 
   void SetGraphState(const std::shared_ptr<GraphState> & /*state*/);
 
-  virtual void Close(){};
+  virtual void Close();
 
   void SetFlowUnitDesc(const std::shared_ptr<FlowUnitDesc> &desc);
 

@@ -196,6 +196,8 @@ Status GCGraph::Init(const std::shared_ptr<GCGraph> &root_graph) {
   return STATUS_OK;
 }
 
+void GCGraph::SetGraphName(const std::string &name) { name_ = name; };
+
 const std::string &GCGraph::GetGraphName() const { return name_; }
 
 std::shared_ptr<GCGraph> GCGraph::GetRootGraph() const {
@@ -314,6 +316,14 @@ void GCGraph::SetConfiguration(const std::string &key,
   }
   configuration_->SetProperty(key, sub_str_list);
 }
+
+GraphConfig::GraphConfig() = default;
+
+GraphConfig::~GraphConfig() = default;
+
+GraphConfigFactory::GraphConfigFactory() = default;
+
+GraphConfigFactory::~GraphConfigFactory() = default;
 
 GraphConfigManager::GraphConfigManager() = default;
 

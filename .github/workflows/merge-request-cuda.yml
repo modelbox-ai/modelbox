@@ -42,6 +42,11 @@ jobs:
       with:
         key: ubuntu-latest-x86_64
         max-size: 512M
+    - name: Remove old modelbox
+      continue-on-error: true
+      run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+
     - name: Configure CMake
       run: |
         mkdir build
@@ -56,7 +61,6 @@ jobs:
     - name: Test
       working-directory: build
       run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
         make build-test -j8
         unset LD_LIBRARY_PATH
         make unittest

@@ -119,6 +119,10 @@ Profiler::~Profiler() {
   }
 }
 
+std::shared_ptr<Performance> Profiler::GetPerf() { return perf_; }
+
+std::shared_ptr<Trace> Profiler::GetTrace() { return trace_; }
+
 Status Profiler::OnInit() {
   bool performance_enable = false;
   bool trace_enable = false;

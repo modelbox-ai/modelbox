@@ -48,7 +48,8 @@ class OutPort;
 
 class NodeBase : public std::enable_shared_from_this<NodeBase> {
  public:
-  virtual ~NodeBase() = default;
+  NodeBase();
+  virtual ~NodeBase();
 
   virtual Status Init(const std::set<std::string>& input_port_names,
                       const std::set<std::string>& output_port_names,
@@ -60,19 +61,19 @@ class NodeBase : public std::enable_shared_from_this<NodeBase> {
 
   virtual std::shared_ptr<Device> GetDevice() = 0;
 
-  virtual void Close(){};
+  virtual void Close();
 
-  void SetName(const std::string& name) { name_ = name; }
+  void SetName(const std::string& name);
 
-  std::string GetName() const { return name_; }
+  std::string GetName() const;
 
-  void SetPriority(int32_t priortity) { priority_ = priortity; }
+  void SetPriority(int32_t priortity);
 
-  int32_t GetPriority() const { return priority_; }
+  int32_t GetPriority() const;
 
-  void SetQueueSize(int32_t queue_size) { queue_size_ = queue_size; }
+  void SetQueueSize(int32_t queue_size);
 
-  int32_t GetQueueSize() const { return queue_size_; }
+  int32_t GetQueueSize() const;
 
   size_t GetInputNum();
 
@@ -98,7 +99,7 @@ class NodeBase : public std::enable_shared_from_this<NodeBase> {
 
   std::shared_ptr<OutPort> GetOutputPort(const std::string& port_name);
 
-  inline std::shared_ptr<EventPort> GetEventPort() { return event_port_; }
+  std::shared_ptr<EventPort> GetEventPort();
 
   void SetAllInportActivated(bool flag);
 
@@ -141,7 +142,7 @@ class Node : public NodeBase {
  public:
   Node();
 
-  ~Node() override = default;
+  ~Node() override;
 
   /**
    * @brief Init the node
@@ -211,23 +212,15 @@ class Node : public NodeBase {
 
   bool IsExceptionVisible();
 
-  std::unordered_map<std::string, std::shared_ptr<Node>> GetMatchNodes() {
-    return match_node_;
-  }
+  std::unordered_map<std::string, std::shared_ptr<Node>> GetMatchNodes();
 
-  void SetMatchNode(const std::string& name, std::shared_ptr<Node> match_node) {
-    match_node_[name] = std::move(match_node);
-  }
+  void SetMatchNode(const std::string& name, std::shared_ptr<Node> match_node);
 
-  std::shared_ptr<Node> GetMatchNode() { return match_node_["match_node"]; }
+  std::shared_ptr<Node> GetMatchNode();
 
-  std::shared_ptr<Node> GetMatchNode(const std::string& port_name) {
-    return match_node_[port_name];
-  }
+  std::shared_ptr<Node> GetMatchNode(const std::string& port_name);
 
-  std::shared_ptr<FlowUnitDesc> GetFlowUnitDesc() {
-    return flowunit_group_->GetExecutorUnit()->GetFlowUnitDesc();
-  }
+  std::shared_ptr<FlowUnitDesc> GetFlowUnitDesc();
 
   void SetSessionManager(SessionManager* session_mgr);
 

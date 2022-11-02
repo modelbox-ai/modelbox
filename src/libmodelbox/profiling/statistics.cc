@@ -20,6 +20,13 @@
 
 namespace modelbox {
 
+StatisticsNotifyMsg::StatisticsNotifyMsg(std::string path,
+                                         std::shared_ptr<StatisticsValue> value,
+                                         StatisticsNotifyType type)
+    : path_{std::move(path)}, value_{std::move(value)}, type_{type} {}
+
+StatisticsNotifyMsg::~StatisticsNotifyMsg() = default;
+
 /**
  * StatisticsValue
  */
@@ -113,9 +120,9 @@ StatisticsNotifyCfg::StatisticsNotifyCfg(std::string path_pattern,
   type_set_.insert(type);
 }
 
-StatisticsNotifyCfg::StatisticsNotifyCfg(
-    std::string path_pattern, StatisticsNotifyFunc func,
-    std::set<StatisticsNotifyType> types)
+StatisticsNotifyCfg::StatisticsNotifyCfg(std::string path_pattern,
+                                         StatisticsNotifyFunc func,
+                                         std::set<StatisticsNotifyType> types)
     : path_pattern_{std::move(path_pattern)},
       func_{std::move(func)},
       type_set_(std::move(types)),
