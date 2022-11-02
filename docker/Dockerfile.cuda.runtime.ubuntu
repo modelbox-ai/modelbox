@@ -19,13 +19,12 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shang
     echo "deb http://archive.ubuntu.com/ubuntu/ bionic-proposed main restricted universe multiverse" >>/etc/apt/sources.list && \
     export DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=low TZ=Asia/Shanghai && \
     apt update && \
-    apt install -y python3.9 python3-pip python3-apt python3-setuptools && \
+    apt install -y python3.8 python3-pip python3-apt python3-setuptools && \
     apt install -y dbus systemd systemd-cron iproute2 gnupg2 libfuse2 apt-utils \
         build-essential bash unzip ffmpeg curl pkg-config ca-certificates libduktape205 \
         libssl1.1 libcpprest graphviz libprotobuf-c1 libgtk-3-0 libgoogle-glog0v5 libtbb2 && \
-    update-ca-certificates && \
-    DEBIAN_FRONTEND=noninteractive apt upgrade -y && \
-    ln -sf python3.9 /usr/bin/python3 && \
+    update-ca-certificates && apt upgrade -y && \
+    ln -sf python3.8 /usr/bin/python3 && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /root/.pip && \
