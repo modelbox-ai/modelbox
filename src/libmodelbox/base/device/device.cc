@@ -40,6 +40,10 @@ Device::Device(size_t thread_count,
   }
 }
 
+Device::Device() = default;
+
+Device::~Device() = default;
+
 std::string Device::GetDeviceID() const {
   if (device_desc_ != nullptr) {
     return device_desc_->GetDeviceId();
@@ -49,6 +53,16 @@ std::string Device::GetDeviceID() const {
 }
 
 std::shared_ptr<Executor> Device::GetDeviceExecutor() { return executor_; }
+
+void Device::SetMemQuota(size_t mem_quota) {
+  memory_manager_->SetMemQuota(mem_quota);
+}
+
+size_t Device::GetMemQuota() const { return memory_manager_->GetMemQuota(); }
+
+size_t Device::GetAllocatedMemSize() const {
+  return memory_manager_->GetAllocatedMemSize();
+}
 
 Status Device::DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
                              size_t count) {
@@ -280,6 +294,9 @@ void DeviceDesc::SetDeviceVersion(const std::string &device_version) {
 void DeviceDesc::SetDeviceDesc(const std::string &device_desc) {
   device_description_ = device_desc;
 }
+
+DeviceDesc::DeviceDesc() = default;
+DeviceDesc::~DeviceDesc() = default;
 
 std::string DeviceDesc::GetDeviceId() { return device_id_; }
 

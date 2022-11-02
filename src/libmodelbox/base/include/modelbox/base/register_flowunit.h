@@ -46,12 +46,12 @@ class RegisterFlowUnit : public FlowUnit {
 
 class RegisterFlowUnitFactory : public FlowUnitFactory {
  public:
-  RegisterFlowUnitFactory() = default;
+  RegisterFlowUnitFactory();
   RegisterFlowUnitFactory(
       std::string unit_name, std::vector<std::string> inputs,
       std::vector<std::string> outputs,
       std::function<Status(std::shared_ptr<DataContext>)> callback);
-  ~RegisterFlowUnitFactory() override = default;
+  ~RegisterFlowUnitFactory() override;
 
   std::map<std::string, std::shared_ptr<FlowUnitDesc>> FlowUnitProbe() override;
 

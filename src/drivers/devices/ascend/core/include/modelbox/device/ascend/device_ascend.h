@@ -52,14 +52,14 @@ class AscendFactory : public DeviceFactory {
 
 class AscendDesc : public DeviceDesc {
  public:
-  AscendDesc() = default;
-  ~AscendDesc() override = default;
+  AscendDesc();
+  ~AscendDesc() override;
 };
 
 class AscendFlowUnit : public FlowUnit {
  public:
-  AscendFlowUnit() = default;
-  ~AscendFlowUnit() override = default;
+  AscendFlowUnit();
+  ~AscendFlowUnit() override;
 
   virtual Status AscendProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
                                aclrtStream stream) = 0;

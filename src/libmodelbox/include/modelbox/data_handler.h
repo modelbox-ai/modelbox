@@ -149,9 +149,7 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
  for input: get inport-outport map when datahandler is constructed with one more
  datahandler
  */
-  std::unordered_map<std::string, std::string> GetPortMap() {
-    return port_to_port_;
-  };
+  std::unordered_map<std::string, std::string> GetPortMap();
 
   std::shared_ptr<DataHandler> GetOutputData(
       std::shared_ptr<DynamicGraph> &dynamic_graph);

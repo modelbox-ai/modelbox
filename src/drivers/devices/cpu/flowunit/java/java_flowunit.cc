@@ -80,8 +80,31 @@ std::shared_ptr<modelbox::FlowUnitDesc> JavaFlowUnit::GetFlowUnitDesc() {
   return nullptr;
 }
 
+JavaFlowUnitDesc::JavaFlowUnitDesc() = default;
+
+JavaFlowUnitDesc::~JavaFlowUnitDesc() = default;
+
 void JavaFlowUnitDesc::SetJavaEntry(const std::string& java_entry) {
   java_entry_ = java_entry;
 }
 
 std::string JavaFlowUnitDesc::GetJavaEntry() { return java_entry_; }
+
+JavaFlowUnitFactory::JavaFlowUnitFactory() = default;
+
+JavaFlowUnitFactory::~JavaFlowUnitFactory() = default;
+
+std::shared_ptr<modelbox::FlowUnit> JavaFlowUnitFactory::CreateFlowUnit(
+    const std::string& unit_name, const std::string& unit_type) {
+  auto java_flowunit = std::make_shared<JavaFlowUnit>();
+  return java_flowunit;
+}
+
+std::string JavaFlowUnitFactory::GetFlowUnitFactoryType() {
+  return FLOWUNIT_TYPE;
+}
+
+std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
+JavaFlowUnitFactory::FlowUnitProbe() {
+  return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
+}

@@ -31,6 +31,10 @@ MatchKey* MatchKey::AsKey(Stream* match_at_stream) {
   return (MatchKey*)match_at_stream;
 }
 
+MatchStreamData::MatchStreamData() = default;
+
+MatchStreamData::~MatchStreamData() = default;
+
 void MatchStreamData::SetStreamMatchKey(MatchKey* match_at) {
   match_at_ = match_at;
 }
@@ -64,11 +68,14 @@ size_t MatchStreamData::GetDataCount() const {
   return first_port_stream_data.size();
 }
 
+
 MatchBufferCache::MatchBufferCache(
     size_t port_count,
     std::unordered_map<std::string, size_t>* stream_count_each_port)
     : port_count_(port_count),
       stream_count_each_port_(stream_count_each_port) {}
+
+MatchBufferCache::~MatchBufferCache() = default;
 
 Status MatchBufferCache::CacheBuffer(const std::string& port_name,
                                      std::shared_ptr<Buffer>& buffer) {
@@ -165,6 +172,8 @@ MatchStreamCache::MatchStreamCache(
     : node_name_(std::move(node_name)),
       port_count_(port_count),
       stream_count_each_port_(stream_count_each_port) {}
+
+MatchStreamCache::~MatchStreamCache() = default;
 
 Status MatchStreamCache::CacheBuffer(const std::string& port_name,
                                      std::shared_ptr<Buffer>& buffer) {
@@ -296,6 +305,8 @@ InputMatchStreamManager::InputMatchStreamManager(std::string node_name,
     : node_name_(std::move(node_name)),
       queue_size_(queue_size),
       port_count_(port_count) {}
+
+InputMatchStreamManager::~InputMatchStreamManager() = default;
 
 size_t InputMatchStreamManager::GetInputStreamCount() {
   return match_stream_cache_map_.size();
@@ -618,6 +629,8 @@ std::shared_ptr<Stream> OutputMatchStream::CreateStream(
 OutputMatchStreamManager::OutputMatchStreamManager(
     std::string node_name, std::set<std::string>&& output_port_names)
     : node_name_(std::move(node_name)), output_port_names_(output_port_names) {}
+
+OutputMatchStreamManager::~OutputMatchStreamManager() = default;
 
 size_t OutputMatchStreamManager::GetOutputStreamCount() {
   return output_stream_map_.size();

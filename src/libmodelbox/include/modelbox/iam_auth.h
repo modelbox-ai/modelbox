@@ -31,8 +31,8 @@ namespace modelbox {
  */
 class IAMAuth {
  public:
-  IAMAuth() = default;
-  ~IAMAuth() = default;
+  IAMAuth();
+  virtual ~IAMAuth();
 
   /*
    * @brief get iamauth instance

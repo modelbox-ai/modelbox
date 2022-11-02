@@ -106,6 +106,10 @@ std::shared_ptr<Device> CudaFactory::CreateDevice(
   return std::make_shared<Cuda>(mem_mgr);
 }
 
+CudaFlowUnit::CudaFlowUnit() = default;
+
+CudaFlowUnit::~CudaFlowUnit() = default;
+
 Status CudaFlowUnit::Process(std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto cuda_ret = cudaSetDevice(dev_id_);
   if (cuda_ret != cudaSuccess) {
@@ -138,5 +142,9 @@ Status CudaFlowUnit::Process(std::shared_ptr<modelbox::DataContext> data_ctx) {
 
   return process_status;
 }
+
+CudaDesc::CudaDesc() = default;
+
+CudaDesc::~CudaDesc() = default;
 
 }  // namespace modelbox

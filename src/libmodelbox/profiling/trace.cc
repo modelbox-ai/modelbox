@@ -128,6 +128,14 @@ void Trace::TraceWork() {
   MBLOG_INFO << "trace timer end";
 }
 
+void Trace::SetWriteFileInterval(int32_t threshold) {
+  write_file_interval_ = threshold;
+}
+
+uint32_t Trace::GetWriteFileInterval() { return write_file_interval_; }
+
+void Trace::SetSessionEnable() { session_enable_ = true; }
+
 Status Trace::WriteTrace() {
   nlohmann::json traces_json = nlohmann::json::array();
   std::unique_lock<std::mutex> lock(trace_mutex_);
@@ -205,6 +213,8 @@ Status Trace::WriteTrace() {
 
 FlowUnitTrace::FlowUnitTrace(std::string flow_unit_name)
     : flow_unit_name_(std::move(flow_unit_name)) {}
+
+FlowUnitTrace::~FlowUnitTrace() = default;
 
 std::shared_ptr<TraceSlice> FlowUnitTrace::Slice(TraceSliceType slice_type,
                                                  std::string session) {

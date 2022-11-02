@@ -105,6 +105,14 @@ std::shared_ptr<Device> AscendFactory::CreateDevice(
   return std::make_shared<Ascend>(mem_mgr);
 }
 
+AscendDesc::AscendDesc() = default;
+
+AscendDesc::~AscendDesc() = default;
+
+AscendFlowUnit::AscendFlowUnit() = default;
+
+AscendFlowUnit::~AscendFlowUnit() = default;
+
 Status AscendFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto ret = aclrtSetDevice(dev_id_);

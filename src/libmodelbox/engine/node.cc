@@ -42,6 +42,26 @@ namespace modelbox {
 #define DEFAULT_QUEUE_SIZE 32
 #define DEFAULT_QUEUE_EVENT 8192  // should be large enough
 
+NodeBase::NodeBase() = default;
+
+NodeBase::~NodeBase() = default;
+
+void NodeBase::SetName(const std::string& name) { name_ = name; }
+
+std::string NodeBase::GetName() const { return name_; }
+
+void NodeBase::Close(){};
+
+void NodeBase::SetPriority(int32_t priortity) { priority_ = priortity; }
+
+int32_t NodeBase::GetPriority() const { return priority_; }
+
+void NodeBase::SetQueueSize(int32_t queue_size) { queue_size_ = queue_size; }
+
+int32_t NodeBase::GetQueueSize() const { return queue_size_; }
+
+std::shared_ptr<EventPort> NodeBase::GetEventPort() { return event_port_; }
+
 Status NodeBase::Init(const std::set<std::string>& input_port_names,
                       const std::set<std::string>& output_port_names,
                       const std::shared_ptr<Configuration>& config) {
@@ -195,6 +215,8 @@ void NodeBase::Shutdown() {
 
 Node::Node() = default;
 
+Node::~Node() = default;
+
 Status Node::Init(const std::set<std::string>& input_port_names,
                   const std::set<std::string>& output_port_names,
                   const std::shared_ptr<Configuration>& config) {
@@ -232,6 +254,25 @@ Status Node::Init(const std::set<std::string>& input_port_names,
   }
 
   return STATUS_OK;
+}
+
+std::unordered_map<std::string, std::shared_ptr<Node>> Node::GetMatchNodes() {
+  return match_node_;
+}
+
+void Node::SetMatchNode(const std::string& name,
+                        std::shared_ptr<Node> match_node) {
+  match_node_[name] = std::move(match_node);
+}
+
+std::shared_ptr<Node> Node::GetMatchNode() { return match_node_["match_node"]; }
+
+std::shared_ptr<Node> Node::GetMatchNode(const std::string& port_name) {
+  return match_node_[port_name];
+}
+
+std::shared_ptr<FlowUnitDesc> Node::GetFlowUnitDesc() {
+  return flowunit_group_->GetExecutorUnit()->GetFlowUnitDesc();
 }
 
 Status Node::InitNodeProperties() {
@@ -759,7 +800,7 @@ void Node::SetLastError(
       continue;
     }
 
-    for (const auto &input_map : data_ctx->GetErrorInputs()) {
+    for (const auto& input_map : data_ctx->GetErrorInputs()) {
       auto error_buffer_list = input_map.second;
       if (!error_buffer_list.empty()) {
         sess->SetError(std::make_shared<FlowUnitError>(

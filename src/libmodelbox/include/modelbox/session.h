@@ -32,6 +32,7 @@ using SessionId = std::string;
 
 class SessionIO {
  public:
+  SessionIO();
   virtual Status SetOutputMeta(const std::string& port_name,
                                std::shared_ptr<DataMeta> meta) = 0;
   virtual Status Send(const std::string& port_name,
@@ -40,7 +41,7 @@ class SessionIO {
   virtual Status Close() = 0;
   virtual Status Shutdown() = 0;
 
-  virtual ~SessionIO() = default;
+  virtual ~SessionIO();
 
  protected:
   friend class Session;
@@ -49,7 +50,10 @@ class SessionIO {
 
 class SessionStateListener {
  public:
-  virtual void NotifySessionClose(){};
+  SessionStateListener();
+  virtual ~SessionStateListener();
+
+  virtual void NotifySessionClose();
 };
 
 class Session {
@@ -102,9 +106,9 @@ class Session {
 
 class SessionManager {
  public:
-  SessionManager() = default;
+  SessionManager();
 
-  virtual ~SessionManager() = default;
+  virtual ~SessionManager();
 
   std::shared_ptr<Session> CreateSession(
       const std::shared_ptr<StatisticsItem>& graph_stats);

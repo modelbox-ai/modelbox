@@ -85,14 +85,14 @@ class CudaFactory : public DeviceFactory {
 
 class CudaDesc : public DeviceDesc {
  public:
-  CudaDesc() = default;
-  ~CudaDesc() override = default;
+  CudaDesc();
+  ~CudaDesc() override;
 };
 
 class CudaFlowUnit : public FlowUnit {
  public:
-  CudaFlowUnit() = default;
-  ~CudaFlowUnit() override = default;
+  CudaFlowUnit();
+  ~CudaFlowUnit() override;
 
   virtual Status CudaProcess(std::shared_ptr<modelbox::DataContext> data_ctx,
                              cudaStream_t stream) = 0;

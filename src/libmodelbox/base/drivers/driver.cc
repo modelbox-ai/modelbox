@@ -260,6 +260,14 @@ void Driver::CloseFactoryLocked() {
   driver_handler_ = nullptr;
 }
 
+DriverHandlerInfo::DriverHandlerInfo() = default;
+
+DriverHandlerInfo::~DriverHandlerInfo() = default;
+
+int DriverHandlerInfo::IncHanderRefcnt() { return ++handler_count_; }
+
+int DriverHandlerInfo::DecHanderRefcnt() { return --handler_count_; }
+
 std::shared_ptr<DriverHandlerInfo> DriverHandler::Add(void *driver_handler) {
   auto driver_handler_info = Get(driver_handler);
   if (nullptr == driver_handler_info) {
@@ -427,6 +435,14 @@ std::shared_ptr<Driver> DriverFactory::GetDriver() {
 };
 
 void DriverFactory::SetDriver(const std::shared_ptr<Driver> &driver) {}
+
+VirtualDriverDesc::VirtualDriverDesc() = default;
+
+VirtualDriverDesc::~VirtualDriverDesc() = default;
+
+DriverDesc::DriverDesc() = default;
+
+DriverDesc::~DriverDesc() = default;
 
 // DriverDesc
 std::string DriverDesc::GetClass() { return driver_class_; }

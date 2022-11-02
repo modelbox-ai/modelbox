@@ -58,6 +58,10 @@ void JavaVirtualDriver::SetBindDriver(
   java_flowunit_driver_ = driver_list;
 }
 
+JavaVirtualDriverManager::JavaVirtualDriverManager() = default;
+
+JavaVirtualDriverManager::~JavaVirtualDriverManager() = default;
+
 modelbox::Status JavaVirtualDriverManager::Init(modelbox::Drivers &driver) {
   auto ret = BindBaseDriver(driver);
   return ret;
@@ -402,7 +406,20 @@ std::shared_ptr<modelbox::FlowUnit> VirtualJavaFlowUnitFactory::CreateFlowUnit(
         ->CreateFlowUnit(unit_name, unit_type);
   }
   return nullptr;
-};
+}
+
+VirtualJavaFlowUnitFactory::VirtualJavaFlowUnitFactory() = default;
+
+VirtualJavaFlowUnitFactory::~VirtualJavaFlowUnitFactory() = default;
+
+std::shared_ptr<modelbox::Driver> VirtualJavaFlowUnitFactory::GetDriver() {
+  return driver_;
+}
+
+void VirtualJavaFlowUnitFactory::SetDriver(
+    const std::shared_ptr<modelbox::Driver> &driver) {
+  driver_ = driver;
+}
 
 std::string VirtualJavaFlowUnitDesc::GetJarEntry() { return java_entry_; }
 
@@ -415,3 +432,23 @@ std::shared_ptr<modelbox::Configuration>
 VirtualJavaFlowUnitDesc::GetConfiguration() {
   return config_;
 }
+
+VirtualJavaFlowUnitDesc::VirtualJavaFlowUnitDesc() = default;
+
+VirtualJavaFlowUnitDesc::~VirtualJavaFlowUnitDesc() = default;
+
+void VirtualJavaFlowUnitDesc::SetJarFilePath(const std::string &path) {
+  jar_file_path_ = path;
+}
+
+const std::string &VirtualJavaFlowUnitDesc::GetJarFilePath() const {
+  return jar_file_path_;
+}
+
+JavaVirtualDriverDesc::JavaVirtualDriverDesc() = default;
+
+JavaVirtualDriverDesc::~JavaVirtualDriverDesc() = default;
+
+JavaVirtualDriver::JavaVirtualDriver() = default;
+
+JavaVirtualDriver::~JavaVirtualDriver() = default;

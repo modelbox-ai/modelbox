@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/port.h"
 
+#include <utility>
+
 namespace modelbox {
+
+IPort::IPort(const std::string& name, const std::shared_ptr<NodeBase>& node)
+    : Port(name, node){};
+
+IPort::~IPort() = default;
 
 Port::Port(std::string name, const std::shared_ptr<NodeBase>& node)
     : name_(std::move(name)), node_(node) {}
@@ -32,6 +37,12 @@ std::shared_ptr<NodeBase> Port::GetNode() {
 }
 
 void Port::Shutdown() {}
+
+InPort::InPort(const std::string& name, const std::shared_ptr<NodeBase>& node,
+               uint32_t priority, size_t event_capacity)
+    : NotifyPort(name, node, priority, event_capacity) {}
+
+InPort::~InPort() = default;
 
 Status InPort::Init() {
   auto node = node_.lock();
@@ -155,7 +166,7 @@ bool OutPort::ConnectPort(const std::shared_ptr<InPort>& inport) {
   if (!inport->SetOutputPort(shared_from_this())) {
     return false;
   }
-  
+
   auto pair = connected_input_ports_.emplace(inport);
   return pair.second;
 }
@@ -169,6 +180,15 @@ void OutPort::Shutdown() {
 std::set<std::shared_ptr<InPort>> OutPort::GetConnectInPort() {
   return connected_input_ports_;
 }
+
+EventPort::EventPort(const std::string& name,
+                     const std::shared_ptr<NodeBase>& node, uint32_t priority,
+                     size_t event_capacity)
+    : NotifyPort(name, node, priority, event_capacity){};
+
+EventPort::~EventPort() = default;
+
+Status EventPort::Init() { return STATUS_OK; };
 
 Status EventPort::SendBatch(
     std::vector<std::shared_ptr<FlowUnitInnerEvent>>& event_list) {

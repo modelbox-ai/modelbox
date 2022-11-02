@@ -79,7 +79,7 @@ class ModelBoxEngine : public std::enable_shared_from_this<ModelBoxEngine> {
    * @brief get error info from graph
    * @return error information
    */
-  std::shared_ptr<ErrorInfo> GetErrorInfo() { return error_info_; }
+  std::shared_ptr<ErrorInfo> GetErrorInfo();
 
   void SetConfig(std::string &, std::string &);
   std::shared_ptr<Configuration> GetConfig();

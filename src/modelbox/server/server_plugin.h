@@ -31,7 +31,7 @@ namespace modelbox {
 class ServerPlugin {
  public:
   ServerPlugin(std::string plugin_path);
-  virtual ~ServerPlugin() = default;
+  virtual ~ServerPlugin();
 
   virtual modelbox::Status Init(
       std::shared_ptr<modelbox::Configuration> config) = 0;

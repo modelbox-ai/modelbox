@@ -28,8 +28,8 @@ constexpr const char *FLOWUNIT_TYPE = "cpu";
 
 class JavaFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
-  JavaFlowUnitDesc() = default;
-  ~JavaFlowUnitDesc() override = default;
+  JavaFlowUnitDesc();
+  ~JavaFlowUnitDesc() override;
 
   void SetJavaEntry(const std::string &java_entry);
   std::string GetJavaEntry();
@@ -71,21 +71,16 @@ class JavaFlowUnit : public modelbox::FlowUnit {
 
 class JavaFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
-  JavaFlowUnitFactory() = default;
-  ~JavaFlowUnitFactory() override = default;
+  JavaFlowUnitFactory();
+  ~JavaFlowUnitFactory() override;
 
   std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
-      const std::string &unit_name, const std::string &unit_type) override {
-    auto java_flowunit = std::make_shared<JavaFlowUnit>();
-    return java_flowunit;
-  };
+      const std::string &unit_name, const std::string &unit_type) override;
 
-  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
+  std::string GetFlowUnitFactoryType() override;
 
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
-      override {
-    return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
-  };
+      override;
 };
 
 #endif  // MODELBOX_FLOWUNIT_JAVA_H_

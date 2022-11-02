@@ -182,7 +182,7 @@ class FlowUnitTrace : public std::enable_shared_from_this<FlowUnitTrace> {
   friend class Trace;
 
  public:
-  virtual ~FlowUnitTrace() = default;
+  virtual ~FlowUnitTrace();
 
   inline const std::string& GetFlowUnitName() const { return flow_unit_name_; }
 
@@ -211,7 +211,7 @@ class FlowUnitPerfCtx {
  public:
   explicit FlowUnitPerfCtx(const std::string& flow_unit_name);
 
-  virtual ~FlowUnitPerfCtx() = default;
+  virtual ~FlowUnitPerfCtx();
 
   void UpdateProcessLatency(int32_t process_latency);
 
@@ -341,13 +341,11 @@ class Trace : public std::enable_shared_from_this<Trace>,
 
   Status WriteTrace();
 
-  inline void SetWriteFileInterval(int32_t threshold) {
-    write_file_interval_ = threshold;
-  }
+  void SetWriteFileInterval(int32_t threshold);
 
-  inline uint32_t GetWriteFileInterval() { return write_file_interval_; }
+  uint32_t GetWriteFileInterval();
 
-  inline void SetSessionEnable() { session_enable_ = true; }
+  void SetSessionEnable();
 
  private:
   std::string TraceSliceTypeToString(TraceSliceType type);
@@ -405,9 +403,9 @@ class Profiler : public ProfilerLifeCycle {
 
   Status OnResume() override;
 
-  inline std::shared_ptr<Performance> GetPerf() { return perf_; }
+  std::shared_ptr<Performance> GetPerf();
 
-  inline std::shared_ptr<Trace> GetTrace() { return trace_; }
+  std::shared_ptr<Trace> GetTrace();
 
  private:
   std::shared_ptr<DeviceManager> device_mgr_;

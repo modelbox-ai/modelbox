@@ -50,9 +50,13 @@ DeviceMemory::DeviceMemory(const std::shared_ptr<Device> &device,
   }
 }
 
+DeviceMemory::~DeviceMemory() = default;
+
 void DeviceMemory::UpdateMemID(void *device_mem_ptr) {
   memory_id_ = std::to_string((uintptr_t)device_mem_ptr);
 }
+
+bool DeviceMemory::IsContentMutable() const { return is_content_mutable_; };
 
 Status DeviceMemory::SetContentMutable(bool content_mutable) {
   is_content_mutable_ = content_mutable;
@@ -306,6 +310,18 @@ Status DeviceMemory::WriteTo(const std::shared_ptr<DeviceMemory> &dest_memory,
   return dest_memory->ReadFrom(shared_from_this(), src_offset, src_size,
                                dest_offset);
 }
+
+Status DeviceMemory::CopyExtraMetaTo(
+    std::shared_ptr<DeviceMemory> &device_mem) {
+  return STATUS_SUCCESS;
+}
+
+Status DeviceMemory::CombineExtraMeta(
+    const std::vector<std::shared_ptr<DeviceMemory>> &mem_list) {
+  return STATUS_SUCCESS;
+}
+
+void DeviceMemory::SetMemFlags(uint32_t mem_flags) { mem_flags_ = mem_flags; }
 
 bool DeviceMemory::CheckReadFromParam(
     const std::shared_ptr<const DeviceMemory> &src_memory, size_t src_offset,
@@ -645,6 +661,21 @@ Status DeviceMemory::MemAcquire(const std::shared_ptr<void> &mem_ptr,
   UpdateMemID(device_mem_ptr_.get());
   return STATUS_SUCCESS;
 }
+
+DeviceMemoryManager::DeviceMemoryManager(std::string device_id)
+    : device_id_(std::move(device_id)) {}
+
+DeviceMemoryManager::~DeviceMemoryManager() = default;
+
+void DeviceMemoryManager::SetMemQuota(size_t mem_quota) {
+  mem_quota_ = mem_quota;
+};
+
+size_t DeviceMemoryManager::GetMemQuota() const { return mem_quota_; };
+
+size_t DeviceMemoryManager::GetAllocatedMemSize() const {
+  return mem_allocated_;
+};
 
 bool DeviceMemoryManager::PreserveMem(size_t size) {
   std::lock_guard<std::mutex> lock_gurad(allocated_size_lock_);

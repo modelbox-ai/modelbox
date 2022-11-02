@@ -28,6 +28,10 @@ std::shared_ptr<IAMAuth> IAMAuth::GetInstance() {
   return instance;
 }
 
+IAMAuth::~IAMAuth() = default;
+
+IAMAuth::IAMAuth() = default;
+
 modelbox::Status IAMAuth::SetConsigneeInfo(const std::string &service_ak,
                                            const std::string &service_sk,
                                            const std::string &domain_id,
@@ -45,6 +49,7 @@ modelbox::Status IAMAuth::GetUserAgencyProjectCredential(
       MBLOG_ERROR << "failed to get user credential info, user_id: " << user_id;
       return modelbox::STATUS_FAULT;
     }
+
     return modelbox::STATUS_OK;
   }
 

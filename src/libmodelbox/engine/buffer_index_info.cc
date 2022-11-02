@@ -60,6 +60,10 @@ void BufferProcessInfo::SetType(BufferProcessType type) { type_ = type; }
 
 BufferProcessType BufferProcessInfo::GetType() { return type_; }
 
+BufferIndexInfo::BufferIndexInfo() = default;
+
+BufferIndexInfo::~BufferIndexInfo() = default;
+
 void BufferIndexInfo::SetInheritInfo(
     std::shared_ptr<BufferInheritInfo> inherit_info) {
   inherit_info_ = std::move(inherit_info);

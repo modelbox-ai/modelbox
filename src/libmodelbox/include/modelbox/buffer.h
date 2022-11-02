@@ -146,7 +146,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
    */
   Buffer(const Buffer& other);
 
-  virtual ~Buffer() = default;
+  virtual ~Buffer();
 
   /**
    * @brief Create a buffer, apply for memory

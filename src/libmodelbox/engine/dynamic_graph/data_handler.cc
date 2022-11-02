@@ -80,6 +80,10 @@ Status DataHandler::SetBindGraph(const std::shared_ptr<GraphState> &gcgraph) {
   return STATUS_SUCCESS;
 }
 
+std::unordered_map<std::string, std::string> DataHandler::GetPortMap() {
+  return port_to_port_;
+};
+
 void DataHandler::SetNodeName(const std::string &name) { node_name_ = name; }
 
 std::string DataHandler::GetNodeName() { return node_name_; }

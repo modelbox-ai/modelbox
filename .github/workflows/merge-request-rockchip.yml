@@ -26,6 +26,11 @@ jobs:
           key: ubuntu-latest-arm64
           max-size: 1024M
 
+      - name: Remove old modelbox
+        continue-on-error: true
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+
       - name: Configure CMake
         run: |
           mkdir build

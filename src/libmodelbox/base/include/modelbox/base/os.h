@@ -31,8 +31,8 @@ namespace modelbox {
  */
 class OSProcess {
  public:
-  OSProcess() = default;
-  virtual ~OSProcess() = default;
+  OSProcess();
+  virtual ~OSProcess();
 
   /**
    * @brief Get thread number of specific process
@@ -84,8 +84,8 @@ class OSProcess {
  */
 class OSThread {
  public:
-  OSThread() = default;
-  virtual ~OSThread() = default;
+  OSThread();
+  virtual ~OSThread();
 
   /**
    * @brief Get current thread id
@@ -139,8 +139,8 @@ class OSThread {
  */
 class OSInfo {
  public:
-  OSInfo() = default;
-  virtual ~OSInfo() = default;
+  OSInfo();
+  virtual ~OSInfo();
 
   /**
    * @brief Get system memory usage

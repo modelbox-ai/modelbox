@@ -71,7 +71,7 @@ class BufferList {
    */
   BufferList(const BufferList& other);
 
-  virtual ~BufferList() = default;
+  virtual ~BufferList();
 
   /**
    * @brief Builder buffer, create memory

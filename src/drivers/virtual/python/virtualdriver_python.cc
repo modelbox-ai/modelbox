@@ -22,9 +22,9 @@
 
 constexpr const char *VIRTUAL_FLOWUNIT_TYPE = "python";
 
-void VirtualPythonFlowUnitDesc::SetPythonEntry(std::string python_entry) {
-  python_entry_ = std::move(python_entry);
-}
+PythonVirtualDriverDesc::PythonVirtualDriverDesc() = default;
+
+PythonVirtualDriverDesc::~PythonVirtualDriverDesc() = default;
 
 std::shared_ptr<modelbox::DriverFactory> PythonVirtualDriver::CreateFactory() {
   auto factory = std::make_shared<VirtualPythonFlowUnitFactory>();
@@ -48,6 +48,10 @@ std::shared_ptr<modelbox::DriverFactory> PythonVirtualDriver::CreateFactory() {
   return factory;
 }
 
+PythonVirtualDriver::PythonVirtualDriver() = default;
+
+PythonVirtualDriver::~PythonVirtualDriver() = default;
+
 std::vector<std::shared_ptr<modelbox::Driver>>
 PythonVirtualDriver::GetBindDriver() {
   return python_flowunit_driver_;
@@ -57,6 +61,10 @@ void PythonVirtualDriver::SetBindDriver(
     const std::vector<std::shared_ptr<modelbox::Driver>> &driver_list) {
   python_flowunit_driver_ = driver_list;
 }
+
+PythonVirtualDriverManager::PythonVirtualDriverManager() = default;
+
+PythonVirtualDriverManager::~PythonVirtualDriverManager() = default;
 
 modelbox::Status PythonVirtualDriverManager::Init(modelbox::Drivers &driver) {
   auto ret = BindBaseDriver(driver);
@@ -184,6 +192,18 @@ modelbox::Status PythonVirtualDriverManager::BindBaseDriver(
   }
 
   return modelbox::STATUS_OK;
+}
+
+VirtualPythonFlowUnitFactory::VirtualPythonFlowUnitFactory() = default;
+VirtualPythonFlowUnitFactory::~VirtualPythonFlowUnitFactory() = default;
+
+std::shared_ptr<modelbox::Driver> VirtualPythonFlowUnitFactory::GetDriver() {
+  return driver_;
+}
+
+void VirtualPythonFlowUnitFactory::SetDriver(
+    const std::shared_ptr<modelbox::Driver> &driver) {
+  driver_ = driver;
 }
 
 modelbox::Status VirtualPythonFlowUnitFactory::FillInput(
@@ -413,6 +433,24 @@ VirtualPythonFlowUnitFactory::CreateFlowUnit(const std::string &unit_name,
   modelbox::StatusError = {modelbox::STATUS_NOTFOUND,
                            "not found flowunit " + std::string(unit_name)};
   return nullptr;
+}
+
+VirtualPythonFlowUnitDesc::VirtualPythonFlowUnitDesc() = default;
+
+VirtualPythonFlowUnitDesc::~VirtualPythonFlowUnitDesc() = default;
+
+void SetConfiguration(const std::shared_ptr<modelbox::Configuration> &config);
+std::shared_ptr<modelbox::Configuration> GetConfiguration();
+
+void VirtualPythonFlowUnitDesc::SetPythonFilePath(const std::string &path) {
+  python_file_path_ = path;
+}
+const std::string &VirtualPythonFlowUnitDesc::GetPythonFilePath() const {
+  return python_file_path_;
+}
+
+void VirtualPythonFlowUnitDesc::SetPythonEntry(std::string python_entry) {
+  python_entry_ = std::move(python_entry);
 }
 
 std::string VirtualPythonFlowUnitDesc::GetPythonEntry() {

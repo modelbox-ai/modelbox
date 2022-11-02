@@ -88,6 +88,8 @@ void StreamOrder::Collapse() { index_at_each_expand_level_.pop_back(); }
 Stream::Stream(std::shared_ptr<Session> session)
     : session_(std::move(session)) {}
 
+Stream::~Stream() = default;
+
 std::shared_ptr<Session> Stream::GetSession() { return session_; }
 
 void Stream::SetMaxBufferCount(size_t max_buffer_count) {

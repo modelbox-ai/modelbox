@@ -30,14 +30,14 @@ const std::vector<std::string> BIND_PYTHON_FLOWUNIT_TYPE{"cpu"};
 // Virtual
 class PythonVirtualDriverDesc : public modelbox::VirtualDriverDesc {
  public:
-  PythonVirtualDriverDesc() = default;
-  ~PythonVirtualDriverDesc() override = default;
+  PythonVirtualDriverDesc();
+  ~PythonVirtualDriverDesc() override;
 };
 
 class VirtualPythonFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
-  VirtualPythonFlowUnitDesc() = default;
-  ~VirtualPythonFlowUnitDesc() override = default;
+  VirtualPythonFlowUnitDesc();
+  ~VirtualPythonFlowUnitDesc() override;
 
   void SetPythonEntry(std::string python_entry);
   std::string GetPythonEntry();
@@ -45,8 +45,8 @@ class VirtualPythonFlowUnitDesc : public modelbox::FlowUnitDesc {
   void SetConfiguration(const std::shared_ptr<modelbox::Configuration> &config);
   std::shared_ptr<modelbox::Configuration> GetConfiguration();
 
-  void SetPythonFilePath(const std::string &path) { python_file_path_ = path; }
-  const std::string &GetPythonFilePath() const { return python_file_path_; }
+  void SetPythonFilePath(const std::string &path);
+  const std::string &GetPythonFilePath() const;
 
  protected:
   std::string python_entry_;
@@ -56,8 +56,8 @@ class VirtualPythonFlowUnitDesc : public modelbox::FlowUnitDesc {
 
 class PythonVirtualDriver : public modelbox::VirtualDriver {
  public:
-  PythonVirtualDriver() = default;
-  ~PythonVirtualDriver() override = default;
+  PythonVirtualDriver();
+  ~PythonVirtualDriver() override;
 
   std::shared_ptr<modelbox::DriverFactory> CreateFactory() override;
   std::vector<std::shared_ptr<modelbox::Driver>> GetBindDriver();
@@ -70,8 +70,8 @@ class PythonVirtualDriver : public modelbox::VirtualDriver {
 
 class VirtualPythonFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
-  VirtualPythonFlowUnitFactory() = default;
-  ~VirtualPythonFlowUnitFactory() override = default;
+  VirtualPythonFlowUnitFactory();
+  ~VirtualPythonFlowUnitFactory() override;
 
   std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
       const std::string &unit_name, const std::string &unit_type) override;
@@ -83,11 +83,9 @@ class VirtualPythonFlowUnitFactory : public modelbox::FlowUnitFactory {
       const std::vector<std::shared_ptr<modelbox::DriverFactory>>
           &bind_flowunit_factory_list) override;
 
-  std::shared_ptr<modelbox::Driver> GetDriver() override { return driver_; };
+  std::shared_ptr<modelbox::Driver> GetDriver() override;
 
-  void SetDriver(const std::shared_ptr<modelbox::Driver> &driver) override {
-    driver_ = driver;
-  }
+  void SetDriver(const std::shared_ptr<modelbox::Driver> &driver) override;
 
  private:
   modelbox::Status FillInput(
@@ -112,8 +110,8 @@ class VirtualPythonFlowUnitFactory : public modelbox::FlowUnitFactory {
 
 class PythonVirtualDriverManager : public modelbox::VirtualDriverManager {
  public:
-  PythonVirtualDriverManager() = default;
-  ~PythonVirtualDriverManager() override = default;
+  PythonVirtualDriverManager();
+  ~PythonVirtualDriverManager() override;
 
   modelbox::Status Scan(const std::string &path) override;
   modelbox::Status Add(const std::string &file) override;

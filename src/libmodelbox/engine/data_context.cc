@@ -24,6 +24,14 @@
 
 namespace modelbox {
 
+ExternalData::ExternalData() = default;
+
+ExternalData::~ExternalData() = default;
+
+DataContext::DataContext() = default;
+
+DataContext::~DataContext() = default;
+
 ExternalDataImpl::ExternalDataImpl(std::shared_ptr<InPort> port,
                                    std::shared_ptr<Device> device,
                                    const std::shared_ptr<Stream> &init_stream)
@@ -161,6 +169,12 @@ std::shared_ptr<FlowUnitInnerEvent> FlowUnitDataContext::GenerateSendEvent() {
 bool FlowUnitDataContext::IsDataPre() { return false; }
 
 bool FlowUnitDataContext::IsDataPost() { return false; }
+
+void FlowUnitDataContext::UpdateBufferIndexInfo(
+    const std::shared_ptr<BufferIndexInfo> &cur_buffer,
+    const std::shared_ptr<BufferIndexInfo> &parent_buffer){};
+
+bool FlowUnitDataContext::SkipInheritInputToMatchNode() { return false; }
 
 void FlowUnitDataContext::SetCurrentInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {
@@ -962,6 +976,8 @@ ExecutorDataContext::ExecutorDataContext(
     std::shared_ptr<FlowUnitExecData> data)
     : origin_ctx_(std::move(origin_ctx)), data_(std::move(data)){};
 
+ExecutorDataContext::~ExecutorDataContext() = default;
+
 std::shared_ptr<BufferList> ExecutorDataContext::Input(
     const std::string &port) const {
   return data_->GetInDataForUser(port);
@@ -1042,6 +1058,13 @@ NormalFlowUnitDataContext::NormalFlowUnitDataContext(
     const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
+NormalFlowUnitDataContext::~NormalFlowUnitDataContext() = default;
+
+void NormalFlowUnitDataContext::SendEvent(
+    std::shared_ptr<FlowUnitEvent> event) {
+  // not support user send event
+}
+
 void NormalFlowUnitDataContext::UpdateProcessState() {
   // input process over, normal data ctx is over
   if (input_stream_max_buffer_count_ == 0) {
@@ -1077,6 +1100,8 @@ LoopNormalFlowUnitDataContext::LoopNormalFlowUnitDataContext(
     Node *node, MatchKey *data_ctx_match_key,
     const std::shared_ptr<Session> &session)
     : NormalFlowUnitDataContext(node, data_ctx_match_key, session) {}
+
+LoopNormalFlowUnitDataContext::~LoopNormalFlowUnitDataContext() = default;
 
 Status LoopNormalFlowUnitDataContext::GenerateOutput() {
   // need know output port for this loop
@@ -1155,6 +1180,8 @@ Status LoopNormalFlowUnitDataContext::CheckOutputData() {
   return STATUS_OK;
 }
 
+StreamFlowUnitDataContext::~StreamFlowUnitDataContext() = default;
+
 StreamFlowUnitDataContext::StreamFlowUnitDataContext(
     Node *node, MatchKey *data_ctx_match_key,
     const std::shared_ptr<Session> &session)
@@ -1203,6 +1230,8 @@ NormalExpandFlowUnitDataContext::NormalExpandFlowUnitDataContext(
     const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
 
+NormalExpandFlowUnitDataContext::~NormalExpandFlowUnitDataContext() = default;
+
 void NormalExpandFlowUnitDataContext::UpdateProcessState() {
   // each buffer in stream has one data ctx, finish after buffer expand end
   is_finished_ = !IsContinueProcess();
@@ -1230,6 +1259,8 @@ StreamExpandFlowUnitDataContext::StreamExpandFlowUnitDataContext(
     Node *node, MatchKey *data_ctx_match_key,
     const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
+
+StreamExpandFlowUnitDataContext::~StreamExpandFlowUnitDataContext() = default;
 
 void StreamExpandFlowUnitDataContext::WriteInputData(
     std::shared_ptr<PortDataMap> stream_data_map) {
@@ -1394,7 +1425,10 @@ void StreamExpandFlowUnitDataContext::UpdateBufferIndexInfo(
 NormalCollapseFlowUnitDataContext::NormalCollapseFlowUnitDataContext(
     Node *node, MatchKey *data_ctx_match_key,
     const std::shared_ptr<Session> &session)
-    : FlowUnitDataContext(node, data_ctx_match_key, session) {}
+    : FlowUnitDataContext(node, data_ctx_match_key, session){};
+
+NormalCollapseFlowUnitDataContext::~NormalCollapseFlowUnitDataContext() =
+    default;
 
 bool NormalCollapseFlowUnitDataContext::IsDataPre() {
   return input_has_stream_start_ && !is_empty_stream_;
@@ -1480,6 +1514,9 @@ StreamCollapseFlowUnitDataContext::StreamCollapseFlowUnitDataContext(
     Node *node, MatchKey *data_ctx_match_key,
     const std::shared_ptr<Session> &session)
     : FlowUnitDataContext(node, data_ctx_match_key, session) {}
+
+StreamCollapseFlowUnitDataContext::~StreamCollapseFlowUnitDataContext() =
+    default;
 
 void StreamCollapseFlowUnitDataContext::SendEvent(
     std::shared_ptr<FlowUnitEvent> event) {

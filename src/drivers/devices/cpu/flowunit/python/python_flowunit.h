@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_PYTHON_H_
 #define MODELBOX_FLOWUNIT_PYTHON_H_
 
@@ -22,10 +21,9 @@
 #include <modelbox/base/status.h>
 #include <modelbox/flow.h>
 #include <modelbox/flowunit.h>
+#include <pybind11/pybind11.h>
 
 #include "virtualdriver_python.h"
-
-#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 
@@ -35,8 +33,8 @@ constexpr const char *FLOWUNIT_TYPE = "cpu";
 
 class PythonFlowUnitDesc : public modelbox::FlowUnitDesc {
  public:
-  PythonFlowUnitDesc() = default;
-  ~PythonFlowUnitDesc() override = default;
+  PythonFlowUnitDesc();
+  ~PythonFlowUnitDesc() override;
 
   void SetPythonEntry(const std::string &python_entry);
   std::string GetPythonEntry();
@@ -88,21 +86,16 @@ class PythonFlowUnit : public modelbox::FlowUnit {
 
 class PythonFlowUnitFactory : public modelbox::FlowUnitFactory {
  public:
-  PythonFlowUnitFactory() = default;
-  ~PythonFlowUnitFactory() override = default;
+  PythonFlowUnitFactory();
+  ~PythonFlowUnitFactory() override;
 
   std::shared_ptr<modelbox::FlowUnit> CreateFlowUnit(
-      const std::string &unit_name, const std::string &unit_type) override {
-    auto python_flowunit = std::make_shared<PythonFlowUnit>();
-    return python_flowunit;
-  };
+      const std::string &unit_name, const std::string &unit_type) override;
 
-  std::string GetFlowUnitFactoryType() override { return FLOWUNIT_TYPE; };
+  std::string GetFlowUnitFactoryType() override;
 
   std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>> FlowUnitProbe()
-      override {
-    return std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>();
-  };
+      override;
 };
 #pragma GCC visibility pop
 #endif  // MODELBOX_FLOWUNIT_PYTHON_H_

@@ -41,14 +41,14 @@ constexpr const int SCHED_MAX_CHECK_TIMEOUT_COUNT = 60;
 class SchedulerCommand {
  public:
   SchedulerCommand(SchedulerCommandType type,
-                   std::shared_ptr<PriorityPort> port)
-      : type_(type), port_(std::move(port)) {}
-  virtual ~SchedulerCommand() = default;
+                   std::shared_ptr<PriorityPort> port);
+  virtual ~SchedulerCommand();
 
-  SchedulerCommandType GetType() { return type_; }
-  std::shared_ptr<PriorityPort> GetPort() { return port_; }
+  SchedulerCommandType GetType();
 
-  int GetPriority() { return 0; }
+  std::shared_ptr<PriorityPort> GetPort();
+
+  int GetPriority();
 
  private:
   SchedulerCommandType type_;
@@ -83,9 +83,9 @@ class SchedulerPort
   SchedulerPort(const std::string& name);
   SchedulerPort(const std::string& name, size_t event_capacity);
 
-  ~SchedulerPort() override = default;
+  ~SchedulerPort() override;
 
-  Status Init() override { return STATUS_OK; };
+  Status Init() override;
 };
 
 class FlowScheduler : public Scheduler {

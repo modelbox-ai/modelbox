@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "engine/common/data_hub.h"
 
 #include <algorithm>
@@ -22,6 +21,9 @@
 #include "modelbox/base/log.h"
 
 namespace modelbox {
+
+DataHub::DataHub() = default;
+DataHub::~DataHub() = default;
 
 PriorityPort::PriorityPort(const std::shared_ptr<IPort>& port)
     : active_time_(GetCurrentTime()), port_(port) {
@@ -31,6 +33,8 @@ PriorityPort::PriorityPort(const std::shared_ptr<IPort>& port)
     priority_ = std::numeric_limits<int>::min();
   }
 }
+
+PriorityPort::~PriorityPort() = default;
 
 const std::shared_ptr<IPort>& PriorityPort::GetPort() const { return port_; }
 std::shared_ptr<IPort> PriorityPort::GetPort() { return port_; }

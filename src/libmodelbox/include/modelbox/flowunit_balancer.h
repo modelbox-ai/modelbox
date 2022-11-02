@@ -46,9 +46,9 @@ std::ostream& operator<<(std::ostream& os, const FlowUnitBalanceStrategy& s);
 
 class FlowUnitBalancer : public std::enable_shared_from_this<FlowUnitBalancer> {
  public:
-  FlowUnitBalancer() = default;
+  FlowUnitBalancer();
 
-  virtual ~FlowUnitBalancer() = default;
+  virtual ~FlowUnitBalancer();
 
   Status Init(const std::vector<std::shared_ptr<FlowUnit>>& flowunits);
 
@@ -60,7 +60,7 @@ class FlowUnitBalancer : public std::enable_shared_from_this<FlowUnitBalancer> {
   virtual FlowUnitBalanceStrategy GetType() = 0;
 
  protected:
-  virtual Status OnInit() { return STATUS_OK; }
+  virtual Status OnInit();
 
   virtual std::shared_ptr<FlowUnit> BindFlowUnit(
       const std::shared_ptr<FlowUnitDataContext>& data_ctx) = 0;
@@ -79,6 +79,8 @@ using FUBalancerCreateFunc = std::function<std::shared_ptr<FlowUnitBalancer>()>;
 
 class FlowUnitBalancerFactory {
  public:
+  virtual ~FlowUnitBalancerFactory();
+
   static FlowUnitBalancerFactory& GetInstance();
 
   std::shared_ptr<FlowUnitBalancer> CreateBalancer(
@@ -88,7 +90,7 @@ class FlowUnitBalancerFactory {
   void RegistBalancer(const FUBalancerCreateFunc& create_func);
 
  private:
-  FlowUnitBalancerFactory() = default;
+  FlowUnitBalancerFactory();
 
   std::unordered_map<FlowUnitBalanceStrategy, FUBalancerCreateFunc,
                      FUBalanceStrategyHash>

@@ -56,7 +56,7 @@ extern std::recursive_mutex ToolCommandGetOptLock;
     ::modelbox::ToolCommandList::Instance()->AddCommand(new_func);           \
     return 0;                                                                \
   }();                                                                       \
-  DeferExt() {                                                                    \
+  DeferExt() {                                                               \
     /* Remove command from command list.*/                                   \
     if (cmd_name_##class.length() > 0) {                                     \
       ::modelbox::ToolCommandList::Instance()->RmvCommand(cmd_name_##class); \
@@ -103,20 +103,20 @@ extern std::recursive_mutex ToolCommandGetOptLock;
 
 class StdOutStream : public OutStream {
  public:
-  StdOutStream() = default;
-  virtual ~StdOutStream() = default;
+  StdOutStream();
+  virtual ~StdOutStream();
 
  protected:
-  void ProcessStream(OStream *st) override { std::cout << st; }
+  void ProcessStream(OStream *st) override;
 };
 
 class StdErrStream : public OutStream {
  public:
-  StdErrStream() = default;
-  virtual ~StdErrStream() = default;
+  StdErrStream();
+  virtual ~StdErrStream();
 
  protected:
-  void ProcessStream(OStream *st) override { std::cerr << st; }
+  void ProcessStream(OStream *st);
 };
 
 class ToolCommand {
@@ -127,13 +127,10 @@ class ToolCommand {
   std::shared_ptr<OutStream> out_cerr_ = std::make_shared<StdErrStream>();
 
  public:
-  ToolCommand() = default;
-  virtual ~ToolCommand() = default;
+  ToolCommand();
+  virtual ~ToolCommand();
 
-  void SetUp(std::shared_ptr<OutStream> cout, std::shared_ptr<OutStream> cerr) {
-    out_cout_ = std::move(cout);
-    out_cerr_ = std::move(cerr);
-  }
+  void SetUp(std::shared_ptr<OutStream> cout, std::shared_ptr<OutStream> cerr);
 
   virtual int Run(int argc, char *argv[]) = 0;
 

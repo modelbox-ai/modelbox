@@ -90,7 +90,7 @@ class MemoryPoolBase : public MemoryAllocFree,
 
   static std::vector<std::shared_ptr<MemoryPoolBase>> GetAllPools();
 
-  MemoryPoolBase() = default;
+  MemoryPoolBase();
   MemoryPoolBase(std::string name);
   virtual ~MemoryPoolBase();
 

@@ -34,6 +34,8 @@ class TomlConfigParser : public ConfigParser {
                const std::string &file) override;
 };
 
+ConfigStore::~ConfigStore() = default;
+
 void ConfigStore::WriteProperty(const std::string &key,
                                 const std::string &property) {
   properties_[key] =
@@ -96,6 +98,8 @@ std::unique_ptr<ConfigStore> ConfigStore::GetSubConfigStore(
   return sub_store;
 }
 
+void ConfigStore::SetExpandEnv(bool expand_env) { expand_env_ = expand_env; }
+
 size_t ConfigStore::Size() const { return properties_.size(); }
 
 bool ConfigStore::Contain(const std::string &key) const {
@@ -153,6 +157,8 @@ Configuration::Configuration(std::unique_ptr<ConfigStore> &store) {
   store_ = std::move(store);
 }
 
+Configuration::~Configuration() = default;
+
 void Configuration::Trim(std::string *value) {
   if (value == nullptr) {
     return;
@@ -163,6 +169,12 @@ void Configuration::Trim(std::string *value) {
 }
 
 size_t Configuration::Size() const { return store_->Size(); }
+
+void Configuration::Add(const Configuration &config) { store_->Add(*(config.store_)); }
+
+void Configuration::Copy(const Configuration &config, const std::string &key) {
+    store_->Copy(*(config.store_), key);
+  }
 
 std::set<std::string> Configuration::GetKeys() const {
   return store_->GetKeys();
@@ -645,6 +657,7 @@ Status TomlConfigParser::Parse(const std::shared_ptr<Configuration> &config,
 }
 
 ConfigurationBuilder::ConfigurationBuilder() = default;
+ConfigurationBuilder::~ConfigurationBuilder() = default;
 
 void ConfigurationBuilder::AddProperty(const std::string &key,
                                        const std::string &property) {

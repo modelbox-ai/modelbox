@@ -493,7 +493,7 @@ modelbox::Status InferenceTensorflowFlowUnit::PreProcess(
     TF_DataType tf_type;
     if (type.empty()) {
       // Get type form buffer meta when model input type is not set
-      modelbox::ModelBoxDataType buffer_type;
+      modelbox::ModelBoxDataType buffer_type = modelbox::MODELBOX_TYPE_INVALID;
       status = input_buf->At(0)->Get("type", buffer_type);
       if (!status) {
         auto err_msg =

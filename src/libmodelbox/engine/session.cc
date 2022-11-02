@@ -20,6 +20,16 @@
 
 namespace modelbox {
 
+SessionIO::SessionIO() = default;
+
+SessionIO::~SessionIO() = default;
+
+SessionStateListener::SessionStateListener() = default;
+
+SessionStateListener::~SessionStateListener() = default;
+
+void SessionStateListener::NotifySessionClose(){};
+
 Session::Session(const std::shared_ptr<StatisticsItem> &graph_stats)
     : ctx_(std::make_shared<SessionContext>(graph_stats)) {}
 
@@ -86,6 +96,10 @@ void Session::SetError(std::shared_ptr<FlowUnitError> error) {
 }
 
 std::shared_ptr<FlowUnitError> Session::GetError() { return error_; }
+
+SessionManager::SessionManager() = default;
+
+SessionManager::~SessionManager() = default;
 
 std::shared_ptr<Session> SessionManager::CreateSession(
     const std::shared_ptr<StatisticsItem> &graph_stats) {

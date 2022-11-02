@@ -89,3 +89,17 @@ void HandleHealthCheck(const web::http::http_request &request) {
   auto resp_status = web::http::status_codes::OK;
   SafeReply(request, resp_status, resp_body);
 }
+
+HttpRequestLimiter::HttpRequestLimiter() = default;
+
+HttpRequestLimiter::~HttpRequestLimiter() { --request_count_; };
+
+std::shared_ptr<HttpRequestLimiter> HttpRequestLimiter::GetInstance() {
+  std::lock_guard<std::mutex> lock(request_mutex_);
+  if (request_count_ < max_request_) {
+    ++request_count_;
+    return std::make_shared<HttpRequestLimiter>();
+  }
+
+  return nullptr;
+}

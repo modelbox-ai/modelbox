@@ -94,9 +94,8 @@ using PopCallBack = std::function<void(void)>;
 
 class IPort : public Port {
  public:
-  IPort(const std::string& name, const std::shared_ptr<NodeBase>& node)
-      : Port(name, node){};
-  ~IPort() override = default;
+  IPort(const std::string& name, const std::shared_ptr<NodeBase>& node);
+  ~IPort() override;
   virtual int32_t GetPriority() const = 0;
   virtual int32_t GetDataCount() const = 0;
   virtual void SetPriority(int32_t priority) = 0;
@@ -263,11 +262,10 @@ class NotifyPort : public IPort {
 class EventPort : public NotifyPort<FlowUnitInnerEvent, EventCompare> {
  public:
   EventPort(const std::string& name, const std::shared_ptr<NodeBase>& node,
-            uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
-      : NotifyPort(name, node, priority, event_capacity){};
-  ~EventPort() override = default;
+            uint32_t priority = 0, size_t event_capacity = SIZE_MAX);
+  ~EventPort() override;
 
-  Status Init() override { return STATUS_OK; };
+  Status Init() override;
 
   Status SendBatch(
       std::vector<std::shared_ptr<FlowUnitInnerEvent>>& event_list);
@@ -281,10 +279,9 @@ class InPort : public NotifyPort<Buffer, CustomCompare> {
 
  public:
   InPort(const std::string& name, const std::shared_ptr<NodeBase>& node,
-         uint32_t priority = 0, size_t event_capacity = SIZE_MAX)
-      : NotifyPort(name, node, priority, event_capacity) {}
+         uint32_t priority = 0, size_t event_capacity = SIZE_MAX);
 
-  ~InPort() override = default;
+  ~InPort() override;
 
   Status Init() override;
 
