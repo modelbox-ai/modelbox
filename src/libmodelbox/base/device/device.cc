@@ -57,6 +57,8 @@ Status Device::DeviceExecute(const DevExecuteCallBack &fun, int32_t priority,
 
 std::string Device::GetType() const { return ""; }
 
+bool Device::SupportMemContiguous() const { return true; }
+
 bool Device::NeedResourceNice() { return false; }
 
 std::list<std::future<Status>> Device::DeviceExecuteAsync(

@@ -90,7 +90,7 @@ class BufferList {
    */
   virtual Status BuildFromHost(const std::vector<size_t>& data_size_list,
                                void* data, size_t data_size,
-                               const DeleteFunction &func = nullptr);
+                               const DeleteFunction& func = nullptr);
 
   /**
    * @brief Get bufferlist size
@@ -312,6 +312,12 @@ class BufferList {
    * @return null if no back buffer
    */
   std::shared_ptr<Buffer> Back();
+
+  /**
+   * @brief test whether buffer list supports mem contiguous
+   * @return support or not
+   **/
+  bool SupportMemContiguous();
 
  private:
   friend class FlowUnitExecData;

@@ -40,6 +40,8 @@ RockChip::RockChip(const std::shared_ptr<DeviceMemoryManager> &mem_mgr)
 
 std::string RockChip::GetType() const { return DEVICE_TYPE; }
 
+bool RockChip::SupportMemContiguous() const { return false; }
+
 Status RockChip::DeviceExecute(const DevExecuteCallBack &rkfun,
                                int32_t priority, size_t rkcount) {
   if (0 == rkcount) {

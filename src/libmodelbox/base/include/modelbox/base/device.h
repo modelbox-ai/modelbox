@@ -95,6 +95,12 @@ class Device : public std::enable_shared_from_this<Device> {
 
   virtual std::string GetType() const;
 
+  /**
+   * @brief when make mem contiguous, need test whether the device supports
+   * @return whether specify device supports mem contiguous
+   **/
+  virtual bool SupportMemContiguous() const;
+
   void SetDeviceDesc(std::shared_ptr<DeviceDesc> device_desc);
 
   std::shared_ptr<DeviceDesc> GetDeviceDesc();
