@@ -28,6 +28,7 @@ class Executor {
  public:
   Executor();
   Executor(int thread_count);
+  Executor(int thread_count, int max_thread_count);
   Executor(const Executor &) = delete;
   Executor &operator=(const Executor &) = delete;
 

@@ -32,6 +32,11 @@ Executor::Executor(int thread_count) {
   thread_pool_->SetName("Executor");
 }
 
+Executor::Executor(int thread_count, int max_thread_count) {
+  thread_pool_ = std::make_shared<ThreadPool>(thread_count, max_thread_count);
+  thread_pool_->SetName("Executor");
+}
+
 Executor::~Executor() { thread_pool_ = nullptr; }
 
 FlowUnitExecContext::FlowUnitExecContext(

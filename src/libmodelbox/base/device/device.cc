@@ -36,7 +36,7 @@ Device::Device(size_t thread_count,
   if (0 == thread_count) {
     executor_ = nullptr;
   } else {
-    executor_ = std::make_shared<Executor>(thread_count);
+    executor_ = std::make_shared<Executor>(thread_count, 4 * thread_count);
   }
 }
 
