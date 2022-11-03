@@ -37,16 +37,14 @@ static std::map<nvinfer1::DataType, modelbox::ModelBoxDataType>
         {nvinfer1::DataType::kFLOAT, modelbox::MODELBOX_FLOAT},
         {nvinfer1::DataType::kINT8, modelbox::MODELBOX_INT8},
         {nvinfer1::DataType::kINT32, modelbox::MODELBOX_INT32},
-        {nvinfer1::DataType::kHALF, modelbox::MODELBOX_HALF},
-        {nvinfer1::DataType::kBOOL, modelbox::MODELBOX_BOOL}};
+        {nvinfer1::DataType::kHALF, modelbox::MODELBOX_HALF}};
 
 static std::map<modelbox::ModelBoxDataType, nvinfer1::DataType>
     mbtype_trttype_map = {
         {modelbox::MODELBOX_FLOAT, nvinfer1::DataType::kFLOAT},
         {modelbox::MODELBOX_INT8, nvinfer1::DataType::kINT8},
         {modelbox::MODELBOX_INT32, nvinfer1::DataType::kINT32},
-        {modelbox::MODELBOX_HALF, nvinfer1::DataType::kHALF},
-        {modelbox::MODELBOX_BOOL, nvinfer1::DataType::kBOOL}};
+        {modelbox::MODELBOX_HALF, nvinfer1::DataType::kHALF}};
 
 modelbox::Status ConvertTrtTypeToModelBoxType(
     nvinfer1::DataType trt_type, modelbox::ModelBoxDataType& modelbox_type) {
