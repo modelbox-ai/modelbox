@@ -1,4 +1,4 @@
-name: Daily Unit Test On Device
+name: Daily Unit Test On Device test
 
 on:
   workflow_dispatch:
@@ -23,6 +23,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Remove old modelbox
+      continue-on-error: true
+      run: |
+        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+
     - name: Configure CMake
       run: |
         mkdir build
@@ -37,9 +43,13 @@ jobs:
     - name: Test
       working-directory: build
       run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}') || true
         [ "$(arch)" == "aarch64" ] && export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
         make build-test -j4
         unset LD_LIBRARY_PATH
         make unittest
       shell: bash
+
+    - uses: actions/upload-artifact@v3
+      with:
+      name: release
+      path: build/release
