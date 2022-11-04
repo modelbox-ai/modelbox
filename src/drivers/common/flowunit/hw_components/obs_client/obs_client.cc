@@ -15,11 +15,10 @@
  */
 
 #include <modelbox/obs_client.h>
-
 #include <securec.h>
-
 #include <modelbox/iam_auth.h>
 #include <modelbox/base/utils.h>
+
 
 #define OBS_SDK_MAX_KEYS 1000
 #define MAX_RETRY_COUNTS 3
@@ -122,6 +121,7 @@ std::shared_ptr<ObsClient> ObsClient::GetInstance() {
   return obs_client;
 }
 
+ObsClient::ObsClient() = default;
 ObsClient::~ObsClient() { DeInitObsSdk(); };
 
 modelbox::Status ObsClient::InitObsSdk() {
