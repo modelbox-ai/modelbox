@@ -126,7 +126,7 @@ modelbox::Status TorchInferenceFlowUnit::LoadModel(
                ModelDecryption::MODEL_STATE_PLAIN) {
       model_ = torch::jit::load(model_path, device);
     } else {
-      return {modelbox::STATUS_FAULT, "open onnx model file fail"};
+      return {modelbox::STATUS_FAULT, "open torch model file fail"};
     }
   } catch (const c10::Error &e) {
     auto err_msg = "loading model " + model_path +
