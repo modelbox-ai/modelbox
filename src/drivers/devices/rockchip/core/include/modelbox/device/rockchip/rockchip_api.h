@@ -53,8 +53,8 @@ Status CopyRGBMemory(uint8_t *psrc, uint8_t *pdst, int w, int h, int ws,
                      int hs);
 Status CopyNVMemory(uint8_t *psrc, uint8_t *pdst, int w, int h, int ws, int hs);
 
-Status GetRGAFromImgBuffer(std::shared_ptr<Buffer> &in_img, RgaSURF_FORMAT fmt,
-                           rga_buffer_t &rgb_buf);
+Status GetRGAFromImgBuffer(const std::shared_ptr<Buffer> &in_img,
+                           RgaSURF_FORMAT fmt, rga_buffer_t &rgb_buf);
 
 std::shared_ptr<modelbox::Buffer> ColorChange(
     MppFrame &frame, RgaSURF_FORMAT fmt, const std::shared_ptr<Device> &device);

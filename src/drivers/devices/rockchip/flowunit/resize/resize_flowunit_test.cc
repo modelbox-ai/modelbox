@@ -147,7 +147,7 @@ TEST_F(RockchipResizeFlowUnitTest, RunUnit) {
     auto output_buffer = output_buffer_list->At(0);
     ASSERT_EQ(output_buffer->GetBytes(), it.first * it.second * 3);
 
-    MppBuffer mpp_buffer = (MppBuffer)output_buffer->ConstData();
+    auto *mpp_buffer = (MppBuffer)output_buffer->ConstData();
 
     int32_t out_width = 0;
     int32_t out_height = 0;
