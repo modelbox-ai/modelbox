@@ -135,8 +135,8 @@ Status CopyRGBMemory(uint8_t *psrc, uint8_t *pdst, int w, int h, int ws,
   return STATUS_SUCCESS;
 }
 
-Status GetRGAFromImgBuffer(std::shared_ptr<Buffer> &in_img, RgaSURF_FORMAT fmt,
-                           rga_buffer_t &rgb_buf) {
+Status GetRGAFromImgBuffer(const std::shared_ptr<Buffer> &in_img,
+                           RgaSURF_FORMAT fmt, rga_buffer_t &rgb_buf) {
   int32_t in_width = 0;
   int32_t in_height = 0;
   int32_t in_wstride = 0;
