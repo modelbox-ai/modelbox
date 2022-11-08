@@ -1,0 +1,61 @@
+/*
+ * Copyright 2022 The Modelbox Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "dlengine_cpu_inference_flowunit.h"
+
+static constexpr std::string BACKEND_TYPE = "JwdLCz9nKiM=";
+
+DLEngineCPUInferenceFlowUnit::DLEngineCPUInferenceFlowUnit()
+    : inference_(std::make_shared<DLEngineInference>()) {}
+
+DLEngineCPUInferenceFlowUnit::~DLEngineCPUInferenceFlowUnit() = default;
+
+modelbox::Status DLEngineCPUInferenceFlowUnit::Open(
+    const std::shared_ptr<modelbox::Configuration> &config) {
+  if (!config->Contain("config.model_type")) {
+    config->SetProperty("config.model_type", "onnx");
+  }
+
+  // fix backend on cpu
+  config->SetProperty("config.backend_type", BACKEND_TYPE);
+
+  return inference_->Init(config, GetFlowUnitDesc(), GetBindDevice()->GetType(),
+                          dev_id_);
+}
+
+modelbox::Status DLEngineCPUInferenceFlowUnit::Close() {
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status DLEngineCPUInferenceFlowUnit::Process(
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  return inference_->Infer(data_ctx);
+}
+
+std::shared_ptr<modelbox::FlowUnit>
+DLEngineCPUInferenceFlowUnitFactory::VirtualCreateFlowUnit(
+    const std::string &unit_name, const std::string &unit_type,
+    const std::string &virtual_type) {
+  return std::make_shared<DLEngineCPUInferenceFlowUnit>();
+}
+
+std::string DLEngineCPUInferenceFlowUnitFactory::GetFlowUnitFactoryType() {
+  return FLOWUNIT_TYPE;
+}
+
+std::string DLEngineCPUInferenceFlowUnitFactory::GetVirtualType() {
+  return INFERENCE_TYPE;
+}
