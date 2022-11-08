@@ -1,0 +1,29 @@
+[base]
+name = "dlengine_inference_onnx"
+device = "cuda"
+version = "1.0.0"
+description = "an dlengine cuda inference flowunit"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/test_model/test_dynamic.onnx"
+type = "inference"
+virtual_type = "dlengine"
+
+[config]
+model_type = "onnx"
+precision = "FP16" # FP32/FP16/INT8
+
+[input]
+[input.input1]
+name = "in1"
+min_shape = "1x3x16x16"
+opt_shape = "4x3x16x16"
+max_shape = "8x3x16x16"
+
+[input.input2]
+name = "in2"
+min_shape = "1x3x16x16"
+opt_shape = "4x3x16x16"
+max_shape = "8x3x16x16"
+
+[output]
+[output.output1]
+name = "out"
