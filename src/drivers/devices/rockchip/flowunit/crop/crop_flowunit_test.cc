@@ -37,7 +37,7 @@ class RockchipCropFlowUnitTest : public testing::Test {
         jpeg_decode_(std::make_shared<modelbox::MppJpegDecode>()) {}
 
  protected:
-  virtual void SetUp() override {
+  void SetUp() override {
     auto ret = jpeg_decode_->Init();
     if (ret != modelbox::STATUS_OK) {
       MBLOG_INFO << "no rockchip device, skip test suit";
@@ -47,7 +47,7 @@ class RockchipCropFlowUnitTest : public testing::Test {
     MBLOG_INFO << "jpeg_decode:" << ret;
   }
 
-  virtual void TearDown() override { crop_driver_flow_ = nullptr; };
+  void TearDown() override { crop_driver_flow_ = nullptr; };
 
   std::shared_ptr<DriverFlowTest> GetDriverFlow();
 
