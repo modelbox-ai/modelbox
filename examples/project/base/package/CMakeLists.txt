@@ -66,11 +66,13 @@ function(FUNC_CPACK)
         "/usr/local/etc"
         "/usr/local/include"
         "/usr/lib/systemd"
+        "/opt"
+        "/opt/modelbox"
         ${CMAKE_INSTALL_FULL_BINDIR}
         ${CMAKE_INSTALL_FULL_INCLUDEDIR}
         ${CMAKE_INSTALL_FULL_LIBDIR}
         "${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig"
-        ${SYSTEMDSYSTEMUNITDIR} PARENT_SCOPEN)
+        ${SYSTEMDSYSTEMUNITDIR} PARENT_SCOPE)
     configure_file(${CPACK_SOURCE_DIR}/rpm/postinscript.in ${CPACK_BINARY_DIR}/rpm/postinscript @ONLY)
     configure_file(${CPACK_SOURCE_DIR}/rpm/postunscript.in ${CPACK_BINARY_DIR}/rpm/postunscript @ONLY)
     set(CPACK_RPM_${UNIT_COMPONENT_UPPER_NAME}_POST_INSTALL_SCRIPT_FILE ${CPACK_BINARY_DIR}/rpm/postinscript PARENT_SCOPE)
