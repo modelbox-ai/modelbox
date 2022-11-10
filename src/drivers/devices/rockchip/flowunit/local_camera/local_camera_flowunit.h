@@ -65,6 +65,7 @@ class RockChipLocalCameraFlowUnit : public modelbox::FlowUnit {
                         std::shared_ptr<modelbox::Buffer> &img_buf);
   MppFrame ProcessYVY2(const uint8_t *buf, size_t size, size_t w, size_t h,
                        std::shared_ptr<modelbox::Buffer> &img_buf);
+
   MppFrame SetMppFrameInfo(size_t w, size_t h, MppFrameFormat fmt,
                            MppBuffer mpp_buf);
 

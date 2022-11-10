@@ -111,7 +111,7 @@ int32_t V4L2Camera::GetCamfd(int32_t id, const std::string &bus_info) {
     }
 
     Defer { globfree(&glob_result); };
-
+	
     // detect it is a camera device
     if (modelbox::STATUS_SUCCESS != CamIoCtl(fd, VIDIOC_QUERYCAP, &cap)) {
       MBLOG_DEBUG << "Not v4l2 device:" << glob_result.gl_pathv[i];

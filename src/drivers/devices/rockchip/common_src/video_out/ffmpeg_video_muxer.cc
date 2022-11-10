@@ -25,6 +25,7 @@ modelbox::Status FfmpegVideoMuxer::Init(
     const std::shared_ptr<FfmpegWriter> &writer) {
   destination_url_ = writer->GetDestinationURL();
   format_ctx_ = writer->GetCtx();
+
   if (format_ctx_ == nullptr) {
     const auto *msg = "FfmpegVideoMuxer.Init fail format ctx is nullptr";
     MBLOG_ERROR << msg;

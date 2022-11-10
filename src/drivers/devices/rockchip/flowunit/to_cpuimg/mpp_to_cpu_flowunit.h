@@ -42,6 +42,7 @@ constexpr const char *FLOWUNIT_DESC =
     "\t@Constraint: The field value range of this flowunit supports: "
     "'pix_fmt': "
     "[rgb_packed,bgr_packed], 'layout': [hwc]. ";
+	
 constexpr const char *IN_IMG = "in_image";
 constexpr const char *OUT_IMG = "out_image";
 
