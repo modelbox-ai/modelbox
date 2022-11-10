@@ -147,7 +147,7 @@ TEST_F(RockchipResizeFlowUnitTest, RunUnit) {
     auto output_buffer = output_buffer_list->At(0);
     ASSERT_EQ(output_buffer->GetBytes(), it.first * it.second * 3);
 
-    MppBuffer mpp_buffer = (MppBuffer)output_buffer->ConstData();
+    auto *mpp_buffer = (MppBuffer)output_buffer->ConstData();
 
     int32_t out_width = 0;
     int32_t out_height = 0;
@@ -172,8 +172,8 @@ TEST_F(RockchipResizeFlowUnitTest, RunUnit) {
     e_ret = memset_s(out_img_buf.get(), total_out_size, 0, total_out_size);
     EXPECT_EQ(e_ret, 0);
 
-    uint8_t *rgbsrc = (uint8_t *)mpp_buffer_get_ptr(mpp_buffer);
-    uint8_t *rgbdst = (uint8_t *)out_img_buf.get();
+    auto *rgbsrc = (uint8_t *)mpp_buffer_get_ptr(mpp_buffer);
+    auto *rgbdst = (uint8_t *)out_img_buf.get();
 
     // copy to memory
     for (int i = 0; i < out_height; i++) {
