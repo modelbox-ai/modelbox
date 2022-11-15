@@ -42,6 +42,12 @@ main() {
         return 1
     fi
 
+    cp ${BASE_PATH}/emotion_demo_files/emotion_test_video.mp4 ${BASE_PATH}/src/graph/emotion_test_video.mp4 -f
+    if [ $? -ne 0 ]; then
+        echo "copy test video failed"
+        return 1
+    fi
+
     rm ${BASE_PATH}/emotion_demo_files -rf
     if [ $? -ne 0 ]; then
         echo "remove emotion_demo_files folder failed"

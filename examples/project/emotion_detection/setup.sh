@@ -60,6 +60,12 @@ main() {
         echo "change graph path failed."
         return 1
     fi
+
+    sed -i "s#@DEMO_VIDEO_DIR@#@PROJECT_PATH@/src/graph#g" ${TARGET_DIR}/src/graph/emotion_detection.toml
+    if [ $? -ne 0 ]; then
+        echo "change test video path failed."
+        return 1
+    fi
 }
 
 main
