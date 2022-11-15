@@ -65,7 +65,7 @@ TEST_F(ResizeFlowUnitTest, TestCase1) {
             format = "graphviz"
         )";
   auto mock_modelbox = GetMockModelbox();
-  auto ret = mock_modelbox->BuildAndRun("graph_name", toml_content, 10);
+  auto ret = mock_modelbox->BuildAndRun("graph_name", toml_content, -1);
   EXPECT_EQ(ret, STATUS_SUCCESS);
 
   /*create buffer list and fill parmeters if you want*/
@@ -86,7 +86,7 @@ TEST_F(ResizeFlowUnitTest, TestCase1) {
   /*send buffer list to port "input1" ,and then transmit to next flowunit*/
   auto status = ext_data->Send("input1", buffer_list);
   EXPECT_EQ(status, STATUS_OK);
-  status = ext_data->Shutdown();
+  status = ext_data->Close();
   EXPECT_EQ(status, STATUS_OK);
 
   /*wait for output buffer list for port "output1" */
@@ -136,7 +136,7 @@ TEST_F(ResizeFlowUnitTest, TestCase2) {
         )";
 
   auto mock_modelbox = GetMockModelbox();
-  auto ret = mock_modelbox->BuildAndRun("graph_name", toml_content, 10);
+  auto ret = mock_modelbox->BuildAndRun("graph_name", toml_content, -1);
   EXPECT_EQ(ret, STATUS_SUCCESS);
 
   /*create buffer list and fill parmeters if you want*/
@@ -156,7 +156,7 @@ TEST_F(ResizeFlowUnitTest, TestCase2) {
   /*send buffer list to port "input1" ,and then transmit to next flowunit*/
   auto status = ext_data->Send("input1", buffer_list);
   EXPECT_EQ(status, STATUS_OK);
-  status = ext_data->Shutdown();
+  status = ext_data->Close();
   EXPECT_EQ(status, STATUS_OK);
 
   /*wait for output buffer list for port "output1" */

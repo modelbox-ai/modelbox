@@ -103,6 +103,10 @@ create_project_template()
 	sed -i "s#@APPLICATION_PATH@#${driver_dir}#g" ${project_path}/src/graph/*.toml 2>/dev/null
 	sed -i "s#@APPLICATION_PATH@#${driver_dir}#g" ${project_path}/src/graph/*.json 2>/dev/null
 	
+	project_real_path=$(realpath ${project_path})
+	sed -i "s#@PROJECT_PATH@#${project_real_path}#g" ${project_path}/src/graph/*.toml 2>/dev/null
+	sed -i "s#@PROJECT_PATH@#${project_real_path}#g" ${project_path}/src/graph/*.json 2>/dev/null
+
 	sed -i "s# graph_.* {# graph_${project_name} {#g" ${project_path}/src/graph/*.toml 2>/dev/null
 	sed -i "s# graph_.* {# graph_${project_name} {#g" ${project_path}/src/graph/*.json 2>/dev/null
 
