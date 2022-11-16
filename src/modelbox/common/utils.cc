@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/prctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <mutex>
@@ -300,14 +302,14 @@ Status ChownToUser(const std::string &user, const std::string &path) {
 
   return STATUS_OK;
 }
-#include <sys/stat.h>
-#include <sys/types.h>
+
 Status RunAsUser(const std::string &user) {
-  struct __user_cap_data_struct cap;
   struct __user_cap_header_struct header;
 #ifdef _LINUX_CAPABILITY_VERSION_3
+  struct __user_cap_data_struct caps[_LINUX_CAPABILITY_U32S_3];
   header.version = _LINUX_CAPABILITY_VERSION_3;
 #else
+  struct __user_cap_data_struct caps[_LINUX_CAPABILITY_U32S_1];
   header.version = _LINUX_CAPABILITY_VERSION;
 #endif
   header.pid = 0;
@@ -324,18 +326,21 @@ Status RunAsUser(const std::string &user) {
     return STATUS_OK;
   }
 
-  if (capget(&header, &cap) < 0) {
+  memset(caps, 0, sizeof(caps));
+  if (capget(&header, caps) < 0) {
     return {STATUS_INVALID, "capget failed: " + StrError(errno)};
   }
 
   prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0);
   Defer { prctl(PR_SET_KEEPCAPS, 0, 0, 0, 0); };
-  cap.effective = 1 << CAP_NET_ADMIN;
-  cap.permitted = 1 << CAP_NET_ADMIN;
-  cap.inheritable = 0;
+  for (auto &cap : caps) {
+    cap.effective = 1 << CAP_NET_ADMIN;
+    cap.permitted = 1 << CAP_NET_ADMIN;
+    cap.inheritable = 0;
+  }
   unused = setgid(gid);
   unused = setuid(uid);
-  if (capset(&header, &cap) < 0) {
+  if (capset(&header, caps) < 0) {
     if (errno == EPERM) {
       return {STATUS_PERMIT, "capset failed: " + StrError(errno)};
     }
@@ -378,7 +383,7 @@ Status SplitIPPort(const std::string &host, std::string &ip,
 
   if (ip == "") {
     ip = "0.0.0.0";
-  };
+  }
 
   return STATUS_OK;
 }
