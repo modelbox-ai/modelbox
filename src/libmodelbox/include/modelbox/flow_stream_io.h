@@ -44,6 +44,16 @@ class FlowStreamIO {
    **/
   Status Send(const std::string &input_name,
               const std::shared_ptr<Buffer> &buffer);
+
+  /**
+   * @brief Send buffer of this stream to flow
+   * @param input_name input node name of flow
+   * @param input_list buffer list of this stream
+   * @return Status
+   **/
+  Status Send(const std::string &input_name,
+              const std::vector<std::shared_ptr<Buffer>> &input_list);
+
   /**
    * @brief Send buffer of this stream to flow
    * @param input_name input node name of flow

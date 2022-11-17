@@ -140,31 +140,31 @@ std::vector<std::vector<std::shared_ptr<Buffer>>> PythonModel::InferBatch(
 
   const auto &first_port_batch = data_list.front();
   auto batch_size = first_port_batch.size();
-  std::vector<std::shared_ptr<FlowStreamIO>> io_list;
-  io_list.reserve(batch_size);
   auto in_port_count = in_names_.size();
-  for (size_t batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
-    auto io = flow_->CreateStreamIO();
-    for (size_t i = 0; i < in_port_count; ++i) {
+  auto io = flow_->CreateStreamIO();
+  for (size_t i = 0; i < in_port_count; ++i) {
+    std::vector<std::shared_ptr<Buffer>> input_list;
+    for (size_t batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
       auto buffer = io->CreateBuffer();
       {
         py::gil_scoped_acquire ac;
         PyBufferToBuffer(buffer, data_list[i][batch_idx]);
       }
-      auto ret = io->Send(in_names_[i], buffer);
-      if (ret != STATUS_OK) {
-        MBLOG_ERROR << "infer send data failed, err " << ret;
-        return result_list;
-      }
+      input_list.push_back(buffer);
     }
-    io->CloseInput();
-    io_list.push_back(io);
+
+    auto ret = io->Send(in_names_[i], input_list);
+    if (ret != STATUS_OK) {
+      MBLOG_ERROR << "infer send " << in_names_[i] << " data failed, err "
+                  << ret;
+      return result_list;
+    }
   }
+  io->CloseInput();
 
   auto out_port_count = out_names_.size();
   result_list.resize(out_port_count);
   for (size_t batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
-    auto io = io_list[batch_idx];
     for (size_t i = 0; i < out_port_count; ++i) {
       std::shared_ptr<Buffer> out_buffer;
       io->Recv(out_names_[i], out_buffer, 0);
