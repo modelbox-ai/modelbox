@@ -35,49 +35,50 @@ constexpr const char *INFERENCE_TYPE = "mindspore";
 
 class MindSporeInference {
  public:
-  MindSporeInference() = default;
+  MindSporeInference(const std::shared_ptr<modelbox::Device> &flowunit_device,
+                     const std::shared_ptr<mindspore::Context> &context);
   virtual ~MindSporeInference();
 
   modelbox::Status Open(const std::shared_ptr<modelbox::Configuration> &opts,
-                        std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc,
-                        const std::shared_ptr<modelbox::Drivers> &drivers_ptr,
-                        std::shared_ptr<mindspore::Context> context);
+                        std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc);
   modelbox::Status Infer(
       const std::shared_ptr<modelbox::DataContext> &data_ctx);
 
  private:
-  modelbox::Status Init(
-      const std::shared_ptr<mindspore::Context> &mindspore_context,
-      const std::string &model_entry,
-      std::shared_ptr<modelbox::Configuration> &config,
-      struct MindSporeIOList &io_list,
-      const std::shared_ptr<modelbox::Drivers> &drivers_ptr);
+  modelbox::Status Init(const std::string &model_entry,
+                        std::shared_ptr<modelbox::Configuration> &config,
+                        const std::shared_ptr<modelbox::Drivers> &drivers_ptr);
   modelbox::Status GetFlowUnitIO(
-      struct MindSporeIOList &io_list,
       std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc);
   modelbox::Status GetModelType(const std::string &model_entry,
                                 mindspore::ModelType &model_type);
   modelbox::Status CheckMindSporeInfo(
       const std::vector<mindspore::MSTensor> &tensor_list,
       const std::vector<std::string> &name_list);
-  modelbox::Status CheckMindSporeIO(struct MindSporeIOList &io_list);
+  modelbox::Status CheckMindSporeIO();
   void PrepareInputTensor(
       std::vector<mindspore::MSTensor> &ms_inputs,
       std::vector<std::vector<int64_t>> &new_shapes,
       const std::shared_ptr<modelbox::DataContext> &data_ctx);
   modelbox::Status PrepareOutputTensor(
       const std::shared_ptr<modelbox::DataContext> &data_ctx,
-      std::vector<mindspore::MSTensor> &ms_outputs);
+      std::vector<mindspore::MSTensor> &ms_outputs,
+      std::vector<BufferList> &model_output_lists);
   modelbox::Status PrepareOutputBufferList(
       const std::shared_ptr<modelbox::DataContext> &data_ctx,
       std::vector<mindspore::MSTensor> &ms_outputs);
 
+ private:
+  std::shared_ptr<modelbox::Device> flowunit_device_;
+  std::shared_ptr<mindspore::Context> context_;
   std::shared_ptr<mindspore::Model> model_{nullptr};
-  std::shared_ptr<mindspore::Context> context_{nullptr};
   int64_t batch_size_{0};
   struct MindSporeIOList io_list_;
   std::string config_file_;
   std::set<mindspore::DeviceType> device_type_;
+  bool model_need_padding_{false};
+  size_t padding_batch_size_{0};
+  uint32_t config_batch_size_{1};
 };
 
 #endif

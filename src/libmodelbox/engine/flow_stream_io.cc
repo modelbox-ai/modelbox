@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <utility>
-
 #include "modelbox/flow_stream_io.h"
+
+#include <utility>
 
 namespace modelbox {
 FlowStreamIO::FlowStreamIO(std::shared_ptr<ExternalDataMap> data_map)
@@ -33,6 +33,14 @@ Status FlowStreamIO::Send(const std::string &input_name,
                           const std::shared_ptr<Buffer> &buffer) {
   auto buffer_list = data_map_->CreateBufferList();
   buffer_list->PushBack(buffer);
+  return data_map_->Send(input_name, buffer_list);
+}
+
+Status FlowStreamIO::Send(
+    const std::string &input_name,
+    const std::vector<std::shared_ptr<Buffer>> &input_list) {
+  auto buffer_list = data_map_->CreateBufferList();
+  buffer_list->Assign(input_list);
   return data_map_->Send(input_name, buffer_list);
 }
 
@@ -78,7 +86,7 @@ Status FlowStreamIO::Recv(const std::string &output_name,
 }
 
 std::shared_ptr<Buffer> FlowStreamIO::Recv(const std::string &output_name,
-                          long timeout) {
+                                           long timeout) {
   std::shared_ptr<Buffer> buffer;
   auto ret = Recv(output_name, buffer, timeout);
   if (ret != STATUS_SUCCESS) {
@@ -88,7 +96,6 @@ std::shared_ptr<Buffer> FlowStreamIO::Recv(const std::string &output_name,
 
   return buffer;
 }
-
 
 void FlowStreamIO::CloseInput() { data_map_->Close(); }
 

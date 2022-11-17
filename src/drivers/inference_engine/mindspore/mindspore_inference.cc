@@ -65,32 +65,37 @@ static std::map<mindspore::DataType, modelbox::ModelBoxDataType>
         {mindspore::DataType::kObjectTypeString, modelbox::MODELBOX_STRING},
         {mindspore::DataType::kNumberTypeBool, modelbox::MODELBOX_BOOL}};
 
+MindSporeInference::MindSporeInference(
+    const std::shared_ptr<modelbox::Device> &flowunit_device,
+    const std::shared_ptr<mindspore::Context> &context)
+    : flowunit_device_(flowunit_device), context_(context) {}
+
 MindSporeInference::~MindSporeInference() {
   model_ = nullptr;
   context_ = nullptr;
+  flowunit_device_ = nullptr;
 }
 
 modelbox::Status MindSporeInference::GetFlowUnitIO(
-    struct MindSporeIOList &io_list,
     std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc) {
   auto unit_desc =
       std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(flowunit_desc);
   auto input_desc = unit_desc->GetFlowUnitInput();
   auto output_desc = unit_desc->GetFlowUnitOutput();
   for (auto &input : input_desc) {
-    io_list.input_name_list.push_back(input.GetPortName());
-    io_list.input_type_list.push_back(input.GetPortType());
-    io_list.input_device_list.push_back(input.GetDeviceType());
+    io_list_.input_name_list.push_back(input.GetPortName());
+    io_list_.input_type_list.push_back(input.GetPortType());
+    io_list_.input_device_list.push_back(input.GetDeviceType());
   }
 
   for (auto &output : output_desc) {
-    io_list.output_name_list.push_back(output.GetPortName());
-    io_list.output_type_list.push_back(output.GetPortType());
+    io_list_.output_name_list.push_back(output.GetPortName());
+    io_list_.output_type_list.push_back(output.GetPortType());
   }
 
-  if (io_list.input_name_list.empty() || io_list.output_name_list.empty()) {
-    MBLOG_ERROR << "Wrong input name [" << io_list.input_name_list.size()
-                << "] or output name [" << io_list.output_name_list.size()
+  if (io_list_.input_name_list.empty() || io_list_.output_name_list.empty()) {
+    MBLOG_ERROR << "Wrong input name [" << io_list_.input_name_list.size()
+                << "] or output name [" << io_list_.output_name_list.size()
                 << "] number";
     return modelbox::STATUS_BADCONF;
   }
@@ -129,10 +134,9 @@ modelbox::Status MindSporeInference::CheckMindSporeInfo(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status MindSporeInference::CheckMindSporeIO(
-    struct MindSporeIOList &io_list) {
+modelbox::Status MindSporeInference::CheckMindSporeIO() {
   auto input_tensors = model_->GetInputs();
-  auto ret = CheckMindSporeInfo(input_tensors, io_list.input_name_list);
+  auto ret = CheckMindSporeInfo(input_tensors, io_list_.input_name_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms input failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
@@ -140,7 +144,7 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
   }
 
   auto output_tensors = model_->GetOutputs();
-  ret = CheckMindSporeInfo(output_tensors, io_list.output_name_list);
+  ret = CheckMindSporeInfo(output_tensors, io_list_.output_name_list);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "check ms output failed " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
@@ -151,12 +155,9 @@ modelbox::Status MindSporeInference::CheckMindSporeIO(
 }
 
 modelbox::Status MindSporeInference::Init(
-    const std::shared_ptr<mindspore::Context> &mindspore_context,
     const std::string &model_entry,
     std::shared_ptr<modelbox::Configuration> &config,
-    struct MindSporeIOList &io_list,
     const std::shared_ptr<modelbox::Drivers> &drivers_ptr) {
-  context_ = mindspore_context;
   auto device_info_list = context_->MutableDeviceInfo();
   for (const auto &device_info : device_info_list) {
     device_type_.insert(device_info->GetDeviceType());
@@ -212,7 +213,7 @@ modelbox::Status MindSporeInference::Init(
     return {modelbox::STATUS_FAULT, err_msg};
   }
 
-  ret = CheckMindSporeIO(io_list);
+  ret = CheckMindSporeIO();
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "input or output info got error, " + ret.WrapErrormsgs();
     MBLOG_ERROR << err_msg;
@@ -220,6 +221,27 @@ modelbox::Status MindSporeInference::Init(
   }
 
   for (auto &input_tensor : model_->GetInputs()) {
+    // check model info & whether padding
+    if (!model_need_padding_ && input_tensor.Shape()[0] > 1) {
+      model_need_padding_ = true;
+      auto max_batch_size = input_tensor.Shape()[0];
+      if (config_batch_size_ > max_batch_size) {
+        auto error_msg =
+            "config_batch_szie: " + std::to_string(config_batch_size_) +
+            " is larger than model_batch_size: " +
+            std::to_string(max_batch_size);
+        MBLOG_ERROR << error_msg;
+        return {modelbox::STATUS_BADCONF, error_msg};
+      }
+      if (config_batch_size_ < max_batch_size) {
+        MBLOG_WARN << "config_batch_szie: " << config_batch_size_
+                   << " is smaller than model_batch_size: " << max_batch_size
+                   << ", the padding data will increase the time required.";
+      }
+
+      MBLOG_INFO << "model: " << model_entry << " enable padding."
+    }
+
     std::stringstream ss;
     ss << "input name:" << input_tensor.Name() << ", shape: [";
     for (size_t i = 0; i < input_tensor.Shape().size(); ++i) {
@@ -232,15 +254,12 @@ modelbox::Status MindSporeInference::Init(
     MBLOG_INFO << ss.str();
   }
 
-  io_list_ = io_list;
   return modelbox::STATUS_OK;
 }
 
 modelbox::Status MindSporeInference::Open(
     const std::shared_ptr<modelbox::Configuration> &opts,
-    std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc,
-    const std::shared_ptr<modelbox::Drivers> &drivers_ptr,
-    std::shared_ptr<mindspore::Context> context) {
+    std::shared_ptr<modelbox::FlowUnitDesc> flowunit_desc) {
   auto unit_desc =
       std::dynamic_pointer_cast<VirtualInferenceFlowUnitDesc>(flowunit_desc);
   auto config = unit_desc->GetConfiguration();
@@ -249,9 +268,10 @@ modelbox::Status MindSporeInference::Open(
   merge_config->Add(*config);
   merge_config->Add(*opts);
 
-  struct MindSporeIOList iolist;
+  config_batch_size_ = opts->GetProperty<uint32_t>(
+      "batch_size", modelbox::NORMAL_DEFAULT_BATCH_SIZE);
 
-  auto ret = GetFlowUnitIO(iolist, flowunit_desc);
+  auto ret = GetFlowUnitIO(flowunit_desc);
   if (ret != modelbox::STATUS_OK) {
     return ret;
   }
@@ -263,8 +283,8 @@ modelbox::Status MindSporeInference::Open(
     config_file_ = relpath + "/" + config_file_;
   }
 
-  ret = Init(context, unit_desc->GetModelEntry(), merge_config, iolist,
-             drivers_ptr);
+  ret = Init(unit_desc->GetModelEntry(), merge_config,
+             flowunit_device_->GetDeviceManager()->GetDrivers());
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Init inference failed, " << ret;
     return ret;
@@ -296,7 +316,10 @@ modelbox::Status MindSporeInference::Infer(
   }
 
   auto ms_outputs = model_->GetOutputs();
-  auto ret = PrepareOutputTensor(data_ctx, ms_outputs);
+  auto model_output_lists = std::vector<modelbox::BufferList>(
+      ms_outputs.size(),
+      std::make_shared<modelbox::BufferList>(flowunit_device_));
+  auto ret = PrepareOutputTensor(data_ctx, ms_outputs, model_output_lists);
   if (ret != modelbox::STATUS_OK) {
     auto err_msg = "prepare output tensor failed, err_msg: " + ret.Errormsg();
     MBLOG_ERROR << err_msg;
@@ -319,6 +342,7 @@ modelbox::Status MindSporeInference::Infer(
     MBLOG_ERROR << err_msg;
     return {modelbox::STATUS_FAULT, err_msg};
   }
+  padding_batch_size_ = 0;
 
   return modelbox::STATUS_OK;
 }
@@ -335,6 +359,22 @@ void MindSporeInference::PrepareInputTensor(
     MBLOG_DEBUG << "input_buffer_list: " << portname << ", model port: " << name
                 << ", size: " << input_buffer_list->Size()
                 << ", bytes:" << input_buffer_list->GetBytes();
+    // input batch padding
+    if (model_need_padding_) {
+      padding_batch_size_ = input_shape[0] - input_buffer_list->Size();
+      if (padding_batch_size_ > 0) {
+        auto padding_buffer =
+            std::make_shared<modelbox::Buffer>(input_buffer_list->GetDevice());
+        auto padding_bytes =
+            padding_batch_size_ * ms_inputs[i].DataSize() / input_shape[0];
+        padding_buffer->Build({padding_bytes});
+        input_buffer_list->PushBack(padding_buffer);
+        MBLOG_DEBUG << "input_port:" << portname
+                    << ", padding batch:" << padding_batch_size_
+                    << ", padding bytes:" << padding_bytes;
+      }
+      input_buffer_list->MakeContiguous();
+    }
     // cpu is host data
     if (io_list_.input_device_list[i] == "cpu") {
       ms_inputs[i].SetData(const_cast<void *>(input_buffer_list->ConstData()),
@@ -344,7 +384,9 @@ void MindSporeInference::PrepareInputTensor(
           const_cast<void *>(input_buffer_list->ConstData()));
     }
     // set current batch size
-    input_shape[0] = input_buffer_list->Size();
+    if (!model_need_padding_) {
+      input_shape[0] = input_buffer_list->Size();
+    }
     MBLOG_DEBUG << "input name: " << name << " shape: ";
     for (auto &item : input_shape) {
       MBLOG_DEBUG << item;
@@ -355,7 +397,8 @@ void MindSporeInference::PrepareInputTensor(
 
 modelbox::Status MindSporeInference::PrepareOutputTensor(
     const std::shared_ptr<modelbox::DataContext> &data_ctx,
-    std::vector<mindspore::MSTensor> &ms_outputs) {
+    std::vector<mindspore::MSTensor> &ms_outputs,
+    std::vector<BufferList> &model_output_lists) {
   if (device_type_.find(mindspore::DeviceType::kGPU) == device_type_.end()) {
     // only gpu support set output device data
     return modelbox::STATUS_OK;
@@ -371,16 +414,23 @@ modelbox::Status MindSporeInference::PrepareOutputTensor(
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    auto output_buffer_list = data_ctx->Output(portname);
-    output_buffer_list->Build(std::vector<size_t>(
+    // set all output tensor mem
+    model_output_lists[i]->Build(std::vector<size_t>(
         ms_outputs[i].Shape()[0],
         ms_outputs[i].DataSize() / ms_outputs[i].Shape()[0]));
-    ms_outputs[i].SetDeviceData(output_buffer_list->MutableData());
+    ms_outputs[i].SetDeviceData(model_output_lists[i]->MutableData());
     MBLOG_DEBUG << "output port name: " << portname
                 << ", batch size: " << ms_outputs[i].Shape()[0]
                 << ", data size: " << ms_outputs[i].DataSize()
                 << ", element num: " << ms_outputs[i].ElementNum()
                 << ", datatype: " << (int)ms_outputs[i].DataType();
+
+    // skip padding tensor
+    auto output_buffer_list = data_ctx->Output(portname);
+    for (size_t b = 0; b < ms_outputs[i].Shape()[0] - padding_batch_size_;
+         ++b) {
+      output_buffer_list->PushBack(model_output_lists[i]->At(b));
+    }
 
     auto tensor_shape = ms_outputs[i].Shape();
     std::vector<size_t> output_shape;
@@ -419,11 +469,19 @@ modelbox::Status MindSporeInference::PrepareOutputBufferList(
       return {modelbox::STATUS_FAULT, err_msg};
     }
 
-    std::vector<size_t> shape_size(
-        ms_outputs[i].Shape()[0],
-        ms_outputs[i].DataSize() / ms_outputs[i].Shape()[0]);
+    // skip padding batch
+    size_t tensor_output_batch = ms_outputs[i].Shape()[0];
+    size_t buffer_output_batch = tensor_output_batch - padding_batch_size_;
+    size_t output_batch_bytes =
+        ms_outputs[i].DataSize() / ms_outputs[i].Shape()[0];
+    MBLOG_DEBUG << "tensor_output_batch:" << tensor_output_batch
+                << ", padding_batch_size:" << padding_batch_size_
+                << ", output_batch_size:" << buffer_output_batch;
+    std::vector<size_t> shape_size(buffer_output_batch, output_batch_bytes);
+
     auto status = output_buffer_list->BuildFromHost(
-        shape_size, ms_outputs[i].MutableData(), ms_outputs[i].DataSize());
+        shape_size, ms_outputs[i].MutableData(),
+        buffer_output_batch * output_batch_bytes);
     if (status != modelbox::STATUS_OK) {
       auto err_msg =
           "output buffer list build from host failed " + status.WrapErrormsgs();

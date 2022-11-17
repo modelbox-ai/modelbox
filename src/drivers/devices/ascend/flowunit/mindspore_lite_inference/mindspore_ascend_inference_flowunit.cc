@@ -31,10 +31,8 @@ modelbox::Status MindSporeInferenceAsendFlowUnit::Open(
   auto cpu_device_info = std::make_shared<mindspore::CPUDeviceInfo>();
   device_list.push_back(cpu_device_info);
 
-  infer_ = std::make_shared<MindSporeInference>();
-  return infer_->Open(opts, this->GetFlowUnitDesc(),
-                      GetBindDevice()->GetDeviceManager()->GetDrivers(),
-                      context);
+  infer_ = std::make_shared<MindSporeInference>(GetBindDevice(), context);
+  return infer_->Open(opts, this->GetFlowUnitDesc());
 }
 
 modelbox::Status MindSporeInferenceAsendFlowUnit::AscendProcess(
