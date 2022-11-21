@@ -239,7 +239,7 @@ modelbox::Status MindSporeInference::Init(
                    << ", the padding data will increase the time required.";
       }
 
-      MBLOG_INFO << "model: " << model_entry << " enable padding."
+      MBLOG_INFO << "model: " << model_entry << " enable padding.";
     }
 
     std::stringstream ss;
@@ -316,7 +316,7 @@ modelbox::Status MindSporeInference::Infer(
   }
 
   auto ms_outputs = model_->GetOutputs();
-  auto model_output_lists = std::vector<modelbox::BufferList>(
+  auto model_output_lists = std::vector<std::shared_ptr<modelbox::BufferList>>(
       ms_outputs.size(),
       std::make_shared<modelbox::BufferList>(flowunit_device_));
   auto ret = PrepareOutputTensor(data_ctx, ms_outputs, model_output_lists);
@@ -398,7 +398,7 @@ void MindSporeInference::PrepareInputTensor(
 modelbox::Status MindSporeInference::PrepareOutputTensor(
     const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::vector<mindspore::MSTensor> &ms_outputs,
-    std::vector<BufferList> &model_output_lists) {
+    std::vector<std::shared_ptr<modelbox::BufferList>> &model_output_lists) {
   if (device_type_.find(mindspore::DeviceType::kGPU) == device_type_.end()) {
     // only gpu support set output device data
     return modelbox::STATUS_OK;
