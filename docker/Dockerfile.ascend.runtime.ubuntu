@@ -21,12 +21,11 @@ WORKDIR /root
 
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     echo "deb http://archive.ubuntu.com/ubuntu/ bionic-proposed main restricted universe multiverse" >>/etc/apt/sources.list && \
-    if [ "$(arch)" = "aarch64" ];then sed -i '/proposed/d' /etc/apt/sources.list && \
-    sed -i 's@ports.ubuntu.com@mirrors.ustc.edu.cn@g' /etc/apt/sources.list;fi && \
+    if [ "$(arch)" = "aarch64" ];then sed -i '/proposed/d' /etc/apt/sources.list;fi && \
     export DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=low TZ=Asia/Shanghai && \
     apt update && \
     apt install -y python3.8-dev python3-pip python3-apt python3-setuptools && \
-    apt install -y gcc dbus systemd systemd-cron iproute2 gnupg2 libfuse2 libgtk-3-0 \
+    apt install -y vim gcc dbus systemd systemd-cron iproute2 gnupg2 libfuse2 libgtk-3-0 \
         build-essential bash unzip ffmpeg curl pkg-config ca-certificates libduktape205 \
         libssl1.1 libcpprest graphviz libprotobuf-c1 libopenblas-base libgoogle-glog0v5 libtbb2 && \
     update-ca-certificates && apt upgrade -y && \
