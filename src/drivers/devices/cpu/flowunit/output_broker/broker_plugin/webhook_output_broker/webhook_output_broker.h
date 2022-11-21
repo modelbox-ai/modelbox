@@ -63,7 +63,8 @@ class WebhookOutputBroker : public modelbox::OutputBrokerPlugin {
       const std::string &config);
   std::map<std::string, std::shared_ptr<WebhookOutputInfo>> output_configs_;
   std::mutex output_configs_lock_;
-  std::shared_ptr<web::http::client::http_client> client_;
+  std::map<std::string, std::shared_ptr<web::http::client::http_client>>
+      output_clients_;
 };
 
 class WebhookOutputBrokerFactory : public modelbox::DriverFactory {
