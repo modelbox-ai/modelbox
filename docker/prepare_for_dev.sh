@@ -2,7 +2,9 @@
 CUR_DIR=$(cd $(dirname "${BASH_SOURCE[0]}");pwd)
 OS_NAME=$(sed -nr '/NAME/s/^NAME="(.*)"$/\1/gp' /etc/os-release)
 VERSION_ID=$(sed -nr '/VERSION_ID/s/^VERSION_ID="(.*)"$/\1/gp' /etc/os-release)
+PLATFROM=$(arch)
 echo "OS_NAME:$OS_NAME"
+echo "PLATFROM:$PLATFROM"
 echo "VERSION_ID:$VERSION_ID"
 
 download() {
@@ -27,7 +29,7 @@ download() {
     fi
 }
 
-if [ "$(arch)" == "x86_64" ];then
+if [ "${PLATFROM}" == "x86_64" ];then
     if [ "$OS_NAME" == "Ubuntu" ];then
         if [ "$VERSION_ID" == "20.04" ];then
             download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/glog_0.6.0_dev_ubuntu.tar.gz
@@ -45,31 +47,23 @@ if [ "$(arch)" == "x86_64" ];then
     fi
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/nlohmann-json_3.7.3.tar.gz
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.tar.gz
-elif [ "$(arch)" == "aarch64" ];then
+elif [ "${PLATFROM}" == "aarch64" ];then
     if [ "$OS_NAME" == "Ubuntu" ];then
-        cp -af /opt/ubuntu/* .
-        sed -i '1d;/COPY --from=0/d' ${CUR_DIR}/Dockerfile.ascend.develop.ubuntu
-        sed -i '/ADD/i\COPY Ascend_dev /usr/local/Ascend' ${CUR_DIR}/Dockerfile.ascend.develop.ubuntu
-        sed -i '/ADD/i\COPY npu-smi /usr/local/sbin/npu-smi' ${CUR_DIR}/Dockerfile.ascend.develop.ubuntu
         if [ "$VERSION_ID" == "18.04" ];then
-            download http://download.modelbox-ai.com/third-party/aarch64/opencv_4.2.0_dev_ubuntu.tar.gz
+            download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/opencv_4.2.0_dev_ubuntu.tar.gz
         elif [ "$VERSION_ID" == "20.04" ];then
-            download http://download.modelbox-ai.com/third-party/aarch64/glog_0.6.0_dev_ubuntu.tar.gz
-            download http://download.modelbox-ai.com/third-party/aarch64/opencv_4.5.5_dev_ubuntu.tar.gz
+            download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/glog_0.6.0_dev_ubuntu.tar.gz
+            download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/opencv_4.5.5_dev_ubuntu.tar.gz
         fi
-        download http://download.modelbox-ai.com/third-party/aarch64/obssdk_3.22.3_dev_ubuntu.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/obssdk_3.22.3_dev_ubuntu.tar.gz
     elif [ "$OS_NAME" == "openEuler" ];then
-        cp -af /opt/openeuler/* .
-        sed -i '1d;/COPY --from=0/d' ${CUR_DIR}/Dockerfile.ascend.develop.openeuler
-        sed -i '/ADD/i\COPY Ascend_dev /usr/local/Ascend' ${CUR_DIR}/Dockerfile.ascend.develop.openeuler
-        sed -i '/ADD/i\COPY npu-smi /usr/local/sbin/npu-smi' ${CUR_DIR}/Dockerfile.ascend.develop.openeuler
-        download http://download.modelbox-ai.com/third-party/aarch64/cpprestsdk_2.10.18_dev.tar.gz
-        download http://download.modelbox-ai.com/third-party/aarch64/duktape_2.6.0_dev.tar.gz
-        download http://download.modelbox-ai.com/third-party/aarch64/ffmpeg_4.4_dev.tar.gz
-        download http://download.modelbox-ai.com/third-party/aarch64/opencv_4.2.0_dev.tar.gz
-        download http://download.modelbox-ai.com/third-party/aarch64/obssdk_3.22.3_dev.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/cpprestsdk_2.10.18_dev.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/duktape_2.6.0_dev.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/ffmpeg_4.4_dev.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/opencv_4.2.0_dev.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/obssdk_3.22.3_dev.tar.gz
     fi
-    download http://download.modelbox-ai.com/third-party/sdk/nlohmann-json_3.7.3.tar.gz
+    download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/nlohmann-json_3.7.3.tar.gz
 else
     echo "build error"
     exit 1

@@ -31,7 +31,6 @@ RUN mkdir -p /root/.pip && \
     echo "index-url = https://pypi.python.org/simple" >>/root/.pip/pip.conf && \
     echo "trusted-host = pypi.python.org" >>/root/.pip/pip.conf && \
     echo "timeout = 120" >>/root/.pip/pip.conf && \
-    if [ "$(arch)" = "aarch64" ];then sed -i 's@python.org@douban.com@g' /root/.pip/pip.conf;fi && \
     groupadd HwHiAiUser && \
     useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser && \
     python3 -m pip install --upgrade pip && \
