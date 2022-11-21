@@ -58,7 +58,7 @@ std::shared_ptr<modelbox::OutputBrokerHandle> WebhookOutputBroker::Open(
         << handle->output_broker_type_ << ", id: " << handle->broker_id_;
     return nullptr;
   }
-  guard.unlock();
+
   std::shared_ptr<WebhookOutputInfo> output_info = iter->second;
   utility::string_t address = U(output_info->url);
   web::http::uri uri = web::http::uri(address);
@@ -67,8 +67,9 @@ std::shared_ptr<modelbox::OutputBrokerHandle> WebhookOutputBroker::Open(
   client_config.set_timeout(utility::seconds(30));
   client_config.set_validate_certificates(false);
 
-  client_ = std::make_shared<web::http::client::http_client>(
+  auto client = std::make_shared<web::http::client::http_client>(
       web::http::uri_builder(uri).to_uri(), client_config);
+  output_clients_[handle->broker_id_] = client;
 
   return handle;
 }
@@ -100,6 +101,16 @@ modelbox::Status WebhookOutputBroker::Write(
         << handle->output_broker_type_ << ", id: " << handle->broker_id_;
     return modelbox::STATUS_NOTFOUND;
   }
+
+  auto client_iter = output_clients_.find(handle->broker_id_);
+  if (client_iter == output_clients_.end()) {
+    MBLOG_ERROR
+        << "Failed to send data! Can not find the broker clients, type: "
+        << handle->output_broker_type_ << ", id: " << handle->broker_id_;
+    return modelbox::STATUS_NOTFOUND;
+  }
+
+  auto client = client_iter->second;
   guard.unlock();
   std::shared_ptr<WebhookOutputInfo> output_info = iter->second;
   web::http::http_headers headers_post;
@@ -114,7 +125,7 @@ modelbox::Status WebhookOutputBroker::Write(
   msg_post.set_body(data);
 
   try {
-    web::http::http_response resp_post = client_->request(msg_post).get();
+    web::http::http_response resp_post = client->request(msg_post).get();
 
     std::string msg_name;
     buffer->Get("msg_name", msg_name);
@@ -154,6 +165,16 @@ modelbox::Status WebhookOutputBroker::Close(
   }
 
   output_configs_.erase(handle->broker_id_);
+
+  auto client_iter = output_clients_.find(handle->broker_id_);
+  if (client_iter == output_clients_.end()) {
+    MBLOG_ERROR << "Broker clients handle not found, type: "
+                << handle->output_broker_type_
+                << ", id: " << handle->broker_id_;
+    return modelbox::STATUS_NOTFOUND;
+  }
+
+  output_clients_.erase(handle->broker_id_);
   guard.unlock();
 
   return modelbox::STATUS_OK;
