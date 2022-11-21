@@ -63,7 +63,7 @@ class MindSporeInference {
   modelbox::Status PrepareOutputTensor(
       const std::shared_ptr<modelbox::DataContext> &data_ctx,
       std::vector<mindspore::MSTensor> &ms_outputs,
-      std::vector<BufferList> &model_output_lists);
+      std::vector<std::shared_ptr<modelbox::BufferList>> &model_output_lists);
   modelbox::Status PrepareOutputBufferList(
       const std::shared_ptr<modelbox::DataContext> &data_ctx,
       std::vector<mindspore::MSTensor> &ms_outputs);
