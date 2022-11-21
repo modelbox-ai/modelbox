@@ -29,16 +29,16 @@
 
 #define RK_CAMERA_MAXRETRY 10
 
-RKLocalCameraFlowUnit::RKLocalCameraFlowUnit() = default;
-RKLocalCameraFlowUnit::~RKLocalCameraFlowUnit() = default;
+RockChipLocalCameraFlowUnit::RockChipLocalCameraFlowUnit() = default;
+RockChipLocalCameraFlowUnit::~RockChipLocalCameraFlowUnit() = default;
 
-modelbox::Status RKLocalCameraFlowUnit::Open(
+modelbox::Status RockChipLocalCameraFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   camWidth_ = opts->GetInt32("cam_width", 640);
   camHeight_ = opts->GetInt32("cam_height", 480);
   camWidth_ = MPP_ALIGN(camWidth_, MPP_ALIGN_WIDTH);
   camHeight_ = MPP_ALIGN(camHeight_, MPP_ALIGN_HEIGHT);
-  camera_id_ = (uint32_t)(opts->GetInt32("cam_id", 0));
+  camera_id_ = (uint32_t)(opts->GetUint32("cam_id", 0));
   fps_ = (uint32_t)(opts->GetInt32("fps", 30));
   if (fps_ <= 0 || fps_ > 60) {
     fps_ = 30;
@@ -59,26 +59,15 @@ modelbox::Status RKLocalCameraFlowUnit::Open(
   return jpeg_dec_.Init();
 }
 
-modelbox::Status RKLocalCameraFlowUnit::DataPre(
+modelbox::Status RockChipLocalCameraFlowUnit::DataPre(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   std::string rk_source_url_ptr;
   auto input_meta = data_ctx->GetInputMeta(LOCAL_CAMERA_INPUT);
   if (input_meta != nullptr) {
     rk_source_url_ptr = *(
         std::static_pointer_cast<std::string>(input_meta->GetMeta(SOURCE_URL)));
-  } else {
-    try {
-      auto buffer = data_ctx->Input(LOCAL_CAMERA_INPUT)->At(0);
-      const char *inbuff_data = (const char *)buffer->ConstData();
-      std::string input_cfg(inbuff_data, buffer->GetBytes());
-
-      nlohmann::json json;
-      json = nlohmann::json::parse(input_cfg);
-      rk_source_url_ptr = json["url"].get<std::string>();
-    } catch (const std::exception &e) {
-      MBLOG_INFO << "no url, use default camera id or bus_info in graph";
-    }
   }
+
   // check url is invalid or not
   if (!rk_source_url_ptr.empty()) {
     if ((rk_source_url_ptr.at(0) < '0' || rk_source_url_ptr.at(0) > '9') &&
@@ -122,17 +111,17 @@ modelbox::Status RKLocalCameraFlowUnit::DataPre(
   return modelbox::STATUS_SUCCESS;
 };
 
-modelbox::Status RKLocalCameraFlowUnit::DataPost(
+modelbox::Status RockChipLocalCameraFlowUnit::DataPost(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   MBLOG_DEBUG << "rknpu local camera data post.";
   return modelbox::STATUS_SUCCESS;
 }
 
-modelbox::Status RKLocalCameraFlowUnit::Close() {
+modelbox::Status RockChipLocalCameraFlowUnit::Close() {
   return modelbox::STATUS_SUCCESS;
 }
 
-modelbox::Status RKLocalCameraFlowUnit::BuildOutput(
+modelbox::Status RockChipLocalCameraFlowUnit::BuildOutput(
     const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::shared_ptr<modelbox::Buffer> &img_buf, MppFrame &frame,
     std::shared_ptr<int64_t> &frame_index) {
@@ -185,13 +174,37 @@ modelbox::Status RKLocalCameraFlowUnit::BuildOutput(
   return modelbox::STATUS_CONTINUE;
 }
 
-MppFrame RKLocalCameraFlowUnit::ProcessYVY2(
+MppFrame RockChipLocalCameraFlowUnit::SetMppFrameInfo(size_t w, size_t h,
+                                                      MppFrameFormat fmt,
+                                                      MppBuffer mpp_buf) {
+  MppFrame frame = nullptr;
+  auto ret = mpp_frame_init(&frame);
+  if (ret != MPP_OK) {
+    MBLOG_ERROR << "failed to mpp frame init ret: " << ret;
+    return nullptr;
+  }
+
+  mpp_frame_set_width(frame, w);
+  mpp_frame_set_height(frame, h);
+  mpp_frame_set_hor_stride(frame, w);
+  mpp_frame_set_ver_stride(frame, h);
+  mpp_frame_set_fmt(frame, fmt);
+  mpp_frame_set_eos(frame, 0);
+  mpp_frame_set_buffer(frame, mpp_buf);
+
+  return frame;
+}
+
+MppFrame RockChipLocalCameraFlowUnit::ProcessYVY2(
     const uint8_t *buf, size_t size, size_t w, size_t h,
     std::shared_ptr<modelbox::Buffer> &img_buf) {
-  MppFrame frame = nullptr;
-
   auto yuy2_buf = std::make_shared<modelbox::Buffer>(GetBindDevice());
-  yuy2_buf->Build(size);
+  auto ret = yuy2_buf->Build(size);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "failed to build buffer reason: " << ret.Errormsg();
+    return nullptr;
+  }
+
   auto *mpp_cam_buf = (MppBuffer)(yuy2_buf->MutableData());
   auto *cpu_cam_buf = (uint8_t *)mpp_buffer_get_ptr(mpp_cam_buf);
   auto yuy2_size = w * h;
@@ -201,20 +214,12 @@ MppFrame RKLocalCameraFlowUnit::ProcessYVY2(
     cpu_cam_buf[i + yuy2_size] = buf[(i << 1) + 1];
   }
 
-  mpp_frame_init(&frame);
-  mpp_frame_set_width(frame, w);
-  mpp_frame_set_height(frame, h);
-  mpp_frame_set_hor_stride(frame, w);
-  mpp_frame_set_ver_stride(frame, h);
-  mpp_frame_set_fmt(frame, MPP_FMT_YUV422SP);
-  mpp_frame_set_eos(frame, 0);
-  mpp_frame_set_buffer(frame, mpp_cam_buf);
   img_buf = yuy2_buf;
 
-  return frame;
+  return SetMppFrameInfo(w, h, MPP_FMT_YUV422SP, mpp_cam_buf);
 }
 
-MppFrame RKLocalCameraFlowUnit::ProcessJpg(
+MppFrame RockChipLocalCameraFlowUnit::ProcessJpg(
     const uint8_t *buf, size_t size, size_t w, size_t h,
     std::shared_ptr<modelbox::Buffer> &img_buf) {
   // here make sure jpg_dec is locked, mpp jpeg dec is not thread-safe , only 1
@@ -231,13 +236,16 @@ MppFrame RKLocalCameraFlowUnit::ProcessJpg(
   return frame;
 }
 
-MppFrame RKLocalCameraFlowUnit::ProcessNV12(
+MppFrame RockChipLocalCameraFlowUnit::ProcessNV12(
     const uint8_t *buf, size_t size, size_t w, size_t h,
     std::shared_ptr<modelbox::Buffer> &img_buf) {
-  MppFrame frame = nullptr;
-
   auto nv12_buf = std::make_shared<modelbox::Buffer>(GetBindDevice());
-  nv12_buf->Build(size);
+  auto mb_ret = nv12_buf->Build(size);
+  if (mb_ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "failed to build buffer reason: " << mb_ret.Errormsg();
+    return nullptr;
+  }
+
   auto *mpp_cam_buf = (MppBuffer)(nv12_buf->MutableData());
   auto *cpu_cam_buf = (uint8_t *)mpp_buffer_get_ptr(mpp_cam_buf);
   auto ret = memcpy_s(cpu_cam_buf, size, buf, size);
@@ -246,26 +254,21 @@ MppFrame RKLocalCameraFlowUnit::ProcessNV12(
     return nullptr;
   }
 
-  mpp_frame_init(&frame);
-  mpp_frame_set_width(frame, w);
-  mpp_frame_set_height(frame, h);
-  mpp_frame_set_hor_stride(frame, w);
-  mpp_frame_set_ver_stride(frame, h);
-  mpp_frame_set_fmt(frame, MPP_FMT_YUV420SP);
-  mpp_frame_set_eos(frame, 0);
-  mpp_frame_set_buffer(frame, mpp_cam_buf);
   img_buf = nv12_buf;
 
-  return frame;
+  return SetMppFrameInfo(w, h, MPP_FMT_YUV420SP, mpp_cam_buf);
 }
 
-MppFrame RKLocalCameraFlowUnit::ProcessRGB24(
+MppFrame RockChipLocalCameraFlowUnit::ProcessRGB24(
     const uint8_t *buf, size_t size, size_t w, size_t h,
     std::shared_ptr<modelbox::Buffer> &img_buf) {
-  MppFrame frame = nullptr;
-
   auto rgb24_buf = std::make_shared<modelbox::Buffer>(GetBindDevice());
-  rgb24_buf->Build(size);
+  auto mb_ret = rgb24_buf->Build(size);
+  if (mb_ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "failed to build buffer reason: " << mb_ret.Errormsg();
+    return nullptr;
+  }
+
   auto *mpp_cam_buf = (MppBuffer)(rgb24_buf->MutableData());
   auto *cpu_cam_buf = (uint8_t *)mpp_buffer_get_ptr(mpp_cam_buf);
   auto ret = memcpy_s(cpu_cam_buf, size, buf, size);
@@ -274,20 +277,12 @@ MppFrame RKLocalCameraFlowUnit::ProcessRGB24(
     return nullptr;
   }
 
-  mpp_frame_init(&frame);
-  mpp_frame_set_width(frame, w);
-  mpp_frame_set_height(frame, h);
-  mpp_frame_set_hor_stride(frame, w);
-  mpp_frame_set_ver_stride(frame, h);
-  mpp_frame_set_fmt(frame, MPP_FMT_RGB888);
-  mpp_frame_set_eos(frame, 0);
-  mpp_frame_set_buffer(frame, mpp_cam_buf);
   img_buf = rgb24_buf;
 
-  return frame;
+  return SetMppFrameInfo(w, h, MPP_FMT_RGB888, mpp_cam_buf);
 }
 
-modelbox::Status RKLocalCameraFlowUnit::Process(
+modelbox::Status RockChipLocalCameraFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto camhdl_ptr = std::static_pointer_cast<V4L2Camera>(
       data_ctx->GetPrivate(LOCAL_CAMERA_CTX));
@@ -310,19 +305,26 @@ modelbox::Status RKLocalCameraFlowUnit::Process(
     }
   };
 
-  using FuncType =
-      std::function<MppFrame(RKLocalCameraFlowUnit *, uint8_t *, size_t, size_t,
-                             size_t, std::shared_ptr<modelbox::Buffer> &)>;
+  using FuncType = std::function<MppFrame(RockChipLocalCameraFlowUnit *,
+                                          uint8_t *, size_t, size_t, size_t,
+                                          std::shared_ptr<modelbox::Buffer> &)>;
   static const std::map<uint32_t, FuncType> process_funcs = {
-      {V4L2_PIX_FMT_MJPEG, &RKLocalCameraFlowUnit::ProcessJpg},
-      {V4L2_PIX_FMT_NV12, &RKLocalCameraFlowUnit::ProcessNV12},
-      {V4L2_PIX_FMT_RGB24, &RKLocalCameraFlowUnit::ProcessRGB24},
-      {V4L2_PIX_FMT_YUYV, &RKLocalCameraFlowUnit::ProcessYVY2},
+      {V4L2_PIX_FMT_MJPEG, &RockChipLocalCameraFlowUnit::ProcessJpg},
+      {V4L2_PIX_FMT_NV12, &RockChipLocalCameraFlowUnit::ProcessNV12},
+      {V4L2_PIX_FMT_RGB24, &RockChipLocalCameraFlowUnit::ProcessRGB24},
+      {V4L2_PIX_FMT_YUYV, &RockChipLocalCameraFlowUnit::ProcessYVY2},
   };
 
   MppFrame frame = nullptr;
   std::shared_ptr<modelbox::Buffer> img_buf = nullptr;
   auto cam_buf = camhdl_ptr->GetFrame();
+  if (cam_buf == nullptr) {
+    const auto *msg = "failed to get frame";
+    MBLOG_ERROR << msg;
+    ret = modelbox::STATUS_FAULT;
+    return {modelbox::STATUS_FAULT, msg};
+  }
+
   auto iter = process_funcs.find(camhdl_ptr->GetFmt());
   if (cam_buf != nullptr && iter != process_funcs.end()) {
     frame =
@@ -332,8 +334,10 @@ modelbox::Status RKLocalCameraFlowUnit::Process(
   if (frame == nullptr) {
     // log has been put in ProcessYVY2 or ProcessJpg
     if ((*retry_count)++ > RK_CAMERA_MAXRETRY) {
-      MBLOG_ERROR << "localcamera get buffer fail";
-      return {modelbox::STATUS_FAULT, "localcamera get buffer fail"};
+      const auto *msg = "localcamera get buffer fail";
+      MBLOG_ERROR << msg;
+      ret = modelbox::STATUS_FAULT;
+      return {modelbox::STATUS_FAULT, msg};
     }
 
     MBLOG_WARN << "local camera get null buffer";
@@ -344,13 +348,12 @@ modelbox::Status RKLocalCameraFlowUnit::Process(
   return BuildOutput(data_ctx, img_buf, frame, frame_index);
 }
 
-MODELBOX_FLOWUNIT(RKLocalCameraFlowUnit, rk_cam_desc) {
+MODELBOX_FLOWUNIT(RockChipLocalCameraFlowUnit, rk_cam_desc) {
   rk_cam_desc.SetFlowUnitName(FLOWUNIT_NAME);
   rk_cam_desc.SetFlowUnitGroupType("Video");
   rk_cam_desc.AddFlowUnitInput({LOCAL_CAMERA_INPUT, "cpu"});
   rk_cam_desc.AddFlowUnitOutput({FRAME_INFO_OUTPUT, modelbox::DEVICE_TYPE});
   rk_cam_desc.SetFlowType(modelbox::STREAM);
-  rk_cam_desc.SetInputContiguous(false);
   rk_cam_desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "cam_width", "int", false, "0", "the camera width"));
   rk_cam_desc.AddFlowUnitOption(modelbox::FlowUnitOption(

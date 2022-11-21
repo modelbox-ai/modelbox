@@ -53,6 +53,7 @@ V4L2Camera::~V4L2Camera() {
 
   // Close v4l2 device
   close(fd_);
+  fd_ = -1;
 }
 
 modelbox::Status V4L2Camera::CamIoCtl(int32_t fd, int32_t req, void *arg) {
@@ -70,7 +71,9 @@ modelbox::Status V4L2Camera::CamIoCtl(int32_t fd, int32_t req, void *arg) {
     return modelbox::STATUS_SUCCESS;
   }
 
-  return {modelbox::STATUS_FAULT, "ioctl fail ret: " + std::to_string(ret)};
+  auto msg = std::string("ioctl fail errno: ") + modelbox::StrError(errno);
+  MBLOG_ERROR << msg;
+  return {modelbox::STATUS_FAULT, msg};
 }
 
 int32_t V4L2Camera::GetCamfd(int32_t id, const std::string &bus_info) {
@@ -100,11 +103,14 @@ int32_t V4L2Camera::GetCamfd(int32_t id, const std::string &bus_info) {
       close(fd);
       fd = -1;
     }
+
     fd = open(glob_result.gl_pathv[i], O_RDWR, 0);
     if (fd < 0) {
       MBLOG_DEBUG << "Cannot open device:" << glob_result.gl_pathv[i];
       continue;
     }
+
+    Defer { globfree(&glob_result); };
 
     // detect it is a camera device
     if (modelbox::STATUS_SUCCESS != CamIoCtl(fd, VIDIOC_QUERYCAP, &cap)) {
@@ -136,7 +142,6 @@ int32_t V4L2Camera::GetCamfd(int32_t id, const std::string &bus_info) {
     close(fd);
     fd = -1;
   }
-  globfree(&glob_result);
 
   return fd;
 }
@@ -207,7 +212,10 @@ modelbox::Status V4L2Camera::SetFmt(uint32_t cam_width, uint32_t cam_height,
   // 设置失败，使用默认值
   if (i == try_fmts.size()) {
     MBLOG_WARN << "VIDIOC_S_FMT fail, use the default value";
-    CamIoCtl(fd_, VIDIOC_S_FMT, &vfmt);
+    if (CamIoCtl(fd_, VIDIOC_S_FMT, &vfmt) != modelbox::STATUS_SUCCESS) {
+      MBLOG_ERROR << "failed to cam io ctl";
+      return {modelbox::STATUS_FAULT, "failed to cam io ctl"};
+    }
   }
 
   cam_fmt_ = vfmt.fmt.pix.pixelformat;
@@ -345,14 +353,18 @@ modelbox::Status V4L2Camera::Init(const std::string &cam_url,
     id = std::stoi(cam_name);
     // set empty
     cam_name = "";
-  } catch (...) {
-    // on need error
+  } catch (const std::exception &e) {
+    auto msg =
+        "stoi exception v4l2 camera name: " + cam_name + " reason: " + e.what();
+    MBLOG_ERROR << msg;
+    return {modelbox::STATUS_FAULT, msg};
   }
 
   fd_ = GetCamfd(id, cam_name);
   if (fd_ < 0) {
-    MBLOG_ERROR << "can not find v4l2 camera";
-    return {modelbox::STATUS_FAULT, "can not find v4l2 camera"};
+    auto msg = "can not find v4l2 camera name: " + cam_name;
+    MBLOG_ERROR << msg;
+    return {modelbox::STATUS_FAULT, msg};
   }
 
   auto ret = SetFmt(cam_width, cam_height, prefer_rgb);

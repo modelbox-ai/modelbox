@@ -31,11 +31,11 @@ class FfmpegWriter {
   modelbox::Status Open(const std::string &format_name,
                         const std::string &destination_url);
 
-  std::string GetFormatName() { return format_name_; }
+  std::string GetFormatName();
 
-  std::string GetDestinationURL() { return destination_url_; }
+  std::string GetDestinationURL();
 
-  std::shared_ptr<AVFormatContext> GetCtx() { return format_ctx_; }
+  std::shared_ptr<AVFormatContext> GetCtx();
 
  private:
   std::string format_name_;

@@ -48,7 +48,7 @@ class RKNPUVideoDecoder {
   void GetLimitDecFrame(std::vector<MppFrame> &out_frame, size_t max_frames);
 
  private:
-  uint32_t err_number = 0;
+  uint32_t err_number_ = 0;
   bool running_ = false;
   MppCtx codec_ctx_ = nullptr;
   MppApi *rk_api_ = nullptr;

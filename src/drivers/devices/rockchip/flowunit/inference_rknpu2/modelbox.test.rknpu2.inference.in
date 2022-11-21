@@ -12,7 +12,7 @@ is_input_contiguous = "false"
 [input.input1]
 name = "input"
 type = "float"
-device = "rknpu"
+device = "rockchip"
 
 [output]
 [output.output1]

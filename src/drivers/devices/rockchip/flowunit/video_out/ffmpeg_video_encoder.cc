@@ -143,7 +143,10 @@ modelbox::Status FfmpegVideoEncoder::Init_CodecConfig() {
     case MPP_VIDEO_CodingHEVC:
     case MPP_VIDEO_CodingVP8:
     default: {
-      MBLOG_ERROR << "unsupport encoder coding type =" << codec_cfg.coding;
+      auto msg = std::string("unsupport encoder coding type =") +
+                 std::to_string(codec_cfg.coding);
+      MBLOG_ERROR << msg;
+      return {modelbox::STATUS_FAULT, msg};
     } break;
   }
 
@@ -163,9 +166,20 @@ modelbox::Status FfmpegVideoEncoder::Init_Config() {
     return {modelbox::STATUS_FAULT, "mpi control enc get cfg failed"};
   }
 
-  Init_PrepConfig();
-  Init_RcConfig();
-  Init_CodecConfig();
+  auto ret_config = Init_PrepConfig();
+  if (ret_config != modelbox::STATUS_SUCCESS) {
+    return ret_config;
+  }
+
+  ret_config = Init_RcConfig();
+  if (ret_config != modelbox::STATUS_SUCCESS) {
+    return ret_config;
+  }
+
+  ret_config = Init_CodecConfig();
+  if (ret_config != modelbox::STATUS_SUCCESS) {
+    return ret_config;
+  }
 
   /* optional */
   int sei_mode = MPP_ENC_SEI_MODE_ONE_FRAME;
@@ -346,13 +360,12 @@ std::shared_ptr<AVPacket> FfmpegVideoEncoder::NewPacket(MppPacket &packet) {
   size_t len = mpp_packet_get_length(packet);
 
   auto *av_packet_ptr = av_packet_alloc();
+  Defer { mpp_packet_deinit(&packet); };
   if (av_packet_ptr == nullptr) {
-    mpp_packet_deinit(&packet);
     MBLOG_ERROR << "av packet alloc failed";
     return nullptr;
   }
   if (0 != av_new_packet(av_packet_ptr, (int)len)) {
-    mpp_packet_deinit(&packet);
     MBLOG_ERROR << "av packet new failed";
     return nullptr;
   }
@@ -361,7 +374,11 @@ std::shared_ptr<AVPacket> FfmpegVideoEncoder::NewPacket(MppPacket &packet) {
       av_packet_ptr, [](AVPacket *pkt) { av_packet_free(&pkt); });
 
   if (len > 0) {
-    memcpy_s(av_packet_ptr->data, len, ptr, len);
+    auto e_ret = memcpy_s(av_packet_ptr->data, len, ptr, len);
+    if (e_ret != EOK) {
+      MBLOG_ERROR << "av packet memcpy_s failed ret: " << e_ret;
+      return nullptr;
+    }
   } else {
     MBLOG_WARN << "get one zero compress frame";
   }
@@ -369,7 +386,6 @@ std::shared_ptr<AVPacket> FfmpegVideoEncoder::NewPacket(MppPacket &packet) {
   av_packet_ptr->pts = mpp_packet_get_pts(packet);
   av_packet_ptr->dts = av_packet_ptr->pts;
 
-  mpp_packet_deinit(&packet);
   return av_packet;
 }
 

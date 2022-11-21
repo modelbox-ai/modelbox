@@ -26,7 +26,22 @@
 
 constexpr const char *FLOWUNIT_NAME = "rk_cpuimg";
 constexpr const char *FLOWUNIT_DESC =
-    "transfer image from rockchip mpp to cpu image";
+    "\n\t@Brief: transfer image from rockchip mpp to cpu image\n"
+    "\t@Port parameter: The input port buffer type and the output port buffer "
+    "type are image. \n"
+    "\t  The image type buffer contains the following meta fields:\n"
+    "\t\tField Name: width,         Type: int32_t\n"
+    "\t\tField Name: height,        Type: int32_t\n"
+    "\t\tField Name: width_stride,  Type: int32_t\n"
+    "\t\tField Name: height_stride, Type: int32_t\n"
+    "\t\tField Name: channel,       Type: int32_t\n"
+    "\t\tField Name: pix_fmt,       Type: string\n"
+    "\t\tField Name: layout,        Type: int32_t\n"
+    "\t\tField Name: shape,         Type: vector<size_t>\n"
+    "\t\tField Name: type,          Type: ModelBoxDataType::MODELBOX_UINT8\n"
+    "\t@Constraint: The field value range of this flowunit supports: "
+    "'pix_fmt': "
+    "[rgb_packed,bgr_packed], 'layout': [hwc]. ";
 constexpr const char *IN_IMG = "in_image";
 constexpr const char *OUT_IMG = "out_image";
 

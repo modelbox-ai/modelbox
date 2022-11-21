@@ -34,7 +34,36 @@
 #include "rga.h"
 
 constexpr const char *FLOWUNIT_NAME = "video_decoder";
-constexpr const char *FLOWUNIT_DESC = "A rockchip video decoder flowunit";
+constexpr const char *FLOWUNIT_DESC =
+    "\n\t@Brief: A video decoder flowunit on rockchip. \n"
+    "\t@Port parameter: The input port buffer type is video_packet, the output "
+    "port buffer type is video_frame.\n"
+    "\t  The video_packet buffer contain the following meta fields:\n"
+    "\t\tField Name: rate_num,      Type: int32_t\n"
+    "\t\tField Name: rate_den,      Type: int32_t\n"
+    "\t\tField Name: duration,      Type: int64_t\n"
+    "\t\tField Name: time_base,     Type: double\n"
+    "\t\tField Name: width,         Type: int32_t\n"
+    "\t\tField Name: height,        Type: int32_t\n"
+    "\t  The video_frame buffer contain the following meta fields:\n"
+    "\t\tField Name: index,         Type: int64_t\n"
+    "\t\tField Name: rate_num,      Type: int32_t\n"
+    "\t\tField Name: rate_den,      Type: int32_t\n"
+    "\t\tField Name: duration,      Type: int64_t\n"
+    "\t\tField Name: timestamp,     Type: int64_t\n"
+    "\t\tField Name: eos,           Type: bool\n"
+    "\t\tField Name: width,         Type: int32_t\n"
+    "\t\tField Name: height,        Type: int32_t\n"
+    "\t\tField Name: width_stride,  Type: int32_t\n"
+    "\t\tField Name: height_stride, Type: int32_t\n"
+    "\t\tField Name: channel,       Type: int32_t\n"
+    "\t\tField Name: pix_fmt,       Type: string\n"
+    "\t\tField Name: layout,        Type: int32_t\n"
+    "\t\tField Name: shape,         Type: vector<size_t>\n"
+    "\t\tField Name: type,          Type: ModelBoxDataType::MODELBOX_UINT8\n"
+    "\t@Constraint: The flowuint 'video_decoder' must be used pair "
+    "with 'video_demuxer. the output buffer meta fields 'pix_fmt' is "
+    "'brg_packed' or 'rgb_packed', 'layout' is 'hcw'.";
 constexpr const char *VIDEO_PACKET_INPUT = "in_video_packet";
 constexpr const char *FRAME_INFO_OUTPUT = "out_video_frame";
 constexpr const char *CODEC_META = "codec_meta";
@@ -43,8 +72,8 @@ constexpr const char *FRAME_INDEX_CTX = "frame_index_ctx";
 
 class VideoDecoderFlowUnit : public modelbox::FlowUnit {
  public:
-  VideoDecoderFlowUnit() = default;
-  ~VideoDecoderFlowUnit() override = default;
+  VideoDecoderFlowUnit();
+  ~VideoDecoderFlowUnit() override;
 
   modelbox::Status Open(
       const std::shared_ptr<modelbox::Configuration> &opts) override;
@@ -63,8 +92,6 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
   }
 
  private:
-  std::shared_ptr<modelbox::Buffer> ColorChange(MppFrame &frame, int32_t ws,
-                                                int32_t hs);
   modelbox::Status WriteData(const std::shared_ptr<modelbox::DataContext> &ctx,
                              std::shared_ptr<modelbox::Buffer> &pack_buff,
                              std::vector<MppFrame> &out_frame);

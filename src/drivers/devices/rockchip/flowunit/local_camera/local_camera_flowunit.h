@@ -37,10 +37,10 @@ constexpr const char *FRAME_INDEX_CTX = "frame_index_ctx";
 constexpr const char *RETRY_COUNT_CTX = "retry_count_ctx";
 constexpr const char *SOURCE_URL = "source_url";
 
-class RKLocalCameraFlowUnit : public modelbox::FlowUnit {
+class RockChipLocalCameraFlowUnit : public modelbox::FlowUnit {
  public:
-  RKLocalCameraFlowUnit();
-  ~RKLocalCameraFlowUnit() override;
+  RockChipLocalCameraFlowUnit();
+  ~RockChipLocalCameraFlowUnit() override;
 
   modelbox::Status DataPre(
       std::shared_ptr<modelbox::DataContext> data_ctx) override;
@@ -65,6 +65,8 @@ class RKLocalCameraFlowUnit : public modelbox::FlowUnit {
                         std::shared_ptr<modelbox::Buffer> &img_buf);
   MppFrame ProcessYVY2(const uint8_t *buf, size_t size, size_t w, size_t h,
                        std::shared_ptr<modelbox::Buffer> &img_buf);
+  MppFrame SetMppFrameInfo(size_t w, size_t h, MppFrameFormat fmt,
+                           MppBuffer mpp_buf);
 
   uint32_t camWidth_{0};
   uint32_t camHeight_{0};

@@ -109,13 +109,14 @@ modelbox::Status RKNPUVideoDecoder::Init(AVCodecID codec_id) {
 
   auto iter = codectype_map.find(codec_id);
   if (iter == codectype_map.end()) {
-    auto msg =
-        std::string("Not support codec type: ") + std::to_string(codec_id);
+    auto msg = std::string("Not support codec type: ") +
+               std::to_string(codec_id) +
+               " support only AV_CODEC_ID_H264 or AV_CODEC_ID_HEVC";
     MBLOG_ERROR << msg;
     return {modelbox::STATUS_NOTSUPPORT, msg};
   }
 
-  err_number = 0;
+  err_number_ = 0;
   return InitDecoder(iter->second);
 }
 
@@ -131,7 +132,13 @@ void RKNPUVideoDecoder::SetPacket(MppPacket &packet, uint8_t *inData,
 }
 
 modelbox::Status RKNPUVideoDecoder::InfoChange(MppFrame &frame) {
-  RK_U32 buf_size = mpp_frame_get_buf_size(frame);
+  auto buf_size = mpp_frame_get_buf_size(frame);
+  if (buf_size <= 0) {
+    auto msg = std::string("get mpp frame get buf size failed: ") +
+               std::to_string(buf_size);
+    MBLOG_ERROR << msg;
+    return {modelbox::STATUS_FAULT, msg};
+  }
 
   if (frm_grp_ == nullptr) {
     /* If buffer group is not set create one and limit it */
@@ -201,7 +208,7 @@ modelbox::Status RKNPUVideoDecoder::GetDecFrame(MppFrame &frame) {
 
   if (ret == MPP_OK && frame == nullptr) {
     // ok, no more, return STATUS_FAULT to exit while, not err here
-    return modelbox::STATUS_FAULT;
+    return modelbox::STATUS_NODATA;
   }
 
   if (mpp_frame_get_info_change(frame)) {
@@ -210,8 +217,8 @@ modelbox::Status RKNPUVideoDecoder::GetDecFrame(MppFrame &frame) {
 
   RK_U32 err_info = mpp_frame_get_errinfo(frame);
   if (err_info != MPP_OK) {
-    err_number++;
-    if (err_number % ERROR_LOG_TIMES == 0) {
+    err_number_++;
+    if (err_number_ % ERROR_LOG_TIMES == 0) {
       MBLOG_WARN << "frame error: " << err_info;
     }
     mpp_frame_deinit(&frame);

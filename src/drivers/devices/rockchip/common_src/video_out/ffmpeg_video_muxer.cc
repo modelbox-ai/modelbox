@@ -25,8 +25,17 @@ modelbox::Status FfmpegVideoMuxer::Init(
     const std::shared_ptr<FfmpegWriter> &writer) {
   destination_url_ = writer->GetDestinationURL();
   format_ctx_ = writer->GetCtx();
+  if (format_ctx_ == nullptr) {
+    const auto *msg = "FfmpegVideoMuxer.Init fail format ctx is nullptr";
+    MBLOG_ERROR << msg;
+    return {modelbox::STATUS_FAULT, msg};
+  }
+
   auto ret = SetupStreamParam(codec_ctx);
   if (ret != modelbox::STATUS_SUCCESS) {
+    auto msg =
+        "FfmpegVideoMuxer.Init SetupStreamParam fail reason: " + ret.Errormsg();
+    MBLOG_ERROR << msg;
     return ret;
   }
 

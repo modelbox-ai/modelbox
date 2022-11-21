@@ -32,7 +32,7 @@ typedef struct CamFrame_t {
 class V4L2Camera {
  public:
   V4L2Camera();
-  ~V4L2Camera();
+  virtual ~V4L2Camera();
 
   modelbox::Status Init(const std::string &cam_url, uint32_t cam_width,
                         uint32_t cam_height, uint32_t fps, bool prefer_rgb);

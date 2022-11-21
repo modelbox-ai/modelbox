@@ -37,8 +37,10 @@ std::shared_ptr<modelbox::Buffer> MppToCpuFlowUnit::ProcessOneImage(
   RgaSURF_FORMAT rga_fmt = RK_FORMAT_UNKNOWN;
   rga_fmt = modelbox::GetRGAFormat(pix_fmt);
   if (rga_fmt == RK_FORMAT_UNKNOWN) {
+    MBLOG_ERROR << "unsupport pix format, pix_fmt: " << pix_fmt;
     return nullptr;
   }
+
   auto *mpp_buf = (MppBuffer)(in_img->ConstData());
   auto *cpu_buf = (uint8_t *)mpp_buffer_get_ptr(mpp_buf);
 
@@ -69,6 +71,7 @@ std::shared_ptr<modelbox::Buffer> MppToCpuFlowUnit::ProcessOneImage(
   }
 
   if (ret != modelbox::STATUS_OK) {
+    MBLOG_ERROR << "copy image fail, reason: " << ret.Errormsg();
     return nullptr;
   }
 
@@ -129,7 +132,6 @@ MODELBOX_FLOWUNIT(MppToCpuFlowUnit, desc) {
   desc.AddFlowUnitInput({IN_IMG, modelbox::DEVICE_TYPE});
   desc.AddFlowUnitOutput({OUT_IMG, "cpu"});
   desc.SetFlowType(modelbox::NORMAL);
-  desc.SetInputContiguous(false);
   desc.SetDescription(FLOWUNIT_DESC);
 }
 

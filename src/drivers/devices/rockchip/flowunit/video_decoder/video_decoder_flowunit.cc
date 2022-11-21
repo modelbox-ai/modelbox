@@ -29,6 +29,9 @@
 
 constexpr uint32_t MAX_PACKAGE_NUM = 2;
 
+VideoDecoderFlowUnit::VideoDecoderFlowUnit() = default;
+VideoDecoderFlowUnit::~VideoDecoderFlowUnit() = default;
+
 modelbox::Status VideoDecoderFlowUnit::Open(
     const std::shared_ptr<modelbox::Configuration> &opts) {
   out_pix_fmt_str_ = opts->GetString("pix_fmt", modelbox::IMG_DEFAULT_FMT);
@@ -41,10 +44,6 @@ modelbox::Status VideoDecoderFlowUnit::Open(
   }
 
   queue_size_ = opts->GetUint64("queue_size", DEC_BUF_LIMIT / 2);
-  /*if (queue_size_ < DEC_BUF_LIMIT / 2) {
-    MBLOG_ERROR << "video queue_size must >= " << DEC_BUF_LIMIT / 2;
-    return STATUS_BADCONF;
-  }*/
 
   return modelbox::STATUS_OK;
 }
@@ -82,54 +81,6 @@ modelbox::Status VideoDecoderFlowUnit::DataPost(
   return modelbox::STATUS_SUCCESS;
 }
 
-std::shared_ptr<modelbox::Buffer> VideoDecoderFlowUnit::ColorChange(
-    MppFrame &frame, int32_t ws, int32_t hs) {
-  auto device = this->GetBindDevice();
-  std::shared_ptr<modelbox::Buffer> buffer = nullptr;
-  int32_t height = hs;
-  int32_t channel = 3;
-
-  if (out_pix_fmt_ == RK_FORMAT_YCbCr_420_SP ||
-      out_pix_fmt_ == RK_FORMAT_YCrCb_420_SP) {
-    buffer = std::make_shared<modelbox::Buffer>(device);
-    MppBuffer mppbuf = mpp_frame_get_buffer(frame);
-    buffer->Build((void *)(mppbuf), mpp_buffer_get_size(mppbuf),
-                  [frame](void *p) {
-                    MppFrame tmp = frame;
-                    mpp_frame_deinit(&tmp);
-                  });
-    height = hs * 3 / 2;
-    channel = 1;
-
-  } else {
-    // others format need colorspace change
-    auto fmt_rga = modelbox::GetRGAFormat(mpp_frame_get_fmt(frame));
-    if (fmt_rga == RK_FORMAT_UNKNOWN) {
-      fmt_rga = RK_FORMAT_YCbCr_420_SP;
-    }
-    rga_buffer_t src_buf = MPPFRAMETORGA(frame, fmt_rga);
-    rga_buffer_t dst_buf;
-    buffer = CreateEmptyMppImg(mpp_frame_get_width(frame),
-                               mpp_frame_get_height(frame), out_pix_fmt_,
-                               device, dst_buf);
-    IM_STATUS status = imcvtcolor(src_buf, dst_buf, fmt_rga, out_pix_fmt_);
-    mpp_frame_deinit(&frame);
-    if (status != IM_STATUS_SUCCESS) {
-      MBLOG_ERROR << "videodecoder rga convert color failed: " << status;
-      return nullptr;
-    }
-  }
-
-  buffer->Set("pix_fmt", out_pix_fmt_str_);
-  buffer->Set("type", modelbox::ModelBoxDataType::MODELBOX_UINT8);
-  buffer->Set("channel", channel);
-  buffer->Set("shape",
-              std::vector<size_t>{(size_t)height, (size_t)ws, (size_t)channel});
-  buffer->Set("layout", std::string("hwc"));
-
-  return buffer;
-}
-
 modelbox::Status VideoDecoderFlowUnit::WriteData(
     const std::shared_ptr<modelbox::DataContext> &ctx,
     std::shared_ptr<modelbox::Buffer> &pack_buff,
@@ -148,28 +99,19 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
       std::static_pointer_cast<int64_t>(ctx->GetPrivate(FRAME_INDEX_CTX));
 
   for (auto &frame : out_frame) {
-    auto w = (int32_t)mpp_frame_get_width(frame);
-    auto h = (int32_t)mpp_frame_get_height(frame);
-    auto ws = (int32_t)mpp_frame_get_hor_stride(frame);
-    auto hs = (int32_t)mpp_frame_get_ver_stride(frame);
     auto pts = (int64_t)(mpp_frame_get_pts(frame) * time_base);
 
-    auto buffer = ColorChange(frame, ws, hs);
+    auto buffer = modelbox::ColorChange(frame, out_pix_fmt_, GetBindDevice());
     // out_frame[i] may be deinit after ColorChange
     if (buffer == nullptr) {
+      MBLOG_ERROR << "failed to ColorChange";
       continue;
     }
+
     buffer->Set("index", *frame_index);
     *frame_index = *frame_index + 1;
-    buffer->Set("width", w);
-    buffer->Set("height", h);
-    if (RK_FORMAT_BGR_888 == out_pix_fmt_ ||
-        RK_FORMAT_BGR_888 == out_pix_fmt_) {
-      buffer->Set("width_stride", (int32_t)(ws * 3));
-    } else {
-      buffer->Set("width_stride", (int32_t)ws);
-    }
-    buffer->Set("height_stride", hs);
+
+    buffer->Set("pix_fmt", out_pix_fmt_str_);
     buffer->Set("rate_num", rate_num);
     buffer->Set("rate_den", rate_den);
     buffer->Set("duration", duration);

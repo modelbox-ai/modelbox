@@ -341,9 +341,14 @@ modelbox::Status VideoOutFlowUnit::GetDestUrl(
     return modelbox::STATUS_SUCCESS;
   }
 
-  nlohmann::json url_json = nlohmann::json::parse(cfg_str);
-  if (url_json.contains("data") && url_json["data"].contains("url")) {
-    dest_url = url_json["data"]["url"].get<std::string>();
+  try {
+    nlohmann::json url_json = nlohmann::json::parse(cfg_str);
+    if (url_json.contains("data") && url_json["data"].contains("url")) {
+      dest_url = url_json["data"]["url"].get<std::string>();
+    }
+  } catch (const std::exception &e) {
+    MBLOG_ERROR << "Parse config str to json failed, detail: " << e.what();
+    return modelbox::STATUS_INVALID;
   }
 
   return modelbox::STATUS_SUCCESS;

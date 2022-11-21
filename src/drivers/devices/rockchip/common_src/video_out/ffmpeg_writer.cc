@@ -70,3 +70,7 @@ modelbox::Status FfmpegWriter::Open(const std::string &format_name,
              << " success";
   return modelbox::STATUS_SUCCESS;
 }
+
+std::string FfmpegWriter::GetFormatName() { return format_name_; }
+std::string FfmpegWriter::GetDestinationURL() { return destination_url_; }
+std::shared_ptr<AVFormatContext> FfmpegWriter::GetCtx() { return format_ctx_; }
