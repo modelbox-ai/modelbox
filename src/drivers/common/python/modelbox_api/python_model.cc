@@ -139,32 +139,44 @@ std::vector<std::vector<std::shared_ptr<Buffer>>> PythonModel::InferBatch(
   }
 
   const auto &first_port_batch = data_list.front();
-  auto batch_size = first_port_batch.size();
+  auto input_batch_size = first_port_batch.size();
+  if (input_batch_size == 0) {
+    MBLOG_ERROR << "infer input batch size is zero.";
+    return result_list;
+  }
+
   auto in_port_count = in_names_.size();
   auto io = flow_->CreateStreamIO();
-  for (size_t i = 0; i < in_port_count; ++i) {
-    std::vector<std::shared_ptr<Buffer>> input_list;
-    for (size_t batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
-      auto buffer = io->CreateBuffer();
-      {
-        py::gil_scoped_acquire ac;
-        PyBufferToBuffer(buffer, data_list[i][batch_idx]);
+  auto max_batch_size = atoi(max_batch_size_.c_str());
+  max_batch_size = max_batch_size < 2 ? 1 : max_batch_size;
+  auto infer_times = ceil(input_batch_size * 1.0 / max_batch_size);
+  for (size_t t = 0; t < infer_times; ++t) {
+    size_t batch_begin = t * max_batch_size;
+    size_t batch_end = std::min((t + 1) * max_batch_size, input_batch_size);
+    for (size_t i = 0; i < in_port_count; ++i) {
+      std::vector<std::shared_ptr<Buffer>> input_list;
+      for (size_t batch_idx = batch_begin; batch_idx < batch_end; ++batch_idx) {
+        auto buffer = io->CreateBuffer();
+        {
+          py::gil_scoped_acquire ac;
+          PyBufferToBuffer(buffer, data_list[i][batch_idx]);
+        }
+        input_list.push_back(buffer);
       }
-      input_list.push_back(buffer);
-    }
 
-    auto ret = io->Send(in_names_[i], input_list);
-    if (ret != STATUS_OK) {
-      MBLOG_ERROR << "infer send " << in_names_[i] << " data failed, err "
-                  << ret;
-      return result_list;
+      auto ret = io->Send(in_names_[i], input_list);
+      if (ret != STATUS_OK) {
+        MBLOG_ERROR << "infer send " << in_names_[i] << " data failed, err "
+                    << ret;
+        return result_list;
+      }
     }
   }
   io->CloseInput();
 
   auto out_port_count = out_names_.size();
   result_list.resize(out_port_count);
-  for (size_t batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
+  for (size_t batch_idx = 0; batch_idx < input_batch_size; ++batch_idx) {
     for (size_t i = 0; i < out_port_count; ++i) {
       std::shared_ptr<Buffer> out_buffer;
       io->Recv(out_names_[i], out_buffer, 0);
