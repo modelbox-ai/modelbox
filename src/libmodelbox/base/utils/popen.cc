@@ -504,7 +504,6 @@ int Popen::WaitForFds(std::vector<struct stdfd *> fds, int timeout,
         }
 
         if (fdset[i].revents & POLLHUP) {
-          stdfd->iseof_ = 1;
           eof_count--;
         }
         fds_count--;
