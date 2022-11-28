@@ -45,7 +45,8 @@ Status InputVirtualNode::Init(const std::set<std::string>& input_port_names,
   }
 
   extern_ports_.clear();
-  auto ext_queue_size = config->GetUint64("queue_size_external", queue_size_);
+  auto ext_queue_size =
+      config->GetUint64("queue_size_external", DEFAULT_QUEUE_SIZE_EXTERNAL);
   for (const auto& output_port_name : output_port_names) {
     auto port = std::make_shared<InPort>(
         output_port_name,
