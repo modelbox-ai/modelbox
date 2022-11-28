@@ -145,6 +145,8 @@ Status ExternalDataMapImpl::SendMatchData(
     const auto& port_data_list = input_port_data_iter.second;
     auto& port_stream = graph_input_ports_stream_[port_name];
     auto& graph_input_port = graph_input_node_ports_[port_name];
+    std::vector<std::shared_ptr<modelbox::Buffer>> batch_data;
+    batch_data.reserve(port_data_list.size());
     for (const auto& port_data : port_data_list) {
       auto& port_buffer_index_info = port_data->index_info_;
       auto port_buffer_index = port_stream->GetBufferCount();
@@ -155,8 +157,9 @@ Status ExternalDataMapImpl::SendMatchData(
       inherit_info->SetInheritFrom(root_buffer_);
       inherit_info->SetType(BufferProcessType::EXPAND);
       port_buffer_index_info->SetInheritInfo(inherit_info);
-      graph_input_port->Send(port_data);
+      batch_data.emplace_back(port_data);
     }
+    graph_input_port->GetQueue()->PushBatchForce(&batch_data);
   }
 
   auto& port = graph_input_node_ports_.begin()->second;

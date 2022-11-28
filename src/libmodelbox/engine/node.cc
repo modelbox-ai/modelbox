@@ -39,10 +39,6 @@ namespace modelbox {
   }                                         \
   return nullptr;
 
-#define DEFAULT_QUEUE_SIZE 32
-#define DEFAULT_QUEUE_SIZE_EXTERNAL 1024
-#define DEFAULT_QUEUE_EVENT 8192  // should be large enough
-
 NodeBase::NodeBase() = default;
 
 NodeBase::~NodeBase() = default;

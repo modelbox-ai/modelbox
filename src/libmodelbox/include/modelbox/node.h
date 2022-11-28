@@ -34,6 +34,10 @@
 
 namespace modelbox {
 
+#define DEFAULT_QUEUE_SIZE 32
+#define DEFAULT_QUEUE_SIZE_EXTERNAL 1024
+#define DEFAULT_QUEUE_EVENT 8192  // should be large enough
+
 using PortsDataList =
     std::unordered_map<std::string, std::list<std::shared_ptr<Buffer>>>;
 

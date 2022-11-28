@@ -19,7 +19,7 @@
 #include "modelbox/single_node.h"
 
 namespace modelbox {
-#define DEFAULT_QUEUE_SIZE 8192
+#define DEFAULT_SINGLE_NODE_QUEUE_SIZE 8192
 SingleNode::SingleNode(const std::string& unit_name,
                        const std::string& unit_type,
                        const std::string& unit_device_id,
@@ -44,7 +44,7 @@ Status SingleNode::Init() {
 
   for (auto& input_port : input_ports) {
     auto input_port_name = input_port.GetPortName();
-    queue_size_ = config_->GetUint64("queue_size", DEFAULT_QUEUE_SIZE);
+    queue_size_ = config_->GetUint64("queue_size", DEFAULT_SINGLE_NODE_QUEUE_SIZE);
     if (0 == queue_size_) {
       return {STATUS_INVALID, "invalid queue_size config: 0"};
     }
