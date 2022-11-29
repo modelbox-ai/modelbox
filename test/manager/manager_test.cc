@@ -302,7 +302,7 @@ TEST_F(ManagerTest, killcmd) {
   info.heartbeat_interval = 1;
   EXPECT_EQ(0, app_start(&info));
 
-  sleep(2);
+  sleep(3);
   EXPECT_EQ(0, access("/tmp/killcmd", F_OK));
   app_stop("killcmd", 0);
   EXPECT_NE(0, app_alive("monitor"));
