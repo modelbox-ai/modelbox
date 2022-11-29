@@ -46,6 +46,15 @@ if [ "${PLATFROM}" == "x86_64" ];then
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/ffmpeg_4.4_dev.tar.gz
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/opencv_4.2.0_dev.tar.gz
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/obssdk_3.22.3_dev.tar.gz
+    elif [ "$OS_NAME" == "android" ];then
+        download https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+        download https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2-linux-x86_64.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_android/src.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_android/deb_files.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_android/cpprestsdk.tar.gz
+        download https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.9.0/MindSpore/lite/release/linux/x86_64/mindspore-lite-1.9.0-linux-x64.tar.gz
+        download https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.9.0/MindSpore/lite/release/android/gpu/mindspore-lite-1.9.0-android-aarch64.tar.gz
+        ls -lh .
     fi
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/nlohmann-json_3.7.3.tar.gz
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.tar.gz
