@@ -36,8 +36,6 @@ include_directories(${LIBMODELBOX_VIRTUALDRIVER_INFERENCE_INCLUDE})
 include_directories(${DLENGINE_INCLUDE_DIR})
 include_directories(${MODELBOX_COMMON_INFERENCE_INCLUDE})
 
-link_directories(${DLENGINE_LIBRARY_DIR})
-
 set(MODELBOX_UNIT_SHARED libmodelbox-engine-dlengine)
 set(MODELBOX_UNIT_SOURCE_INCLUDE ${CMAKE_CURRENT_LIST_DIR})
 
@@ -52,7 +50,7 @@ SOVERSION ${MODELBOX_VERSION_MAJOR}
 target_link_libraries(${MODELBOX_UNIT_SHARED} pthread)
 target_link_libraries(${MODELBOX_UNIT_SHARED} rt)
 target_link_libraries(${MODELBOX_UNIT_SHARED} dl)
-target_link_libraries(${MODELBOX_UNIT_SHARED} dlengine)
+target_link_libraries(${MODELBOX_UNIT_SHARED} ${DLENGINE_LIBRARIES})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_SHARED})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${LIBMODELBOX_VIRTUALDRIVER_INFERENCE_SHARED})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_COMMON_INFERENCE_LIBRARY})

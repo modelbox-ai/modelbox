@@ -75,7 +75,8 @@ modelbox::Status TensorShapeParam::Parse(const std::string &shape_str,
                                          std::vector<size_t> &shape_value) {
   auto format_shape_str = shape_str;
   std::transform(format_shape_str.begin(), format_shape_str.end(),
-                 format_shape_str.begin(), std::tolower);
+                 format_shape_str.begin(),
+                 [](int c) { return std::tolower(c); });
   auto dims = modelbox::StringSplit(format_shape_str, 'x');
   if (dims.empty()) {
     MBLOG_ERROR << "shape [" << shape_str
@@ -416,7 +417,7 @@ void DLEngineInference::SetBufferInfo(
     const std::shared_ptr<modelbox::BufferList> &buffer_list,
     dlengine::DataType data_type, const dlengine::DimSize &shape) {
   // data_type has been checked
-  auto mb_data_type = g_dlengine_to_mb_type_map[data_type];
+  auto mb_data_type = g_dlengine_to_mb_type_map.at(data_type);
   std::vector<size_t> out_shape;
   out_shape.reserve(shape.num_dims);
   const size_t n = 1;
@@ -456,5 +457,5 @@ size_t DLEngineInference::SingleTensorSize(const dlengine::DimSize &shape,
   }
 
   // data_type has been checked
-  return tensor_size * g_dlengine_type_size_map[data_type];
+  return tensor_size * g_dlengine_type_size_map.at(data_type);
 }
