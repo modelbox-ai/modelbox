@@ -16,7 +16,7 @@
 
 #include "dlengine_cpu_inference_flowunit.h"
 
-static constexpr std::string BACKEND_TYPE = "JwdLCz9nKiM=";
+constexpr const char *BACKEND_TYPE = "JwdLCz9nKiM=";
 
 DLEngineCPUInferenceFlowUnit::DLEngineCPUInferenceFlowUnit()
     : inference_(std::make_shared<DLEngineInference>()) {}

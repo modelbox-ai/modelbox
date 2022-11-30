@@ -16,7 +16,7 @@
 
 #include "dlengine_cuda_inference_flowunit.h"
 
-static constexpr std::string BACKEND_TYPE = "PBJAFgZcNjg=";
+constexpr const char *BACKEND_TYPE = "PBJAFgZcNjg=";
 
 DLEngineCUDAInferenceFlowUnit::DLEngineCUDAInferenceFlowUnit()
     : inference_(std::make_shared<DLEngineInference>()) {}
@@ -45,7 +45,7 @@ modelbox::Status DLEngineCUDAInferenceFlowUnit::CudaProcess(
   auto ret = cudaStreamSynchronize(stream);
   if (ret != cudaSuccess) {
     MBLOG_ERROR << "cuda stream sync failed, err " << ret;
-    return STATUS_FAULT;
+    return modelbox::STATUS_FAULT;
   }
 
   return inference_->Infer(data_ctx);
