@@ -1,0 +1,24 @@
+[base]
+name = "rknpu2_inference"
+device = "rockchip"
+version = "@MODELBOX_VERSION_STRING@"
+description = "an rknpu2 inference flowunit"
+entry = "@CMAKE_SOURCE_DIR@/test/assets/sdc_inference/pool_inst.wk"
+type = "inference"
+virtual_type = "rknpu2"
+is_input_contiguous = "false"
+
+[input]
+[input.input1]
+name = "input"
+type = "float"
+device = "rockchip"
+
+[output]
+[output.output1]
+name = "output:0"
+type = "float"
+
+[output.output2]
+name = "output:1"
+type = "float"

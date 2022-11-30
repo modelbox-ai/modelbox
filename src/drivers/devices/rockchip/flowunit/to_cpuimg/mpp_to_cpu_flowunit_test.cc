@@ -34,9 +34,9 @@
 #include "test/mock/minimodelbox/mockflow.h"
 
 namespace modelbox {
-class RockchipResizeFlowUnitTest : public testing::Test {
+class RockchipMppToCpuFlowUnitTest : public testing::Test {
  public:
-  RockchipResizeFlowUnitTest()
+  RockchipMppToCpuFlowUnitTest()
       : driver_flow_(std::make_shared<MockFlow>()),
         jpeg_decode_(std::make_shared<modelbox::MppJpegDecode>()) {}
 
@@ -66,11 +66,11 @@ class RockchipResizeFlowUnitTest : public testing::Test {
   std::shared_ptr<modelbox::MppJpegDecode> jpeg_decode_;
 };
 
-std::shared_ptr<MockFlow> RockchipResizeFlowUnitTest::GetDriverFlow() {
+std::shared_ptr<MockFlow> RockchipMppToCpuFlowUnitTest::GetDriverFlow() {
   return driver_flow_;
 }
 
-TEST_F(RockchipResizeFlowUnitTest, RunUnit) {
+TEST_F(RockchipMppToCpuFlowUnitTest, RunUnit) {
   std::map<int, int> size_map = {{112, 110}, {160, 120}, {640, 480}};
   for (auto &it : size_map) {
     std::string toml_content = R"(
@@ -86,9 +86,10 @@ TEST_F(RockchipResizeFlowUnitTest, RunUnit) {
                                std::to_string(it.first) +
                                ", image_height=" + std::to_string(it.second) +
                                R"(]
-
+          rk_cpuimg[type=flowunit, flowunit=rk_cpuimg, device=cpu, deviceid=0]
           input -> resize:in_image
-          resize:out_image -> output
+          resize:out_image -> rk_cpuimg:in_image
+          rk_cpuimg:out_image -> output
         }'''
     format = "graphviz"
   )";
@@ -134,7 +135,6 @@ TEST_F(RockchipResizeFlowUnitTest, RunUnit) {
     auto e_ret =
         memcpy_s(in_img_buffer->MutableData(), in_img_buffer->GetBytes(),
                  img.data, img.total() * img.elemSize());
-
     EXPECT_EQ(e_ret, 0);
     auto status = extern_data->Send("input", in_img_buffer_list);
     EXPECT_EQ(status, STATUS_OK);
@@ -146,8 +146,6 @@ TEST_F(RockchipResizeFlowUnitTest, RunUnit) {
     ASSERT_EQ(output_buffer_list->Size(), 1);
     auto output_buffer = output_buffer_list->At(0);
     ASSERT_EQ(output_buffer->GetBytes(), it.first * it.second * 3);
-
-    auto *mpp_buffer = (MppBuffer)output_buffer->ConstData();
 
     int32_t out_width = 0;
     int32_t out_height = 0;
@@ -172,16 +170,10 @@ TEST_F(RockchipResizeFlowUnitTest, RunUnit) {
     e_ret = memset_s(out_img_buf.get(), total_out_size, 0, total_out_size);
     EXPECT_EQ(e_ret, 0);
 
-    auto *rgbsrc = (uint8_t *)mpp_buffer_get_ptr(mpp_buffer);
-    auto *rgbdst = (uint8_t *)out_img_buf.get();
-
     // copy to memory
-    for (int i = 0; i < out_height; i++) {
-      e_ret = memcpy_s(rgbdst, out_width * 3, rgbsrc, out_width * 3);
-      EXPECT_EQ(e_ret, 0);
-      rgbsrc += out_width * 3;
-      rgbdst += out_width * 3;
-    }
+    e_ret = memcpy_s(out_img_buf.get(), output_buffer->GetBytes(),
+                     output_buffer->ConstData(), output_buffer->GetBytes());
+    EXPECT_EQ(e_ret, 0);
 
     std::string out_file_name = std::string(TEST_ASSETS) + "/rockchip_" +
                                 std::to_string(it.first) + "x" +
