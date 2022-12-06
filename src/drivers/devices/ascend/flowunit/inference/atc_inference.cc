@@ -63,8 +63,6 @@ modelbox::Status AtcInference::Init(
 modelbox::Status AtcInference::ParseConfig(
     const std::shared_ptr<modelbox::Configuration> &config) {
   device_id_ = config->GetInt32("deviceid");
-  batch_size_ = config->GetInt32("batch_size", 1);
-  MBLOG_INFO << "Model batch size " << batch_size_;
   return modelbox::STATUS_SUCCESS;
 }
 
@@ -126,10 +124,15 @@ modelbox::Status AtcInference::CheckModelIO(
                                        unit_input_list.end());
   std::set<std::string> unit_output_set(unit_output_list.begin(),
                                         unit_output_list.end());
+
+  auto model_input_size = dynamic_batch_tensor_index_ >= 0
+                              ? model_input_list_.size() - 1
+                              : model_input_list_.size();
+
   if (model_input_list_.empty() || model_output_list_.empty() ||
-      model_input_list_.size() != unit_input_list.size() ||
+      model_input_size != unit_input_list.size() ||
       model_output_list_.size() != unit_output_list.size()) {
-    MBLOG_ERROR << "Model input[" << model_input_list_.size() << "], output["
+    MBLOG_ERROR << "Model input[" << model_input_size << "], output["
                 << model_output_list_.size() << "], FlowUnit input["
                 << unit_input_list.size() << "], output["
                 << unit_output_list.size() << "], these io count is bad";
@@ -137,6 +140,9 @@ modelbox::Status AtcInference::CheckModelIO(
   }
 
   for (auto &model_input_name : model_input_list_) {
+    if (model_input_name == ACL_DYNAMIC_TENSOR_NAME) {
+      continue;
+    }
     if (unit_input_set.find(model_input_name) == unit_input_set.end()) {
       MBLOG_ERROR << "Model miss input [" << model_input_name
                   << "] in graph config";
@@ -161,7 +167,8 @@ void AtcInference::ReadModelInfo() {
   std::stringstream model_info;
   model_info << "Model:" << model_file_ << std::endl;
   auto *desc_ptr = model_desc_.get();
-  LogBatchInfo(desc_ptr, model_info);
+  size_t max_batch_size = 1;
+  SaveBatchInfo(desc_ptr, model_info, max_batch_size);
   model_info << "Input:" << std::endl;
   aclmdlIODims dims;
   for (size_t i = 0; i < input_num; ++i) {
@@ -178,6 +185,17 @@ void AtcInference::ReadModelInfo() {
     model_input_size_.push_back(size);
     auto format = aclmdlGetInputFormat(desc_ptr, i);
     auto data_type = aclmdlGetInputDataType(desc_ptr, i);
+
+    if (name == ACL_DYNAMIC_TENSOR_NAME) {
+      dynamic_batch_tensor_index_ = i;
+      ret = aclrtMalloc(&dynamic_batch_mem_ptr_, model_input_size_[i],
+                        aclrtMemMallocPolicy::ACL_MEM_MALLOC_NORMAL_ONLY);
+      if (ret != ACL_SUCCESS || dynamic_batch_mem_ptr_ == nullptr) {
+        MBLOG_ERROR << "malloc acl memory failed, size: " << size;
+        return;
+      }
+    }
+
     LogTensorInfo(desc_ptr, i, dims, size, format, data_type, model_info);
   }
 
@@ -194,7 +212,14 @@ void AtcInference::ReadModelInfo() {
     std::string name = aclmdlGetOutputNameByIndex(desc_ptr, i);
     model_output_list_.push_back(name);
     auto size = aclmdlGetOutputSizeByIndex(desc_ptr, i);
-    model_output_size_.push_back(size);
+    if (dynamic_batch_tensor_index_ >= 0 && dims.dimCount > 0 &&
+        max_batch_size != (size_t)dims.dims[0]) {
+      MBLOG_ERROR << "model output tensor [" << name
+                  << "] dims error, first dims: " << dims.dims[0]
+                  << " is not same with max_batch_size: " << max_batch_size;
+    }
+
+    model_output_size_.push_back(size / max_batch_size);
     auto format = aclmdlGetOutputFormat(desc_ptr, i);
     auto data_type = aclmdlGetOutputDataType(desc_ptr, i);
     output_data_type_.push_back(GetModelBoxDataType(data_type));
@@ -213,15 +238,21 @@ void AtcInference::SaveOutputShape(const aclmdlIODims &dims) {
   output_shape_.push_back(shape);
 }
 
-void AtcInference::LogBatchInfo(aclmdlDesc *desc_ptr,
-                                std::stringstream &model_info) {
+void AtcInference::SaveBatchInfo(aclmdlDesc *desc_ptr,
+                                 std::stringstream &model_info,
+                                 size_t &max_batch_size) {
   aclmdlBatch batch;
   auto ret = aclmdlGetDynamicBatch(desc_ptr, &batch);
   if (ret != ACL_ERROR_NONE) {
     model_info << "Get dynamic batch failed, ret " << ret;
   } else {
     model_info << "Dynamic batch:[";
+    size_t size = 0;
     for (size_t i = 0; i < batch.batchCount; ++i) {
+      dynamic_batch_set_.emplace(batch.batch[i]);
+      if (size < batch.batch[i]) {
+        size = batch.batch[i];
+      }
       model_info << batch.batch[i];
       if (i + 1 == batch.batchCount) {
         model_info << "]";
@@ -232,6 +263,8 @@ void AtcInference::LogBatchInfo(aclmdlDesc *desc_ptr,
 
     if (batch.batchCount == 0) {
       model_info << "]";
+    } else {
+      max_batch_size = size;
     }
   }
   model_info << std::endl;
@@ -290,6 +323,31 @@ modelbox::ModelBoxDataType AtcInference::GetModelBoxDataType(
   return modelbox::ModelBoxDataType::MODELBOX_TYPE_INVALID;
 }
 
+modelbox::Status AtcInference::GetCurrentBatchSize(
+    std::shared_ptr<modelbox::DataContext> &data_ctx, size_t &batch_size) {
+  if (model_input_list_.size() == 0) {
+    MBLOG_ERROR << "model_input_list_ is empty ";
+    return modelbox::STATUS_FAULT;
+  }
+
+  auto buffer_list = data_ctx->Input()->at(model_input_list_[0]);
+  if (buffer_list == nullptr) {
+    MBLOG_ERROR << "get current batch size  failed  ";
+    return modelbox::STATUS_FAULT;
+  }
+
+  if ((dynamic_batch_tensor_index_ >= 0) &&
+      (dynamic_batch_set_.find(buffer_list->Size()) ==
+       dynamic_batch_set_.end())) {
+    MBLOG_ERROR << "current model is not support input batch_size: "
+                << buffer_list->Size();
+    return modelbox::STATUS_FAULT;
+  }
+
+  batch_size = buffer_list->Size();
+  return modelbox::STATUS_OK;
+}
+
 modelbox::Status AtcInference::Infer(
     std::shared_ptr<modelbox::DataContext> &data_ctx, aclrtStream stream) {
   auto acl_ret = aclrtSetDevice(device_id_);
@@ -299,22 +357,41 @@ modelbox::Status AtcInference::Infer(
     return {modelbox::STATUS_FAULT, "Set device failed"};
   }
 
-  auto input = CreateDataSet(data_ctx->Input(), model_input_list_);
+  size_t current_batch_size;
+  auto ret = GetCurrentBatchSize(data_ctx, current_batch_size);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "get current batch size failed";
+    return {modelbox::STATUS_FAULT, "Get current batch size failed"};
+  }
+
+  auto input =
+      CreateDataSet(data_ctx->Input(), model_input_list_, current_batch_size);
   if (input == nullptr) {
     MBLOG_ERROR << "Create input for infer failed";
     return {modelbox::STATUS_FAULT, "Create input failed"};
   }
 
-  auto ret = PrepareOutput(data_ctx);
+  ret = PrepareOutput(data_ctx, current_batch_size);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Prepare output failed";
     return {modelbox::STATUS_FAULT, "Prepare output failed"};
   }
 
-  auto output = CreateDataSet(data_ctx->Output(), model_output_list_);
+  auto output =
+      CreateDataSet(data_ctx->Output(), model_output_list_, current_batch_size);
   if (output == nullptr) {
     MBLOG_ERROR << "Create output for infer failed";
     return {modelbox::STATUS_FAULT, "Create output failed"};
+  }
+
+  if (dynamic_batch_tensor_index_ >= 0) {
+    acl_ret = aclmdlSetDynamicBatchSize(model_id_, input.get(),
+                                        dynamic_batch_tensor_index_,
+                                        current_batch_size);
+    if (acl_ret != ACL_ERROR_NONE) {
+      MBLOG_ERROR << "aclmdlSetDynamicBatchSize failed, ret " << acl_ret;
+      return {modelbox::STATUS_FAULT, "Execute acl set batch_size failed"};
+    }
   }
 
   acl_ret = ACL_ERROR_NONE;
@@ -334,13 +411,14 @@ modelbox::Status AtcInference::Infer(
 }
 
 modelbox::Status AtcInference::PrepareOutput(
-    std::shared_ptr<modelbox::DataContext> &data_ctx) {
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
+    const size_t &current_batch_size) {
   auto output_count = model_output_list_.size();
   for (size_t i = 0; i < output_count; ++i) {
     auto &name = model_output_list_[i];
     auto buffer_list = data_ctx->Output(name);
     auto &size = model_output_size_[i];
-    std::vector<size_t> shape(batch_size_, size);
+    std::vector<size_t> shape(current_batch_size, size);
     buffer_list->Build(shape);
     buffer_list->Set("shape", output_shape_[i]);
     buffer_list->Set("type", output_data_type_[i]);
@@ -351,7 +429,7 @@ modelbox::Status AtcInference::PrepareOutput(
 
 std::shared_ptr<aclmdlDataset> AtcInference::CreateDataSet(
     const std::shared_ptr<modelbox::BufferListMap> &buffer_list_map,
-    std::vector<std::string> &name_list) {
+    std::vector<std::string> &name_list, const size_t &current_batch_size) {
   auto *data_set_ptr = aclmdlCreateDataset();
   if (data_set_ptr == nullptr) {
     MBLOG_ERROR << "aclmdlCreateDataset return null";
@@ -368,15 +446,32 @@ std::shared_ptr<aclmdlDataset> AtcInference::CreateDataSet(
   });
 
   for (auto &tensor_name : name_list) {
-    auto buffer_list = buffer_list_map->at(tensor_name);
-    if (buffer_list == nullptr) {
-      MBLOG_ERROR << "Create data set for tensor " << tensor_name
-                  << " failed, buffer list is null";
-      return nullptr;
+    void *mem_ptr = nullptr;
+    size_t size;
+    if (tensor_name != ACL_DYNAMIC_TENSOR_NAME) {
+      auto buffer_list = buffer_list_map->at(tensor_name);
+      if (buffer_list == nullptr) {
+        MBLOG_ERROR << "Create data set for tensor " << tensor_name
+                    << " failed, buffer list is null";
+        return nullptr;
+      }
+
+      if (current_batch_size != buffer_list->Size()) {
+        MBLOG_ERROR << "buffer bacth_size is not same, first bacth_size: "
+                    << current_batch_size
+                    << "  , current tensor: " << tensor_name
+                    << " bacth_size:" << buffer_list->Size();
+        return nullptr;
+      }
+
+      mem_ptr = const_cast<void *>(buffer_list->ConstData());
+      size = buffer_list->GetBytes();
+    } else {
+      size = model_input_size_[dynamic_batch_tensor_index_];
+      mem_ptr = dynamic_batch_mem_ptr_;
     }
 
-    auto *data_buffer = aclCreateDataBuffer(
-        const_cast<void *>(buffer_list->ConstData()), buffer_list->GetBytes());
+    auto *data_buffer = aclCreateDataBuffer(mem_ptr, size);
     if (data_buffer == nullptr) {
       MBLOG_ERROR << "Create data set buffer for tensor " << tensor_name
                   << "failed";
@@ -409,6 +504,10 @@ modelbox::Status AtcInference::Deinit() {
   if (ret != ACL_ERROR_NONE) {
     MBLOG_ERROR << "Unload model failed, model id is " << model_id_;
     return modelbox::STATUS_FAULT;
+  }
+
+  if (dynamic_batch_mem_ptr_ != nullptr) {
+    aclrtFree(dynamic_batch_mem_ptr_);
   }
 
   return modelbox::STATUS_SUCCESS;

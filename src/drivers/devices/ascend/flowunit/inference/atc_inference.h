@@ -56,7 +56,8 @@ class AtcInference {
 
   void SaveOutputShape(const aclmdlIODims &dims);
 
-  void LogBatchInfo(aclmdlDesc *desc_ptr, std::stringstream &model_info);
+  void SaveBatchInfo(aclmdlDesc *desc_ptr, std::stringstream &model_info,
+                     size_t &max_batch_size);
 
   void LogTensorInfo(aclmdlDesc *desc_ptr, size_t index, aclmdlIODims &dims,
                      size_t size, aclFormat format, aclDataType data_type,
@@ -69,15 +70,21 @@ class AtcInference {
   modelbox::ModelBoxDataType GetModelBoxDataType(aclDataType data_type);
 
   modelbox::Status PrepareOutput(
-      std::shared_ptr<modelbox::DataContext> &data_ctx);
+      std::shared_ptr<modelbox::DataContext> &data_ctx,
+      const size_t &current_batch_size);
 
   std::shared_ptr<aclmdlDataset> CreateDataSet(
       const std::shared_ptr<modelbox::BufferListMap> &buffer_list_map,
-      std::vector<std::string> &name_list);
+      std::vector<std::string> &name_list, const size_t &current_batch_size);
+
+  modelbox::Status GetCurrentBatchSize(
+      std::shared_ptr<modelbox::DataContext> &data_ctx, size_t &batch_size);
 
   int32_t device_id_{0};
   std::string model_file_;
-  int32_t batch_size_{1};
+  int32_t dynamic_batch_tensor_index_{-1};
+  void *dynamic_batch_mem_ptr_{nullptr};
+  std::set<size_t> dynamic_batch_set_;
 
   uint32_t model_id_{0};
   bool is_model_load_{false};
