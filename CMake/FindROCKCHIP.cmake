@@ -3,9 +3,9 @@ if(DEFINED ENV{ROCKCHIP_PATH})
 
     message(STATUS "DEFINED ${HINTS_ROCKCHIP_PATH}")
 else()
-    set(HINTS_ROCKCHIP_PATH "/opt/rockchip")
+    set(HINTS_ROCKCHIP_PATH "/usr/local/rockchip")
 
-    message(STATUS "set default search path: /opt/rockchip")
+    message(STATUS "set default search path: /usr/local/rockchip")
 endif()
 
 find_path(ROCKCHIP_RGA_INCLUDE NAMES im2d.h rga.h
