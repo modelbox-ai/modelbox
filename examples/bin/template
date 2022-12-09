@@ -187,8 +187,12 @@ create_project() {
 		--rootpath)
 			project_root_path="$arg_value"
 			shift "$shift_count" ;;
-		-- ) shift; break ;;
-		* ) break ;;
+		-- )
+			echo "invalid arg -"
+			shift ;;
+		* )
+			echo "invalid arg $arg_option"
+			shift ;;
   		esac
 	done
 
@@ -218,14 +222,14 @@ create_project() {
 }
 
 create_service_plugin_template() {
-	TEMPLATE_PATH="$MODELBOX_TEMPLATE_PATH/plugin"
+	TEMPLATE_PATH="$MODELBOX_TEMPLATE_PATH/service-plugin"
 	SOURCE_DIR="${project_path}/src/service-plugin/${plugin_name}"
 	CMAKE_FILE="${SOURCE_DIR}/CMakeLists.txt"
 	SOURCE_FILE="${SOURCE_DIR}/${plugin_name}.cc"
 	HEAD_FILE="${SOURCE_DIR}/${plugin_name}.h"
 
 	if [ ! -d "$TEMPLATE_PATH" ]; then
-		echoerr "Server plugin template not exist."
+		echoerr "Server plugin template ${TEMPLATE_PATH} not exist."
 		return 1
 	fi
 
@@ -288,11 +292,15 @@ create_service_plugin() {
 		--name)
 			plugin_name="$arg_value"
 			shift "$shift_count" ;;
-		--path)
+		--project-path)
 			project_path="$arg_value"
 			shift "$shift_count" ;;
-		-- ) shift; break ;;
-		* ) break ;;
+		-- )
+			echo "invalid arg -"
+			shift ;;
+		* )
+			echo "invalid arg $arg_option"
+			shift ;;
   		esac
 	done
 
