@@ -125,6 +125,61 @@ Java_com_modelbox_Buffer_BufferGetData(JNIEnv *env, jobject j_this) {
 
 /*
  * Class:     com_modelbox_Buffer
+ * Method:    BufferGetDirectData
+ * Signature: ()Ljava/nio/ByteBuffer;
+ */
+JNIEXPORT jobject JNICALL
+Java_com_modelbox_Buffer_BufferGetDirectData(JNIEnv *env, jobject j_this) {
+  bool is_const = false;
+  auto n_buffer =
+      modelbox::JNINativeObject::GetNativeSharedPtr<modelbox::Buffer>(env,
+                                                                      j_this);
+  if (n_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::StatusError);
+    return nullptr;
+  }
+
+  void *n_buffer_ptr = n_buffer->MutableData();
+  if (n_buffer_ptr == nullptr) {
+    n_buffer_ptr = (void *)n_buffer->ConstData();
+    if (n_buffer_ptr == nullptr) {
+      modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_NOBUFS,
+                                 "Buffer data is null");
+      return nullptr;
+    }
+
+    is_const = true;
+  }
+
+  //TODO The reference to n_bufferlist should be added to avoid dangling pointers of j_byte_buffer
+  //https://stackoverflow.com/questions/46844275/freeing-memory-wrapped-with-newdirectbytebuffer
+  jobject j_byte_buffer =
+      env->NewDirectByteBuffer((void *)n_buffer_ptr, n_buffer->GetBytes());
+  if (j_byte_buffer == nullptr) {
+    modelbox::ModelBoxJNIThrow(env, modelbox::STATUS_NOMEM,
+                               "alloc memory for Buffer byte failed.");
+    return nullptr;
+  }
+
+  if (is_const == false) {
+    return j_byte_buffer;
+  }
+
+  jmethodID asreadonly_method =
+      env->GetMethodID(env->GetObjectClass(j_byte_buffer), "asReadOnlyBuffer",
+                       "()Ljava/nio/ByteBuffer;");
+  if (asreadonly_method == nullptr) {
+    MBLOG_ERROR << "get asreadonly method failed.";
+    return nullptr;
+  }
+
+  jobject j_readonly_byte_buffer =
+      env->CallObjectMethod(j_byte_buffer, asreadonly_method);
+  return j_readonly_byte_buffer;
+}
+
+/*
+ * Class:     com_modelbox_Buffer
  * Method:    BufferHasError
  * Signature: ()Z
  */

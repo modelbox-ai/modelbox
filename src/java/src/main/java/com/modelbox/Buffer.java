@@ -16,6 +16,8 @@
 
 package com.modelbox;
 
+import java.nio.ByteBuffer;
+
 /**
  * Modelbox Buffer
  */
@@ -46,6 +48,15 @@ public class Buffer extends NativeObject {
    */
   public byte[] getData() throws ModelBoxException {
     return BufferGetData();
+  }
+
+  /**
+   * get direct buffer.
+   * <p>WARNING: Do not hold ByteBuffer beyond the scope, otherwise it will cause dangling pointers and trigger coredump
+   * @return direct buffer
+   */
+  public ByteBuffer getDirectData() throws ModelBoxException {
+    return BufferGetDirectData();
   }
 
   /*
@@ -311,6 +322,8 @@ public class Buffer extends NativeObject {
   private native void BufferBuild(byte[] data);
 
   private native byte[] BufferGetData();
+
+  private native ByteBuffer BufferGetDirectData();
 
   private native boolean BufferHasError();
 
