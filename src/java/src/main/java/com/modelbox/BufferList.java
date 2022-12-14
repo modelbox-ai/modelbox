@@ -17,6 +17,7 @@
 package com.modelbox;
 
 
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 
 /**
@@ -65,7 +66,7 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Builder buffer, create memory
+   * Builder buffer, create memory
    * @param sizeList buffer size list
    */
   public void build(int[] sizeList) {
@@ -73,7 +74,7 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Get buffer at index
+   * Get buffer at index
    * @param index position of buffer
    * @return buffer
    */
@@ -82,7 +83,7 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Get number of buffer in bufferlist
+   * Get number of buffer in bufferlist
    * @return number of buffer
    */
   public long size() {
@@ -90,7 +91,7 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Push new buffer to buffer list
+   * Push new buffer to buffer list
    * @param buffer pointer to buffer
    */
   public void pushBack(Buffer buffer) {
@@ -98,7 +99,7 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Push new data to buffer list
+   * Push new data to buffer list
    * @param data pointer to data
    */
   public void pushBack(byte[] data) {
@@ -106,7 +107,7 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Assign buffer list
+   * Assign buffer list
    * @param buffers buffer list to assign
    */
   public void assign(Buffer[] buffers) {
@@ -114,7 +115,7 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Get buffer data pointer from begining
+   * Get buffer data pointer from begining
    * @return buffer data pointer from begining
    */
   public byte[] getData() {
@@ -122,7 +123,26 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Get device of buffer list
+   * Get buffer data pointer from begining
+   * <p>WARNING: Do not hold ByteBuffer beyond the scope, otherwise it will cause dangling pointers and trigger coredump
+   * @return buffer data pointer from begining
+   */
+  public ByteBuffer getDirectData() {
+    return BufferListGetDirectData();
+  }
+
+  /**
+   * Get buffer data pointer from begining
+   * WARNING: Do not hold ByteBuffer beyond the scope, otherwise it will cause dangling pointers and trigger coredump
+   * @param index position of buffer
+   * @return buffer data pointer from begining
+   */
+  public ByteBuffer getDirectData(int index) {
+    return BufferListGetDirectData(index);
+  }
+
+  /**
+   * Get device of buffer list
    * @return pointer to device
    */
   public Device getDevice() {
@@ -130,7 +150,7 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   }
 
   /**
-   * @brief Reset buffer list
+   * Reset buffer list
    * @return reset result
    */
   public void reset() {
@@ -150,6 +170,10 @@ public class BufferList extends NativeObject implements Iterable<Buffer> {
   private native void BufferListAssign(Buffer[] buffers);
 
   private native byte[] BufferListGetData();
+
+  private native ByteBuffer BufferListGetDirectData();
+
+  private native ByteBuffer BufferListGetDirectData(int index);
 
   private native Device BufferListGetDevice();
 

@@ -20,6 +20,7 @@ package com.modelbox;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class ModelBoxFlowTest {
 
   public static class FlowUnitPassThrough extends FlowUnit {
     public static class Builder extends FlowUnitBuilder {
+      static boolean is_direct = false;
       @Override
       public void probe(FlowUnitDesc desc) throws ModelBoxException {
         desc.SetFlowUnitType("cpu");
@@ -42,11 +44,19 @@ public class ModelBoxFlowTest {
 
       @Override
       public FlowUnit build() throws ModelBoxException {
-        return new FlowUnitPassThrough();
+        return new FlowUnitPassThrough(is_direct);
+      }
+
+      public void setDirect(boolean b) {
+        is_direct = b;
       }
     }
 
-    public FlowUnitPassThrough() {}
+    public FlowUnitPassThrough(boolean is_direct) {
+      this.is_direct = is_direct;
+    }
+
+    private boolean is_direct = false;
 
     @Override
     public void open(Configuration opts) throws ModelBoxException {
@@ -58,8 +68,31 @@ public class ModelBoxFlowTest {
       BufferList in = data_ctx.input("in");
       BufferList out = data_ctx.output("out");
 
+      if (is_direct) {
+        return process_directbuffer(data_ctx);
+      }
+
       for (int i = 0; i < in.size(); i++) {
         out.pushBack(in.at(i));
+      }
+
+      return Status.OK();
+    }
+
+    public Status process_directbuffer(DataContext data_ctx) throws ModelBoxException {
+      BufferList in = data_ctx.input("in");
+      BufferList out = data_ctx.output("out");
+
+      int sizes[] = new int[(int)in.size()];
+      for (int i = 0; i < in.size(); i++) {
+        sizes[i] = (int)in.at(i).getBytes();
+      }
+
+      out.build(sizes);
+      ByteBuffer outbuff = out.getDirectData();
+
+      for (int i = 0; i < in.size(); i++) {
+        outbuff.put(in.at(i).getDirectData());
       }
 
       return Status.OK();
@@ -236,7 +269,9 @@ public class ModelBoxFlowTest {
 
     System.out.println(txt);
     Flow flow = new Flow();
-    flow.RegisterFlowUnit(new FlowUnitPassThrough.Builder());
+    FlowUnitPassThrough.Builder builder = new FlowUnitPassThrough.Builder();
+    builder.setDirect(true);
+    flow.RegisterFlowUnit(builder);
     flow.init("Process", txt);
     flow.startRun();
     FlowStreamIO streamio = flow.CreateStreamIO();
@@ -253,6 +288,15 @@ public class ModelBoxFlowTest {
       Buffer outdata = streamio.recv("output", 1000 * 10);
       if (outdata == null) {
         break;
+      }
+
+      ByteBuffer b = outdata.getDirectData();
+      if (b != null) {
+        byte[] bytes = new byte[b.remaining()];
+        b.get(bytes);
+        String str = new String(bytes);
+        assertEquals(msg, str);
+        Log.info("Direct message is: " + str);
       }
       
       String str = new String(outdata.getData());
