@@ -40,16 +40,13 @@ include_directories(${ROCKCHIP_MPP_INCLUDE})
 include_directories(${ROCKCHIP_RGA_INCLUDE})
 include_directories(${FFMPEG_INCLUDE_DIR})
 include_directories(${MODELBOX_COMMON_VIDEO_DECODE_INCLUDE})
-include_directories(${CMAKE_CURRENT_LIST_DIR}/../../common_src/video_out)
+include_directories(${MODELBOX_ROCKCHIP_COMMON_FFMPEG_VIDEO_INCLUDE})
 include_directories(${NLOHMANN_INCLUDE_DIR})
 
 set(MODELBOX_UNIT_SHARED libmodelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}-shared)
 set(MODELBOX_UNIT_SOURCE_INCLUDE ${CMAKE_CURRENT_LIST_DIR})
 
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/../../common_src/video_out COMMON_VIDEOOUT_SRCS)
-group_source_test_files(COMMON_VIDEOOUT_SRCS_SOURCE MODELBOX_UNIT_TEST_SOURCE "_test.c*" ${COMMON_VIDEOOUT_SRCS})
-
-add_library(${MODELBOX_UNIT_SHARED} SHARED ${MODELBOX_UNIT_SOURCE} ${COMMON_VIDEOOUT_SRCS_SOURCE})
+add_library(${MODELBOX_UNIT_SHARED} SHARED ${MODELBOX_UNIT_SOURCE})
 set(LIBMODELBOX_FLOWUNIT_VIDEO_DECODER_CPU_SHARED ${MODELBOX_UNIT_SHARED})
 
 set_target_properties(${MODELBOX_UNIT_SHARED} PROPERTIES
@@ -64,6 +61,7 @@ target_link_libraries(${MODELBOX_UNIT_SHARED} rt)
 target_link_libraries(${MODELBOX_UNIT_SHARED} dl)
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${FFMPEG_LIBRARIES})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_COMMON_VIDEO_DECODE_LIBRARY})
+target_link_libraries(${MODELBOX_UNIT_SHARED} ${MODELBOX_ROCKCHIP_COMMON_FFMPEG_VIDEO_LIBRARY})
 target_link_libraries(${MODELBOX_UNIT_SHARED} ${OpenCV_LIBS})
 
 set_target_properties(${MODELBOX_UNIT_SHARED} PROPERTIES OUTPUT_NAME "modelbox-unit-${UNIT_DEVICE}-${UNIT_NAME}")

@@ -1,5 +1,5 @@
 #
-# Copyright 2021 The Modelbox Project Authors. All Rights Reserved.
+# Copyright 2022 The Modelbox Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 cmake_minimum_required(VERSION 3.10)
 
-project(modelbox-drivers-rockchip)
+project(modelbox-drivers-common-flowunit)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Do not build in source directory!")
@@ -23,9 +24,6 @@ endif()
 
 subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR} "CMakeLists.txt")
 
-include_directories(${HUAWEI_SECURE_C_INCLUDE_DIR})
-include_directories(${ROCKCHIP_INCLUDE_DIR})
-
-add_subdirectory(core)
-add_subdirectory(common)
-add_subdirectory(flowunit)
+foreach(subdir ${SUBDIRS})
+    add_subdirectory(${subdir})
+endforeach()
