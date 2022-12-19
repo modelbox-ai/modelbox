@@ -152,6 +152,9 @@ modelbox::Status modelbox::RKNPU2Inference::Init(
     return {modelbox::STATUS_FAULT, "query input_output error"};
   }
 
+  MBLOG_INFO << "model input num: " << rknpu2_io_num.n_input
+             << ", output num: " << rknpu2_io_num.n_output << std::endl;
+
   if (npu2model_input_list_.size() != rknpu2_io_num.n_input ||
       npu2model_output_list_.size() != rknpu2_io_num.n_output) {
     MBLOG_ERROR << "model input output num mismatch: input num in graph is "
@@ -285,9 +288,10 @@ size_t modelbox::RKNPU2Inference::GetInputBuffer(
     input_params->in_width_ = in_image->GetBytes();
   }
 
-  if (input_buf_list->GetDevice()->GetType() == "rknpu") {
+  if (input_buf_list->GetDevice()->GetType() == "rockchip") {
     return CopyFromAlignMemory(input_buf_list, input_buf, input_params);
   }
+
   input_buf.reset((uint8_t *)input_buf_list->ConstData(), [](uint8_t *p) {});
   return input_buf_list->GetBytes();
 }
@@ -326,6 +330,7 @@ modelbox::Status modelbox::RKNPU2Inference::Infer(
                   << " " << inputs_size_[i];
       return modelbox::STATUS_FAULT;
     }
+
     one_input.pass_through = false;
     one_input.type = (rknn_tensor_type)inputs_type_[i];
     one_input.fmt = RKNN_TENSOR_NHWC;

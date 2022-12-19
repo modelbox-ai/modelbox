@@ -174,7 +174,6 @@ MODELBOX_FLOWUNIT(VideoDecoderFlowUnit, desc) {
   desc.AddFlowUnitInput({VIDEO_PACKET_INPUT, "cpu"});
   desc.AddFlowUnitOutput({FRAME_INFO_OUTPUT, modelbox::DEVICE_TYPE});
   desc.SetFlowType(modelbox::STREAM);
-  desc.SetInputContiguous(false);
   desc.SetResourceNice(false);
   desc.SetDescription(FLOWUNIT_DESC);
   desc.AddFlowUnitOption(modelbox::FlowUnitOption(

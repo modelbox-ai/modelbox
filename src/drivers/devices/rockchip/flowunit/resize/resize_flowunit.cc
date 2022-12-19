@@ -135,7 +135,6 @@ MODELBOX_FLOWUNIT(ResizeFlowUnit, rk_resize_desc) {
   rk_resize_desc.AddFlowUnitInput({IN_IMG});
   rk_resize_desc.AddFlowUnitOutput({OUT_IMG});
   rk_resize_desc.SetFlowType(modelbox::NORMAL);
-  rk_resize_desc.SetInputContiguous(false);
   rk_resize_desc.SetDescription(FLOWUNIT_DESC);
   rk_resize_desc.AddFlowUnitOption(modelbox::FlowUnitOption(
       "image_width", "int", true, "0", "the resize width"));

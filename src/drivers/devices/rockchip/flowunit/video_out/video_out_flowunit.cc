@@ -317,18 +317,25 @@ modelbox::Status VideoOutFlowUnit::GetDestUrl(
     const std::shared_ptr<modelbox::DataContext> &data_ctx,
     std::string &dest_url) {
   dest_url = default_dest_url_;
-
   Defer {
     std::regex url_auth_pattern("://[^ /]*?:[^ /]*?@");
     auto result = std::regex_replace(dest_url, url_auth_pattern, "://*:*@");
     MBLOG_INFO << "video_out url is " << result;
   };
 
+  if (data_ctx == nullptr) {
+    MBLOG_ERROR << "data ctx is nullptr";
+    return modelbox::STATUS_INVALID;
+  }
+
   // 3种方式获取
   auto stream_meta = data_ctx->GetInputMeta(FRAME_INFO_INPUT);
   if (stream_meta != nullptr) {
+    auto meta_dest_url = stream_meta->GetMeta(DEST_URL);
     auto dest_url_ptr =
-        std::static_pointer_cast<std::string>(stream_meta->GetMeta(DEST_URL));
+        meta_dest_url == nullptr
+            ? nullptr
+            : std::static_pointer_cast<std::string>(meta_dest_url);
     if (dest_url_ptr != nullptr && !(*dest_url_ptr).empty()) {
       dest_url = *dest_url_ptr;
       return modelbox::STATUS_SUCCESS;
@@ -336,6 +343,11 @@ modelbox::Status VideoOutFlowUnit::GetDestUrl(
   }
 
   auto config = data_ctx->GetSessionConfig();
+  if (config == nullptr) {
+    MBLOG_ERROR << "data ctx session config is empty";
+    return modelbox::STATUS_INVALID;
+  }
+
   auto cfg_str = config->GetString("iva_task_output");
   if (cfg_str.empty()) {
     return modelbox::STATUS_SUCCESS;
@@ -368,7 +380,6 @@ MODELBOX_FLOWUNIT(VideoOutFlowUnit, desc) {
   desc.SetFlowUnitGroupType("Video");
   desc.AddFlowUnitInput({FRAME_INFO_INPUT, "cpu"});
   desc.SetFlowType(modelbox::STREAM);
-  desc.SetInputContiguous(false);
   // 禁止异步执行，编码必须一帧帧的编码
   desc.SetResourceNice(false);
   desc.SetDescription(FLOWUNIT_DESC);

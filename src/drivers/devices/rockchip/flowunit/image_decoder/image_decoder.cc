@@ -227,7 +227,6 @@ MODELBOX_FLOWUNIT(ImageDecoderFlowUnit, rk_imgdec_desc) {
       "the output pixel format"));
 
   rk_imgdec_desc.SetFlowType(modelbox::NORMAL);
-  rk_imgdec_desc.SetInputContiguous(false);
   rk_imgdec_desc.SetDescription(FLOWUNIT_DESC);
 }
 

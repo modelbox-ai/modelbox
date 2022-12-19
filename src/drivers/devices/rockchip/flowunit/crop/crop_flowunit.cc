@@ -161,7 +161,6 @@ MODELBOX_FLOWUNIT(RockchipCropFlowUnit, rk_crop_desc) {
   rk_crop_desc.AddFlowUnitInput({IN_REGION, "cpu"});
   rk_crop_desc.AddFlowUnitOutput({OUT_IMG, modelbox::DEVICE_TYPE});
   rk_crop_desc.SetFlowType(modelbox::NORMAL);
-  rk_crop_desc.SetInputContiguous(false);
   rk_crop_desc.SetDescription(FLOWUNIT_DESC);
 }
 

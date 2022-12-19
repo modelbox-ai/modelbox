@@ -26,7 +26,7 @@
 
 #include "rknpu2_inference.h"
 
-constexpr const char *RKNPU2_FLOWUNIT_TYPE = "rknpu2";
+constexpr const char *RKNPU2_FLOWUNIT_TYPE = "rockchip";
 constexpr const char *RKNPU2_INFERENCE_TYPE = "rknpu2";
 
 class RKNPU2InferenceFlowUnit : public modelbox::FlowUnit {

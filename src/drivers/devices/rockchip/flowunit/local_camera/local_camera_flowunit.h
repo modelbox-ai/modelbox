@@ -68,9 +68,6 @@ class RockChipLocalCameraFlowUnit : public modelbox::FlowUnit {
   MppFrame SetMppFrameInfo(size_t w, size_t h, MppFrameFormat fmt,
                            MppBuffer mpp_buf);
 
-  MppFrame SetMppFrameInfo(size_t w, size_t h, MppFrameFormat fmt,
-                           MppBuffer mpp_buf);
-
   uint32_t camWidth_{0};
   uint32_t camHeight_{0};
   uint32_t camera_id_{0};
