@@ -781,7 +781,7 @@ Status FlowUnitDataContext::GenerateOutput() {
     // merge buffer by input index
     auto compare = [](const std::shared_ptr<Buffer> &b1,
                       const std::shared_ptr<Buffer> &b2) {
-      if (b1 == nullptr) {
+      if (b1 == nullptr || b2 == nullptr) {
         // condition output, will be removed in node stream manage
         return true;
       }
