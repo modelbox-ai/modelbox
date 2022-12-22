@@ -1,9 +1,11 @@
-FROM modelbox/ascend-base-openeuler:latest
+FROM modelbox/c83-base:latest
 FROM openeuler/openeuler:20.03-lts-sp3
 
+ARG dtype
+
 COPY release /opt/release
-COPY --from=0 /usr/local/Ascend_dev /usr/local/Ascend
-COPY --from=0 /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi
+COPY --from=0 /usr/local/Ascend_dev${dtype} /usr/local/Ascend
+COPY --from=0 /usr/local/sbin/npu-smi${dtype} /usr/local/sbin/npu-smi
 ADD *.tar.gz /usr/local/
 
 ARG ASCEND_PATH=/usr/local/Ascend
@@ -53,11 +55,13 @@ RUN mkdir -p /root/.pip && \
     useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser && \
     python3 -m pip install --upgrade pip && \
     python3 -m pip install --no-cache-dir wheel numpy attrs psutil decorator protobuf scipy sympy cffi grpcio grpcio-tools requests pillow pyyaml opencv-python==4.5.5.64 && \
-    python3 -m pip install --no-cache-dir https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.6.1/MindSpore/ascend/$(arch)/mindspore_ascend-1.6.1-cp37-cp37m-linux_$(arch).whl && \
+    python3 -m pip install --no-cache-dir https://ms-release.obs.cn-north-4.myhuaweicloud.com/1.9.0/MindSpore/ascend/$(arch)/mindspore_ascend-1.9.0-cp37-cp37m-linux_$(arch).whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/topi-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/te-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64/hccl-0.1.0-py3-none-any.whl && \
     echo "${ASCEND_PATH}/ascend-toolkit/latest/fwkacllib/lib64" >>/etc/ld.so.conf.d/ascend.conf && \
+    echo "${ASCEND_PATH}/driver/lib64/driver" >>/etc/ld.so.conf.d/ascend.conf && \
+    echo "${ASCEND_PATH}/driver/lib64/common" >>/etc/ld.so.conf.d/ascend.conf && \
     echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf.d/ascend.conf && \
     sed -i '/include/i\/usr/local/lib64' /etc/ld.so.conf && \
     sed -i '/include/i\/usr/local/lib' /etc/ld.so.conf

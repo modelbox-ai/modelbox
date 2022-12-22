@@ -6,9 +6,8 @@ WORKDIR /root
 
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     apt update && \
-    apt install -y python3.7-dev python3-pip curl pciutils && \
+    apt install -y python3-dev python3-pip curl pciutils && \
     apt clean all && \
-    ln -sf python3.7 /usr/bin/python3 && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN mkdir -p /root/.pip && \
@@ -21,10 +20,10 @@ RUN mkdir -p /root/.pip && \
     useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser
 
 
-FROM base as dev
+FROM base as dev310
 
-ARG cann_ver="5.0.4"
-ARG driver_ver="21.0.4"
+ARG cann_ver="6.0.RC1"
+ARG driver_ver="6.0.rc1"
 
 RUN if [ "$(arch)" = "aarch64" ];then driver_tag=3000;else driver_tag=3010; fi && \
     bash ascend/A300-${driver_tag}-npu-driver_${driver_ver}_linux-$(arch).run --quiet --docker && \
@@ -36,23 +35,47 @@ RUN if [ "$(arch)" = "aarch64" ];then driver_tag=3000;else driver_tag=3010; fi &
     ls -lh /usr/local/Ascend/* /usr/local/sbin/npu-smi
 
 
-FROM base as run
+FROM base as run310
 
-ARG cann_ver="5.0.4"
-ARG driver_ver="21.0.4"
+ARG cann_ver="6.0.RC1"
+ARG driver_ver="6.0.rc1"
 
 RUN if [ "$(arch)" = "aarch64" ];then driver_tag=3000;else driver_tag=3010; fi && \
     bash ascend/A300-${driver_tag}-npu-driver_${driver_ver}_linux-$(arch).run --quiet --docker && \
     bash ascend/Ascend-cann-nnae_${cann_ver}_linux-$(arch).run --quiet --install && \
     ls -lh /usr/local/Ascend/*
 
+FROM base as dev310p
 
-FROM ubuntu:18.04
+ARG cann_ver="6.0.RC1"
+ARG driver_ver="6.0.rc1"
+
+RUN bash ascend/Ascend-hdk-310p-npu-driver_${driver_ver}_linux-$(arch).run --quiet --docker && \
+    cp -af /usr/local/Ascend/driver/lib64 /root/ && \
+    bash ascend/Ascend-hdk-310p-npu-driver_${driver_ver}_linux-$(arch).run --quiet --devel && \
+    cp -af /root/lib64 /usr/local/Ascend/driver/ && \
+    rm -rf /root/lib64 /usr/local/Ascend/develop && \
+    bash ascend/Ascend-cann-toolkit_${cann_ver}_linux-$(arch).run --quiet --full && \
+    ls -lh /usr/local/Ascend/* /usr/local/sbin/npu-smi
+
+FROM base as run310p
+
+ARG cann_ver="6.0.RC1"
+ARG driver_ver="6.0.rc1"
+
+RUN bash ascend/Ascend-hdk-310p-npu-driver_${driver_ver}_linux-$(arch).run --quiet --docker && \
+    bash ascend/Ascend-cann-nnae_${cann_ver}_linux-$(arch).run --quiet --install && \
+    ls -lh /usr/local/Ascend/*
+
+FROM ubuntu:20.04
 
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
     groupadd HwHiAiUser && \
     useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser
 
-COPY --from=dev /usr/local/Ascend /usr/local/Ascend_dev
-COPY --from=dev /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi
-COPY --from=run /usr/local/Ascend /usr/local/Ascend_run
+COPY --from=dev310 /usr/local/Ascend /usr/local/Ascend_dev310
+COPY --from=dev310 /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi310
+COPY --from=run310 /usr/local/Ascend /usr/local/Ascend_run310
+COPY --from=dev310p /usr/local/Ascend /usr/local/Ascend_dev310p
+COPY --from=dev310p /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi310p
+COPY --from=run310p /usr/local/Ascend /usr/local/Ascend_run310p
