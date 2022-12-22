@@ -25,41 +25,41 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "CUDA_VER=11-2" >> $GITHUB_OUTPUT
-        echo "CUDA_VERSION=11.2" >> $GITHUB_OUTPUT
-        echo "CUDA_CUDART_VERSION=11.2.152-1" >> $GITHUB_OUTPUT
-        echo "TRT_VERSION=8.4.2.4" >> $GITHUB_OUTPUT
-        echo "NVIDIA_CUDA_VERSION=11.2.2" >> $GITHUB_OUTPUT
-        echo "NVIDIA_REQUIRE_CUDA=cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_cuda112_trt_ubuntu
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "CUDA_VER=11-2" >> $GITHUB_OUTPUT
+          echo "CUDA_VERSION=11.2" >> $GITHUB_OUTPUT
+          echo "CUDA_CUDART_VERSION=11.2.152-1" >> $GITHUB_OUTPUT
+          echo "TRT_VERSION=8.4.2.4" >> $GITHUB_OUTPUT
+          echo "NVIDIA_CUDA_VERSION=11.2.2" >> $GITHUB_OUTPUT
+          echo "NVIDIA_REQUIRE_CUDA=cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_cuda112_trt_ubuntu
+          path: artifact
 
   build_cuda112_trt_ubuntu_develop_image:
     runs-on: ubuntu-20.04
@@ -143,19 +143,19 @@ jobs:
     container:
       image: ${{ needs.compile_cuda112_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+          make build-test -j8
+          make unittest
 
   compile_cuda112_tf_ubuntu:
     runs-on: ubuntu-latest
@@ -170,41 +170,41 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "CUDA_VER=11-2" >> $GITHUB_OUTPUT
-        echo "TF_VERSION=2.6.0" >> $GITHUB_OUTPUT
-        echo "CUDA_VERSION=11.2" >> $GITHUB_OUTPUT
-        echo "CUDA_CUDART_VERSION=11.2.152-1" >> $GITHUB_OUTPUT
-        echo "NVIDIA_CUDA_VERSION=11.2.2" >> $GITHUB_OUTPUT
-        echo "NVIDIA_REQUIRE_CUDA=cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=450,driver<451" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_cuda112_tf_ubuntu
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "CUDA_VER=11-2" >> $GITHUB_OUTPUT
+          echo "TF_VERSION=2.6.0" >> $GITHUB_OUTPUT
+          echo "CUDA_VERSION=11.2" >> $GITHUB_OUTPUT
+          echo "CUDA_CUDART_VERSION=11.2.152-1" >> $GITHUB_OUTPUT
+          echo "NVIDIA_CUDA_VERSION=11.2.2" >> $GITHUB_OUTPUT
+          echo "NVIDIA_REQUIRE_CUDA=cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=450,driver<451" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_cuda112_tf_ubuntu
+          path: artifact
           
   build_cuda112_tf_ubuntu_develop_image:
     runs-on: ubuntu-20.04
@@ -288,19 +288,19 @@ jobs:
     container:
       image: ${{ needs.compile_cuda112_tf_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+          make build-test -j8
+          make unittest
 
   compile_cuda102_trt_ubuntu:
     runs-on: ubuntu-latest
@@ -315,41 +315,41 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "CUDA_VER=10-2" >> $GITHUB_OUTPUT
-        echo "CUDA_VERSION=10.2" >> $GITHUB_OUTPUT
-        echo "CUDA_CUDART_VERSION=10.2.89-1" >> $GITHUB_OUTPUT
-        echo "TRT_VERSION=7.1.3.4" >> $GITHUB_OUTPUT
-        echo "NVIDIA_CUDA_VERSION=10.2.89" >> $GITHUB_OUTPUT
-        echo "NVIDIA_REQUIRE_CUDA=cuda>=10.2 brand=tesla,driver>=418,driver<419" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorrt_7.1.3-cuda_10.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorrt_7.1.3-cuda_10.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_cuda102_trt_ubuntu
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "CUDA_VER=10-2" >> $GITHUB_OUTPUT
+          echo "CUDA_VERSION=10.2" >> $GITHUB_OUTPUT
+          echo "CUDA_CUDART_VERSION=10.2.89-1" >> $GITHUB_OUTPUT
+          echo "TRT_VERSION=7.1.3.4" >> $GITHUB_OUTPUT
+          echo "NVIDIA_CUDA_VERSION=10.2.89" >> $GITHUB_OUTPUT
+          echo "NVIDIA_REQUIRE_CUDA=cuda>=10.2 brand=tesla,driver>=418,driver<419" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorrt_7.1.3-cuda_10.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorrt_7.1.3-cuda_10.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_cuda102_trt_ubuntu
+          path: artifact
 
   build_cuda102_trt_ubuntu_develop_image:
     runs-on: ubuntu-22.04
@@ -442,19 +442,19 @@ jobs:
     container:
       image: ${{ needs.compile_cuda102_trt_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+          make build-test -j8
+          make unittest
 
   compile_cuda102_torch_ubuntu:
     runs-on: ubuntu-latest
@@ -469,41 +469,41 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "CUDA_VER=10-2" >> $GITHUB_OUTPUT
-        echo "CUDA_VERSION=10.2" >> $GITHUB_OUTPUT
-        echo "CUDA_CUDART_VERSION=10.2.89-1" >> $GITHUB_OUTPUT
-        echo "TORCH_VERSION=1.9.1" >> $GITHUB_OUTPUT
-        echo "NVIDIA_CUDA_VERSION=10.2.89" >> $GITHUB_OUTPUT
-        echo "NVIDIA_REQUIRE_CUDA=cuda>=10.2 brand=tesla,driver>=418,driver<419" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-libtorch_1.9.1-cuda_10.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-libtorch_1.9.1-cuda_10.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_cuda102_torch_ubuntu
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "CUDA_VER=10-2" >> $GITHUB_OUTPUT
+          echo "CUDA_VERSION=10.2" >> $GITHUB_OUTPUT
+          echo "CUDA_CUDART_VERSION=10.2.89-1" >> $GITHUB_OUTPUT
+          echo "TORCH_VERSION=1.9.1" >> $GITHUB_OUTPUT
+          echo "NVIDIA_CUDA_VERSION=10.2.89" >> $GITHUB_OUTPUT
+          echo "NVIDIA_REQUIRE_CUDA=cuda>=10.2 brand=tesla,driver>=418,driver<419" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-libtorch_1.9.1-cuda_10.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-libtorch_1.9.1-cuda_10.2-ubuntu-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_cuda102_torch_ubuntu
+          path: artifact
 
   build_cuda102_torch_ubuntu_develop_image:
     runs-on: ubuntu-22.04
@@ -596,56 +596,56 @@ jobs:
     container:
       image: ${{ needs.compile_cuda102_torch_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+          make build-test -j8
+          make unittest
 
   compile_x86d_ubuntu:
     runs-on: ubuntu-latest
-    container: modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-ubuntu-x86_64
+    container: modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-ubuntu-x86_64
     outputs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-ubuntu-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.6.1-cann_5.0.4-ubuntu-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_x86d_ubuntu
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-ubuntu-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.9.0-cann_6.0.1-ubuntu-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_x86d_ubuntu
+          path: artifact
 
   build_x86d_ubuntu_develop_image:
     runs-on: ubuntu-20.04
@@ -674,6 +674,7 @@ jobs:
           push: true
           context: .
           file: docker/Dockerfile.ascend.develop.ubuntu
+          build-args: dtype=310
           tags: |
             ${{ needs.compile_x86d_ubuntu.outputs.IMAGE_NAME_DEV }}:latest
             ${{ needs.compile_x86d_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
@@ -705,6 +706,7 @@ jobs:
           push: true
           context: .
           file: docker/Dockerfile.ascend.runtime.ubuntu
+          build-args: dtype=310
           tags: |
             ${{ needs.compile_x86d_ubuntu.outputs.IMAGE_NAME_RUN }}:latest
             ${{ needs.compile_x86d_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
@@ -715,19 +717,19 @@ jobs:
     container:
       image: ${{ needs.compile_x86d_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+          make build-test -j8
+          make unittest
 
   compile_armd_ubuntu:
     runs-on: ubuntu
@@ -735,36 +737,41 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-ubuntu-aarch64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.6.1-cann_5.0.4-ubuntu-aarch64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on -DUSE_CN_MIRROR=yes
-    - name: Build
-      working-directory: build
-      run: |
-        npm cache clean --force
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_armd_ubuntu
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-ubuntu-aarch64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.9.0-cann_6.0.1-ubuntu-aarch64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          sed -i -e '107,116'H -e '116'G thirdparty/CMake/local-package.in
+          sed -i '118,120s@APIGW_Cpp@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -i '121s@APIGW-cpp-sdk@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -i '122s@APIGW-cpp-sdk-1.0.2@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -n '118,127p' thirdparty/CMake/local-package.in
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on -DLOCAL_PACKAGE_PATH=/opt/thirdparty/source
+      - name: Build
+        working-directory: build
+        run: |
+          npm cache clean --force
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_armd_ubuntu
+          path: artifact
 
   build_armd_ubuntu_develop_image:
     runs-on: ubuntu-latest
@@ -796,6 +803,7 @@ jobs:
           docker buildx ls
           docker buildx inspect --bootstrap
           docker buildx build --platform linux/arm64 \
+                 --build-arg dtype=310 \
                  --file docker/Dockerfile.ascend.develop.ubuntu \
                  --tag ${{ needs.compile_armd_ubuntu.outputs.IMAGE_NAME_DEV }}:latest \
                  --tag ${{ needs.compile_armd_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }} \
@@ -831,6 +839,7 @@ jobs:
           docker buildx ls
           docker buildx inspect --bootstrap
           docker buildx build --platform linux/arm64 \
+                 --build-arg dtype=310 \
                  --file docker/Dockerfile.ascend.runtime.ubuntu \
                  --tag ${{ needs.compile_armd_ubuntu.outputs.IMAGE_NAME_RUN }}:latest \
                  --tag ${{ needs.compile_armd_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }} \
@@ -840,13 +849,261 @@ jobs:
     runs-on: ubuntu
     needs: compile_armd_ubuntu
     steps:
-    - name: Test
-      working-directory: build
-      run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}') || true
-        export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
-        make build-test -j8
-        make unittest
+      - name: Test
+        working-directory: build
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}') || true
+          export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
+          make build-test -j8
+          make unittest
+
+  compile_x86d310p_ubuntu:
+    runs-on: ubuntu-latest
+    container: modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-d310p-ubuntu-x86_64
+    outputs:
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+      - name: Set-env
+        id: env
+        run: |
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-d310p-ubuntu-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.9.0-cann_6.0.1-d310p-ubuntu-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_x86d310p_ubuntu
+          path: artifact
+
+  build_x86d310p_ubuntu_develop_image:
+    runs-on: ubuntu-20.04
+    needs: compile_x86d310p_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@main
+        with:
+          name: modelbox_x86d310p_ubuntu
+          path: .
+      - name: Download for dev package
+        run: ./docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@master
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.ascend.develop.ubuntu
+          build-args: dtype=710
+          tags: |
+            ${{ needs.compile_x86d310p_ubuntu.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_x86d310p_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_x86d310p_ubuntu_runtime_image:
+    runs-on: ubuntu-20.04
+    needs: compile_x86d310p_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@main
+        with:
+          name: modelbox_x86d310p_ubuntu
+          path: .
+      - name: Download for run package
+        run: ./docker/prepare_for_run.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@master
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.ascend.runtime.ubuntu
+          build-args: dtype=710
+          tags: |
+            ${{ needs.compile_x86d310p_ubuntu.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_x86d310p_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_x86d310p_ubuntu:
+    runs-on: ubuntu-latest
+    needs: [compile_x86d310p_ubuntu,build_x86d310p_ubuntu_develop_image]
+    container:
+      image: ${{ needs.compile_x86d310p_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}')
+          make build-test -j8
+          make unittest
+
+  compile_armd310p_ubuntu:
+    runs-on: ubuntu-d310p
+    needs: compile_armd_ubuntu
+    outputs:
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+      - name: Set-env
+        id: env
+        run: |
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-d310p-ubuntu-aarch64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.9.0-cann_6.0.1-d310p-ubuntu-aarch64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          sed -i -e '107,116'H -e '116'G thirdparty/CMake/local-package.in
+          sed -i '118,120s@APIGW_Cpp@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -i '121s@APIGW-cpp-sdk@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -i '122s@APIGW-cpp-sdk-1.0.2@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -n '118,127p' thirdparty/CMake/local-package.in
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on -DLOCAL_PACKAGE_PATH=/opt/thirdparty/source
+      - name: Build
+        working-directory: build
+        run: |
+          npm cache clean --force
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_armd310p_ubuntu
+          path: artifact
+
+  build_armd310p_ubuntu_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_armd310p_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@main
+        with:
+          name: modelbox_armd310p_ubuntu
+          path: .
+      - name: Download for dev package
+        run: |
+          sed -i '5s/PLATFROM=.*/PLATFROM=aarch64/' docker/prepare_for_dev.sh
+          ./docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx create --name cibuilder --driver docker-container --use
+          docker buildx ls
+          docker buildx inspect --bootstrap
+          docker buildx build --platform linux/arm64 \
+                 --build-arg dtype=710 \
+                 --file docker/Dockerfile.ascend.develop.ubuntu \
+                 --tag ${{ needs.compile_armd310p_ubuntu.outputs.IMAGE_NAME_DEV }}:latest \
+                 --tag ${{ needs.compile_armd310p_ubuntu.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }} \
+                 --push .
+
+  build_armd310p_ubuntu_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_armd310p_ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@main
+        with:
+          name: modelbox_armd310p_ubuntu
+          path: .
+      - name: Download for run package
+        run: |
+          sed -i '5s/PLATFROM=.*/PLATFROM=aarch64/' docker/prepare_for_run.sh
+          ./docker/prepare_for_run.sh
+        shell: bash
+      - name: Build and Push
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx create --name cibuilder --driver docker-container --use
+          docker buildx ls
+          docker buildx inspect --bootstrap
+          docker buildx build --platform linux/arm64 \
+                 --build-arg dtype=710 \
+                 --file docker/Dockerfile.ascend.runtime.ubuntu \
+                 --tag ${{ needs.compile_armd310p_ubuntu.outputs.IMAGE_NAME_RUN }}:latest \
+                 --tag ${{ needs.compile_armd310p_ubuntu.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }} \
+                 --push .
+
+  test_armd310p_ubuntu:
+    runs-on: ubuntu-d310p
+    needs: compile_armd310p_ubuntu
+    steps:
+      - name: Test
+        working-directory: build
+        run: |
+          dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}') || true
+          export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
+          make build-test -j8
+          make unittest
 
   compile_cuda112_trt_openeuler:
     runs-on: ubuntu-latest
@@ -861,41 +1118,41 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "CUDA_VER=11-2" >> $GITHUB_OUTPUT
-        echo "CUDA_VERSION=11.2" >> $GITHUB_OUTPUT
-        echo "CUDA_CUDART_VERSION=11.2.152-1" >> $GITHUB_OUTPUT
-        echo "TRT_VERSION=8.4.2.4" >> $GITHUB_OUTPUT
-        echo "NVIDIA_CUDA_VERSION=11.2.2" >> $GITHUB_OUTPUT
-        echo "NVIDIA_REQUIRE_CUDA=cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_cuda112_trt_openeuler
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "CUDA_VER=11-2" >> $GITHUB_OUTPUT
+          echo "CUDA_VERSION=11.2" >> $GITHUB_OUTPUT
+          echo "CUDA_CUDART_VERSION=11.2.152-1" >> $GITHUB_OUTPUT
+          echo "TRT_VERSION=8.4.2.4" >> $GITHUB_OUTPUT
+          echo "NVIDIA_CUDA_VERSION=11.2.2" >> $GITHUB_OUTPUT
+          echo "NVIDIA_REQUIRE_CUDA=cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorrt_8.4.2-cuda_11.2-openeuler-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_cuda112_trt_openeuler
+          path: artifact
 
   build_cuda112_trt_openeuler_develop_image:
     runs-on: ubuntu-20.04
@@ -983,19 +1240,19 @@ jobs:
     container:
       image: ${{ needs.compile_cuda112_trt_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        rpm -e $(rpm -qa|grep modelbox)
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          rpm -e $(rpm -qa|grep modelbox)
+          make build-test -j8
+          make unittest
 
   compile_cuda112_tf_openeuler:
     runs-on: ubuntu-latest
@@ -1010,41 +1267,41 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "CUDA_VER=11-2" >> $GITHUB_OUTPUT
-        echo "TF_VERSION=2.6.0" >> $GITHUB_OUTPUT
-        echo "CUDA_VERSION=11.2" >> $GITHUB_OUTPUT
-        echo "CUDA_CUDART_VERSION=11.2.152-1" >> $GITHUB_OUTPUT
-        echo "NVIDIA_CUDA_VERSION=11.2.2" >> $GITHUB_OUTPUT
-        echo "NVIDIA_REQUIRE_CUDA=cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=450,driver<451" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_cuda112_tf_openeuler
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "CUDA_VER=11-2" >> $GITHUB_OUTPUT
+          echo "TF_VERSION=2.6.0" >> $GITHUB_OUTPUT
+          echo "CUDA_VERSION=11.2" >> $GITHUB_OUTPUT
+          echo "CUDA_CUDART_VERSION=11.2.152-1" >> $GITHUB_OUTPUT
+          echo "NVIDIA_CUDA_VERSION=11.2.2" >> $GITHUB_OUTPUT
+          echo "NVIDIA_REQUIRE_CUDA=cuda>=11.2 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=450,driver<451" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorflow_2.6.0-cuda_11.2-openeuler-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_cuda112_tf_openeuler
+          path: artifact
           
   build_cuda112_tf_openeuler_develop_image:
     runs-on: ubuntu-20.04
@@ -1132,19 +1389,19 @@ jobs:
     container:
       image: ${{ needs.compile_cuda112_tf_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        rpm -e $(rpm -qa|grep modelbox)
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          rpm -e $(rpm -qa|grep modelbox)
+          make build-test -j8
+          make unittest
 
   compile_cuda102_trt_openeuler:
     runs-on: ubuntu-latest
@@ -1159,44 +1416,44 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "CUDA_VER=10-2" >> $GITHUB_OUTPUT
-        echo "CUDA_VERSION=10.2" >> $GITHUB_OUTPUT
-        echo "CUDA_CUDART_VERSION=10.2.89-1" >> $GITHUB_OUTPUT
-        echo "TRT_VERSION=7.1.3.4" >> $GITHUB_OUTPUT
-        echo "NVIDIA_CUDA_VERSION=10.2.89" >> $GITHUB_OUTPUT
-        echo "NVIDIA_REQUIRE_CUDA=cuda>=10.2 brand=tesla,driver>=418,driver<419" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorrt_7.1.3-cuda_10.2-openeuler-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorrt_7.1.3-cuda_10.2-openeuler-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_cuda102_trt_openeuler
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "CUDA_VER=10-2" >> $GITHUB_OUTPUT
+          echo "CUDA_VERSION=10.2" >> $GITHUB_OUTPUT
+          echo "CUDA_CUDART_VERSION=10.2.89-1" >> $GITHUB_OUTPUT
+          echo "TRT_VERSION=7.1.3.4" >> $GITHUB_OUTPUT
+          echo "NVIDIA_CUDA_VERSION=10.2.89" >> $GITHUB_OUTPUT
+          echo "NVIDIA_REQUIRE_CUDA=cuda>=10.2 brand=tesla,driver>=418,driver<419" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-tensorrt_7.1.3-cuda_10.2-openeuler-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-tensorrt_7.1.3-cuda_10.2-openeuler-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_cuda102_trt_openeuler
+          path: artifact
 
   build_cuda102_trt_openeuler_develop_image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: compile_cuda102_trt_openeuler
     steps:
       - name: Checkout
@@ -1236,7 +1493,7 @@ jobs:
             ${{ needs.compile_cuda102_trt_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
 
   build_cuda102_trt_openeuler_runtime_image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: compile_cuda102_trt_openeuler
     steps:
       - name: Checkout
@@ -1281,19 +1538,19 @@ jobs:
     container:
       image: ${{ needs.compile_cuda102_trt_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        rpm -e $(rpm -qa|grep modelbox)
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          rpm -e $(rpm -qa|grep modelbox)
+          make build-test -j8
+          make unittest
 
   compile_cuda102_torch_openeuler:
     runs-on: ubuntu-latest
@@ -1308,44 +1565,44 @@ jobs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "CUDA_VER=10-2" >> $GITHUB_OUTPUT
-        echo "CUDA_VERSION=10.2" >> $GITHUB_OUTPUT
-        echo "CUDA_CUDART_VERSION=10.2.89-1" >> $GITHUB_OUTPUT
-        echo "TORCH_VERSION=1.9.1" >> $GITHUB_OUTPUT
-        echo "NVIDIA_CUDA_VERSION=10.2.89" >> $GITHUB_OUTPUT
-        echo "NVIDIA_REQUIRE_CUDA=cuda>=10.2 brand=tesla,driver>=418,driver<419" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-libtorch_1.9.1-cuda_10.2-openeuler-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-libtorch_1.9.1-cuda_10.2-openeuler-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_cuda102_torch_openeuler
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "CUDA_VER=10-2" >> $GITHUB_OUTPUT
+          echo "CUDA_VERSION=10.2" >> $GITHUB_OUTPUT
+          echo "CUDA_CUDART_VERSION=10.2.89-1" >> $GITHUB_OUTPUT
+          echo "TORCH_VERSION=1.9.1" >> $GITHUB_OUTPUT
+          echo "NVIDIA_CUDA_VERSION=10.2.89" >> $GITHUB_OUTPUT
+          echo "NVIDIA_REQUIRE_CUDA=cuda>=10.2 brand=tesla,driver>=418,driver<419" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-libtorch_1.9.1-cuda_10.2-openeuler-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-libtorch_1.9.1-cuda_10.2-openeuler-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_cuda102_torch_openeuler
+          path: artifact
 
   build_cuda102_torch_openeuler_develop_image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: compile_cuda102_torch_openeuler
     steps:
       - name: Checkout
@@ -1385,7 +1642,7 @@ jobs:
             ${{ needs.compile_cuda102_torch_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
 
   build_cuda102_torch_openeuler_runtime_image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: compile_cuda102_torch_openeuler
     steps:
       - name: Checkout
@@ -1430,59 +1687,59 @@ jobs:
     container:
       image: ${{ needs.compile_cuda102_torch_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        rpm -e $(rpm -qa|grep modelbox)
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          rpm -e $(rpm -qa|grep modelbox)
+          make build-test -j8
+          make unittest
 
   compile_x86d_openeuler:
     runs-on: ubuntu-latest
-    container: modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-openeuler-x86_64
+    container: modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-openeuler-x86_64
     outputs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-openeuler-x86_64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.6.1-cann_5.0.4-openeuler-x86_64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Build
-      working-directory: build
-      run: |
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_x86d_openeuler
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-openeuler-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.9.0-cann_6.0.1-openeuler-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_x86d_openeuler
+          path: artifact
 
   build_x86d_openeuler_develop_image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: compile_x86d_openeuler
     steps:
       - name: Checkout
@@ -1510,12 +1767,13 @@ jobs:
           push: true
           context: .
           file: docker/Dockerfile.ascend.develop.openeuler
+          build-args: dtype=310
           tags: |
             ${{ needs.compile_x86d_openeuler.outputs.IMAGE_NAME_DEV }}:latest
             ${{ needs.compile_x86d_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
 
   build_x86d_openeuler_runtime_image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: compile_x86d_openeuler
     steps:
       - name: Checkout
@@ -1543,6 +1801,7 @@ jobs:
           push: true
           context: .
           file: docker/Dockerfile.ascend.runtime.openeuler
+          build-args: dtype=310
           tags: |
             ${{ needs.compile_x86d_openeuler.outputs.IMAGE_NAME_RUN }}:latest
             ${{ needs.compile_x86d_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
@@ -1553,57 +1812,62 @@ jobs:
     container:
       image: ${{ needs.compile_x86d_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
-    - name: Test
-      working-directory: build
-      run: |
-        rpm -e $(rpm -qa|grep modelbox)
-        make build-test -j8
-        make unittest
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          rpm -e $(rpm -qa|grep modelbox)
+          make build-test -j8
+          make unittest
 
   compile_armd_openeuler:
     runs-on: openeuler
-    needs: compile_armd_ubuntu
+    needs: compile_armd310p_ubuntu
     outputs:
       IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
       IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
     steps:
-    - name: Set-env
-      id: env
-      run: |
-        echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-openeuler-aarch64" >> $GITHUB_OUTPUT
-        echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.6.1-cann_5.0.4-openeuler-aarch64" >> $GITHUB_OUTPUT
-    - name: Checkout
-      uses: actions/checkout@main
-    - name: CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on -DUSE_CN_MIRROR=yes
-    - name: Build
-      working-directory: build
-      run: |
-        npm cache clean --force
-        make package -j8
-    - name: Release check
-      run: ./docker/artifact_check.sh
-      shell: bash
-    - name: Prepare Artifact
-      run: |
-        mkdir artifact
-        cp -af build/release artifact/
-        ls -lh artifact
-    - name: Upload Artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: modelbox_armd_openeuler
-        path: artifact
+      - name: Set-env
+        id: env
+        run: |
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-openeuler-aarch64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.9.0-cann_6.0.1-openeuler-aarch64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          sed -i -e '107,116'H -e '116'G thirdparty/CMake/local-package.in
+          sed -i '118,120s@APIGW_Cpp@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -i '121s@APIGW-cpp-sdk@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -i '122s@APIGW-cpp-sdk-1.0.2@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -n '118,127p' thirdparty/CMake/local-package.in
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on -DLOCAL_PACKAGE_PATH=/opt/thirdparty/source
+      - name: Build
+        working-directory: build
+        run: |
+          npm cache clean --force
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_armd_openeuler
+          path: artifact
 
   build_armd_openeuler_develop_image:
     runs-on: ubuntu-latest
@@ -1636,6 +1900,7 @@ jobs:
           docker buildx ls
           docker buildx inspect --bootstrap
           docker buildx build --platform linux/arm64 \
+                 --build-arg dtype=310 \
                  --file docker/Dockerfile.ascend.develop.openeuler \
                  --tag ${{ needs.compile_armd_openeuler.outputs.IMAGE_NAME_DEV }}:latest \
                  --tag ${{ needs.compile_armd_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }} \
@@ -1672,6 +1937,7 @@ jobs:
           docker buildx ls
           docker buildx inspect --bootstrap
           docker buildx build --platform linux/arm64 \
+                 --build-arg dtype=310 \
                  --file docker/Dockerfile.ascend.runtime.openeuler \
                  --tag ${{ needs.compile_armd_openeuler.outputs.IMAGE_NAME_RUN }}:latest \
                  --tag ${{ needs.compile_armd_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }} \
@@ -1681,9 +1947,262 @@ jobs:
     runs-on: openeuler
     needs: compile_armd_openeuler
     steps:
-    - name: Test
-      working-directory: build
-      run: |
-        rpm -e $(rpm -qa|grep modelbox) || true
-        make build-test -j8
-        make unittest
+      - name: Test
+        working-directory: build
+        run: |
+          rpm -e $(rpm -qa|grep modelbox) || true
+          make build-test -j8
+          make unittest
+
+  compile_x86d310p_openeuler:
+    runs-on: ubuntu-latest
+    container: modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-d310p-openeuler-x86_64
+    outputs:
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+      - name: Set-env
+        id: env
+        run: |
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-d310p-openeuler-x86_64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.9.0-cann_6.0.1-d310p-openeuler-x86_64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Build
+        working-directory: build
+        run: |
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_x86d310p_openeuler
+          path: artifact
+
+  build_x86d310p_openeuler_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_x86d310p_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@main
+        with:
+          name: modelbox_x86d310p_openeuler
+          path: .
+      - name: Download for dev package
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_dev.sh
+          bash docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@master
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.ascend.develop.openeuler
+          build-args: dtype=710
+          tags: |
+            ${{ needs.compile_x86d310p_openeuler.outputs.IMAGE_NAME_DEV }}:latest
+            ${{ needs.compile_x86d310p_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }}
+
+  build_x86d310p_openeuler_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_x86d310p_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@main
+        with:
+          name: modelbox_x86d310p_openeuler
+          path: .
+      - name: Download for run package
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_run.sh
+          bash docker/prepare_for_run.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@master
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.ascend.runtime.openeuler
+          build-args: dtype=710
+          tags: |
+            ${{ needs.compile_x86d310p_openeuler.outputs.IMAGE_NAME_RUN }}:latest
+            ${{ needs.compile_x86d310p_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }}
+
+  test_x86d310p_openeuler:
+    runs-on: ubuntu-latest
+    needs: [compile_x86d310p_openeuler,build_x86d310p_openeuler_develop_image]
+    container:
+      image: ${{ needs.compile_x86d310p_openeuler.outputs.IMAGE_NAME_DEV }}:${{ github.event.inputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on
+      - name: Test
+        working-directory: build
+        run: |
+          rpm -e $(rpm -qa|grep modelbox)
+          make build-test -j8
+          make unittest
+
+  compile_armd310p_openeuler:
+    runs-on: openeuler-d310p
+    needs: compile_armd_openeuler
+    outputs:
+      IMAGE_NAME_DEV: ${{ steps.env.outputs.IMAGE_NAME_DEV }}
+      IMAGE_NAME_RUN: ${{ steps.env.outputs.IMAGE_NAME_RUN }}
+    steps:
+      - name: Set-env
+        id: env
+        run: |
+          echo "IMAGE_NAME_DEV=modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-d310p-openeuler-aarch64" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_RUN=modelbox/modelbox-runtime-mindspore_1.9.0-cann_6.0.1-d310p-openeuler-aarch64" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: CMake
+        run: |
+          sed -i -e '107,116'H -e '116'G thirdparty/CMake/local-package.in
+          sed -i '118,120s@APIGW_Cpp@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -i '121s@APIGW-cpp-sdk@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -i '122s@APIGW-cpp-sdk-1.0.2@modelbox-webui@g' thirdparty/CMake/local-package.in
+          sed -n '118,127p' thirdparty/CMake/local-package.in
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_ALL_DEMO=on -DWITH_WEBUI=on -DLOCAL_PACKAGE_PATH=/opt/thirdparty/source
+      - name: Build
+        working-directory: build
+        run: |
+          npm cache clean --force
+          make package -j8
+      - name: Release check
+        run: ./docker/artifact_check.sh
+        shell: bash
+      - name: Prepare Artifact
+        run: |
+          mkdir artifact
+          cp -af build/release artifact/
+          ls -lh artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_armd310p_openeuler
+          path: artifact
+
+  build_armd310p_openeuler_develop_image:
+    runs-on: ubuntu-latest
+    needs: compile_armd310p_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@main
+        with:
+          name: modelbox_armd310p_openeuler
+          path: .
+      - name: Download for dev package
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_dev.sh
+          sed -i '5s/PLATFROM=.*/PLATFROM=aarch64/' docker/prepare_for_dev.sh
+          ./docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx create --name cibuilder --driver docker-container --use
+          docker buildx ls
+          docker buildx inspect --bootstrap
+          docker buildx build --platform linux/arm64 \
+                 --build-arg dtype=710 \
+                 --file docker/Dockerfile.ascend.develop.openeuler \
+                 --tag ${{ needs.compile_armd310p_openeuler.outputs.IMAGE_NAME_DEV }}:latest \
+                 --tag ${{ needs.compile_armd310p_openeuler.outputs.IMAGE_NAME_DEV }}:${{ env.IMAGE_VERSION }} \
+                 --push .
+
+  build_armd310p_openeuler_runtime_image:
+    runs-on: ubuntu-latest
+    needs: compile_armd310p_openeuler
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Artifact
+        uses: actions/download-artifact@main
+        with:
+          name: modelbox_armd310p_openeuler
+          path: .
+      - name: Download for run package
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=openEuler/' docker/prepare_for_run.sh
+          sed -i '5s/PLATFROM=.*/PLATFROM=aarch64/' docker/prepare_for_run.sh
+          ./docker/prepare_for_run.sh
+        shell: bash
+      - name: Build and Push
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx create --name cibuilder --driver docker-container --use
+          docker buildx ls
+          docker buildx inspect --bootstrap
+          docker buildx build --platform linux/arm64 \
+                 --build-arg dtype=710 \
+                 --file docker/Dockerfile.ascend.runtime.openeuler \
+                 --tag ${{ needs.compile_armd310p_openeuler.outputs.IMAGE_NAME_RUN }}:latest \
+                 --tag ${{ needs.compile_armd310p_openeuler.outputs.IMAGE_NAME_RUN }}:${{ env.IMAGE_VERSION }} \
+                 --push .
+
+  test_armd310p_openeuler:
+    runs-on: openeuler-d310p
+    needs: compile_armd310p_openeuler
+    steps:
+      - name: Test
+        working-directory: build
+        run: |
+          rpm -e $(rpm -qa|grep modelbox) || true
+          make build-test -j8
+          make unittest

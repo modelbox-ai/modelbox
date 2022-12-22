@@ -16,8 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: modelbox/modelbox-develop-mindspore_1.6.1-cann_5.0.4-ubuntu-x86_64
-
+      image: modelbox/modelbox-develop-mindspore_1.9.0-cann_6.0.1-ubuntu-x86_64
     steps:
     - uses: actions/checkout@v3
     - run: apt update

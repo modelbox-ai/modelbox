@@ -11,22 +11,24 @@ download() {
     url="$1"
     softName=${url##*/}
     echo -e "\n\nBegin to download ${softName}"
-    curl -k -L -O ${url}
 
-    times=1
-    until [ $times -gt 3 ]; do
-        if [ $(ls -l ${softName}|awk '{print $5}') -lt 50000 ]; then
-            ls -lh ${softName}
-            echo "package ${softName} download failed, retry $times ......"
-            curl -k -L -O ${url}
+    times=0
+    while true
+    do
+        curl -k -L -O ${url}
+        if [ $(ls -l ${softName}|awk '{print $5}') -ge 50000 ]; then
+            echo "${softName} download complete"
+            break
+        else
+            times=$[${times}+1]
+            if [ ${times} -gt 3 ]; then
+                echo "package ${softName} download failed,pls check"
+                exit 1
+            fi
+            echo "package ${softName} download failed, retry $times in 3 seconds......"
+            sleep 3
         fi
-        let "times++"
     done
-
-    if [ $(ls -l ${softName}|awk '{print $5}') -lt 50000 ]; then
-        echo "package ${softName} download failed,pls check"
-        exit 1
-    fi
 }
 
 if [ "${PLATFROM}" == "x86_64" ];then
@@ -49,12 +51,8 @@ if [ "${PLATFROM}" == "x86_64" ];then
     download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive/Video_Codec_SDK_9.1.23.tar.gz
 elif [ "${PLATFROM}" == "aarch64" ];then
     if [ "$OS_NAME" == "Ubuntu" ];then
-        if [ "$VERSION_ID" == "18.04" ];then
-            download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/opencv_4.2.0_dev_ubuntu.tar.gz
-        elif [ "$VERSION_ID" == "20.04" ];then
-            download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/glog_0.6.0_dev_ubuntu.tar.gz
-            download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/opencv_4.5.5_dev_ubuntu.tar.gz
-        fi
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/glog_0.6.0_dev_ubuntu.tar.gz
+        download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/opencv_4.5.5_dev_ubuntu.tar.gz
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/obssdk_3.22.3_dev_ubuntu.tar.gz
     elif [ "$OS_NAME" == "openEuler" ];then
         download https://github.com/modelbox-ai/modelbox-binary/releases/download/BinaryArchive_aarch64/cpprestsdk_2.10.18_dev.tar.gz

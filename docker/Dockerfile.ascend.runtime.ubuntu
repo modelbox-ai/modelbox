@@ -1,9 +1,11 @@
-FROM modelbox/ascend-base-ubuntu:latest
+FROM modelbox/c83-base:latest
 FROM ubuntu:20.04
 
+ARG dtype
+
 COPY release /opt/release
-COPY --from=0 /usr/local/Ascend_run /usr/local/Ascend
-COPY --from=0 /usr/local/sbin/npu-smi /usr/local/sbin/npu-smi
+COPY --from=0 /usr/local/Ascend_run${dtype} /usr/local/Ascend
+COPY --from=0 /usr/local/sbin/npu-smi${dtype} /usr/local/sbin/npu-smi
 ADD *.tar.gz /usr/local/
 
 ARG ASCEND_PATH=/usr/local/Ascend
@@ -47,6 +49,8 @@ RUN mkdir -p /root/.pip && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/te-0.4.0-py3-none-any.whl && \
     python3 -m pip install --no-cache-dir ${ASCEND_PATH}/nnae/latest/fwkacllib/lib64/hccl-0.1.0-py3-none-any.whl && \
     echo "${ASCEND_PATH}/nnae/latest/fwkacllib/lib64" >>/etc/ld.so.conf.d/ascend.conf && \
+    echo "${ASCEND_PATH}/driver/lib64/driver" >>/etc/ld.so.conf.d/ascend.conf && \
+    echo "${ASCEND_PATH}/driver/lib64/common" >>/etc/ld.so.conf.d/ascend.conf && \
     echo "${ASCEND_PATH}/driver/lib64" >>/etc/ld.so.conf.d/ascend.conf && \
     sed -i '/include/i\/usr/local/lib' /etc/ld.so.conf && \
     find /usr/local -name "*.a"|xargs rm -f
