@@ -223,7 +223,7 @@ modelbox::Status MindSporeInference::Init(
   for (auto &input_tensor : model_->GetInputs()) {
     // check model info & whether padding
     if (!model_need_padding_ && input_tensor.Shape()[0] > 1) {
-      model_need_padding_ = true;
+      model_need_padding_ = !multi_batch_in_buffer_;
       auto max_batch_size = input_tensor.Shape()[0];
       if (config_batch_size_ > max_batch_size) {
         auto error_msg =
@@ -282,6 +282,9 @@ modelbox::Status MindSporeInference::Open(
         modelbox::GetDirName(unit_desc->GetDriverDesc()->GetFilePath());
     config_file_ = relpath + "/" + config_file_;
   }
+
+  multi_batch_in_buffer_ =
+      merge_config->GetBool("config.multi_batch_in_buffer", false);
 
   ret = Init(unit_desc->GetModelEntry(), merge_config,
              flowunit_device_->GetDeviceManager()->GetDrivers());
@@ -384,7 +387,7 @@ void MindSporeInference::PrepareInputTensor(
           const_cast<void *>(input_buffer_list->ConstData()));
     }
     // set current batch size
-    if (!model_need_padding_) {
+    if (!multi_batch_in_buffer_ && !model_need_padding_) {
       input_shape[0] = input_buffer_list->Size();
     }
     MBLOG_DEBUG << "input name: " << name << " shape: ";
@@ -474,6 +477,10 @@ modelbox::Status MindSporeInference::PrepareOutputBufferList(
     size_t buffer_output_batch = tensor_output_batch - padding_batch_size_;
     size_t output_batch_bytes =
         ms_outputs[i].DataSize() / ms_outputs[i].Shape()[0];
+    if (multi_batch_in_buffer_) {
+      buffer_output_batch = 1;
+      output_batch_bytes = ms_outputs[i].DataSize();
+    }
     MBLOG_DEBUG << "tensor_output_batch:" << tensor_output_batch
                 << ", padding_batch_size:" << padding_batch_size_
                 << ", output_batch_size:" << buffer_output_batch;
@@ -491,7 +498,9 @@ modelbox::Status MindSporeInference::PrepareOutputBufferList(
 
     auto tensor_shape = ms_outputs[i].Shape();
     std::vector<size_t> output_shape;
-    tensor_shape[0] = 1;
+    if (!multi_batch_in_buffer_) {
+      tensor_shape[0] = 1;
+    }
     MBLOG_DEBUG << "output shape: ";
     for (const auto &item : tensor_shape) {
       output_shape.push_back(item);
