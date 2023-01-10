@@ -76,6 +76,7 @@ class MindSporeInference {
   struct MindSporeIOList io_list_;
   std::string config_file_;
   std::set<mindspore::DeviceType> device_type_;
+  bool multi_batch_in_buffer_{false};
   bool model_need_padding_{false};
   size_t padding_batch_size_{0};
   uint32_t config_batch_size_{1};
