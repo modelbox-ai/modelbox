@@ -34,6 +34,7 @@
 #include "rga.h"
 
 constexpr const char *FLOWUNIT_NAME = "video_decoder";
+
 constexpr const char *FLOWUNIT_DESC =
     "\n\t@Brief: A video decoder flowunit on rockchip. \n"
     "\t@Port parameter: The input port buffer type is video_packet, the output "
@@ -64,6 +65,7 @@ constexpr const char *FLOWUNIT_DESC =
     "\t@Constraint: The flowuint 'video_decoder' must be used pair "
     "with 'video_demuxer. the output buffer meta fields 'pix_fmt' is "
     "'brg_packed' or 'rgb_packed', 'layout' is 'hcw'.";
+
 constexpr const char *VIDEO_PACKET_INPUT = "in_video_packet";
 constexpr const char *FRAME_INFO_OUTPUT = "out_video_frame";
 constexpr const char *CODEC_META = "codec_meta";

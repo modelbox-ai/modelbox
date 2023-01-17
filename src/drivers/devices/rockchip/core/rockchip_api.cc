@@ -119,6 +119,16 @@ Status CopyNVMemory(uint8_t *psrc, uint8_t *pdst, int w, int h, int ws,
 
 Status CopyRGBMemory(uint8_t *psrc, uint8_t *pdst, int w, int h, int ws,
                      int hs) {
+  if (psrc == nullptr) {
+    MBLOG_ERROR << "psrc is nullptr";
+    return {STATUS_FAULT, "psrc is nullptr"};
+  }
+
+  if (pdst == nullptr) {
+    MBLOG_ERROR << "pdst is nullptr";
+    return {STATUS_FAULT, "pdst is nullptr"};
+  }
+
   uint8_t *rgbsrc = psrc;
   uint8_t *rgbdst = pdst;
 

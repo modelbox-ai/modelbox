@@ -360,6 +360,7 @@ std::shared_ptr<AVPacket> FfmpegVideoEncoder::NewPacket(MppPacket &packet) {
   size_t len = mpp_packet_get_length(packet);
 
   auto *av_packet_ptr = av_packet_alloc();
+
   Defer { mpp_packet_deinit(&packet); };
   if (av_packet_ptr == nullptr) {
     MBLOG_ERROR << "av packet alloc failed";

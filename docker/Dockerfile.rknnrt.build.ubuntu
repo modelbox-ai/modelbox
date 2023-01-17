@@ -59,7 +59,6 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; \
     systemctl enable ssh
 
 RUN echo "/usr/local/rockchip/rga/libs/Linux/gcc-aarch64" >> /etc/ld.so.conf.d/rockchip.conf && \
-    echo "/usr/local/rockchip/rknpu/rknn/rknn_api/librknn_api/lib64" >> /etc/ld.so.conf.d/rockchip.conf && \
     if [ -d /usr/local/rockchip/rknpu2/runtime/RK356X ]; then echo "/usr/local/rockchip/rknpu2/runtime/RK356X/Linux/librknn_api/aarch64" >> /etc/ld.so.conf.d/rockchip.conf; elif [ -d /usr/local/rockchip/rknpu2/runtime/RK3588 ]; then echo "/usr/local/rockchip/rknpu2/runtime/RK3588/Linux/librknn_api/aarch64" >> /etc/ld.so.conf.d/rockchip.conf; fi && \
     echo "/usr/local/rockchip/rkmpp/lib" >> /etc/ld.so.conf.d/rockchip.conf
 
