@@ -362,6 +362,19 @@ void MindSporeInference::PrepareInputTensor(
     MBLOG_DEBUG << "input_buffer_list: " << portname << ", model port: " << name
                 << ", size: " << input_buffer_list->Size()
                 << ", bytes:" << input_buffer_list->GetBytes();
+    std::vector<size_t> b_shape;
+    if (!input_buffer_list->At(0)->Get("shape", b_shape) ||
+        input_shape.size() != b_shape.size()) {
+      MBLOG_ERROR << "get input shape failed, tensor shape size:"
+                  << input_shape.size()
+                  << ", buffer shape size: " << b_shape.size();
+      return;
+    }
+
+    for (size_t index = 0; index < b_shape.size(); ++index) {
+      input_shape[index] = b_shape[index];
+    }
+    
     // input batch padding
     if (model_need_padding_) {
       padding_batch_size_ = input_shape[0] - input_buffer_list->Size();
