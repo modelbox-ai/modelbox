@@ -19,7 +19,7 @@ jobs:
             - tensorrt
             - pytorch
             - tensorflow
-            - ubuntu
+            - ubuntu-d310p
 
     steps:
     - uses: actions/checkout@v3
@@ -37,7 +37,7 @@ jobs:
     - name: Test
       working-directory: build
       run: |
-        dpkg -r $(dpkg -l|grep  modelbox|awk '{print $2}') || true
+        dpkg -r $(dpkg -l|grep modelbox|awk '{print $2}') || true
         [ "$(arch)" == "aarch64" ] && export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
         make build-test -j4
         unset LD_LIBRARY_PATH
