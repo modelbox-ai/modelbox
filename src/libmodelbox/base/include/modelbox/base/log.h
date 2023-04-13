@@ -341,11 +341,8 @@ extern std::shared_ptr<const void> LogSetLogID(const char *id);
   MBLOG_LIBRARY_DEEPBIND. but this will cause a little slower when calling log
   API.
 */
-#ifdef MBLOG_LIBRARY_DEEPBIND
+
 #define ModelBoxLogger modelbox::GetLogger()
-#else
-#define ModelBoxLogger modelbox::klogger
-#endif
 
 #define MODELBOX_PRINT(level, ...) \
   ModelBoxLogger.Print(level, BASE_FILE_NAME, __LINE__, __func__, __VA_ARGS__)
