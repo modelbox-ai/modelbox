@@ -529,7 +529,7 @@ void ModelboxEditorPlugin::HandlerGraphModifyTime(
 modelbox::Status ModelboxEditorPlugin::GenerateCommandFromJson(
     const nlohmann::json& body, std::string& cmd) {
   nlohmann::json error_json;
-  for (auto& element : body.items()) {
+  for (const auto& element : body.items()) {
     cmd += " -" + element.key();
     if (element.value().is_null()) {
       continue;
@@ -548,7 +548,7 @@ modelbox::Status ModelboxEditorPlugin::GenerateCommandFromJson(
         cmd += " ";
       }
 
-      for (auto& i : port.items()) {
+      for (const auto& i : port.items()) {
         cmd += i.key() + "=" + i.value().dump();
         if (i != port.items().end()) {
           cmd += ",";
