@@ -361,6 +361,11 @@ void VirtualPythonFlowUnitFactory::FillFlowUnitType(
   } else {
     flowunit_desc->SetExceptionVisible(false);
   }
+
+  if (config->Contain("base.max_batch_size")) {
+    auto max_batch_size = config->GetInt32("base.max_batch_size", 1);
+    flowunit_desc->SetMaxBatchSize(max_batch_size);
+  }
 }
 
 std::map<std::string, std::shared_ptr<modelbox::FlowUnitDesc>>
