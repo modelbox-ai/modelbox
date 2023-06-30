@@ -87,10 +87,12 @@ modelbox::ModelBoxDataType TypeFromFormatStr(const std::string &format) {
   return iter->second;
 }
 
-void PyBufferToBuffer(const std::shared_ptr<Buffer> &buffer,
-                      const py::buffer &data) {
+Status PyBufferToBuffer(const std::shared_ptr<Buffer> &buffer,
+                        const py::buffer &data) {
   py::buffer_info info = data.request();
   std::vector<size_t> i_shape;
+  Status ret;
+
   for (auto &dim : info.shape) {
     i_shape.push_back(dim);
   }
@@ -101,16 +103,34 @@ void PyBufferToBuffer(const std::shared_ptr<Buffer> &buffer,
 
   size_t bytes = Volume(i_shape) * info.itemsize;
   if (PyBuffer_IsContiguous(info.view(), 'C')) {
-    buffer->BuildFromHost(info.ptr, bytes);
+    auto *buffer_obj = new (std::nothrow) py::buffer;
+    if (buffer_obj == nullptr) {
+      return {STATUS_NOBUFS, "alloc py::buffer failed."};
+    }
+
+    *buffer_obj = data;
+    ret = buffer->BuildFromHost(info.ptr, bytes,
+                                [buffer_obj](void *pbuff) mutable {
+                                  py::gil_scoped_acquire interpreter_guard{};
+                                  delete buffer_obj;
+                                });
   } else {
     // py_buffer is not C Contiguous, need convert
-    buffer->Build(bytes);
-    PyBuffer_ToContiguous(buffer->MutableData(), info.view(), bytes, 'C');
+    ret = buffer->Build(bytes);
+    if (ret != STATUS_OK) {
+      return ret;
+    }
+    if (PyBuffer_ToContiguous(buffer->MutableData(), info.view(), bytes, 'C') !=
+        0) {
+      return {STATUS_NOBUFS, "convert numpy to contiguous failed."};
+    }
   }
 
   buffer->Set("shape", i_shape);
   buffer->Set("type", TypeFromFormatStr(info.format));
   buffer->SetGetBufferType(modelbox::BufferEnumType::RAW);
+
+  return STATUS_OK;
 }
 
 }  // namespace modelbox

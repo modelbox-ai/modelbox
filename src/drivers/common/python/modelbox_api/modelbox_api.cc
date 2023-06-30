@@ -795,7 +795,10 @@ void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
           "push_back",
           [](BufferList &bl, const py::buffer &b) {
             auto buffer = std::make_shared<Buffer>(bl.GetDevice());
-            PyBufferToBuffer(buffer, b);
+            if (PyBufferToBuffer(buffer, b) != STATUS_OK) {
+              throw std::runtime_error(
+                  "Failed to push back py::buffer to Buffer");
+            }
             bl.PushBack(buffer);
           },
           py::keep_alive<1, 2>())
@@ -1081,7 +1084,9 @@ void ModelboxPyApiSetUpFlowUnit(pybind11::module &m) {
           [](modelbox::FlowUnit &flow,
              py::buffer &b) -> std::shared_ptr<Buffer> {
             auto buffer = std::make_shared<Buffer>(flow.GetBindDevice());
-            PyBufferToBuffer(buffer, b);
+            if (PyBufferToBuffer(buffer, b) != STATUS_OK) {
+              throw std::runtime_error("create buffer failed.");
+            }
             return buffer;
           },
           py::keep_alive<0, 1>());
@@ -1328,7 +1333,9 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
           "create_buffer",
           [](PythonFlowStreamIO &self, const py::buffer &data) {
             auto buffer = self.CreateBuffer();
-            PyBufferToBuffer(buffer, data);
+            if (PyBufferToBuffer(buffer, data) != STATUS_OK) {
+              throw std::runtime_error("Failed to create buffer");
+            }
             return buffer;
           },
           py::keep_alive<0, 1>())
@@ -1349,7 +1356,9 @@ void ModelboxPyApiSetUpFlowStreamIO(pybind11::module &m) {
             auto buffer = self.CreateBuffer();
             {
               py::gil_scoped_acquire ac;
-              PyBufferToBuffer(buffer, data);
+              if (PyBufferToBuffer(buffer, data) != STATUS_OK) {
+                throw std::runtime_error("Failed to send buffer");
+              }
             }
             return self.Send(input_name, buffer);
           },

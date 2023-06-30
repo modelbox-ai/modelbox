@@ -27,8 +27,8 @@ std::string FormatStrFromType(const ModelBoxDataType &type);
 
 ModelBoxDataType TypeFromFormatStr(const std::string &format);
 
-void PyBufferToBuffer(const std::shared_ptr<Buffer> &buffer,
-                      const py::buffer &data);
+Status PyBufferToBuffer(const std::shared_ptr<Buffer> &buffer,
+                        const py::buffer &data);
 
 }  // namespace modelbox
 

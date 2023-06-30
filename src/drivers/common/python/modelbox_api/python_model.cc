@@ -97,6 +97,8 @@ void PythonModel::Stop() {
 std::vector<std::shared_ptr<Buffer>> PythonModel::Infer(
     const std::vector<py::buffer> &data_list) {
   std::vector<std::shared_ptr<Buffer>> result_list;
+  Status ret;
+
   if (data_list.size() != in_names_.size()) {
     MBLOG_ERROR << "infer input data size != model input count";
     return result_list;
@@ -108,9 +110,13 @@ std::vector<std::shared_ptr<Buffer>> PythonModel::Infer(
     auto buffer = io->CreateBuffer();
     {
       py::gil_scoped_acquire ac;
-      PyBufferToBuffer(buffer, data_list[i]);
+      ret = PyBufferToBuffer(buffer, data_list[i]);
+      if (ret != STATUS_OK) {
+        MBLOG_ERROR << "infer input data failed, err " << ret;
+        return result_list;
+      }
     }
-    auto ret = io->Send(in_names_[i], buffer);
+    ret = io->Send(in_names_[i], buffer);
     if (ret != STATUS_OK) {
       MBLOG_ERROR << "infer send data failed, err " << ret;
       return result_list;
@@ -133,6 +139,8 @@ std::vector<std::vector<std::shared_ptr<Buffer>>> PythonModel::InferBatch(
   // input[port1[batch1,batch2],port2[batch1,batch2]]
   // output[port1[batch1,batch2],port2[batch1,batch2]]
   std::vector<std::vector<std::shared_ptr<Buffer>>> result_list;
+  Status ret;
+  
   if (data_list.size() != in_names_.size()) {
     MBLOG_ERROR << "infer input data size != model input count";
     return result_list;
@@ -159,12 +167,16 @@ std::vector<std::vector<std::shared_ptr<Buffer>>> PythonModel::InferBatch(
         auto buffer = io->CreateBuffer();
         {
           py::gil_scoped_acquire ac;
-          PyBufferToBuffer(buffer, data_list[i][batch_idx]);
+          ret = PyBufferToBuffer(buffer, data_list[i][batch_idx]);
+          if (ret != STATUS_OK) {
+            MBLOG_ERROR << "infer input data failed, err " << ret;
+            return result_list;
+          }
         }
         input_list.push_back(buffer);
       }
 
-      auto ret = io->Send(in_names_[i], input_list);
+      ret = io->Send(in_names_[i], input_list);
       if (ret != STATUS_OK) {
         MBLOG_ERROR << "infer send " << in_names_[i] << " data failed, err "
                     << ret;
