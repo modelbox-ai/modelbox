@@ -75,7 +75,10 @@ modelbox::Status PythonFlowUnit::Open(
   py::gil_scoped_acquire interpreter_guard{};
 
   // Avoid thread.lock assert after interpreter finish.
-  PyGILState_Ensure();
+  PyGILState_STATE state = PyGILState_Ensure();
+  Defer {
+    PyGILState_Release(state);
+  };
 
   const char *enable_debug = getenv("MODELBOX_DEBUG_PYTHON");
   if (enable_debug != nullptr) {
