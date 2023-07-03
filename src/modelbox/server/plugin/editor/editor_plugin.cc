@@ -529,7 +529,7 @@ void ModelboxEditorPlugin::HandlerGraphModifyTime(
 modelbox::Status ModelboxEditorPlugin::GenerateCommandFromJson(
     const nlohmann::json& body, std::string& cmd) {
   nlohmann::json error_json;
-  for (auto& element : body.items()) {
+  for (const auto& element : body.items()) {
     cmd += " -" + element.key();
     if (element.value().is_null()) {
       continue;
@@ -541,14 +541,14 @@ modelbox::Status ModelboxEditorPlugin::GenerateCommandFromJson(
     }
 
     int num = 0;
-    for (auto port : element.value()) {
+    for (const auto& port : element.value()) {
       if (num > 0) {
         cmd += " -" + element.key() + "=";
       } else {
         cmd += " ";
       }
 
-      for (auto& i : port.items()) {
+      for (const auto& i : port.items()) {
         cmd += i.key() + "=" + i.value().dump();
         if (i != port.items().end()) {
           cmd += ",";
@@ -856,7 +856,7 @@ void ModelboxEditorPlugin::SendFile(const std::string& file_name,
   modelbox::AddSafeHeader(response);
   response.status = modelbox::HttpStatusCodes::OK;
   response.set_content_provider(
-      content_type.c_str(),
+      content_type,
       [file, data, data_size](size_t offset, httplib::DataSink& sink) {
         if (file->eof()) {
           sink.done();
@@ -864,10 +864,6 @@ void ModelboxEditorPlugin::SendFile(const std::string& file_name,
         }
 
         file->read(data.get(), data_size);
-        if (!sink.is_writable()) {
-          return false;
-        }
-
         auto ret = sink.write(data.get(), file->gcount());
         if (!ret) {
           return false;

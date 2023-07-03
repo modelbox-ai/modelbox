@@ -420,7 +420,7 @@ Status HttpServer::Start() {
     return STATUS_SUCCESS;
   }
 
-  auto ret = server_impl_->bind_to_port(ip_.c_str(), port_);
+  auto ret = server_impl_->bind_to_port(ip_, port_);
   if (!ret) {
     status_ = {STATUS_ALREADY, "bind to " + ip_ + ":" + std::to_string(port_) +
                                    " failed, might be conflict, error " +
@@ -605,24 +605,24 @@ std::unordered_map<std::string,
         {HttpMethods::GET,
          [](httplib::Client &client, const std::string &path,
             HttpRequest &request) {
-           return client.Get(path.c_str(), request.GetHeaders());
+           return client.Get(path, request.GetHeaders());
          }},
         {HttpMethods::DELETE,
          [](httplib::Client &client, const std::string &path,
             HttpRequest &request) {
-           return client.Delete(path.c_str(), request.GetHeaders());
+           return client.Delete(path, request.GetHeaders());
          }},
         {HttpMethods::PUT,
          [](httplib::Client &client, const std::string &path,
             HttpRequest &request) {
-           return client.Put(path.c_str(), request.GetHeaders(),
-                             request.GetRequestBody(), nullptr);
+           return client.Put(path, request.GetHeaders(),
+                             request.GetRequestBody(), "");
          }},
         {HttpMethods::POST,
          [](httplib::Client &client, const std::string &path,
             HttpRequest &request) {
-           return client.Post(path.c_str(), request.GetHeaders(),
-                              request.GetRequestBody(), nullptr);
+           return client.Post(path, request.GetHeaders(),
+                              request.GetRequestBody(), "");
          }},
 };
 

@@ -196,7 +196,7 @@ modelbox::Status WebhookOutputBroker::ParseConfig(
     MBLOG_DEBUG << "url: " << output_info->url;
 
     auto value = json["headers"].get<nlohmann::json>();
-    for (auto &header : value.items()) {
+    for (const auto &header : value.items()) {
       if (header.key().empty()) {
         MBLOG_ERROR << "headers key is empty!";
         return modelbox::STATUS_BADCONF;
