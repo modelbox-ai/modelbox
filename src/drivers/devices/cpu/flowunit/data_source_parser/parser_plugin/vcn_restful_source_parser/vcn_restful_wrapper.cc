@@ -40,13 +40,13 @@ VcnRestfulWrapper::VcnRestfulWrapper() {
   httpcli_func_map_[REQ_GET] = [](httplib::Client &cli, const std::string &path,
                                   const httplib::Headers &headers,
                                   const std::string &body) {
-    return cli.Get(path.c_str(), headers);
+    return cli.Get(path, headers);
   };
 
   httpcli_func_map_[REQ_POST] =
       [](httplib::Client &cli, const std::string &path,
          const httplib::Headers &headers, const std::string &body) {
-        return cli.Post(path.c_str(), headers, body, nullptr);
+        return cli.Post(path, headers, body, "");
       };
 }
 

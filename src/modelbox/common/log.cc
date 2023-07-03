@@ -42,7 +42,7 @@ tlog_level MblogLevelToTlogLevel(modelbox::LogLevel mblog_level) {
       level = TLOG_FATAL;
       break;
     case modelbox::LOG_OFF:
-      level = TLOG_FATAL;
+      level = TLOG_OFF;
       break;
   }
 
@@ -70,8 +70,11 @@ modelbox::LogLevel TlogLevelToMblogLevel(tlog_level tlog_level) {
     case TLOG_FATAL:
       level = modelbox::LOG_FATAL;
       break;
+    case TLOG_OFF:
+      level = modelbox::LOG_OFF;
+      break;
     case TLOG_END:
-      level = modelbox::LOG_FATAL;
+      level = modelbox::LOG_OFF;
       break;
   }
 
