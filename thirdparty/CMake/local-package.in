@@ -52,7 +52,7 @@ ExternalProject_Add(
 # 下载安全tinylog
 ExternalProject_Add(
   tinylog
-  URL               @LOCAL_PACKAGE_PATH@/tinylog-1.6.zip
+  URL               @LOCAL_PACKAGE_PATH@/tinylog-1.8.zip
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/tinylog
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -63,7 +63,7 @@ ExternalProject_Add(
 # pybind11
 ExternalProject_Add(
   pybind11
-  URL               @LOCAL_PACKAGE_PATH@/pybind11-2.9.1.zip
+  URL               @LOCAL_PACKAGE_PATH@/pybind11-2.10.4.zip
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/pybind11
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -85,7 +85,7 @@ ExternalProject_Add(
 # nlohmann json
 ExternalProject_Add(
   nlohmann
-  URL               @LOCAL_PACKAGE_PATH@/v3.7.3.tar.gz
+  URL               @LOCAL_PACKAGE_PATH@/json-v3.11.2.tar.gz
   SOURCE_DIR         ${THIRDPARTY_DOWNLOAD_DIR}/nlohmann
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
@@ -96,7 +96,7 @@ ExternalProject_Add(
 # cpp-httplib
 ExternalProject_Add(
   cpp-httplib
-  URL               @LOCAL_PACKAGE_PATH@/cpp-httplib-0.10.4.tar.gz
+  URL               @LOCAL_PACKAGE_PATH@/cpp-httplib-0.12.6.tar.gz
   SOURCE_DIR        ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib
   CONFIGURE_COMMAND ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib/split.py -o ${THIRDPARTY_DOWNLOAD_DIR}/cpp-httplib/build
   BUILD_COMMAND     ""
