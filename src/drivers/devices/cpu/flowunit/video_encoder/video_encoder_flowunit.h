@@ -22,6 +22,7 @@
 #include <modelbox/flow.h>
 
 #include <vector>
+
 #include "ffmpeg_video_encoder.h"
 #include "ffmpeg_video_muxer.h"
 #include "ffmpeg_writer.h"
@@ -43,7 +44,8 @@ constexpr const char *FLOWUNIT_DESC =
     "\t\tField Name: layout,        Type: int32_t\n"
     "\t\tField Name: shape,         Type: vector<size_t>\n"
     "\t\tField Name: type,          Type: ModelBoxDataType::MODELBOX_UINT8\n"
-    "\t@Constraint: The field value range of this flowunit supports: 'pix_fmt': "
+    "\t@Constraint: The field value range of this flowunit supports: "
+    "'pix_fmt': "
     "[rgb, bgr, nv12], 'layout': [hwc]. ";
 constexpr const char *DEST_URL = "dest_url";
 constexpr const char *COLOR_CVT_CTX = "color_cvt_ctx";
@@ -115,6 +117,7 @@ class VideoEncoderFlowUnit : public modelbox::FlowUnit {
   std::string default_dest_url_;
   std::string format_name_;
   std::string encoder_name_;
+  uint64_t bit_rate_{0};
 };
 
 #endif  // MODELBOX_FLOWUNIT_VIDEO_ENCODER_CPU_H_

@@ -82,6 +82,16 @@ class TaskManager : public std::enable_shared_from_this<TaskManager> {
   void SetTaskNumLimit(int task_limits);
 
   /**
+   * @brief Get task threshold
+   */
+  int GetTaskNumLimit();
+
+  /**
+   * @brief Get avaiable task number
+   */
+  int GetAvaiableTaskCount();
+
+  /**
    * @brief Register new task
    * @param task task pointer
    */

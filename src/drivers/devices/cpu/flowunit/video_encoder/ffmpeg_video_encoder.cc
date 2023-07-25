@@ -22,6 +22,7 @@
 
 modelbox::Status FfmpegVideoEncoder::Init(int32_t width, int32_t height,
                                           const AVRational &frame_rate,
+                                          uint64_t bit_rate,
                                           const std::string &encoder_name) {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
   av_register_all();
@@ -41,7 +42,7 @@ modelbox::Status FfmpegVideoEncoder::Init(int32_t width, int32_t height,
   codec_ctx_.reset(codec_ctx,
                    [](AVCodecContext *ctx) { avcodec_free_context(&ctx); });
   AVDictionary *param = nullptr;
-  SetupCodecParam(width, height, frame_rate, param, codec_ctx_);
+  SetupCodecParam(width, height, frame_rate, bit_rate, param, codec_ctx_);
   auto ffmpeg_ret = avcodec_open2(codec_ctx_.get(), codec, &param);
   av_dict_free(&param);
   if (ffmpeg_ret < 0) {
@@ -55,9 +56,11 @@ modelbox::Status FfmpegVideoEncoder::Init(int32_t width, int32_t height,
 
 void FfmpegVideoEncoder::SetupCodecParam(
     int32_t width, int32_t height, const AVRational &frame_rate,
-    AVDictionary *&param, std::shared_ptr<AVCodecContext> &codec_ctx) {
+    uint64_t bit_rate, AVDictionary *&param,
+    std::shared_ptr<AVCodecContext> &codec_ctx) {
   av_dict_set(&param, "preset", "fast", 0);
   codec_ctx->framerate = frame_rate;
+  codec_ctx_->bit_rate = bit_rate;
   codec_ctx->time_base = av_inv_q(frame_rate);
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
   codec_ctx->width = width;
