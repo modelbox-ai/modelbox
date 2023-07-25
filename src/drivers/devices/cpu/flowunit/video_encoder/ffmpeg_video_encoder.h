@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-
 #ifndef MODELBOX_FLOWUNIT_FFMPEG_ENCODER_H_
 #define MODELBOX_FLOWUNIT_FFMPEG_ENCODER_H_
 
 #include <modelbox/base/status.h>
+
 #include <memory>
 #include <vector>
 extern "C" {
@@ -29,17 +29,19 @@ extern "C" {
 class FfmpegVideoEncoder {
  public:
   modelbox::Status Init(int32_t width, int32_t height,
-                      const AVRational &frame_rate,
-                      const std::string &encoder_name);
+                        const AVRational &frame_rate, uint64_t bit_rate,
+                        const std::string &encoder_name);
 
-  modelbox::Status Encode(const std::shared_ptr<AVFrame> &av_frame,
-                        std::vector<std::shared_ptr<AVPacket>> &av_packet_list);
+  modelbox::Status Encode(
+      const std::shared_ptr<AVFrame> &av_frame,
+      std::vector<std::shared_ptr<AVPacket>> &av_packet_list);
 
   std::shared_ptr<AVCodecContext> GetCtx() { return codec_ctx_; }
 
  private:
   void SetupCodecParam(int32_t width, int32_t height,
-                       const AVRational &frame_rate, AVDictionary *&param,
+                       const AVRational &frame_rate, uint64_t bit_rate,
+                       AVDictionary *&param,
                        std::shared_ptr<AVCodecContext> &codec_ctx);
 
   std::shared_ptr<AVCodecContext> codec_ctx_;

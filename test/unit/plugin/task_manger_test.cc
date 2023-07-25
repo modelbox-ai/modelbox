@@ -68,18 +68,18 @@ class TaskManagerTest : public testing::Test {
  private:
 };
 
-void TaskFinished(OneShotTask* task, TaskStatus status) {
+void TaskFinished(OneShotTask *task, TaskStatus status) {
   count++;
   EXPECT_EQ(FINISHED, status);
   cv.notify_one();
 }
 
-void TaskStopped(OneShotTask* task, TaskStatus status) {
+void TaskStopped(OneShotTask *task, TaskStatus status) {
   EXPECT_EQ(STOPPED, status);
   cv.notify_one();
 }
 
-void TaskEnd(OneShotTask* task, TaskStatus status) {
+void TaskEnd(OneShotTask *task, TaskStatus status) {
   MBLOG_INFO << "Task end " << status;
 }
 
@@ -144,6 +144,15 @@ TEST_F(TaskManagerTest, StopTask) {
   task_2->RegisterStatusCallback(TaskStopped);
   task_2->Stop();
   EXPECT_EQ(STOPPED, task_2->GetTaskStatus());
+
+  auto task_3 =
+      std::dynamic_pointer_cast<OneShotTask>(tm->CreateTask(TASK_ONESHOT));
+  EXPECT_EQ(WAITING, task_3->GetTaskStatus());
+  task_3->Start();
+  task_3->Stop();
+  EXPECT_EQ(STOPPED, task_3->GetTaskStatus());
+
+  EXPECT_EQ(tm->GetAvaiableTaskCount(), 0);
 }
 
 TEST_F(TaskManagerTest, DeleteTaskById) {

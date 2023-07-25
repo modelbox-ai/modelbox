@@ -123,12 +123,17 @@ Status Task::Stop() {
   return STATUS_SUCCESS;
 }
 
-bool Task::IsRready() {
+bool Task::IsReady() {
   std::unique_lock<std::mutex> guard(lock_);
   if (already_submit_ && status_ == WAITING) {
     return true;
   }
   return false;
+}
+
+bool Task::IsTaskSubmitted() {
+  std::unique_lock<std::mutex> guard(lock_);
+  return already_submit_;
 }
 
 Status Task::Start() {

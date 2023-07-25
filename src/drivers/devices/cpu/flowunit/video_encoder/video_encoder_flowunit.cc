@@ -15,7 +15,9 @@
  */
 
 #include "video_encoder_flowunit.h"
+
 #include <securec.h>
+
 #include "modelbox/flowunit.h"
 #include "modelbox/flowunit_api_helper.h"
 
@@ -36,6 +38,7 @@ modelbox::Status VideoEncoderFlowUnit::Open(
     return modelbox::STATUS_BADCONF;
   }
 
+  bit_rate_ = opts->GetUint64("bit_rate", 3200000);
   encoder_name_ = opts->GetString("encoder", "mpeg4");
   return modelbox::STATUS_OK;
 }
@@ -44,8 +47,8 @@ modelbox::Status VideoEncoderFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status VideoEncoderFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
-  auto muxer =
-      std::static_pointer_cast<FfmpegVideoMuxer>(data_ctx->GetPrivate(MUXER_CTX));
+  auto muxer = std::static_pointer_cast<FfmpegVideoMuxer>(
+      data_ctx->GetPrivate(MUXER_CTX));
   auto encoder = std::static_pointer_cast<FfmpegVideoEncoder>(
       data_ctx->GetPrivate(ENCODER_CTX));
   auto color_cvt = std::static_pointer_cast<FfmpegColorConverter>(
@@ -248,7 +251,8 @@ modelbox::Status VideoEncoderFlowUnit::DataPre(
   }
 
   auto encoder = std::make_shared<FfmpegVideoEncoder>();
-  ret = encoder->Init(width, height, {rate_num, rate_den}, encoder_name_);
+  ret = encoder->Init(width, height, {rate_num, rate_den}, bit_rate_,
+                      encoder_name_);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Init encoder failed";
     return modelbox::STATUS_FAULT;
@@ -296,9 +300,10 @@ modelbox::Status VideoEncoderFlowUnit::GetDestUrl(
     }
   }
 
-  MBLOG_WARN << "Input meta [dest_url] should be set in port [in_video_frame] for "
-                "each stream, Use default_dest_url in config is only "
-                "for debug";
+  MBLOG_WARN
+      << "Input meta [dest_url] should be set in port [in_video_frame] for "
+         "each stream, Use default_dest_url in config is only "
+         "for debug";
   if (default_dest_url_.empty()) {
     MBLOG_ERROR << "default_dest_url in config is empty, no dest url available";
     return modelbox::STATUS_BADCONF;

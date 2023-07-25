@@ -37,6 +37,7 @@ Status TaskManager::Submit(const std::shared_ptr<Task>& task) {
                << avaiable_task_counts_;
     return STATUS_SUCCESS;
   }
+
   if (thread_pool_ == nullptr) {
     return {STATUS_NOTFOUND, "thread_pool not exist"};
   }
@@ -57,7 +58,7 @@ void TaskManager::StartWaittingTask() {
 
   while (task_iter != task_maps_.end()) {
     auto task = task_iter->second;
-    if (task->IsRready()) {
+    if (task->IsReady()) {
       Submit(task);
     }
     task_iter++;
@@ -92,11 +93,15 @@ void TaskManager::ReceiveWork() {
         } else {
           task->UpdateTaskStatus(ABNORMAL);
         }
-        avaiable_task_counts_--;
+        if (task->IsTaskSubmitted()) {
+          avaiable_task_counts_--;
+        }
       } else if (status == STATUS_EOF) {
         MBLOG_DEBUG << "recv external finished";
         task->UpdateTaskStatus(FINISHED);
-        avaiable_task_counts_--;
+        if (task->IsTaskSubmitted()) {
+          avaiable_task_counts_--;
+        }
       }
       guard.unlock();
       task->FetchData(status, map_buffer_list);
@@ -134,6 +139,10 @@ std::shared_ptr<Task> TaskManager::CreateTask(TaskType task_type) {
   RegisterTask(task);
   return task;
 }
+
+int TaskManager::GetTaskNumLimit() { return task_num_limits_; }
+
+int TaskManager::GetAvaiableTaskCount() { return avaiable_task_counts_; }
 
 void TaskManager::SetTaskNumLimit(int task_limits) {
   std::lock_guard<std::mutex> guard(new_del_lock_);
