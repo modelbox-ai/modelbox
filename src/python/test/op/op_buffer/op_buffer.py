@@ -68,13 +68,7 @@ class BufferTestFlowunit(modelbox.FlowUnit):
 
             add_buffer.set("np_test", data_ctx.get_private("np_test"))
 
-            try:
-                add_buffer.set("map_test", {"test" : 1})
-            except ValueError as err:
-                modelbox.info(str(err))
-            else:
-                return modelbox.Status.StatusCode.STATUS_SHUTDOWN
-
+            add_buffer.set("map_test", {"test" : 1})
             out_bl.push_back(add_buffer)
 
         return modelbox.Status()

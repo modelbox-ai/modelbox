@@ -153,13 +153,9 @@ format = "graphviz"
             if not (np_set_test == np_get_test).all():
                 return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid np test")
 
-            try:
-                dict_test = buffer.get("map_test")
-            except ValueError as err:
-                modelbox.info(str(err))
-            else:
-                flow.stop()
-                self.assertTrue(False)
+            dict_test = buffer.get("map_test")
+            if dict_test != {"test" : 1}:
+                return modelbox.Status(modelbox.Status.StatusCode.STATUS_SHUTDOWN, "invalid map test")
 
         flow.stop()
 
