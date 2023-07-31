@@ -357,10 +357,10 @@ Status FlowUnitGroup::Init(const std::set<std::string> &input_ports_name,
 
 Status FlowUnitGroup::Open(const CreateExternalDataFunc &create_func) {
   auto status = STATUS_OK;
-  for (auto &flowunit : flowunit_group_) {
+  auto open_func = [&](const std::shared_ptr<FlowUnit> &flowunit) -> modelbox::Status {
     if (!flowunit) {
       MBLOG_WARN << "flow unit is nullptr.";
-      continue;
+      return STATUS_INVALID;
     }
 
     auto flowunit_desc = flowunit->GetFlowUnitDesc();
@@ -380,11 +380,34 @@ Status FlowUnitGroup::Open(const CreateExternalDataFunc &create_func) {
                             "', type '" +
                             flowunit_desc->GetDriverDesc()->GetType() +
                             "' failed."};
-      break;
+      return status;
     }
 
     MBLOG_DEBUG << flowunit_desc->GetFlowUnitName() << ":"
                 << flowunit_desc->GetFlowUnitAliasName() << " opened.";
+
+    return STATUS_OK;
+  };
+  
+  ThreadPool pool(std::thread::hardware_concurrency());
+  pool.SetName(unit_name_ + "-Open");
+  std::vector<std::future<Status>> result;
+
+  for (auto &flowunit : flowunit_group_) {
+    auto ret = pool.Submit(open_func, flowunit);
+    result.push_back(std::move(ret));
+  }
+
+  for (auto &fut : result) {
+    const auto *msg = "open flowunit failed, please check log.";
+    if (!fut.valid()) {
+      return {STATUS_FAULT, msg};
+    }
+
+    auto ret = fut.get();
+    if (!ret) {
+      return ret;
+    }
   }
 
   bool need_check_output = false;
