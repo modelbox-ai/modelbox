@@ -192,6 +192,12 @@ bool GetAttributes(void *value, std::size_t value_type,
     ret_data = *((py::object *)(value));
     return true;
   }
+
+  if (typeid(std::shared_ptr<py::object>).hash_code() == value_type) {
+    ret_data = *(*((std::shared_ptr<py::object> *)(value)));
+    return true;
+  }
+
   return false;
 }
 
@@ -230,6 +236,17 @@ void BufferSetAttributes(Buffer &buffer, const std::string &key,
                          buffer_info.ptr, buffer_info.shape,
                          buffer_info.strides);
     buffer.Set(key, numpy_info);
+    return;
+  }
+
+  if (py::isinstance<py::object>(obj)) {
+    auto *obj_ptr = new py::object();
+    *obj_ptr = obj;
+    auto obj_shared = std::shared_ptr<py::object>(obj_ptr, [](void *ptr) {
+      py::gil_scoped_acquire interpreter_guard{};
+      delete static_cast<py::object *>(ptr);
+    });
+    buffer.Set(key, obj_shared);
     return;
   }
 
@@ -738,7 +755,25 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
                  return buffer;
                }),
                py::keep_alive<1, 2>())
+          .def(py::init([](const std::shared_ptr<modelbox::Device> &device) {
+                 auto buffer = std::make_shared<Buffer>(device);
+                 return buffer;
+               }),
+               py::keep_alive<1, 2>())
           .def(py::init<const Buffer &>())
+          .def("build", [](std::shared_ptr<Buffer> &buffer, const std::string &str) {
+                 StrToBuffer(buffer, str);
+               })
+          .def("build", [](std::shared_ptr<Buffer> &buffer, const py::list &li) {
+                 ListToBuffer(buffer, li);
+               })
+          .def("build", [](std::shared_ptr<Buffer> &buffer, const py::buffer &buf) {
+                 PyBufferToBuffer(buffer, buf);
+               })
+          .def("as_bytes", [](Buffer &buffer) {
+                return py::bytes{(const char *)buffer.ConstData(),
+                                    buffer.GetBytes()};
+               })
           .def("as_object",
                [](Buffer &buffer) -> py::object {
                  return BufferToPyObject(buffer);
@@ -760,9 +795,8 @@ void ModelboxPyApiSetUpBuffer(pybind11::module &m) {
                  buffer.CopyMeta(other_ptr);
                })
           .def("set",
-               [](Buffer &buffer, const std::string &key, py::object &obj) {
-                 BufferSetAttributes(buffer, key, obj);
-               })
+               [](Buffer &buffer, const std::string &key,
+                  py::object &obj) { BufferSetAttributes(buffer, key, obj); })
           .def("get", BufferGetAttributes);
 
   ModelboxPyApiSetUpDataType(h);
@@ -784,6 +818,7 @@ void ModelboxPyApiSetUpBufferList(pybind11::module &m) {
            })
       .def("size", &modelbox::BufferList::Size)
       .def("get_bytes", &modelbox::BufferList::GetBytes)
+      .def("get_device", &modelbox::BufferList::GetDevice)
       .def(
           "push_back",
           [](BufferList &bl, Buffer &buffer) {
