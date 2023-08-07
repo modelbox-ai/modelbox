@@ -123,6 +123,21 @@ if(NOT DISABLE_MODELBOX_TEST)
         COMMENT "Run python Test..."
     )
 
+    # run single test case
+    # usage:
+    #   cmake -DPYTHON_TEST_CASE=test_log.py ..
+    #   make unittest-python-case
+    if (PYTHON_TEST_CASE)
+        message(STATUS "run test case for python: ${PYTHON_TEST_CASE}")
+        add_custom_target(unittest-python-case
+            COMMAND PYTHONPATH=${MODELBOX_PYTHON_BINARY_DIR} ${PYTHON_EXECUTABLE} ${MODELBOX_PYTHON_BINARY_DIR}/test/${PYTHON_TEST_CASE};
+            DEPENDS modelbox-python
+            WORKING_DIRECTORY ${TEST_WORKING_DIR}
+            COMMENT "Run python Test..."
+        )
+        add_dependencies(unittest-python-case all-drivers)
+    endif()
+
     add_dependencies(unittest-python all-drivers)
 
     list(APPEND MODELBOX_UNIT_TEST_TARGETS modelbox-python)
