@@ -33,6 +33,8 @@ class Executor {
 
   virtual ~Executor();
 
+  void SetThreadCount(int thread_count);
+
   template <typename func, typename... ts>
   auto Run(func &&fun, int32_t priority, ts &&...params)
       -> std::future<typename std::result_of<func(ts...)>::type> {
