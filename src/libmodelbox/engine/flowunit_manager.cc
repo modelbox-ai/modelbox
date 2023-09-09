@@ -60,8 +60,6 @@ Status FlowUnitManager::Initialize(
   Status status;
   status = InitFlowUnitFactory(driver);
 
-  max_executor_thread_num = config->GetUint32("graph.max_executor_thread_num", 0);
-
   if (status != STATUS_SUCCESS) {
     return status;
   }
@@ -409,9 +407,6 @@ std::shared_ptr<FlowUnit> FlowUnitManager::CreateSingleFlowUnit(
   if (device == nullptr) {
     return nullptr;
   }
-
-  MBLOG_INFO << "max_executor_thread_num: " << max_executor_thread_num;
-  device->GetDeviceExecutor()->SetThreadCount(max_executor_thread_num);
 
   flowunit->SetBindDevice(device);
   std::vector<FlowUnitInput> &in_list = flowunit_desc->GetFlowUnitInput();
