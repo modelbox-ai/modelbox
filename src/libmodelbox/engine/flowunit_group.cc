@@ -46,6 +46,8 @@ void FlowUnitGroup::InitTrace() {
   }
 }
 
+uint32_t FlowUnitGroup::GetBatchSize() const { return batch_size_; }
+
 std::shared_ptr<TraceSlice> FlowUnitGroup::StartTrace(
     FUExecContextList &exec_ctx_list) {
   std::call_once(trace_init_flag_, &FlowUnitGroup::InitTrace, this);
@@ -388,7 +390,7 @@ Status FlowUnitGroup::Open(const CreateExternalDataFunc &create_func) {
 
     return STATUS_OK;
   };
-  
+
   ThreadPool pool(std::thread::hardware_concurrency());
   pool.SetName(unit_name_ + "-Open");
   std::vector<std::future<Status>> result;

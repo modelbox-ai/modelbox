@@ -612,6 +612,8 @@ class FlowUnitManager {
 
   std::shared_ptr<DeviceManager> GetDeviceManager();
 
+  int max_executor_thread_num_;
+
  private:
   Status CheckParams(const std::string &unit_name, const std::string &unit_type,
                      const std::string &unit_device_id);
