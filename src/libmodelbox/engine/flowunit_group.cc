@@ -23,6 +23,11 @@
 
 namespace modelbox {
 
+uint32_t FlowUnitGroup::GetBatchSize() const
+{
+  return batch_size_;
+}
+
 void FlowUnitGroup::InitTrace() {
   if (profiler_ == nullptr) {
     return;
