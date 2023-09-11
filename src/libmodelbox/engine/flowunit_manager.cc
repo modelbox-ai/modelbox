@@ -414,6 +414,9 @@ std::shared_ptr<FlowUnit> FlowUnitManager::CreateSingleFlowUnit(
     return nullptr;
   }
 
+  MBLOG_INFO << "max_executor_thread_num: " << max_executor_thread_num;
+  device->GetDeviceExecutor()->SetThreadCount(max_executor_thread_num);
+
   flowunit->SetBindDevice(device);
   std::vector<FlowUnitInput> &in_list = flowunit_desc->GetFlowUnitInput();
   for (auto &in_item : in_list) {
