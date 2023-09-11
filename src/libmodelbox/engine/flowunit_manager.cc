@@ -59,6 +59,13 @@ Status FlowUnitManager::Initialize(
   SetDeviceManager(std::move(device_mgr));
   Status status;
   status = InitFlowUnitFactory(driver);
+
+  if (config != nullptr){
+    max_executor_thread_num = config->GetUint32("graph.max_executor_thread_num", 0);
+  } else {
+    max_executor_thread_num = 0;
+  }
+  
   if (status != STATUS_SUCCESS) {
     return status;
   }
