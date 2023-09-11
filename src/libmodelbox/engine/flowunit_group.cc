@@ -46,6 +46,11 @@ void FlowUnitGroup::InitTrace() {
   }
 }
 
+uint32_t FlowUnitGroup::GetBatchSize() const
+{
+  return batch_size_;
+}
+
 std::shared_ptr<TraceSlice> FlowUnitGroup::StartTrace(
     FUExecContextList &exec_ctx_list) {
   std::call_once(trace_init_flag_, &FlowUnitGroup::InitTrace, this);
