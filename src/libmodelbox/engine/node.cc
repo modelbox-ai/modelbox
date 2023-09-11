@@ -763,23 +763,43 @@ void Node::CleanDataContext() {
 
 Status Node::Run(RunType type) {
   std::list<std::shared_ptr<FlowUnitDataContext>> data_ctx_list;
+  size_t process_count = 0;
   auto ret = Recv(type, data_ctx_list);
+
   if (!ret) {
     return ret;
   }
 
-  ret = Process(data_ctx_list);
-  if (!ret) {
-    return ret;
-  }
+  std::list<std::shared_ptr<FlowUnitDataContext>> process_ctx_list;
 
-  if (!GetOutputNames().empty()) {
-    ret = Send(data_ctx_list);
+  auto output_names_is_empty = GetOutputNames().empty();
+
+  for (auto& ctx : data_ctx_list) {
+    // process data according to batch size
+    process_count++;
+    process_ctx_list.push_back(ctx);
+
+    if (process_ctx_list.size() < flowunit_group_->GetBatchSize()) {
+      if (process_count < data_ctx_list.size()) {
+        continue;
+      }
+    }
+
+    ret = Process(process_ctx_list);
     if (!ret) {
       return ret;
     }
-  } else {
-    SetLastError(data_ctx_list);
+
+    if (!output_names_is_empty) {
+      ret = Send(process_ctx_list);
+      if (!ret) {
+        return ret;
+      }
+    } else {
+      SetLastError(process_ctx_list);
+    }
+
+    process_ctx_list.clear();
   }
 
   Clean(data_ctx_list);

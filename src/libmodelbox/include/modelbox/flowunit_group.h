@@ -64,6 +64,8 @@ class FlowUnitGroup {
 
   Status Close();
 
+  uint32_t GetBatchSize() const;
+
  private:
   std::weak_ptr<Node> node_;
   uint32_t batch_size_;

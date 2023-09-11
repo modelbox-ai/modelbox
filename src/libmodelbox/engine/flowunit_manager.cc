@@ -59,6 +59,14 @@ Status FlowUnitManager::Initialize(
   SetDeviceManager(std::move(device_mgr));
   Status status;
   status = InitFlowUnitFactory(driver);
+
+  if (config != nullptr) {
+    max_executor_thread_num_ =
+        config->GetUint32("graph.max_executor_thread_num", 0);
+  } else {
+    max_executor_thread_num_ = 0;
+  }
+
   if (status != STATUS_SUCCESS) {
     return status;
   }
@@ -405,6 +413,12 @@ std::shared_ptr<FlowUnit> FlowUnitManager::CreateSingleFlowUnit(
   device = device_mgr->CreateDevice(unit_type, unit_device_id);
   if (device == nullptr) {
     return nullptr;
+  }
+
+  if (max_executor_thread_num_ > 0) {
+    MBLOG_INFO << "find the parameter max_executor_thread_num in the config: "
+               << max_executor_thread_num_;
+    device->GetDeviceExecutor()->SetThreadCount(max_executor_thread_num_);
   }
 
   flowunit->SetBindDevice(device);

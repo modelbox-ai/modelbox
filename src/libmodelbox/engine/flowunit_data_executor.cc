@@ -34,6 +34,10 @@ Executor::Executor(int thread_count) {
 
 Executor::~Executor() { thread_pool_ = nullptr; }
 
+void Executor::SetThreadCount(int thread_count) {
+  thread_pool_->SetThreadSize(thread_count);
+}
+
 FlowUnitExecContext::FlowUnitExecContext(
     std::shared_ptr<FlowUnitDataContext> data_ctx)
     : data_ctx_(std::move(data_ctx)) {}
