@@ -38,6 +38,10 @@ FlowUnitExecContext::FlowUnitExecContext(
     std::shared_ptr<FlowUnitDataContext> data_ctx)
     : data_ctx_(std::move(data_ctx)) {}
 
+void Executor::SetThreadCount(int thread_count){
+  thread_pool_->SetThreadSize(thread_count);
+}
+
 void FlowUnitExecContext::SetFlowUnit(std::shared_ptr<FlowUnit> fu) {
   bind_fu_ = std::move(fu);
 }
