@@ -152,8 +152,14 @@ bool SetAttributes(DataType &context, const std::string &key,
 
   if (py::isinstance<py::list>(obj)) {
     py::list obj_list_all = obj.cast<py::list>();
+    if (obj_list_all.empty()) {
+      return setup_data(List1DObjectFunc, obj_list_all, obj_list_all);
+    }
     if (py::isinstance<py::list>(obj_list_all[0])) {
       py::list obj_list_1d = obj_list_all[0].cast<py::list>();
+      if (obj_list_1d.empty()) {
+        return setup_data(List2DObjectFunc, obj_list_1d, obj_list_all);
+      }
       if (setup_data(List2DObjectFunc, obj_list_1d[0], obj_list_all)) {
         return true;
       }
