@@ -52,3 +52,5 @@ ModelBox支持两种方式运行，一种是服务化，一种是SDK，开发者
 |SDK|ModelBox提供了ModelBox开发库，使用于扩展现有应用支持高性能AI推理，专注AI推理业务，支持c++，Python集成|
 
 在开发AI推理应用时，可以按照[第一个应用](https://modelbox-ai.com/modelbox-book/first-app/mnist.html)的流程开发AI应用。
+
+
