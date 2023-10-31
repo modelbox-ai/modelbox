@@ -53,7 +53,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_CN_MIRROR=yes -DWITH_WEBUI=${{github.event.inputs.WithWebUI}} -DCLANG_TIDY=${{github.event.inputs.WithClangTidy}} -DCLANG_TIDY_AS_ERROR=on
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_WEBUI=${{github.event.inputs.WithWebUI}} -DCLANG_TIDY=${{github.event.inputs.WithClangTidy}} -DCLANG_TIDY_AS_ERROR=on
 
     - name: Build
       working-directory: build

@@ -27,7 +27,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_CN_MIRROR=yes -DCLANG_TIDY=on -DCLANG_TIDY_AS_ERROR=on
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCLANG_TIDY=on -DCLANG_TIDY_AS_ERROR=on
 
     - name: Build
       working-directory: build
