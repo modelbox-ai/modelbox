@@ -1,0 +1,89 @@
+name: Publish android images
+on:
+  workflow_dispatch:
+    inputs:
+      build_image:
+        description: 'select to build image'
+        required: true
+        type: boolean
+
+jobs:
+  build_android_develop_image:
+    runs-on: ubuntu-22.04
+    if: ${{ inputs.build_image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Login to DockerHub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download for dev package
+        run: |
+          sed -i '3s/OS_NAME=.*/OS_NAME=android/' docker/prepare_for_dev.sh
+          sed -i '/ls -lh release/d' docker/prepare_for_dev.sh
+          ./docker/prepare_for_dev.sh
+        shell: bash
+      - name: Build and Push
+        uses: docker/build-push-action@master
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.android.develop.ubuntu
+          tags: |
+            modelbox/modelbox-develop-android-ubuntu:latest
+
+  build_android_unittest:
+    runs-on: ubuntu-22.04
+    if: ${{ always() }}
+    needs: build_android_develop_image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Compile
+        run: |
+          containerid=$(docker run -dit --rm --privileged \
+                      -v $(pwd):/data/devel/modelbox \
+                      modelbox/modelbox-develop-android-ubuntu:latest /bin/bash | cut -c1-5)
+          docker exec ${containerid} /bin/bash -c 'bash -x /data/devel/modelbox/build_for_android.sh x64'
+        shell: bash
+      - name: BuildUnit
+        run: |
+          containerid=$(docker run -dit --rm --privileged \
+                      -v $(pwd):/data/devel/modelbox \
+                      modelbox/modelbox-develop-android-ubuntu:latest /bin/bash | cut -c1-5)
+          docker exec ${containerid} /bin/bash -c 'bash -x /data/devel/modelbox/build_for_android.sh buildtest'
+        shell: bash
+      - name: UnitTest
+        run: |
+          containerid=$(docker run -dit --rm --privileged \
+                      -v $(pwd):/data/devel/modelbox \
+                      modelbox/modelbox-develop-android-ubuntu:latest /bin/bash | cut -c1-5)
+          docker exec ${containerid} /bin/bash -c 'bash -x /data/devel/modelbox/build_for_android.sh unittest'
+        shell: bash
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_android_unittest
+          path: unittest.tar.gz
+
+  package_android_ubuntu:
+    runs-on: ubuntu-22.04
+    if: ${{ always() }}
+    needs: build_android_develop_image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Package
+        run: |
+          containerid=$(docker run -dit --rm --privileged \
+                      -v $(pwd):/data/devel/modelbox \
+                      modelbox/modelbox-develop-android-ubuntu:latest /bin/bash|cut -c1-5)
+          docker exec ${containerid} /bin/bash -c 'bash -x /data/devel/modelbox/build_for_android.sh'
+        shell: bash
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: modelbox_aar
+          path: aar_pkg/modelbox.aar
