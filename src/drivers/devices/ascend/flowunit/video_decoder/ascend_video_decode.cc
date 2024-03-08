@@ -205,6 +205,11 @@ void AscendVideoDecoder::Callback(acldvppStreamDesc *input,
 
   auto *ctx = (DvppVideoDecodeContext *)userData;
   auto queue = ctx->GetCacheQueue();
+  if (queue == nullptr) {
+    acldvppFree(vdecOutBufferDev);
+    MBLOG_ERROR << "get cache queue failed.";
+    return;
+  }
   auto res = queue->Push(dvpp_frame);
   if (!res) {
     acldvppFree(vdecOutBufferDev);
@@ -214,6 +219,7 @@ void AscendVideoDecoder::Callback(acldvppStreamDesc *input,
 
 modelbox::Status AscendVideoDecoder::Init(
     const std::shared_ptr<modelbox::DataContext> &data_ctx) {
+  vdecChannelDesc_ = nullptr;
   aclError ret = aclrtSetDevice(device_id_);
   if (ret != ACL_ERROR_NONE) {
     auto errMsg = "acl set device " + std::to_string(device_id_) +
@@ -304,22 +310,17 @@ modelbox::Status AscendVideoDecoder::Init(
 
   auto device_id = device_id_;
   vdecChannelDesc_.reset(
-      vdecChannelDescPtr, [device_id](aclvdecChannelDesc *p) {
-        auto ret = aclrtSetDevice(device_id);
-        if (ret != ACL_ERROR_NONE) {
-          MBLOG_ERROR << "Set device to " << device_id
-                      << " failed, err: " << ret;
-        }
-
-        ret = aclvdecDestroyChannel(p);
+      vdecChannelDescPtr, [this, device_id](aclvdecChannelDesc *p) {
+        auto ret = aclvdecDestroyChannel(p);
         if (ret != ACL_ERROR_NONE) {
           MBLOG_ERROR << "fail to destroy vdec channel, err: " << ret;
         }
-
         ret = aclvdecDestroyChannelDesc(p);
         if (ret != ACL_ERROR_NONE) {
           MBLOG_ERROR << "fail to destroy vdec channel desc, err: " << ret;
         }
+
+        this->thread_handler_ = nullptr;
       });
 
   setup_result = true;

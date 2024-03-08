@@ -42,6 +42,8 @@ modelbox::Status FfmpegReader::Open(const std::string &source_url) {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
   av_register_all();
 #endif
+  format_ctx_ = nullptr;
+
   auto ret = avformat_network_init();
   if (ret < 0) {
     GET_FFMPEG_ERR(ret, err_str);
@@ -60,6 +62,7 @@ modelbox::Status FfmpegReader::Open(const std::string &source_url) {
   AVFormatContext *ctx = nullptr;
   ctx = avformat_alloc_context();
   if (ctx == nullptr) {
+    av_dict_free(&options);
     return {modelbox::STATUS_FAULT, "ctx is null"};
   }
   ResetStartTime();
@@ -71,6 +74,7 @@ modelbox::Status FfmpegReader::Open(const std::string &source_url) {
     GET_FFMPEG_ERR(ret, err_str);
     MBLOG_ERROR << "avformat open input[" << format_source_url_
                 << "] failed, err " << err_str;
+    avformat_close_input(&ctx);
     return modelbox::STATUS_FAULT;
   }
 

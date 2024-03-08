@@ -108,6 +108,7 @@ class VideoDemuxerFlowUnit
 
   bool key_frame_only_{false};
   size_t queue_size_{32};
+  bool is_retry_reset_{false};
 };
 
 class DemuxerWorker {

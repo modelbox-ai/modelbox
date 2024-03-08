@@ -147,8 +147,90 @@ modelbox::Status VideoDecodeFlowUnit::Open(
   return modelbox::STATUS_OK;
 }
 
-modelbox::Status VideoDecodeFlowUnit::DataPre(
-    std::shared_ptr<modelbox::DataContext> data_ctx) {
+modelbox::Status VideoDecodeFlowUnit::ReopenDecoder(
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
+    const std::shared_ptr<modelbox::Buffer> &flag_buffer) {
+  auto old_source_url =
+      std::static_pointer_cast<std::string>(data_ctx->GetPrivate(SOURCE_URL_META));
+  auto old_codec_id =
+      std::static_pointer_cast<AVCodecID>(data_ctx->GetPrivate(CODEC_ID_META));
+
+  if (old_source_url == nullptr || old_codec_id == nullptr) {
+    MBLOG_ERROR << "Reopen decoder failed, source url or codec id is null";
+    return modelbox::STATUS_FAULT;
+  }
+
+  std::string source_url;
+  AVCodecID codec_id;
+  if (flag_buffer->Get(SOURCE_URL_META, source_url) == false) {
+    return modelbox::STATUS_SUCCESS;
+  }
+
+  if (flag_buffer->Get(CODEC_ID_META, codec_id) == false) {
+    return modelbox::STATUS_SUCCESS;
+  }
+
+  if (source_url == *old_source_url && codec_id == *old_codec_id) {
+    return modelbox::STATUS_SUCCESS;
+  }
+
+  MBLOG_WARN << "Reopen decoder, source url or codec id changed";
+  auto ret = CloseDecoder(data_ctx);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "Close decoder failed";
+    return modelbox::STATUS_FAULT;
+  }
+
+  int32_t rate_num;
+  int32_t rate_den;
+  int32_t encode_type;
+
+  auto res = flag_buffer->Get("rate_num", rate_num);
+  if (!res) {
+    return {modelbox::STATUS_FAULT, "get rate_num failed."};
+  }
+
+  res = flag_buffer->Get("rate_den", rate_den);
+  if (!res) {
+    return {modelbox::STATUS_FAULT, "get rate_den failed."};
+  }
+
+  auto in_meta = data_ctx->GetInputMeta(VIDEO_PACKET_INPUT);
+  auto profile_id =
+      std::static_pointer_cast<int32_t>(in_meta->GetMeta(PROFILE_META));
+  if (profile_id == nullptr) {
+    return {modelbox::STATUS_FAULT, "get profile id failed."};
+  }
+
+  encode_type = GetDvppEncodeType(codec_id, *profile_id);
+  if (encode_type == -1) {
+    return {modelbox::STATUS_FAULT, "get dvpp encode type failed."};
+  }
+
+  return NewDecoder(data_ctx, source_url, codec_id, rate_num, rate_den,
+                    encode_type);
+}
+
+modelbox::Status VideoDecodeFlowUnit::CloseDecoder(
+    std::shared_ptr<modelbox::DataContext> &data_ctx) {
+  auto instance_id =
+      std::static_pointer_cast<int32_t>(data_ctx->GetPrivate(INSTANCE_ID));
+  if (instance_id != nullptr) {
+    RestoreInstanceId(*instance_id);
+  }
+  data_ctx->SetPrivate(DVPP_DECODER, nullptr);
+  data_ctx->SetPrivate(DVPP_DECODER_CTX, nullptr);
+  data_ctx->SetPrivate(FRAME_INDEX_CTX, nullptr);
+  data_ctx->SetPrivate(INSTANCE_ID, nullptr);
+  data_ctx->SetPrivate(SOURCE_URL_META, nullptr);
+  data_ctx->SetPrivate(CODEC_ID_META, nullptr);
+  return modelbox::STATUS_SUCCESS;
+}
+
+modelbox::Status VideoDecodeFlowUnit::NewDecoder(
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
+    const std::string &source_url, AVCodecID codec_id, int32_t rate_num,
+    int32_t rate_den, int32_t encode_type) {
   int32_t instance_id = 0;
   instance_id = FindTheMinimumAvailableId();
   modelbox::Status ret = modelbox::STATUS_SUCCESS;
@@ -161,17 +243,6 @@ modelbox::Status VideoDecodeFlowUnit::DataPre(
   }
 
   DeferCondAdd { RestoreInstanceId(instance_id); };
-
-  int32_t rate_num;
-  int32_t rate_den;
-  int32_t encode_type;
-  auto res = GetDecoderParam(data_ctx, rate_num, rate_den, encode_type);
-  if (!res) {
-    auto errMsg = "get decoder param failed, detail: " + res.ToString();
-    MBLOG_ERROR << errMsg;
-    ret = {modelbox::STATUS_FAULT, errMsg};
-    return ret;
-  }
 
   auto video_decoder = std::make_shared<AscendVideoDecoder>(
       instance_id, dev_id_, rate_num, rate_den, format_, encode_type);
@@ -192,24 +263,67 @@ modelbox::Status VideoDecodeFlowUnit::DataPre(
   data_ctx->SetPrivate(DVPP_DECODER, video_decoder);
   data_ctx->SetPrivate(FRAME_INDEX_CTX, frame_index);
   data_ctx->SetPrivate(INSTANCE_ID, instance_id_ptr);
-  MBLOG_INFO << "acl video decode data pre success.";
+  data_ctx->SetPrivate(SOURCE_URL_META, std::make_shared<std::string>(source_url));
+  data_ctx->SetPrivate(CODEC_ID_META, std::make_shared<AVCodecID>(codec_id));
+  MBLOG_INFO << "open video decode data success.";
 
   return ret;
+}
+
+modelbox::Status VideoDecodeFlowUnit::DataPre(
+    std::shared_ptr<modelbox::DataContext> data_ctx) {
+  auto input_packet = data_ctx->Input(VIDEO_PACKET_INPUT);
+  if (input_packet == nullptr) {
+    return {modelbox::STATUS_FAULT, "get input failed."};
+  }
+
+  int32_t rate_num;
+  int32_t rate_den;
+  int32_t encode_type;
+
+  auto buffer = input_packet->At(0);
+  auto res = buffer->Get("rate_num", rate_num);
+  if (!res) {
+    return {modelbox::STATUS_FAULT, "get rate_num failed."};
+  }
+
+  res = buffer->Get("rate_den", rate_den);
+  if (!res) {
+    return {modelbox::STATUS_FAULT, "get rate_den failed."};
+  }
+
+  auto in_meta = data_ctx->GetInputMeta(VIDEO_PACKET_INPUT);
+  auto codec_id =
+      std::static_pointer_cast<AVCodecID>(in_meta->GetMeta(CODEC_META));
+  if (codec_id == nullptr) {
+    return {modelbox::STATUS_FAULT, "get codec id failed."};
+  }
+
+  auto source_url =
+      std::static_pointer_cast<std::string>(in_meta->GetMeta(SOURCE_URL_META));
+  if (source_url == nullptr) {
+    MBLOG_ERROR << "Stream source url is null, init decoder failed";
+    return modelbox::STATUS_FAULT;
+  }
+
+  auto profile_id =
+      std::static_pointer_cast<int32_t>(in_meta->GetMeta(PROFILE_META));
+  if (profile_id == nullptr) {
+    return {modelbox::STATUS_FAULT, "get profile id failed."};
+  }
+
+  encode_type = GetDvppEncodeType(*codec_id, *profile_id);
+  if (encode_type == -1) {
+    return {modelbox::STATUS_FAULT, "get dvpp encode type failed."};
+  }
+
+  return NewDecoder(data_ctx, *source_url, *codec_id, rate_num, rate_den,
+                    encode_type);
 };
 
 modelbox::Status VideoDecodeFlowUnit::DataPost(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
-  MBLOG_DEBUG << "videodecoder data post.";
-  // Destroy decoder first
-  data_ctx->SetPrivate(DVPP_DECODER, nullptr);
-  // Ctx must destroy after decoder destroy
-  data_ctx->SetPrivate(DVPP_DECODER_CTX, nullptr);
-  // Restore id
-  auto instance_id =
-      std::static_pointer_cast<int32_t>(data_ctx->GetPrivate(INSTANCE_ID));
-  RestoreInstanceId(*instance_id);
-
-  return modelbox::STATUS_SUCCESS;
+  return CloseDecoder(data_ctx);
 }
 
 modelbox::Status VideoDecodeFlowUnit::Close() {
@@ -219,7 +333,9 @@ modelbox::Status VideoDecodeFlowUnit::Close() {
 
 modelbox::Status VideoDecodeFlowUnit::ReadData(
     const std::shared_ptr<modelbox::DataContext> &data_ctx,
-    std::vector<std::shared_ptr<DvppPacket>> &dvpp_packet_list) {
+    std::vector<std::shared_ptr<DvppPacket>> &dvpp_packet_list,
+    std::shared_ptr<modelbox::Buffer> &flag_buffer) {
+  auto reset_flag = false;
   auto video_packet_input = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (video_packet_input == nullptr) {
     MBLOG_ERROR << "video packet input is null";
@@ -233,6 +349,14 @@ modelbox::Status VideoDecodeFlowUnit::ReadData(
 
   for (size_t i = 0; i < video_packet_input->Size(); ++i) {
     auto packet_buffer = video_packet_input->At(i);
+
+    if (reset_flag == false) {
+      packet_buffer->Get("reset_flag", reset_flag);
+      if (reset_flag == true) {
+        flag_buffer = packet_buffer;
+      }
+    }
+
     std::shared_ptr<DvppPacket> dvpp_packet;
     auto ret = ReadDvppStreamDesc(packet_buffer, dvpp_packet);
     if (ret != modelbox::STATUS_SUCCESS) {
@@ -462,6 +586,8 @@ modelbox::Status VideoDecodeFlowUnit::WriteData(
 
 modelbox::Status VideoDecodeFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
+  std::shared_ptr<modelbox::Buffer> flag_buffer = nullptr;
+
   auto acl_ret = aclrtSetDevice(dev_id_);
   if (acl_ret != ACL_SUCCESS) {
     MBLOG_ERROR << "set acl device to " << dev_id_ << " failed, err "
@@ -473,7 +599,7 @@ modelbox::Status VideoDecodeFlowUnit::Process(
       data_ctx->GetPrivate(DVPP_DECODER_CTX));
   auto video_decoder = std::static_pointer_cast<AscendVideoDecoder>(
       data_ctx->GetPrivate(DVPP_DECODER));
-  if (video_decoder == nullptr) {
+  if (video_decoder == nullptr || video_decoder_ctx == nullptr) {
     MBLOG_ERROR << "Video decoder is not init";
     return modelbox::STATUS_FAULT;
   }
@@ -489,10 +615,28 @@ modelbox::Status VideoDecodeFlowUnit::Process(
   }
 
   std::vector<std::shared_ptr<DvppPacket>> dvpp_packet_list;
-  ret = ReadData(data_ctx, dvpp_packet_list);
+  ret = ReadData(data_ctx, dvpp_packet_list, flag_buffer);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Read av_packet input failed, err code " + ret.ToString();
     return modelbox::STATUS_FAULT;
+  }
+
+  if (flag_buffer) {
+    video_decoder_ctx = nullptr;
+    video_decoder = nullptr;
+    if (ReopenDecoder(data_ctx, flag_buffer) != modelbox::STATUS_SUCCESS) {
+      MBLOG_ERROR << "Reopen decoder failed";
+      return modelbox::STATUS_FAULT;
+    }
+
+    video_decoder_ctx = std::static_pointer_cast<DvppVideoDecodeContext>(
+        data_ctx->GetPrivate(DVPP_DECODER_CTX));
+    video_decoder = std::static_pointer_cast<AscendVideoDecoder>(
+        data_ctx->GetPrivate(DVPP_DECODER));
+    if (video_decoder == nullptr || video_decoder_ctx == nullptr) {
+      MBLOG_ERROR << "Video decoder is not init";
+      return modelbox::STATUS_FAULT;
+    }
   }
 
   size_t err_num = 0;

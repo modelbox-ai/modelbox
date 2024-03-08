@@ -57,7 +57,8 @@ constexpr const char *FLOWUNIT_DESC =
     "\t\tField Name: shape,         Type: vector<size_t>\n"
     "\t\tField Name: type,          Type: ModelBoxDataType::MODELBOX_UINT8\n"
     "\t@Constraint: The flowuint 'video_decoder' must be used pair "
-    "with 'video_demuxer. the output buffer meta fields 'pix_fmt' is 'brg_packed' or 'rgb_packed', 'layout' is 'hcw'.";
+    "with 'video_demuxer. the output buffer meta fields 'pix_fmt' is "
+    "'brg_packed' or 'rgb_packed', 'layout' is 'hcw'.";
 constexpr const char *CODEC_META = "codec_meta";
 constexpr const char *DECODER_CTX = "decoder_ctx";
 constexpr const char *CVT_CTX = "converter_ctx";
@@ -65,6 +66,7 @@ constexpr const char *FRAME_INDEX_CTX = "frame_index_ctx";
 constexpr const char *VIDEO_PACKET_INPUT = "in_video_packet";
 constexpr const char *FRAME_INFO_OUTPUT = "out_video_frame";
 constexpr const char *SOURCE_URL_META = "source_url";
+constexpr const char *CODEC_ID_META = "codec_id";
 constexpr const char *LAST_FRAME = "last_frame";
 
 class VideoDecoderFlowUnit : public modelbox::FlowUnit {
@@ -99,7 +101,8 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
  private:
   modelbox::Status ReadData(
       const std::shared_ptr<modelbox::DataContext> &data_ctx,
-      std::vector<std::shared_ptr<AVPacket>> &pkt_list);
+      std::vector<std::shared_ptr<AVPacket>> &pkt_list,
+      std::shared_ptr<modelbox::Buffer> &flag_buffer);
   modelbox::Status ReadAVPacket(
       const std::shared_ptr<modelbox::Buffer> &packet_buffer,
       std::shared_ptr<AVPacket> &pkt);
@@ -108,6 +111,15 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
   modelbox::Status WriteData(std::shared_ptr<modelbox::DataContext> &data_ctx,
                              std::list<std::shared_ptr<AVFrame>> &frame_list,
                              bool eos);
+
+  modelbox::Status CloseDecoder(
+      std::shared_ptr<modelbox::DataContext> &data_ctx);
+  modelbox::Status NewDecoder(std::shared_ptr<modelbox::DataContext> &data_ctx,
+                              const std::string &source_url,
+                              AVCodecID codec_id);
+  modelbox::Status ReopenDecoder(
+      std::shared_ptr<modelbox::DataContext> &data_ctx,
+      const std::shared_ptr<modelbox::Buffer> &flag_buffer);
 
   AVPixelFormat out_pix_fmt_{AV_PIX_FMT_NV12};
   std::string out_pix_fmt_str_;

@@ -84,6 +84,11 @@ modelbox::Status FfmpegVideoMuxer::Mux(
 
   auto ret = av_interleaved_write_frame(format_ctx_.get(), av_packet.get());
   if (ret < 0) {
+    if (ret == AVERROR(EPIPE) || ret == AVERROR_EOF) {
+      MBLOG_ERROR << "remote end closed the connection";
+      return modelbox::STATUS_NOSTREAM;
+    }
+
     GET_FFMPEG_ERR(ret, ffmpeg_err);
     MBLOG_ERROR << "av_write_frame failed, ret " << ffmpeg_err;
     return {modelbox::STATUS_FAULT,

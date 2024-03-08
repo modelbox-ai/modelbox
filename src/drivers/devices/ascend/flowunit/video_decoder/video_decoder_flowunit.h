@@ -73,6 +73,8 @@ constexpr const char *DVPP_DECODER = "dvpp_decode";
 constexpr const char *VIDEO_PACKET_INPUT = "in_video_packet";
 constexpr const char *FRAME_INFO_OUTPUT = "out_video_frame";
 constexpr const char *CODEC_META = "codec_meta";
+constexpr const char *SOURCE_URL_META = "source_url";
+constexpr const char *CODEC_ID_META = "codec_id";
 constexpr const char *PROFILE_META = "profile_meta";
 constexpr const char *DVPP_DECODER_CTX = "dvpp_decode_context";
 constexpr const char *DVPP_DECODE_FLOWUNIT_DESC =
@@ -121,7 +123,8 @@ class VideoDecodeFlowUnit : public modelbox::FlowUnit {
       int32_t &rate_den, int32_t &encode_type);
   modelbox::Status ReadData(
       const std::shared_ptr<modelbox::DataContext> &data_ctx,
-      std::vector<std::shared_ptr<DvppPacket>> &dvpp_packet_list);
+      std::vector<std::shared_ptr<DvppPacket>> &dvpp_packet_list,
+      std::shared_ptr<modelbox::Buffer> &flag_buffer);
   modelbox::Status ReadDvppStreamDesc(
       const std::shared_ptr<modelbox::Buffer> &packet_buffer,
       std::shared_ptr<DvppPacket> &dvpp_packet);
@@ -133,6 +136,16 @@ class VideoDecodeFlowUnit : public modelbox::FlowUnit {
   void InitInstanceId();
   int32_t FindTheMinimumAvailableId();
   void RestoreInstanceId(int32_t instance_id);
+
+  modelbox::Status CloseDecoder(
+      std::shared_ptr<modelbox::DataContext> &data_ctx);
+  modelbox::Status NewDecoder(std::shared_ptr<modelbox::DataContext> &data_ctx,
+                              const std::string &source_url, AVCodecID codec_id,
+                              int32_t rate_num, int32_t rate_den,
+                              int32_t encode_type);
+  modelbox::Status ReopenDecoder(
+      std::shared_ptr<modelbox::DataContext> &data_ctx,
+      const std::shared_ptr<modelbox::Buffer> &flag_buffer);
 
   uint32_t dest_width_{224};
   uint32_t dest_height_{224};
