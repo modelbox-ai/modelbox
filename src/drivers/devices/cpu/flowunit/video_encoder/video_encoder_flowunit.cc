@@ -65,6 +65,58 @@ modelbox::Status VideoEncoderFlowUnit::Process(
     return modelbox::STATUS_FAULT;
   }
 
+  if (reopen_remote_ == true) {
+
+    static time_t last_time = 0;
+    time_t now = time(nullptr);
+
+    if (now - last_time < 5) {
+      return modelbox::STATUS_SUCCESS;
+    }
+
+    muxer = nullptr;
+    encoder = nullptr;
+    color_cvt = nullptr;
+
+    auto frame_buffer_list = data_ctx->Input(FRAME_INFO_INPUT);
+    auto buffer = frame_buffer_list->At(0);
+
+    int32_t width = 0;
+    int32_t height = 0;
+    int32_t rate_num = 0;
+    int32_t rate_den = 0;
+
+    buffer->Get("width", width);
+    buffer->Get("height", height);
+    buffer->Get("rate_num", rate_num);
+    buffer->Get("rate_den", rate_den);
+
+    if (width == 0 || height == 0 || rate_num == 0 || rate_den == 0) {
+      MBLOG_ERROR << "buffer meta is invalid";
+      return modelbox::STATUS_SUCCESS;
+    }
+
+    CloseMuexer(data_ctx);
+    if (OpenMuxer(data_ctx, width, height, rate_num, rate_den, "") !=
+        modelbox::STATUS_SUCCESS) {
+      MBLOG_ERROR << "Open muxer failed";
+      return modelbox::STATUS_FAULT;
+    }
+
+    muxer = std::static_pointer_cast<FfmpegVideoMuxer>(
+        data_ctx->GetPrivate(MUXER_CTX));
+    encoder = std::static_pointer_cast<FfmpegVideoEncoder>(
+        data_ctx->GetPrivate(ENCODER_CTX));
+    color_cvt = std::static_pointer_cast<FfmpegColorConverter>(
+        data_ctx->GetPrivate(COLOR_CVT_CTX));
+    if (muxer == nullptr || encoder == nullptr || color_cvt == nullptr) {
+      MBLOG_ERROR << "Open muxer failed";
+      return modelbox::STATUS_FAULT;
+    }
+
+    reopen_remote_ = false;
+  }
+
   std::vector<std::shared_ptr<AVPacket>> av_packet_list;
   ret = EncodeFrame(encoder, av_frame_list, av_packet_list);
   if (ret != modelbox::STATUS_SUCCESS) {
@@ -74,6 +126,12 @@ modelbox::Status VideoEncoderFlowUnit::Process(
 
   ret = MuxPacket(muxer, encoder->GetCtx()->time_base, av_packet_list);
   if (ret != modelbox::STATUS_SUCCESS) {
+    if (ret == modelbox::STATUS_NOSTREAM) {
+      MBLOG_WARN << "No stream to mux, retry.";
+      reopen_remote_ = true;
+      return modelbox::STATUS_SUCCESS;
+    }
+
     MBLOG_ERROR << "Mux packet failed";
     return modelbox::STATUS_FAULT;
   }
@@ -216,6 +274,82 @@ modelbox::Status VideoEncoderFlowUnit::MuxPacket(
   return modelbox::STATUS_SUCCESS;
 }
 
+modelbox::Status VideoEncoderFlowUnit::OpenMuxer(
+    const std::shared_ptr<modelbox::DataContext> &data_ctx, int32_t width,
+    int32_t height, int32_t rate_num, int32_t rate_den, std::string dest_url) {
+  MBLOG_WARN << "OpenMuxer, width " << width << ", height " << height
+             << ", rate_num " << rate_num << ", rate_den " << rate_den
+             << ", dest_url " << dest_url;
+
+  if (rate_num == 0 || rate_den == 0) {
+    rate_num = 25;
+    rate_den = 1;
+  }
+
+  if (dest_url == "") {
+    auto dest_url_ptr =
+        std::static_pointer_cast<std::string>(data_ctx->GetPrivate("dest_url"));
+    if (dest_url_ptr != nullptr) {
+      dest_url = *dest_url_ptr;
+    }
+
+    if (dest_url == "") {
+      MBLOG_ERROR << "dest_url is empty";
+      return modelbox::STATUS_FAULT;
+    }
+  }
+
+  auto encoder = std::make_shared<FfmpegVideoEncoder>();
+  auto ret = encoder->Init(width, height, {rate_num, rate_den}, bit_rate_,
+                           encoder_name_);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "Init encoder failed";
+    return modelbox::STATUS_FAULT;
+  }
+
+  auto writer = std::make_shared<FfmpegWriter>();
+  ret = writer->Open(format_name_, dest_url);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "Open ffmepg writer failed, format " << format_name_
+                << ", url " << dest_url;
+    return modelbox::STATUS_FAULT;
+  }
+
+  auto muxer = std::make_shared<FfmpegVideoMuxer>();
+  ret = muxer->Init(encoder->GetCtx(), writer);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "Init muxer failed";
+    return modelbox::STATUS_FAULT;
+  }
+
+  auto color_cvt = std::make_shared<FfmpegColorConverter>();
+
+  data_ctx->SetPrivate(MUXER_CTX, muxer);
+  data_ctx->SetPrivate(ENCODER_CTX, encoder);
+  data_ctx->SetPrivate(COLOR_CVT_CTX, color_cvt);
+  auto frame_index_ptr = std::make_shared<int64_t>(0);
+  data_ctx->SetPrivate(FRAME_INDEX_CTX, frame_index_ptr);
+  data_ctx->SetPrivate("dest_url", std::make_shared<std::string>(dest_url));
+  MBLOG_INFO << "Video encoder init success"
+             << ", width " << width << ", height " << height << ", rate "
+             << rate_num << "/" << rate_den << ", format " << format_name_
+             << ", destination url " << dest_url << ", encoder "
+             << encoder_name_;
+  return modelbox::STATUS_OK;
+}
+
+modelbox::Status VideoEncoderFlowUnit::CloseMuexer(
+    const std::shared_ptr<modelbox::DataContext> &data_ctx) {
+  data_ctx->SetPrivate(MUXER_CTX, nullptr);
+  data_ctx->SetPrivate(ENCODER_CTX, nullptr);
+  data_ctx->SetPrivate(COLOR_CVT_CTX, nullptr);
+
+  auto frame_index_ptr = std::make_shared<int64_t>(0);
+  data_ctx->SetPrivate(FRAME_INDEX_CTX, frame_index_ptr);
+
+  return modelbox::STATUS_OK;
+}
+
 modelbox::Status VideoEncoderFlowUnit::DataPre(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   std::string dest_url;
@@ -245,47 +379,7 @@ modelbox::Status VideoEncoderFlowUnit::DataPre(
     return modelbox::STATUS_INVALID;
   }
 
-  if (rate_num == 0 || rate_den == 0) {
-    rate_num = 25;
-    rate_den = 1;
-  }
-
-  auto encoder = std::make_shared<FfmpegVideoEncoder>();
-  ret = encoder->Init(width, height, {rate_num, rate_den}, bit_rate_,
-                      encoder_name_);
-  if (ret != modelbox::STATUS_SUCCESS) {
-    MBLOG_ERROR << "Init encoder failed";
-    return modelbox::STATUS_FAULT;
-  }
-
-  auto writer = std::make_shared<FfmpegWriter>();
-  ret = writer->Open(format_name_, dest_url);
-  if (ret != modelbox::STATUS_SUCCESS) {
-    MBLOG_ERROR << "Open ffmepg writer failed, format " << format_name_
-                << ", url " << dest_url;
-    return modelbox::STATUS_FAULT;
-  }
-
-  auto muxer = std::make_shared<FfmpegVideoMuxer>();
-  ret = muxer->Init(encoder->GetCtx(), writer);
-  if (ret != modelbox::STATUS_SUCCESS) {
-    MBLOG_ERROR << "Init muxer failed";
-    return modelbox::STATUS_FAULT;
-  }
-
-  auto color_cvt = std::make_shared<FfmpegColorConverter>();
-
-  data_ctx->SetPrivate(MUXER_CTX, muxer);
-  data_ctx->SetPrivate(ENCODER_CTX, encoder);
-  data_ctx->SetPrivate(COLOR_CVT_CTX, color_cvt);
-  auto frame_index_ptr = std::make_shared<int64_t>(0);
-  data_ctx->SetPrivate(FRAME_INDEX_CTX, frame_index_ptr);
-  MBLOG_INFO << "Video encoder init success"
-             << ", width " << width << ", height " << height << ", rate "
-             << rate_num << "/" << rate_den << ", format " << format_name_
-             << ", destination url " << dest_url << ", encoder "
-             << encoder_name_;
-  return modelbox::STATUS_OK;
+  return OpenMuxer(data_ctx, width, height, rate_num, rate_den, dest_url);
 }
 
 modelbox::Status VideoEncoderFlowUnit::GetDestUrl(

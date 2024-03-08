@@ -51,6 +51,7 @@ modelbox::Status VideoDecoderFlowUnit::Close() { return modelbox::STATUS_OK; }
 
 modelbox::Status VideoDecoderFlowUnit::Process(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
+  std::shared_ptr<modelbox::Buffer> flag_buffer = nullptr;
   auto video_decoder = std::static_pointer_cast<FfmpegVideoDecoder>(
       data_ctx->GetPrivate(DECODER_CTX));
   if (video_decoder == nullptr) {
@@ -59,10 +60,24 @@ modelbox::Status VideoDecoderFlowUnit::Process(
   }
 
   std::vector<std::shared_ptr<AVPacket>> pkt_list;
-  auto ret = ReadData(data_ctx, pkt_list);
+  auto ret = ReadData(data_ctx, pkt_list, flag_buffer);
   if (ret != modelbox::STATUS_SUCCESS) {
     MBLOG_ERROR << "Read av_packet input failed";
     return modelbox::STATUS_FAULT;
+  }
+
+  if (flag_buffer) {
+    if (ReopenDecoder(data_ctx, flag_buffer) != modelbox::STATUS_SUCCESS) {
+      MBLOG_ERROR << "Reopen decoder failed";
+      return modelbox::STATUS_FAULT;
+    }
+
+    video_decoder = std::static_pointer_cast<FfmpegVideoDecoder>(
+        data_ctx->GetPrivate(DECODER_CTX));
+    if (video_decoder == nullptr) {
+      MBLOG_ERROR << "Video decoder is not init";
+      return modelbox::STATUS_FAULT;
+    }
   }
 
   std::list<std::shared_ptr<AVFrame>> frame_list;
@@ -90,7 +105,9 @@ modelbox::Status VideoDecoderFlowUnit::Process(
 
 modelbox::Status VideoDecoderFlowUnit::ReadData(
     const std::shared_ptr<modelbox::DataContext> &data_ctx,
-    std::vector<std::shared_ptr<AVPacket>> &pkt_list) {
+    std::vector<std::shared_ptr<AVPacket>> &pkt_list,
+    std::shared_ptr<modelbox::Buffer> &flag_buffer) {
+  bool reset_flag = false;
   auto video_packet_input = data_ctx->Input(VIDEO_PACKET_INPUT);
   if (video_packet_input == nullptr) {
     MBLOG_ERROR << "video packet input is null";
@@ -104,6 +121,14 @@ modelbox::Status VideoDecoderFlowUnit::ReadData(
 
   for (size_t i = 0; i < video_packet_input->Size(); ++i) {
     auto packet_buffer = video_packet_input->At(i);
+
+    if (reset_flag == false) {
+      packet_buffer->Get("reset_flag", reset_flag);
+      if (reset_flag == true) {
+        flag_buffer = packet_buffer;
+      }
+    }
+
     std::shared_ptr<AVPacket> pkt;
     auto ret = ReadAVPacket(packet_buffer, pkt);
     if (ret != modelbox::STATUS_SUCCESS) {
@@ -260,6 +285,81 @@ modelbox::Status VideoDecoderFlowUnit::WriteData(
   return modelbox::STATUS_SUCCESS;
 }
 
+modelbox::Status VideoDecoderFlowUnit::ReopenDecoder(
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
+    const std::shared_ptr<modelbox::Buffer> &flag_buffer) {
+  auto old_source_url = std::static_pointer_cast<std::string>(
+      data_ctx->GetPrivate(SOURCE_URL_META));
+  auto old_codec_id =
+      std::static_pointer_cast<AVCodecID>(data_ctx->GetPrivate(CODEC_ID_META));
+
+  if (old_source_url == nullptr || old_codec_id == nullptr) {
+    MBLOG_ERROR << "Reopen decoder failed, source url or codec id is null";
+    return modelbox::STATUS_FAULT;
+  }
+
+  std::string source_url;
+  AVCodecID codec_id;
+  if (flag_buffer->Get(SOURCE_URL_META, source_url) == false) {
+    return modelbox::STATUS_SUCCESS;
+  }
+
+  if (flag_buffer->Get(CODEC_ID_META, codec_id) == false) {
+    return modelbox::STATUS_SUCCESS;
+  }
+
+  if (source_url == *old_source_url && codec_id == *old_codec_id) {
+    return modelbox::STATUS_SUCCESS;
+  }
+
+  MBLOG_WARN << "Reopen decoder, source url or codec id changed";
+  auto ret = CloseDecoder(data_ctx);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "Close decoder failed";
+    return modelbox::STATUS_FAULT;
+  }
+
+  return NewDecoder(data_ctx, source_url, codec_id);
+}
+
+modelbox::Status VideoDecoderFlowUnit::CloseDecoder(
+    std::shared_ptr<modelbox::DataContext> &data_ctx) {
+  data_ctx->SetPrivate(DECODER_CTX, nullptr);
+  data_ctx->SetPrivate(CVT_CTX, nullptr);
+  data_ctx->SetPrivate(FRAME_INDEX_CTX, nullptr);
+  data_ctx->SetPrivate(SOURCE_URL_META, nullptr);
+  data_ctx->SetPrivate(CODEC_ID_META, nullptr);
+  data_ctx->SetOutputMeta(FRAME_INFO_OUTPUT, nullptr);
+  return modelbox::STATUS_SUCCESS;
+}
+
+modelbox::Status VideoDecoderFlowUnit::NewDecoder(
+    std::shared_ptr<modelbox::DataContext> &data_ctx,
+    const std::string &source_url, AVCodecID codec_id) {
+  auto video_decoder = std::make_shared<FfmpegVideoDecoder>();
+  auto ret = video_decoder->Init(codec_id);
+  if (ret != modelbox::STATUS_SUCCESS) {
+    MBLOG_ERROR << "Video decoder init failed";
+    return modelbox::STATUS_FAULT;
+  }
+
+  auto color_cvt = std::make_shared<FfmpegColorConverter>();
+  auto frame_index = std::make_shared<int64_t>();
+  *frame_index = 0;
+  data_ctx->SetPrivate(DECODER_CTX, video_decoder);
+  data_ctx->SetPrivate(CVT_CTX, color_cvt);
+  data_ctx->SetPrivate(FRAME_INDEX_CTX, frame_index);
+  data_ctx->SetPrivate(SOURCE_URL_META,
+                       std::make_shared<std::string>(source_url));
+  data_ctx->SetPrivate(CODEC_ID_META, std::make_shared<AVCodecID>(codec_id));
+  auto meta = std::make_shared<modelbox::DataMeta>();
+  meta->SetMeta(SOURCE_URL_META, std::make_shared<std::string>(source_url));
+  data_ctx->SetOutputMeta(FRAME_INFO_OUTPUT, meta);
+  MBLOG_INFO << "Video decoder init success";
+  MBLOG_INFO << "Video decoder output pix fmt " << out_pix_fmt_str_;
+  return modelbox::STATUS_OK;
+}
+
 modelbox::Status VideoDecoderFlowUnit::DataPre(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
   auto in_meta = data_ctx->GetInputMeta(VIDEO_PACKET_INPUT);
@@ -277,30 +377,12 @@ modelbox::Status VideoDecoderFlowUnit::DataPre(
     return modelbox::STATUS_FAULT;
   }
 
-  auto video_decoder = std::make_shared<FfmpegVideoDecoder>();
-  auto ret = video_decoder->Init(*codec_id);
-  if (ret != modelbox::STATUS_SUCCESS) {
-    MBLOG_ERROR << "Video decoder init failed";
-    return modelbox::STATUS_FAULT;
-  }
-
-  auto color_cvt = std::make_shared<FfmpegColorConverter>();
-  auto frame_index = std::make_shared<int64_t>();
-  *frame_index = 0;
-  data_ctx->SetPrivate(DECODER_CTX, video_decoder);
-  data_ctx->SetPrivate(CVT_CTX, color_cvt);
-  data_ctx->SetPrivate(FRAME_INDEX_CTX, frame_index);
-  auto meta = std::make_shared<modelbox::DataMeta>();
-  meta->SetMeta(SOURCE_URL_META, source_url);
-  data_ctx->SetOutputMeta(FRAME_INFO_OUTPUT, meta);
-  MBLOG_INFO << "Video decoder init success";
-  MBLOG_INFO << "Video decoder output pix fmt " << out_pix_fmt_str_;
-  return modelbox::STATUS_OK;
+  return NewDecoder(data_ctx, *source_url, *codec_id);
 }
 
 modelbox::Status VideoDecoderFlowUnit::DataPost(
     std::shared_ptr<modelbox::DataContext> data_ctx) {
-  return modelbox::STATUS_OK;
+  return CloseDecoder(data_ctx);
 }
 
 MODELBOX_FLOWUNIT(VideoDecoderFlowUnit, desc) {

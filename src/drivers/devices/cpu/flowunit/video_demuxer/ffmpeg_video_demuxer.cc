@@ -30,6 +30,11 @@ modelbox::Status FfmpegVideoDemuxer::Init(std::shared_ptr<FfmpegReader> &reader,
                                           bool key_frame_only) {
   source_url_ = reader->GetSourceURL();
   format_ctx_ = reader->GetCtx();
+
+  if (format_ctx_ == nullptr) {
+    return modelbox::STATUS_FAULT;
+  }
+
   reader_ = reader;
   auto ret = SetupStreamInfo();
   if (ret != modelbox::STATUS_SUCCESS) {

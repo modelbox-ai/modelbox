@@ -119,7 +119,7 @@ NvcodecVideoDecoder::~NvcodecVideoDecoder() {
 
 modelbox::Status NvcodecVideoDecoder::Init(const std::string &device_id,
                                            AVCodecID codec_id,
-                                           std::string &file_url,
+                                           const std::string &file_url,
                                            bool skip_err_frame, bool no_delay) {
   gpu_id_ = std::stoi(device_id);
   MBLOG_INFO << "Init decode in gpu " << gpu_id_;

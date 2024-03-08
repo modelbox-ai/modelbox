@@ -69,6 +69,9 @@ modelbox::Status VideoDemuxerFlowUnit::Process(
   std::shared_ptr<AVPacket> pkt;
   if (demuxer_worker != nullptr) {
     demux_status = demuxer_worker->ReadPacket(pkt);
+    if (demux_status == modelbox::STATUS_NODATA) {
+      is_retry_reset_ = true;
+    }
   }
 
   if (demux_status == modelbox::STATUS_OK) {
@@ -126,6 +129,16 @@ modelbox::Status VideoDemuxerFlowUnit::WriteData(
   }
 
   auto packet_buffer = video_packet_output->At(0);
+  if (is_retry_reset_) {
+    bool is_reset = true;
+    auto codec_id = std::make_shared<AVCodecID>(video_demuxer->GetCodecID());
+    auto source_url =
+        std::static_pointer_cast<std::string>(data_ctx->GetPrivate(SOURCE_URL));
+    packet_buffer->Set("reset_flag", is_reset);
+    packet_buffer->Set("source_url", *source_url);
+    packet_buffer->Set("codec_id", video_demuxer->GetCodecID());
+    is_retry_reset_ = false;
+  }
   packet_buffer->Set("pts", pkt->pts);
   packet_buffer->Set("dts", pkt->dts);
   packet_buffer->Set("time_base", video_demuxer->GetTimeBase());
@@ -280,6 +293,14 @@ modelbox::Status VideoDemuxerFlowUnit::InitDemuxer(
     return modelbox::STATUS_FAULT;
   }
   video_demuxer->LogStreamInfo();
+
+  int32_t width = 0;
+  int32_t height = 0;
+  video_demuxer->GetFrameMeta(&width, &height);
+  if (width == 0 || height == 0) {
+    MBLOG_ERROR << "video demuxer get frame meta failed";
+    return modelbox::STATUS_FAULT;
+  }
 
   auto codec_id = video_demuxer->GetCodecID();
   auto profile_id = video_demuxer->GetProfileID();

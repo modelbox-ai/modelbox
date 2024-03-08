@@ -117,7 +117,7 @@ class NvcodecVideoDecoder {
   virtual ~NvcodecVideoDecoder();
 
   modelbox::Status Init(const std::string &device_id, AVCodecID codec_id,
-                        std::string &file_url, bool skip_err_frame,
+                        const std::string &file_url, bool skip_err_frame,
                         bool no_delay);
 
   modelbox::Status Decode(

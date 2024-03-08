@@ -114,10 +114,18 @@ class VideoEncoderFlowUnit : public modelbox::FlowUnit {
       const AVRational &time_base,
       std::vector<std::shared_ptr<AVPacket>> &av_packet_list);
 
+  modelbox::Status OpenMuxer(
+      const std::shared_ptr<modelbox::DataContext> &data_ctx, int32_t width,
+      int32_t height, int32_t rate_num, int32_t rate_den, std::string dest_url);
+
+  modelbox::Status CloseMuexer(
+      const std::shared_ptr<modelbox::DataContext> &data_ctx);
+
   std::string default_dest_url_;
   std::string format_name_;
   std::string encoder_name_;
   uint64_t bit_rate_{0};
+  bool reopen_remote_{false};
 };
 
 #endif  // MODELBOX_FLOWUNIT_VIDEO_ENCODER_CPU_H_

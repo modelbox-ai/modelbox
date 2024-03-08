@@ -63,7 +63,7 @@ modelbox::Status VideoDemuxerFlowUnitRetryTest::StartFlow(
   driver_flow_->BuildAndRun("VideoDecoder", toml_content, -1);
   std::string source_type = "url";
   std::string data_source_cfg = R"({
-        "url": "rtsp://0.0.0.1:554/sample_100kbit.mp4",
+        "url": "rtsp://192.168.59.29:10054/live/k14XeNAIR",
         "url_type": "stream"
   })";
   flow_ = driver_flow_->GetFlow();
@@ -79,6 +79,7 @@ TEST_F(VideoDemuxerFlowUnitRetryTest, RtspInputTest) {
 
 std::string VideoDemuxerFlowUnitRetryTest::GetRtspTomlConfig() {
   const std::string test_lib_dir = TEST_DRIVER_DIR;
+  const std::string dest_url = "rtmp://192.168.59.29:10035/live/iEunZv0IR?sign=mPu7WDASRz";
   std::string toml_content =
       R"(
       [log]
@@ -95,12 +96,16 @@ std::string VideoDemuxerFlowUnitRetryTest::GetRtspTomlConfig() {
             data_source_parser[type=flowunit, flowunit=data_source_parser, device=cpu, deviceid=0, retry_interval_ms = 1000, obs_retry_interval_ms = 3000,url_retry_interval_ms = 1000, label="<data_uri>", plugin_dir=")" +
       test_lib_dir + R"("] 
             videodemuxer[type=flowunit, flowunit=video_demuxer, device=cpu, deviceid=0, label="<in_video_url> | <out_video_packet>", queue_size = 16]
-            videodecoder[type=flowunit, flowunit=video_decoder, device=cpu, deviceid=0, label="<in_video_packet> | <out_video_frame>", pix_fmt=nv12, queue_size = 16]  
-            read_frame[type=flowunit, flowunit=read_frame, device=cpu, deviceid=0, label="<frame_info>", queue_size = 16]
+            videodecoder[type=flowunit, flowunit=video_decoder, device=cpu, deviceid=0, label="<in_video_packet> | <out_video_frame>", pix_fmt=rgb, queue_size = 16]  
+            // videodecoder[type=flowunit, flowunit=video_decoder, device=cuda, deviceid=0, label="<in_video_packet> | <out_video_frame>", pix_fmt=rgb, queue_size = 16]  
+            // videodecoder[type=flowunit, flowunit=video_decoder, device=ascend, deviceid=0, label="<in_video_packet> | <out_video_frame>", pix_fmt=nv12, queue_size = 16]  
+            videoencoder[type=flowunit, flowunit=video_encoder, device=cpu, queue_size = 16, deviceid=0, default_dest_url=")" +
+      dest_url + R"(
+            ", format=flv, encoder=libx264 ]
             input -> data_source_parser:in_data
             data_source_parser:out_video_url -> videodemuxer:in_video_url
             videodemuxer:out_video_packet -> videodecoder:in_video_packet
-            videodecoder:out_video_frame -> read_frame:frame_info
+            videodecoder:out_video_frame -> videoencoder:in_video_frame
           }'''
       format = "graphviz"
     )";

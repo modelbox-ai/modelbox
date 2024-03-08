@@ -66,6 +66,7 @@ constexpr const char *FRAME_INDEX_CTX = "frame_index_ctx";
 constexpr const char *VIDEO_PACKET_INPUT = "in_video_packet";
 constexpr const char *FRAME_INFO_OUTPUT = "out_video_frame";
 constexpr const char *SOURCE_URL_META = "source_url";
+constexpr const char *CODEC_ID_META = "codec_id";
 constexpr const char *LAST_FRAME = "last_frame";
 
 class VideoDecoderFlowUnit : public modelbox::FlowUnit {
@@ -100,7 +101,8 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
  private:
   modelbox::Status ReadData(
       const std::shared_ptr<modelbox::DataContext> &data_ctx,
-      std::vector<std::shared_ptr<NvcodecPacket>> &pkt_list);
+      std::vector<std::shared_ptr<NvcodecPacket>> &pkt_list,
+      std::shared_ptr<modelbox::Buffer> &flag_buffer);
   modelbox::Status ReadNvcodecPacket(
       const std::shared_ptr<modelbox::Buffer> &packet_buffer,
       std::shared_ptr<NvcodecPacket> &pkt);
@@ -109,6 +111,15 @@ class VideoDecoderFlowUnit : public modelbox::FlowUnit {
       std::vector<std::shared_ptr<NvcodecFrame>> &frame_list, bool eos,
       const std::string &file_url);
   modelbox::Status CreateCudaContext(CUcontext &cu_ctx, std::string &device_id);
+
+  modelbox::Status CloseDecoder(
+      std::shared_ptr<modelbox::DataContext> &data_ctx);
+  modelbox::Status NewDecoder(std::shared_ptr<modelbox::DataContext> &data_ctx,
+                              const std::string &source_url,
+                              AVCodecID codec_id);
+  modelbox::Status ReopenDecoder(
+      std::shared_ptr<modelbox::DataContext> &data_ctx,
+      const std::shared_ptr<modelbox::Buffer> &flag_buffer);
 
   std::string out_pix_fmt_str_;
   bool skip_err_frame_{false};
