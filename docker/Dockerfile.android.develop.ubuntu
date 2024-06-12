@@ -1,0 +1,89 @@
+FROM ubuntu:22.04
+COPY android-ndk-r25b-linux.zip /root/
+RUN apt update && \
+    apt install -y unzip
+
+RUN mkdir -p /data/ndk && \
+    unzip /root/android-ndk-r25b-linux.zip -d /data/ndk/ >/dev/null && \
+    ls /data/ndk/android-ndk-r25b
+
+
+FROM ubuntu:22.04
+
+ADD cpprestsdk.tar.gz /data/
+ADD deb_files.tar.gz src.tar.gz /data/devel/thirdparty/
+ADD mindspore-lite-*.tar.gz /data/mindspore/
+COPY --from=0 /data/ndk /data/ndk
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /root
+
+RUN apt update && \
+    apt upgrade -y && \
+    apt install -y --no-install-recommends \
+        vim curl zip unzip git maven make strace iproute2 \
+        pkg-config openjdk-8-jdk ca-certificates patchelf \
+        python3-pip ubuntu-desktop clang-tidy-14 cmake && \
+    ln -sf clang-tidy-14 /usr/bin/clang-tidy && \
+    ln -sf run-clang-tidy-14 /usr/bin/run-clang-tidy && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /root/.pip && \
+    echo "[global]" > /root/.pip/pip.conf && \
+    echo "index-url = https://pypi.python.org/simple" >>/root/.pip/pip.conf && \
+    echo "trusted-host = pypi.python.org" >>/root/.pip/pip.conf && \
+    echo "timeout = 120" >>/root/.pip/pip.conf && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir setuptools pyclip
+
+RUN ln -sf data/data/com.termux/files/usr /data/devel/thirdparty/deb/x86_64/usr && \
+    ln -sf data/data/com.termux/files/usr /data/devel/thirdparty/deb/arm64-v8a/usr && \
+    ln -sf opencv4/opencv2 /data/devel/thirdparty/deb/x86_64/usr/include/opencv2 && \
+    ln -sf opencv4/opencv2 /data/devel/thirdparty/deb/arm64-v8a/usr/include/opencv2 && \
+    cp -af /data/cpprestsdk/arm64-v8a/lib/libcpprest.so /data/devel/thirdparty/deb/arm64-v8a/usr/lib/ && \
+    cp -af /data/cpprestsdk/x86_64/lib/libcpprest.so /data/devel/thirdparty/deb/x86_64/usr/lib/ && \
+    ln -sf /data/cpprestsdk/include/cpprest /data/devel/thirdparty/deb/arm64-v8a/usr/include/cpprest && \
+    ln -sf /data/cpprestsdk/include/cpprest /data/devel/thirdparty/deb/x86_64/usr/include/cpprest && \
+    ln -sf /data/cpprestsdk/include/pplx /data/devel/thirdparty/deb/arm64-v8a/usr/include/pplx && \
+    ln -sf /data/cpprestsdk/include/pplx /data/devel/thirdparty/deb/x86_64/usr/include/pplx && \
+    ln -sf devel/thirdparty/deb/x86_64/data/data /data/data
+
+RUN mkdir -p /data/devel/stub && \
+    cd /data/devel/stub && \
+    touch test.c && \
+    /data/ndk/android-ndk-r25b/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android28-clang -fPIC -shared -Wl,--build-id -Wl,-soname,libpthread.so test.c -o libpthread.so.a64 && \
+    /data/ndk/android-ndk-r25b/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android28-clang -fPIC -shared -Wl,--build-id -Wl,-soname,librt.so test.c -o librt.so.a64 && \
+    /data/ndk/android-ndk-r25b/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android28-clang -fPIC -shared -Wl,--build-id -Wl,-soname,libpthread.so test.c -o libpthread.so.x64 && \
+    /data/ndk/android-ndk-r25b/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android28-clang -fPIC -shared -Wl,--build-id -Wl,-soname,librt.so test.c -o librt.so.x64 && \
+    cp libpthread.so.a64 /data/devel/thirdparty/deb/arm64-v8a/usr/lib/libpthread.so && \
+    cp librt.so.a64 /data/devel/thirdparty/deb/arm64-v8a/usr/lib/librt.so && \
+    cp libpthread.so.x64 /data/devel/thirdparty/deb/x86_64/usr/lib/libpthread.so && \
+    cp librt.so.x64 /data/devel/thirdparty/deb/x86_64/usr/lib/librt.so
+
+RUN curl --proto '=https' --tlsv1.2 -Sf https://repo.waydro.id/waydroid.gpg --output /usr/share/keyrings/waydroid.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/waydroid.gpg] https://repo.waydro.id/ jammy main" | tee /etc/apt/sources.list.d/waydroid.list && \
+    apt update && \
+    apt install -y waydroid=1.3.3 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; \
+    do [ $i = systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+    rm -f /lib/systemd/system/multi-user.target.wants/*; \
+    rm -f /etc/systemd/system/*.wants/*; \
+    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+    echo 'export TMOUT=0' >> /etc/bash.bashrc && \
+    echo 'export HISTSIZE=1000' >> /etc/bash.bashrc && \
+    echo 'export $(dbus-launch)' >> /etc/bash.bashrc && \
+    echo 'export RUNLEVEL=3' >> /etc/bash.bashrc && \
+    echo 'export PS1="\[\e[35;1m\][\u@\h \W]$ \[\e[0m\]"' >> ~/.bashrc
+
+ENV NDK_ROOT=/data/ndk/android-ndk-r25b
+ENV USER_ROOT=/data/devel/thirdparty/deb
+ENV LIBRARY_RUNPATH=/data/user/0/com.mbox_ai/files/lib
+ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+ENV JRE_HOME=${JAVA_HOME}/jre
+ENV CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+ENV PATH=${JAVA_HOME}/bin:$PATH
